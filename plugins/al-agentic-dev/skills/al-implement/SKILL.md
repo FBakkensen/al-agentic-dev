@@ -9,7 +9,7 @@ description: Pick a `ready-for-implementation` technical task from the `tasks/` 
 
 Pick the next `ready-for-implementation` technical task from the `tasks/` folder. Consume its fresh `Test Specification`. Drive AAA cases red → green: `Unit` first, `Integration` second. Reconcile final procedure names and scopes in the task file. Flip status to `done` when the full suite is green and the spec reconciled. **Stop at green** — reshape (`/al-refactor`) and rigor (`/al-mutate`) are the next steps the user invokes, not work this skill runs. One task per session.
 
-This skill calls only `/al-research` (evidence-bar escalation) and `/al-build` (compile/test), and consults the built-in rubber-duck agent for an independent cross-family read on non-trivial work ([rubber-duck-review.md](../../references/rubber-duck-review.md)). It spawns a subagent per AAA case but invokes no other skill — it hands off by naming the next step, never by chaining.
+This skill calls only `/al-research` (evidence-bar escalation) and `/al-build` (compile/test), and consults the rubber-duck agent for an independent cross-family read on non-trivial work ([rubber-duck-review.md](../../references/rubber-duck-review.md)). It spawns a subagent per AAA case but invokes no other skill — it hands off by naming the next step, never by chaining.
 
 **Layer.** Red-first at the Unit + Integration layers (see [`test-strategy.md`](../../references/test-strategy.md)). A production bug a higher layer surfaces is pushed down to this layer so the proof lives where an oracle sees it.
 

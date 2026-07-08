@@ -1,11 +1,20 @@
 # Rubber-duck review — the cross-check discipline
 
-How a skill gets an independent read on a non-trivial artifact: consult the **built-in
-rubber-duck agent** (ask in plain language — "rubber-duck this Test Specification" — or the
-user runs `/rubber-duck`; the harness may also consult it on its own). The rubber duck runs
-on a different model family than the session by design, so it catches what same-family
-self-review confirms. It is a harness built-in: no skill wraps it, no script dispatches it,
-and it is not spawned through the task tool.
+How a skill gets an independent read on a non-trivial artifact: consult the **rubber-duck
+agent**, spawned through the task tool as `agent_type: "rubber-duck"` (or the user runs
+`/rubber-duck`; the harness may also consult it on its own). The rubber duck runs on a
+different model family than the session by design — its pairing is gpt↔claude — so it
+catches what same-family self-review confirms.
+
+**Fallback when the agent type is missing.** `rubber-duck` drops out of the task tool's
+`agent_type` enum on some session models (the pairing is gpt↔claude only). When it is
+missing: spawn `general-purpose` with a critic prompt on the *other* model family — session
+on a Claude model → a GPT-family model, session on a GPT model → a Claude-family model —
+at medium reasoning. The family rule is the contract; look up current IDs in the task
+tool's model list. There is no skip path: the consult happens at every checkpoint that
+calls for it, by one route or the other. Only if the task tool itself cannot spawn at all
+does the caller state `Rubber-duck review skipped: <reason>` in one line and continue —
+no halt, no retry loop, no invented findings.
 
 The consult is one of the moves a skill may make **autonomously** mid-step, no user
 round-trip — load-bearing for the cheap-model goal: a smaller model running a pipeline
@@ -33,12 +42,13 @@ What the duck returns is what the caller reconciles — bullets stay bullets, ea
 (artifact updated) or rejected (rationale stated in session). Editorialising the return is
 silent self-review of the second opinion.
 
-## Fail closed, do not fake
+## Do not fold to pushback automatically
 
-If the consult cannot run, the caller says so in one line — `Rubber-duck review skipped:
-<reason>` — and continues its own work: no halt, no retry loop, no invented findings. The
-cross-check is a checkpoint, not a hard gate; a missing one is recoverable, faking one is
-not.
+If the duck contradicts primary-source evidence the caller has already gathered (the file
+says X, the user said Y), the caller surfaces the conflict in one more consult — "I found
+X, you suggest Y, which constraint breaks the tie?" — instead of silently switching to the
+duck's answer. Reconcile beats deferring; a second opinion is input, not an override of
+evidence in hand.
 
 ## Veto semantics (al-code-review only)
 

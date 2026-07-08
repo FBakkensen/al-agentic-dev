@@ -1,6 +1,6 @@
 # al-agentic-dev plugin overview
 
-Composable skills for AL/Business Central agentic development. One feature flows idea → merge through a pipeline of named skills, each owning a specific cut of the work. **You drive the pipeline:** every skill ends by naming the next natural step, and you invoke it by typing `/<skill-name>` — nothing auto-chains. A skill calls another skill only in two cases: `/al-research` (BC fact escalation) and `/al-build` (compile/publish/test); non-trivial artifacts additionally get an autonomous consult of the built-in **rubber-duck agent** (an independent read a cheap model leans on mid-step — [`rubber-duck-review.md`](rubber-duck-review.md)). Everything else is a handoff you take. Skills also spawn lightweight **subagents** from shared prompt blocks (review lenses, the red-green worker) via the task tool.
+Composable skills for AL/Business Central agentic development. One feature flows idea → merge through a pipeline of named skills, each owning a specific cut of the work. **You drive the pipeline:** every skill ends by naming the next natural step, and you invoke it by typing `/<skill-name>` — nothing auto-chains. A skill calls another skill only in two cases: `/al-research` (BC fact escalation) and `/al-build` (compile/publish/test); non-trivial artifacts additionally get an autonomous consult of the **rubber-duck agent** (an independent read a cheap model leans on mid-step — [`rubber-duck-review.md`](rubber-duck-review.md)). Everything else is a handoff you take. Skills also spawn lightweight **subagents** from shared prompt blocks (review lenses, the red-green worker) via the task tool.
 
 ## Pipeline
 
@@ -53,7 +53,7 @@ State handoff is the filesystem, never in-memory: every skill can be invoked col
 
 ## Subagents
 
-Skills spawn lightweight workers from shared prompt blocks under `references/subagents/`. They are not slash commands and not custom-agent definitions — a skill spawns a subagent via the task tool with the named prompt. Each block names the model tier to spawn on, per [`model-selection.md`](model-selection.md).
+Skills spawn lightweight workers from shared prompt blocks under `references/subagents/`. They are not slash commands and not custom-agent definitions — a skill spawns a subagent via the task tool with the named prompt. Each block names the model tier to spawn on, per [`delegation.md`](delegation.md).
 
 | Prompt block | Role | Spawned by |
 |---|---|---|

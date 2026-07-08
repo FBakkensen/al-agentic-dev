@@ -60,7 +60,7 @@ Use one delegated worker when host supports subagents. Host owns plan generation
 
 After the worker returns its mutation report, close the completed worker thread before the host resumes judgement, killer-test work, or closeout.
 
-Spawn the worker on the cheap tier — a mechanical mutate-build-revert cycle (see [model-selection.md](../../references/model-selection.md)).
+Spawn the worker on the cheap tier — a mechanical mutate-build-revert cycle (see [delegation.md](../../references/delegation.md)).
 
 ### Worker rules
 

@@ -2,7 +2,7 @@
 
 Spawnable prompt block. A skill (`/al-implement`, or `/al-code-review --fix`) drives one AAA case to GREEN by spawning a subagent with the prompt below, passing the single AAA case spec, the task's `New and Modified Objects` block, and the task file path. The subagent writes test + production code and runs `/al-build` inside the loop; commits, final full-suite gate, reconciliation, refactor, and mutation stay with the caller.
 
-**Model:** spawn on the cheap tier — this is clear-spec implementation (a single AAA case with its `New and Modified Objects` block). Escalate one tier (mid/smart) only if the case can't reach green. Tier-to-model-ID mapping: [`../model-selection.md`](../model-selection.md).
+**Model:** spawn on the cheap tier — this is clear-spec implementation (a single AAA case with its `New and Modified Objects` block). Escalate one tier (mid/smart) only if the case can't reach green. Tier-to-model-ID mapping: [`../delegation.md`](../delegation.md).
 
 ---
 
