@@ -2,9 +2,9 @@
 
 Whether to hand work to a spawned subagent, and which model it runs on. One home: the
 subagent prompt blocks under `subagents/` and the skills that spawn them name a tier and
-point here; this file owns the triggers, the tier ordering, and the escalation rule so they
-do not drift. Set the tier with the spawn's `model` parameter on the task tool, using the
-harness's current model IDs.
+point here; this file owns the triggers, the tier ordering, the effort rule, and the rerun
+diagnostic so they do not drift. Set the tier with the spawn's `model` parameter on the task
+tool, using the harness's current model IDs, and the thoroughness with `reasoning_effort`.
 
 ## When to delegate
 
@@ -45,16 +45,34 @@ inherit the spawning session's model (omit the `model` parameter).
 
 ## How to pick
 
+Two dials, set both at spawn. The `model` parameter picks the tier — how hard or ambiguous
+the problem is, what the worker must *know*. The `reasoning_effort` parameter picks the
+effort — how much ground the worker must cover and verify before calling itself done, how
+hard it *tries*. The dials are independent: the cheap tier at high effort suits a wide sweep
+of routine ground; the smart tier at low effort suits one hard judgment with little legwork.
+Omit `reasoning_effort` unless the workload names a reason — the model's default is tuned
+for what most tasks need.
+
 - **Intelligence > taste > cost.** Cost breaks a tie; it never overrides a task that needs more
   intelligence. Escalating costs less than shipping wrong code.
+- **Effort never buys capability.** Genuinely hard work on a cheap tier at high effort just
+  grinds: more iterations, sometimes a higher total cost, and some tasks it never finishes.
+  Judge by expected total task cost — per-token price × tokens consumed — never per-token
+  price alone; a stronger model that reaches green in fewer steps can be both better and
+  cheaper.
+- **A sharp spec lowers the tier.** Precise instructions suit small models; ambiguity demands
+  a larger one. Sharpening the spawn prompt is the first lever — it is what makes the cheap
+  tier safe for the bulk workers below.
 - **Bulk / mechanical work → cheap tier.** Clear-spec implementation (a single AAA case with its
   `New and Modified Objects` block), the build/publish/test gate, the mutate-build-revert cycle.
   The spec carries the judgment; the worker executes it.
 - **Review of a whole implementation → the smart tiers** (mid / smart) — *except the
   al-agentic-dev carve-out below.*
-- **Escalate a cheap run that misses the bar.** Start at the mapped tier; if the output is wrong
-  or the worker can't reach green, rerun the same work one tier up. Standing permission — judge
-  the output, not the price tag.
+- **When a run misses the bar, never rerun blind.** A rerun without a named cause is a coin
+  flip at full price. Diagnose first: *wasn't told* — the spawn prompt was vague or missing
+  context → fix the prompt, touch no dial; *didn't know* — confidently wrong despite complete
+  context → one tier up; *didn't try* — skipped a file, didn't run the gate, bailed early →
+  effort up, same tier. Rerun once, naming the diagnosis.
 
 ## The al-agentic-dev carve-out — review runs cheap on purpose
 
@@ -72,7 +90,7 @@ its intent.
 
 | Worker | Tier |
 |---|---|
-| `al-red-green` (one AAA case RED→GREEN) | cheap; escalate → mid/smart only if a case can't reach green |
+| `al-red-green` (one AAA case RED→GREEN) | cheap; a case that can't reach green runs the rerun diagnostic above — tier up (mid/smart) only on *didn't know* |
 | `al-review-lens` / `al-review-lens-bc` (one focused review pass) | cheap (carve-out) |
 | build gate worker (`/al-build`) | cheap |
 | mutation worker (`/al-mutate`) | cheap |
