@@ -1,9 +1,30 @@
-# Model selection
+# Delegation
 
-Which model a spawned subagent runs on. One home: the subagent prompt blocks under
-`subagents/` and the skills that spawn them name a tier and point here; this file owns the
-ordering and the escalation rule so they do not drift. Set the tier with the spawn's `model`
-parameter on the task tool, using the harness's current model IDs.
+Whether to hand work to a spawned subagent, and which model it runs on. One home: the
+subagent prompt blocks under `subagents/` and the skills that spawn them name a tier and
+point here; this file owns the triggers, the tier ordering, and the escalation rule so they
+do not drift. Set the tier with the spawn's `model` parameter on the task tool, using the
+harness's current model IDs.
+
+## When to delegate
+
+Each trigger names a cue and the reflex it fires:
+
+- **The task sentence contains "across all / every / each"** — a distributive phrase means
+  the sentence is already a delegation prompt. Hand it to a subagent verbatim.
+- **Third repetition** — the same-shaped edit is being made for the third time. Stop: the
+  remaining instances are a sweep; delegate the rest.
+- **The spec is already written down** — a task file, a todo description, or a decisions
+  table contains what-changes-where. "The context is in my head" is disproven by that
+  artifact; the artifact *is* the prompt.
+- **The checking command is nameable** — a grep count, a validator, or the build/test gate
+  proves the work done. Then quality is bounded by the gate, not the worker; the cheapest
+  capable tier does it and the caller runs the check.
+- **Disjoint file sets** — two work items touch no common file. They run as parallel
+  background subagents, not sequentially by the caller.
+
+Stay inline when: the edit needs a judgment call per site; the files overlap work already
+in flight; or the whole job is smaller than writing the handoff.
 
 ## Tiers
 
@@ -40,8 +61,8 @@ inherit the spawning session's model (omit the `model` parameter).
 A single smart reviewer is the usual way to review an implementation. This plugin doesn't use
 one: `/al-code-review` and `/al-refactor` decompose the review into many **narrow single-goal
 lenses**, each on the cheap tier, then adversarially judge the findings (skeptics prompted to
-refute) and run an independent veto through the built-in **rubber-duck agent** — which the
-harness runs on a different model family than the session, catching what same-family
+refute) and run an independent veto through the **rubber-duck agent** — which runs on a
+different model family than the session, catching what same-family
 self-review misses (see [`rubber-duck-review.md`](rubber-duck-review.md)). The decomposition
 plus the veto substitutes for the one smart reviewer, so the lenses stay cheap deliberately.
 This is not a downgrade of the review-→-smart-tier rule; it is a different shape that meets
@@ -56,6 +77,8 @@ its intent.
 | build gate worker (`/al-build`) | cheap |
 | mutation worker (`/al-mutate`) | cheap |
 
-The rubber-duck consult is orthogonal to this table: the harness owns its model and picks a
-different family than the session by design. Do not try to re-tier it.
+The rubber-duck consult is orthogonal to this table: spawned as `agent_type:
+"rubber-duck"`, the harness pairs it to a different model family than the session by
+design; the cross-family fallback in [`rubber-duck-review.md`](rubber-duck-review.md) owns
+the model choice when that agent type is unavailable. Do not try to re-tier it.
 
