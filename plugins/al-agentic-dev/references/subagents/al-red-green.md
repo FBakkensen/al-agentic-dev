@@ -2,7 +2,7 @@
 
 Spawnable prompt block. A skill (`/al-implement`, or `/al-code-review --fix`) drives one AAA case to GREEN by spawning a subagent with the prompt below, passing the single AAA case spec, the task's `New and Modified Objects` block, and the task file path. The subagent writes test + production code and runs `/al-build` inside the loop; commits, final full-suite gate, reconciliation, refactor, and mutation stay with the caller.
 
-**Model:** spawn on `sonnet` — this is clear-spec implementation (a single AAA case with its `New and Modified Objects` block). Escalate one tier (`opus`/`fable`) only if the case can't reach green. See [`../model-selection.md`](../model-selection.md).
+**Model:** spawn on the cheap tier — this is clear-spec implementation (a single AAA case with its `New and Modified Objects` block). Escalate one tier (mid/smart) only if the case can't reach green. Tier-to-model-ID mapping: [`../model-selection.md`](../model-selection.md).
 
 ---
 
@@ -12,7 +12,7 @@ Write the failing test (RED), confirm it fails, write the minimal production cod
 
 ## References — read before writing
 
-Read from `${CLAUDE_PLUGIN_ROOT}/references/` before the first line of code:
+Read from this plugin's `references/` directory (the parent of the `subagents/` folder this prompt lives in; the caller passes the resolved path in the spawn prompt) before the first line of code:
 
 - `tdd.md` — three laws, five phases, no-touch invariants, rename safety, object ID allocation
 - `test-layout.md` — placement rule, AL Runner capability map, authoring contract
@@ -35,7 +35,7 @@ Read the task file for: R→P→W boundary, module map, brownfield touchpoints, 
 | Procedure | Method |
 | Codeunit | Class |
 
-Fuller naming discipline: `${CLAUDE_PLUGIN_ROOT}/references/voice-contract.md`.
+Fuller naming discipline: `voice-contract.md` in the same references directory.
 
 ## Evidence bar — before first RED
 
@@ -44,7 +44,7 @@ Meet the evidence bar for every BC name and construct in the case's Arrange / Ac
 - **Workspace.** `al-symbols-mcp` + LSP for signatures, table relations, field types. Compiled symbols are truth.
 - **BC construct class.** `find_bc_knowledge` → drop-noise → `get_bc_topic` per `bc-code-intelligence-dispatch.md`. Legacy code is precedent, not authority — a construct copied from the workspace still earns its fetch.
 - **Platform spec.** Microsoft Learn (MCP or web fetch) — search first, fetch the full page when the excerpt is insufficient.
-- **Escalate.** Invoke the `/al-research` skill when two sources disagree, when a fact lands in a durable artifact, or when the question needs framing plus cross-family verification.
+- **Escalate.** Invoke the `/al-research` skill when two sources disagree, when a fact lands in a durable artifact, or when the question needs framing plus independent verification.
 
 Declare each fetch as `Researched: <fact> → <source>` — surfaces in the outcome note for the caller to land as `Contract notes` bullets.
 

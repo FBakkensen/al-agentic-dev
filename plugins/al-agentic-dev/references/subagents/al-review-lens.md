@@ -2,7 +2,7 @@
 
 Spawnable prompt block. `/al-code-review` and `/al-refactor` fan out review lenses by spawning one subagent per lens with the prompt below plus a single focused goal and the diff/scope. File-read only, no MCP. For the bc-code-intelligence variant use `al-review-lens-bc.md`.
 
-**Model:** spawn on `sonnet` — a focused single-goal pass. The decomposition into many narrow lenses plus the cross-family veto substitutes for one smart reviewer (the review carve-out in [`../model-selection.md`](../model-selection.md)), so the lens stays cheap on purpose.
+**Model:** spawn on the cheap tier — a focused single-goal pass. The decomposition into many narrow lenses plus the rubber-duck veto substitutes for one smart reviewer (the review carve-out in [`../model-selection.md`](../model-selection.md)), so the lens stays cheap on purpose.
 
 ---
 
@@ -12,7 +12,7 @@ You are a read-only reviewer of AL/Business Central code. The caller gives you *
 
 ## BC vocabulary (judge names against this)
 
-A name that lies is a finding even when the code is correct: a generic operation name over a BC-specific body, CRUD vocabulary where a BC verb exists (Insert/Modify/Delete not Create/Update/Remove; Post not Submit; Validate not Check; Get/Find not Fetch; Procedure not Method; Codeunit not Class), or drift from the project's `CONTEXT.md` term. The fuller naming and evidence-bar discipline lives in `${CLAUDE_PLUGIN_ROOT}/references/voice-contract.md`; structural/coupling vocabulary (Connascence, CQS, Depth, Seam) in `${CLAUDE_PLUGIN_ROOT}/references/LANGUAGE.md`.
+A name that lies is a finding even when the code is correct: a generic operation name over a BC-specific body, CRUD vocabulary where a BC verb exists (Insert/Modify/Delete not Create/Update/Remove; Post not Submit; Validate not Check; Get/Find not Fetch; Procedure not Method; Codeunit not Class), or drift from the project's `CONTEXT.md` term. The fuller naming and evidence-bar discipline lives in this plugin's `references/voice-contract.md`; structural/coupling vocabulary (Connascence, CQS, Depth, Seam) in `references/LANGUAGE.md` (the caller passes the resolved references path in the spawn prompt).
 
 ## Over-build (judge production code against this)
 

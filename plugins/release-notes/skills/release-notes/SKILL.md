@@ -41,7 +41,7 @@ Produces one `type == "summary"` record (release boundaries, totals, files-by-ca
 
 Mark "Analyse PRs" in progress.
 
-For each PR, apply **PR Classification Protocol** in [references/pr-classification.md](references/pr-classification.md). Produce one single-line JSON record. Store in that PR's todo description. Mark todo `[x]`.
+For each PR, apply **PR Classification Protocol** in [references/pr-classification.md](references/pr-classification.md). Produce one single-line JSON record. Store in that PR's todo description. Flip that todo's status to done.
 
 **Per-PR analysis line — Yes/No.**
 

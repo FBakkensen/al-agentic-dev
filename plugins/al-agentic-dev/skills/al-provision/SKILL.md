@@ -1,5 +1,6 @@
 ---
 name: al-provision
+allowed-tools: ["execute", "read"]
 description: Execute the `kind: provision` task in the `tasks/` folder for AL/Business Central — refresh the build environment (compiler, symbols, and — when enabled — the breaking-change baseline) by running al-build's `provision.ps1`, then flip the task `done` or `blocked`. Use on the first task of a feature, or whenever a `kind: provision` task sits at `status: ready`.
 ---
 
@@ -18,8 +19,10 @@ A `kind: provision` task at `status: ready`. No `/al-refine` — this kind carri
 ## Run
 
 ```powershell
-pwsh "${CLAUDE_SKILL_DIR}/../al-build/scripts/provision.ps1"
+pwsh "<this-skill-dir>/../al-build/scripts/provision.ps1"
 ```
+
+Substitute `<this-skill-dir>` with this skill's base directory (announced at skill activation) — `al-build` is a sibling skill in the same plugin.
 
 Delegate to one general subagent — provision output is verbose; keep it out of the main session. The worker runs exactly this one command and returns the exit code; it edits nothing.
 

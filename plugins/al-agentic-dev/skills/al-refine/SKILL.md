@@ -81,9 +81,9 @@ Artifacts stay clean; chat carries the citation. `Researched:` bullets land in `
 
 When a domain rule is implicit, when edge discovery surfaces a case the user must adjudicate, when an upper bound is missing, when a boundary contradicts another rule, or when intent splits (`validate` as schema check vs. business rule check) → run `/grill-me`. Fuzzy language shipped to `/al-implement` becomes fuzzy code; fuzzy verification becomes weak sign-off. Replace vague phrasing with exact object + procedure + status names inline.
 
-## Second opinion on non-trivial plans
+## Rubber-duck review on non-trivial plans
 
-Cross-check via `/al-second-opinion`. Prompt body for technical tasks: task title + description + proposed `Test Specification` + `CONTEXT.md` language excerpt if resolved + "what behaviours, decision rows, negatives, boundaries, scopes, procedure mappings, or object/signature landings are missing or wrong? AND does this surface any of the eight replan triggers? AND does wording use project vocabulary where applicable? Return a bulleted list." Prompt body for verify tasks: task title + slice context from `event-model.md` + proposed `Verification Plan` + "what user-facing journeys, contract checks, exploration prompts, boundaries, or exception paths are missing or wrong? AND do examples name real surfaces? AND does this surface any of the eight replan triggers? Return a bulleted list."
+Consult the built-in rubber-duck agent ([rubber-duck-review.md](../../references/rubber-duck-review.md)). Artifact body for technical tasks: task title + description + proposed `Test Specification` + `CONTEXT.md` language excerpt if resolved + "what behaviours, decision rows, negatives, boundaries, scopes, procedure mappings, or object/signature landings are missing or wrong? AND does this surface any of the eight replan triggers? AND does wording use project vocabulary where applicable? Return a bulleted list." Artifact body for verify tasks: task title + slice context from `event-model.md` + proposed `Verification Plan` + "what user-facing journeys, contract checks, exploration prompts, boundaries, or exception paths are missing or wrong? AND do examples name real surfaces? AND does this surface any of the eight replan triggers? Return a bulleted list."
 
 Reconcile each returned bullet; accept by updating or reject with session rationale. If a rejection encodes a durable principle, escalate via `/al-steer` to `/al-grill-adr` or `/al-design`.
 
@@ -113,7 +113,7 @@ verify:    status: ready → status: ready-for-verification
 
 No `in-progress` state.
 
-**Advisor checkpoint.** Before writing the first `Test Specification` or `Verification Plan` into the task file, do a final shape check — coverage, the New/Modified split, the push-up set. For non-trivial proof, `/al-second-opinion` gives an independent cross-family read; the shape is hard to retract once downstream skills consume it.
+**Advisor checkpoint.** Before writing the first `Test Specification` or `Verification Plan` into the task file, do a final shape check — coverage, the New/Modified split, the push-up set. For non-trivial proof, the rubber-duck agent gives an independent cross-family read ([rubber-duck-review.md](../../references/rubber-duck-review.md)); the shape is hard to retract once downstream skills consume it.
 
 ## Next step
 
@@ -131,6 +131,6 @@ If state can't be read, fall back to `/al-implement` for a technical task; for a
 |---|---|
 | **Runs after**     | `/al-scope` or dependency restoration opened one named task to `status: ready` |
 | **Hands off to**   | `/al-implement` for `ready-for-implementation` technical tasks; for `ready-for-verification` verify tasks, state-conditional on the slice's recordings — `/al-page-script` (a `Record: yes` recording missing) else `/al-user-verification` (`/al-code-review` already ran at slice-done; the verify task arrives carrying `review: clean`) |
-| **Calls directly** | `/al-research` (BC facts), `/al-second-opinion` (non-trivial `Test Specification` / `Verification Plan`) — the only skills it invokes |
+| **Calls directly** | `/al-research` (BC facts) — the only skill it invokes; rubber-duck consult on non-trivial `Test Specification` / `Verification Plan` per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
 | **Replan venue**   | `/al-steer` |
 | **Sidebands**      | `/al-grill-adr` (fuzzy domain term), `/grill-me` (fuzzy intent) |

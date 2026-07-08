@@ -1,0 +1,12 @@
+{
+  "lspServers": {
+    "al": {
+      "command": "al",
+      "args": ["launchlspserver"],
+      "fileExtensions": {
+        ".al": "al",
+        ".dal": "al"
+      }
+    }
+  }
+}

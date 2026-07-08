@@ -1,6 +1,6 @@
 # Thrift rules
 
-Token thrift across chat and production AL. One home: read by every prose-writing skill and by `/al-implement` at generation; re-emitted verbatim by the `SessionStart` hook so it survives compaction. Do not copy these rules into another file — point here.
+Token thrift across chat and production AL. One home: read by every prose-writing skill and by `/al-implement` at generation; also injected at session start by the plugin's `sessionStart` hook. Compaction can drop it mid-session — skills re-read this file on invocation, which is the recovery path. Do not copy these rules into another file — point here.
 
 ## Chat: say it once, lede first
 

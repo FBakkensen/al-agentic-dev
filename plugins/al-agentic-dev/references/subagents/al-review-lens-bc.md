@@ -2,7 +2,7 @@
 
 Spawnable prompt block. The BC-specific variant of `al-review-lens.md`: same fan-out, plus bc-code-intelligence MCP reach. `/al-code-review` and `/al-refactor` spawn one subagent with the prompt below for the BC best-practice lens, passing a single focused goal and the diff/scope. For the pure file-read, no-MCP lenses use `al-review-lens.md`.
 
-**Model:** spawn on `sonnet` — a focused single-goal pass with MCP dispatch. Cheap on purpose: the decomposition plus the cross-family veto substitutes for one smart reviewer (the review carve-out in [`../model-selection.md`](../model-selection.md)).
+**Model:** spawn on the cheap tier — a focused single-goal pass with MCP dispatch. Cheap on purpose: the decomposition plus the rubber-duck veto substitutes for one smart reviewer (the review carve-out in [`../model-selection.md`](../model-selection.md)).
 
 ---
 
@@ -25,7 +25,7 @@ Names that lie are findings even when the code is otherwise correct. Use BC verb
 | Procedure | Method |
 | Codeunit | Class |
 
-Fuller naming and evidence-bar discipline lives in `${CLAUDE_PLUGIN_ROOT}/references/voice-contract.md`; structural/coupling vocabulary (Connascence, CQS, Depth, Seam) in `${CLAUDE_PLUGIN_ROOT}/references/LANGUAGE.md`.
+Fuller naming and evidence-bar discipline lives in this plugin's `references/voice-contract.md`; structural/coupling vocabulary (Connascence, CQS, Depth, Seam) in `references/LANGUAGE.md` (the caller passes the resolved references path in the spawn prompt).
 
 ## Over-build / platform reinvention (judge production code against this)
 
@@ -40,11 +40,11 @@ Two carve-outs keep this from over-firing. **Production only** — never flag te
 
 The `bc-code-intelligence` store is incomplete; a few high-cost BC correctness traps are not in it (nor in MS Learn / alguidelines / BCQuality) and must be matched directly:
 
-- **`xRec` change-detection in a code-reachable `OnValidate`.** `if Rec.X <> xRec.X` (or a `GuiAllowed`-gated variant) used to gate a cascade/recompute is silently wrong when the validate can fire from code (engine recalc, web service, background, a programmatic `Validate`) — `xRec` is the prior value only from the UI; from code it is empty or `= Rec`. The fix is a persisted-row `Get` compare. See `${CLAUDE_PLUGIN_ROOT}/references/testability.md` → "compare the persisted row, never `xRec`".
+- **`xRec` change-detection in a code-reachable `OnValidate`.** `if Rec.X <> xRec.X` (or a `GuiAllowed`-gated variant) used to gate a cascade/recompute is silently wrong when the validate can fire from code (engine recalc, web service, background, a programmatic `Validate`) — `xRec` is the prior value only from the UI; from code it is empty or `= Rec`. The fix is a persisted-row `Get` compare. See `references/testability.md` → "compare the persisted row, never `xRec`".
 
 ## Dispatch
 
-Run the `find_bc_knowledge` → drop-noise → `get_bc_topic` dispatch per `${CLAUDE_PLUGIN_ROOT}/references/bc-code-intelligence-dispatch.md` in full — including the noise drop-list and the AL false-positive guards. Match each surviving topic's `anti_pattern_indicators` against the diff yourself; an indicator the code does not exhibit is not a finding. The MCP recommends leads, not bugs.
+Run the `find_bc_knowledge` → drop-noise → `get_bc_topic` dispatch per `references/bc-code-intelligence-dispatch.md` in full — including the noise drop-list and the AL false-positive guards. Match each surviving topic's `anti_pattern_indicators` against the diff yourself; an indicator the code does not exhibit is not a finding. The MCP recommends leads, not bugs.
 
 **Graceful degradation.** If the `bc-code-intelligence` server is absent, fall back to a vanilla read of the diff for the same goal and say the topic store was unavailable. Never block on the missing server.
 

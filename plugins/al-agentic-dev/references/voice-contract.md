@@ -117,7 +117,7 @@ Artifact carries the forward-facing fact in declarative voice. Workflow log belo
 
 - Do NOT prefix lines with the agent that decided (`/al-implement decision:`).
 - Do NOT narrate TDD steps as prose ("bullet 1 went red on stub, green on body fill").
-- Do NOT cite second-opinion or advisor-checkpoint reconciliation.
+- Do NOT cite rubber-duck or advisor-checkpoint reconciliation.
 
 Place an advisor checkpoint inline at the moment the gate fires, not as a top-of-file blockquote.
 
@@ -182,8 +182,8 @@ SKILL-specific shapes live in the owning SKILL.md and follow the same rule: shap
 
 - AL Runner ERROR table → `/al-implement`
 - Drafted `Test Specification` / `Verification Plan` → `/al-refine`
-- Second opinion line → `/al-second-opinion`
+- Rubber-duck skip line → `rubber-duck-review.md`
 
 ## Chat carve-out
 
-Chat requires a closing line stating what landed (the user has no task file open). Closing line follows the Style rule; not a pleasantry. Workflow markers (`**RED**`, `**GREEN**`, `**Second opinion**`) permitted in chat; workflow narrative prose still banned.
+Chat requires a closing line stating what landed (the user has no task file open). Closing line follows the Style rule; not a pleasantry. Workflow markers (`**RED**`, `**GREEN**`, `**Rubber-duck**`) permitted in chat; workflow narrative prose still banned.

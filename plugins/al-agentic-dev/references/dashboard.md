@@ -14,7 +14,7 @@ Inputs, exhaustively: `000-feature.md` (feature title + Goal line), and each per
 
 ## Where it lives
 
-Write to `.output/dashboard.html` — a render artifact, never committed; `.output/` is the build-output convention `/al-build` already uses, so gitignore it in the consumer repo if it isn't already. If the harness offers a hosted live-page tool with a stable URL (e.g. Claude Code Artifacts), also publish the same file to the same URL each render so the developer keeps one browser tab that always shows current state; otherwise the local file is the surface — name its path once per session so the developer can open it.
+Write to `.output/dashboard.html` — a render artifact, never committed; `.output/` is the build-output convention `/al-build` already uses, so gitignore it in the consumer repo if it isn't already. If the harness offers a hosted live-page tool with a stable URL, also publish the same file to the same URL each render so the developer keeps one browser tab that always shows current state; otherwise the local file is the surface — name its path once per session so the developer can open it.
 
 ## What the page shows
 

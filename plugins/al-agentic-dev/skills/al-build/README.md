@@ -115,7 +115,7 @@ The plugin's `config/al-build.json` is a template, not the live config. Copy it 
 Copy-Item "<plugin-path>/config/al-build.json" -Destination "<repo-root>/al-build.json"
 ```
 
-Claude Code users get this via session-start hook.
+Or run this skill's `scripts/init.ps1` to drop it in place.
 
 ```json
 {

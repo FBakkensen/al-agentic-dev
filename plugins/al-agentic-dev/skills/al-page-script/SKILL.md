@@ -1,5 +1,6 @@
 ---
 name: al-page-script
+allowed-tools: ["execute", "read"]
 description: Guide the user to record the slice's framework-limited E2E Journey Examples in BC's Page Scripting recorder — one scenario at a time in chat, punchline-first. The user records and downloads the `.yml`; the agent replays each on a fresh container and classifies reds. Recordings are reserved for behaviour no AL test layer can automate (generation-time push-down). Prerequisite to `/al-user-verification`.
 ---
 
@@ -44,11 +45,11 @@ Announce the verify task: `T-NNN` id, slice slug + its `event-model.md` step, th
 
 Per scenario that is one spawn to record on (carried over from the prior replay) and one fresh spawn to replay on; each spawn runs minutes, so the opener warns the user. A slice's `Record: yes` set is usually one or two scenarios.
 
-Spawn invocations (every replay is preceded by a fresh spawn + publish):
-- spawn fresh container: `pwsh "${CLAUDE_SKILL_DIR}/../al-build/scripts/new-agent-container.ps1"`
-- publish all apps: `pwsh "${CLAUDE_SKILL_DIR}/../al-build/scripts/publish-apps.ps1"`
-- replay one file on the freshly-spawned container (re-runnability gate): `pwsh "${CLAUDE_SKILL_DIR}/../al-build/scripts/pagescript-replay.ps1" -File pagescripts/recordings/<…>__NN.yml`
-- batch replay (final pre-flight): `pwsh "${CLAUDE_SKILL_DIR}/../al-build/scripts/pagescript-replay.ps1"` (no `-File`)
+Spawn invocations (every replay is preceded by a fresh spawn + publish; substitute `<this-skill-dir>` with this skill's base directory, announced at skill activation — `al-build` is a sibling skill in the same plugin):
+- spawn fresh container: `pwsh "<this-skill-dir>/../al-build/scripts/new-agent-container.ps1"`
+- publish all apps: `pwsh "<this-skill-dir>/../al-build/scripts/publish-apps.ps1"`
+- replay one file on the freshly-spawned container (re-runnability gate): `pwsh "<this-skill-dir>/../al-build/scripts/pagescript-replay.ps1" -File pagescripts/recordings/<…>__NN.yml`
+- batch replay (final pre-flight): `pwsh "<this-skill-dir>/../al-build/scripts/pagescript-replay.ps1"` (no `-File`)
 
 ### Per-scenario card
 

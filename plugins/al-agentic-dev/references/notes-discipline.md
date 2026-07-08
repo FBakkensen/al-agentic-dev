@@ -31,9 +31,9 @@ Cannot tell which side a piece belongs on → ask trigger test: *will this line 
 | Recurring scope rejection with substantive reason | `.out-of-scope/<concept>.md` | `/al-steer` |
 | In-scope question that matters but can't be phrased as a decision yet | `.not-yet-specified/<question>.md` at repo root; graduates to a decision (file deleted) or moves to `.out-of-scope/`, never silently absorbed | `/al-grill-adr`, `/al-design` (write); `/al-steer` (groom); `/al-refine` (scan before speccing) |
 | Process IDs (issue / PR numbers, "the current fix") | commit message or PR description | writing skill at commit time |
-| Environment lessons (`-Force` is mandatory here, container needs republishing) | `scripts/` or local `CLAUDE.md` | project, not this plugin |
+| Environment lessons (`-Force` is mandatory here, container needs republishing) | `scripts/` or the project's local instructions file (`AGENTS.md`) | project, not this plugin |
 | Lessons learned, post-mortems, "Note for next time" | PR description (if cross-cutting) or retrospective doc | writing skill at PR time |
-| Session-internal reasoning (second-opinion accept/reject, reconciliation chatter) | stays in session; durable artifact carries outcome, never deliberation | writing skill |
+| Session-internal reasoning (rubber-duck accept/reject, reconciliation chatter) | stays in session; durable artifact carries outcome, never deliberation | writing skill |
 
 The *shape* content takes inside the task file body (chip, alert, callout, prose line, table cell, collapsible details) is writing skill's call per task. This file does not prescribe shape; `voice-contract.md` governs the prose.
 

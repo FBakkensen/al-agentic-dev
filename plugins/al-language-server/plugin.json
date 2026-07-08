@@ -1,0 +1,6 @@
+{
+  "name": "al-language-server",
+  "description": "AL (Business Central) language server for LSP-based code intelligence, backed by the AL compiler's native agentic LSP (al launchlspserver). Requires the AL dotnet tool >= 18.0 on PATH.",
+  "version": "0.2.0",
+  "lspServers": "lsp.json"
+}

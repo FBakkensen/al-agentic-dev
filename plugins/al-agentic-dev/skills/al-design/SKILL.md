@@ -75,7 +75,7 @@ Non-trivial = multi-module, brownfield refactor, or novel pattern selection. Whe
 | 2 | Maximise flexibility, many use cases, easy extension. |
 | 3 | Optimise the most common caller, default case trivial. |
 
-Each pass runs its own `/al-research` and receives BC vocabulary from `CONTEXT.md` plus architectural vocabulary from [LANGUAGE.md](../../references/LANGUAGE.md) → all three name things consistently. Output per pass: module map + per-module interface, named adapters at every seam, the one trade-off line that distinguishes this design. Present all three sequentially, compare along **depth** / **locality** / **seam placement**, pick one (or hybrid) opinionatedly, run `/grill-me` when choice is user's call; `/al-second-opinion` reconciles non-trivial picks. When the choice goes to the user: one question, lettered options, recommendation first ([voice-contract.md](../../references/voice-contract.md) One decision per question).
+Each pass runs its own `/al-research` and receives BC vocabulary from `CONTEXT.md` plus architectural vocabulary from [LANGUAGE.md](../../references/LANGUAGE.md) → all three name things consistently. Output per pass: module map + per-module interface, named adapters at every seam, the one trade-off line that distinguishes this design. Present all three sequentially, compare along **depth** / **locality** / **seam placement**, pick one (or hybrid) opinionatedly, run `/grill-me` when choice is user's call; a rubber-duck consult reconciles non-trivial picks ([rubber-duck-review.md](../../references/rubber-duck-review.md)). When the choice goes to the user: one question, lettered options, recommendation first ([voice-contract.md](../../references/voice-contract.md) One decision per question).
 
 ## Branch + folder + write
 
@@ -103,8 +103,8 @@ Once when `architecture.md` lands. Gate report — rendered box-first, passed th
 |---|---|
 | **Runs after**     | `/al-event-model` (user/API-facing features) or `/al-grill-adr` (backend-only) |
 | **Hands off to**   | `/al-scope` |
-| **Calls directly** | `/al-research` (BC facts), `/al-second-opinion` (parallel design-twice picks) — the only skills it invokes |
+| **Calls directly** | `/al-research` (BC facts) — the only skill it invokes; rubber-duck consult on design-twice picks per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
 | **Replan venue**   | `/al-steer` |
 | **Sidebands**      | `bc-standard-reference` (pure BaseApp questions), `/grill-me` (design-twice reconciliation) |
 
-**Advisor checkpoint.** Before writing `architecture.md` for the first time, do a final shape check (`/al-second-opinion` for non-trivial design picks) — drift caught here costs minutes, drift caught at `/al-implement` costs a feature.
+**Advisor checkpoint.** Before writing `architecture.md` for the first time, do a final shape check (a rubber-duck consult for non-trivial design picks) — drift caught here costs minutes, drift caught at `/al-implement` costs a feature.

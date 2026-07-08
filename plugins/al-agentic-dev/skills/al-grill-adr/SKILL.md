@@ -22,7 +22,7 @@ Journey pressure hands off to `/al-event-model`; architecture, object responsibi
 ## Preconditions
 
 - None hard. Run before `/al-design` to crystallise intent, or standalone mid-feature when a fuzzy term or hidden trade-off surfaces.
-- `CONTEXT.md` missing at repo root → materialise from `${CLAUDE_SKILL_DIR}/../../references/CONTEXT.template.md` on first term that resolves. `docs/adr/` missing → materialise first ADR from `${CLAUDE_SKILL_DIR}/../../references/adr.template.md` on first accept.
+- `CONTEXT.md` missing at repo root → materialise from `../../references/CONTEXT.template.md` (relative to this skill's base directory) on first term that resolves. `docs/adr/` missing → materialise first ADR from `../../references/adr.template.md` on first accept.
 
 ## What goes into CONTEXT.md and domain ADRs
 
@@ -32,7 +32,7 @@ Answer before walking away:
 - **What concrete BC scenario forces a boundary between two concepts to be precise?** Partial posting, reversal, dimension inheritance, multi-company, AppSource constraint — the user finds their own precision when a scenario forces yes-or-no.
 - **What is the user not asking because they don't know to ask it?** Grilling interrogates stated intent; a blindspot pass names the unknown-unknowns around it — the adjacent BC behaviour, historical constraint, or standard pattern the user shows no sign of having considered. Name each one and let the user decide whether it matters; an unclaimed blindspot is where the implementation guesses later. A blindspot the user says *matters but can't be decided yet* is not dropped and not forced — write it as `.not-yet-specified/<question>.md` at repo root (the question and what it waits on; shape is your call) so it survives the session instead of resurfacing as a guess at `/al-implement`.
 - **Where does the user's stated behaviour disagree with the code?** Read the code when it can answer; ask the user only what code cannot tell (intent, future direction, why a constraint exists). Name the conflict; resolution is the user's call.
-- **Does any domain constraint cross the four-of-four ADR bar?** Offer an ADR inline only when **all four** hold: hard to reverse (shipped data, partner integrations, behavioural contracts); surprising without context; real trade-off with genuine alternatives; domain (a rule about *what the business does*, not *how the code is shaped*). Three of four does not earn one — inflation rots the index. When a question feels architectural, grill the domain constraint behind it. Template: `${CLAUDE_SKILL_DIR}/../../references/adr.template.md`; resolve `NNNN` per `${CLAUDE_SKILL_DIR}/../../references/cross-branch-numbering.md`.
+- **Does any domain constraint cross the four-of-four ADR bar?** Offer an ADR inline only when **all four** hold: hard to reverse (shipped data, partner integrations, behavioural contracts); surprising without context; real trade-off with genuine alternatives; domain (a rule about *what the business does*, not *how the code is shaped*). Three of four does not earn one — inflation rots the index. When a question feels architectural, grill the domain constraint behind it. Template: `../../references/adr.template.md` (relative to this skill's base directory); resolve `NNNN` per `../../references/cross-branch-numbering.md`.
 - **Which BC names are verified this session?** Every BC-specific term landing in `CONTEXT.md` or a domain ADR meets the evidence bar in [voice-contract.md](../../references/voice-contract.md). See *Citation chain in chat* below.
 
 A question stays unanswerable → grilling is not done. Keep going, or run `/al-research` if the gap is a BC behavioural fact rather than user intent.
@@ -58,5 +58,5 @@ Idea grilled, `CONTEXT.md` (and any ADR) written and integrity-checked. `Next: /
 | **Runs after**     | `main` (kicks off new feature) or standalone for fuzzy term |
 | **Hands off to**   | `/al-event-model` (user/API-facing features) or `/al-design` (backend-only) |
 | **Replan venue**   | `/al-steer` |
-| **Calls directly** | `/al-research` (BC facts), `/al-second-opinion` (ADR reconciliation) — the only skills it invokes |
+| **Calls directly** | `/al-research` (BC facts) — the only skill it invokes; rubber-duck consult for ADR reconciliation per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
 | **Sidebands**      | `/grill-me` (interview the user) |

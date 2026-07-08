@@ -7,7 +7,7 @@ description: User-facing orientation for the al-agentic-dev plugin — pipeline 
 
 # /al-agentic-dev-overview, Plugin tour
 
-Read `${CLAUDE_SKILL_DIR}/../../references/overview.md` and emit verbatim — the whole file is the response body. Write nothing; inspect no repo state.
+Read `../../references/overview.md` relative to this skill's base directory and emit verbatim — the whole file is the response body. Write nothing; inspect no repo state.
 
 Pure static emit is the seam: this skill answers "what does the plugin contain", `/al-steer` answers "what should I do right now". A prompt that wants state-aware navigation ("what's next", "where are we") is `/al-steer` — route, don't tour.
 

@@ -78,8 +78,8 @@ Once when `event-model.md` lands. Gate report — rendered box-first, passed thr
 |---|---|
 | **Runs after**     | `/al-grill-adr` (CONTEXT + domain ADRs settled) |
 | **Hands off to**   | `/al-design` (consumes `event-model.md`) |
-| **Calls directly** | `/al-research` (BaseApp Role / Action / Event / View / Status names), `/al-second-opinion` (non-trivial timelines: multi-Role, branching, brownfield, integration) — the only skills it invokes |
+| **Calls directly** | `/al-research` (BaseApp Role / Action / Event / View / Status names) — the only skill it invokes; rubber-duck consult on non-trivial timelines (multi-Role, branching, brownfield, integration) per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
 | **Replan venue**   | `/al-steer` (downstream fact invalidates timeline) |
 | **Sidebands**      | `bc-standard-reference` (pure BaseApp behaviour), `/grill-me` (confess-your-guesses pass) |
 
-**Advisor checkpoint.** Before the first write of `event-model.md`, do a final shape check (`/al-second-opinion` for non-trivial timelines: multi-Role, branching, brownfield, integration). Drift caught here costs minutes; caught at `/al-design`, a feature.
+**Advisor checkpoint.** Before the first write of `event-model.md`, do a final shape check (a rubber-duck consult for non-trivial timelines: multi-Role, branching, brownfield, integration). Drift caught here costs minutes; caught at `/al-design`, a feature.

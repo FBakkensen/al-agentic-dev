@@ -1,6 +1,7 @@
 ---
 name: al-mutate
 description: "Validate AL/Business Central test rigor by mutation: inject one mutation at a time, run the script-backed build gate, classify, revert, report killed/surviving/equivalent mutants. The rigor step the user runs after `/al-refactor` on whatever arrived without a red, or standalone on legacy code before `/al-refactor`."
+allowed-tools: ["execute", "read", "edit"]
 ---
 
 **Style:** Concise — cut filler, keep grammar. Opinionated — pick a side. Arrows (→) for causality. Technical terms exact, code and errors quoted verbatim.
@@ -23,11 +24,13 @@ Any precondition fails → **Stop**, surface the gap.
 
 ## Workflow
 
-**Plan first, execute second.** Host `/al-mutate` chooses included sites, skipped sites, and one operator per qualifying site. Cross-check non-trivial plans via `/al-second-opinion` before worker execution: *"what mutations are missing or misaligned? AND does this surface any of the eight replan triggers? Return a bulleted list."* Reconcile each returned bullet. Worker executes the approved plan only; it does not add, remove, or replace mutants.
+**Plan first, execute second.** Host `/al-mutate` chooses included sites, skipped sites, and one operator per qualifying site. Cross-check non-trivial plans via a rubber-duck consult before worker execution ([rubber-duck-review.md](../../references/rubber-duck-review.md)): *"what mutations are missing or misaligned? AND does this surface any of the eight replan triggers? Return a bulleted list."* Reconcile each returned bullet. Worker executes the approved plan only; it does not add, remove, or replace mutants.
 
 **One mutation, one build, one revert.** Apply one mutation. Run `pwsh "<plugin>/skills/al-build/scripts/test.ps1"` directly with the selected gate. Classify. Revert with `git checkout -- .`. Verify tree matches `HEAD` before next mutation. Batched mutations conflate signal; un-reverted mutations poison production and corrupt every subsequent classification. The verify step catches a silent failed revert.
 
 **Survivors are the artifact.** Green pass with no survivors and no equivalences → either perfect tests or no unproven logic worth mutating; the latter belongs in the plan, not the result.
+
+**Survive compaction.** A long mutation run outlives the context window: keep the approved mutation plan and per-mutant verdicts in the session todo list (one todo per mutation site, description carries the verdict) — todos survive context compaction; this skill's injected body does not. After a compaction, re-read this skill, verify the tree matches `HEAD`, and resume from the todo state.
 
 **Equivalence needs a specific reason.** "The swapped branch sets the same field to the same value because both paths re-read from the source record before assignment" is an equivalence reason; "looks equivalent" is not. The recorded reason protects future readers from chasing the un-killable mutant.
 
@@ -57,7 +60,7 @@ Use one delegated worker when host supports subagents. Host owns plan generation
 
 After the worker returns its mutation report, close the completed worker thread before the host resumes judgement, killer-test work, or closeout.
 
-Spawn the worker on `sonnet` — a mechanical mutate-build-revert cycle (see [model-selection.md](../../references/model-selection.md)).
+Spawn the worker on the cheap tier — a mechanical mutate-build-revert cycle (see [model-selection.md](../../references/model-selection.md)).
 
 ### Worker rules
 
@@ -108,6 +111,6 @@ If state can't be read, fall back to `/al-code-review`.
 |---|---|
 | **Runs after**     | `/al-refactor` (the rigor step the user runs after reshape), OR standalone on legacy code before `/al-refactor` |
 | **Hands off to**   | `/al-code-review` on a clean verdict (slice/feature gate); `/al-implement` for a reached real-gap survivor (resume TDD for the killer test) or for the next `ready-for-implementation` task; `/al-refine` only for unreached-line or missing-coverage cases |
-| **Calls directly** | `/al-second-opinion` (cross-check non-trivial mutation plans before execution) |
+| **Calls directly** | none — the rubber-duck consult cross-checks non-trivial mutation plans before execution ([rubber-duck-review.md](../../references/rubber-duck-review.md)) |
 | **Replan venue**   | `/al-steer` |
 | **Sidebands**      | `/al-research` (BaseApp behaviour for survivor classification), `/grill-me` (classification call needs the user) |

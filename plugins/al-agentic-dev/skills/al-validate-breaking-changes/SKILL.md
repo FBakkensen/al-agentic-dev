@@ -1,5 +1,6 @@
 ---
 name: al-validate-breaking-changes
+allowed-tools: ["execute", "read"]
 description: Execute the `kind: breaking-change` task in the `tasks/` folder for AL/Business Central — run al-build's `validate-breaking-changes.ps1` against the provisioned baseline, then flip the task `done` or `blocked`. Use as the feature's last task; a detected break stops for a human, never self-resolved.
 ---
 
@@ -18,8 +19,10 @@ A `kind: breaking-change` task at `status: ready`. If still `blocked`, the featu
 ## Run
 
 ```powershell
-pwsh "${CLAUDE_SKILL_DIR}/../al-build/scripts/validate-breaking-changes.ps1"
+pwsh "<this-skill-dir>/../al-build/scripts/validate-breaking-changes.ps1"
 ```
+
+Substitute `<this-skill-dir>` with this skill's base directory (announced at skill activation) — `al-build` is a sibling skill in the same plugin.
 
 Delegate to one general subagent — verbose; keep it out of the main session. The script reads the baseline cache `/al-provision` populated (never downloads), and **self-skips** when `breakingChange.enabled=false` (exit `0`, "disabled"). The worker returns the exit code; it edits nothing.
 

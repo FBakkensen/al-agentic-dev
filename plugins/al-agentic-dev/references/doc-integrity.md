@@ -6,7 +6,7 @@ Verify **document integrity only**: the artifact exists and matches its profile,
 
 ## Scope of the check
 
-The artifact you just wrote, its directly linked sibling artifacts in the same spec folder, the plugin grammar references under `${CLAUDE_PLUGIN_ROOT}/references/`, and `CONTEXT.md` / `docs/adr/` when linked (or always, for `/al-grill-adr`). No source code, symbols, or research.
+The artifact you just wrote, its directly linked sibling artifacts in the same spec folder, the plugin grammar references under this plugin's `references/` directory, and `CONTEXT.md` / `docs/adr/` when linked (or always, for `/al-grill-adr`). No source code, symbols, or research.
 
 ## Profiles
 

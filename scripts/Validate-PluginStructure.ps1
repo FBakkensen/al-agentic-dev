@@ -1,11 +1,13 @@
 #Requires -Version 7.2
 <#
 .SYNOPSIS
-    Validates the Claude marketplace and per-plugin manifests.
+    Validates the Copilot CLI marketplace and per-plugin manifests.
 .DESCRIPTION
-    Checks that every plugin listed in the Claude marketplace has a folder under
-    plugins/ with a .claude-plugin/plugin.json manifest, and that all manifests are
-    valid JSON. This marketplace targets Claude Code only.
+    Checks that every plugin listed in .github/plugin/marketplace.json has a folder
+    under plugins/ with a root plugin.json manifest whose name matches the marketplace
+    entry, that all manifests are valid JSON, that agent files use the .agent.md
+    extension, and that any hooks config declares "version": 1 (Copilot CLI hook
+    format). This marketplace targets GitHub Copilot CLI.
 .EXAMPLE
     pwsh scripts/Validate-PluginStructure.ps1
 #>
@@ -14,23 +16,23 @@ param()
 
 $errors = @()
 
-function Get-ClaudeMarketplacePluginNames {
+function Get-MarketplacePluginNames {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Path
     )
 
     if (-not (Test-Path $Path)) {
-        $script:errors += "Missing Claude marketplace: $Path"
-        Write-Host "FAIL: Claude marketplace missing at $Path" -ForegroundColor Red
+        $script:errors += "Missing marketplace manifest: $Path"
+        Write-Host "FAIL: marketplace manifest missing at $Path" -ForegroundColor Red
         return @()
     }
 
     try {
         $marketplace = Get-Content -Path $Path -Raw | ConvertFrom-Json
     } catch {
-        $script:errors += "Invalid JSON in Claude marketplace: $Path"
-        Write-Host "FAIL: Claude marketplace JSON invalid at $Path" -ForegroundColor Red
+        $script:errors += "Invalid JSON in marketplace manifest: $Path"
+        Write-Host "FAIL: marketplace manifest JSON invalid at $Path" -ForegroundColor Red
         return @()
     }
 
@@ -41,21 +43,21 @@ function Get-ClaudeMarketplacePluginNames {
         }
     }
 
-    Write-Host "OK: Claude marketplace loaded with $($pluginNames.Count) plugins" -ForegroundColor Green
+    Write-Host "OK: marketplace manifest loaded with $($pluginNames.Count) plugins" -ForegroundColor Green
     return $pluginNames
 }
 
 $repoRoot = Join-Path $PSScriptRoot ".."
-$claudeMarketplacePath = Join-Path $repoRoot ".claude-plugin\marketplace.json"
+$marketplacePath = Join-Path $repoRoot ".github\plugin\marketplace.json"
 $pluginsPath = Join-Path $repoRoot "plugins"
 
-$claudePlugins = @(Get-ClaudeMarketplacePluginNames -Path $claudeMarketplacePath)
+$pluginNames = @(Get-MarketplacePluginNames -Path $marketplacePath)
 
-if ($claudePlugins.Count -eq 0) {
-    Write-Host "WARN: No plugins found in Claude marketplace." -ForegroundColor Yellow
+if ($pluginNames.Count -eq 0) {
+    Write-Host "WARN: No plugins found in marketplace manifest." -ForegroundColor Yellow
 }
 
-foreach ($pluginName in $claudePlugins) {
+foreach ($pluginName in $pluginNames) {
     $pluginPath = Join-Path $pluginsPath $pluginName
     if (-not (Test-Path $pluginPath)) {
         $errors += "Missing plugin folder for marketplace entry: $pluginName"
@@ -63,18 +65,69 @@ foreach ($pluginName in $claudePlugins) {
         continue
     }
 
-    $claudePluginJson = Join-Path $pluginPath ".claude-plugin\plugin.json"
-    if (Test-Path $claudePluginJson) {
-        try {
-            Get-Content -Path $claudePluginJson -Raw | ConvertFrom-Json | Out-Null
-            Write-Host "OK: $pluginName/.claude-plugin/plugin.json exists and is valid JSON" -ForegroundColor Green
-        } catch {
-            $errors += "Invalid JSON in $pluginName/.claude-plugin/plugin.json"
-            Write-Host "FAIL: $pluginName/.claude-plugin/plugin.json is invalid JSON" -ForegroundColor Red
+    $pluginJsonPath = Join-Path $pluginPath "plugin.json"
+    if (-not (Test-Path $pluginJsonPath)) {
+        $errors += "Missing plugin.json in $pluginName"
+        Write-Host "FAIL: $pluginName/plugin.json missing" -ForegroundColor Red
+        continue
+    }
+
+    $manifest = $null
+    try {
+        $manifest = Get-Content -Path $pluginJsonPath -Raw | ConvertFrom-Json
+        Write-Host "OK: $pluginName/plugin.json exists and is valid JSON" -ForegroundColor Green
+    } catch {
+        $errors += "Invalid JSON in $pluginName/plugin.json"
+        Write-Host "FAIL: $pluginName/plugin.json is invalid JSON" -ForegroundColor Red
+        continue
+    }
+
+    if ($manifest.name -ne $pluginName) {
+        $errors += "plugin.json name '$($manifest.name)' does not match marketplace entry '$pluginName'"
+        Write-Host "FAIL: $pluginName/plugin.json name mismatch ('$($manifest.name)')" -ForegroundColor Red
+    }
+
+    $legacyDir = Join-Path $pluginPath ".claude-plugin"
+    if (Test-Path $legacyDir) {
+        $errors += "Legacy .claude-plugin/ directory present in $pluginName"
+        Write-Host "FAIL: $pluginName contains a legacy .claude-plugin/ directory" -ForegroundColor Red
+    }
+
+    $agentsDir = Join-Path $pluginPath "agents"
+    if (Test-Path $agentsDir) {
+        $strayAgents = @(Get-ChildItem -Path $agentsDir -Filter *.md -File |
+            Where-Object { $_.Name -notlike '*.agent.md' })
+        foreach ($stray in $strayAgents) {
+            $errors += "Agent file without .agent.md extension: $pluginName/agents/$($stray.Name)"
+            Write-Host "FAIL: $pluginName/agents/$($stray.Name) must use the .agent.md extension" -ForegroundColor Red
         }
-    } else {
-        $errors += "Missing .claude-plugin/plugin.json in $pluginName"
-        Write-Host "FAIL: $pluginName/.claude-plugin/plugin.json missing" -ForegroundColor Red
+        if ($strayAgents.Count -eq 0) {
+            Write-Host "OK: $pluginName agents use the .agent.md extension" -ForegroundColor Green
+        }
+    }
+
+    $hooksCandidates = @(
+        (Join-Path $pluginPath "hooks.json"),
+        (Join-Path $pluginPath "hooks\hooks.json")
+    )
+    if ($null -ne $manifest.hooks -and $manifest.hooks -is [string]) {
+        $hooksCandidates += (Join-Path $pluginPath $manifest.hooks)
+    }
+    foreach ($hooksPath in ($hooksCandidates | Select-Object -Unique)) {
+        if (-not (Test-Path $hooksPath)) { continue }
+        try {
+            $hooksConfig = Get-Content -Path $hooksPath -Raw | ConvertFrom-Json
+        } catch {
+            $errors += "Invalid JSON in hooks config: $hooksPath"
+            Write-Host "FAIL: hooks config invalid JSON at $hooksPath" -ForegroundColor Red
+            continue
+        }
+        if ($hooksConfig.version -ne 1) {
+            $errors += "Hooks config missing 'version': 1 (Copilot CLI format): $hooksPath"
+            Write-Host "FAIL: hooks config at $hooksPath must declare `"version`": 1" -ForegroundColor Red
+        } else {
+            Write-Host "OK: $pluginName hooks config declares version 1" -ForegroundColor Green
+        }
     }
 }
 
@@ -83,4 +136,4 @@ if ($errors.Count -gt 0) {
     exit 1
 }
 
-Write-Host "`nAll plugins have valid Claude marketplace structure." -ForegroundColor Cyan
+Write-Host "`nAll plugins have valid Copilot CLI marketplace structure." -ForegroundColor Cyan

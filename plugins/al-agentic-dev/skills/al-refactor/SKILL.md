@@ -31,7 +31,7 @@ Architectural vocabulary (Module, Interface, Implementation, Seam, Adapter, Dept
 
 ## Lenses
 
-Spawn 4 lens subagents in parallel on the task diff — each with the prompt in [`subagents/al-review-lens.md`](../../references/subagents/al-review-lens.md), except lens 2 (BC best-practice) which uses [`subagents/al-review-lens-bc.md`](../../references/subagents/al-review-lens-bc.md) for its bc-code-intelligence reach (spawn each on `sonnet` — see the Model line in those files). Each returns reshape opportunities; the main session merges into one ordered apply queue, running pre-send check 3 ([voice-contract.md](../../references/voice-contract.md) Relaying subagent findings) on each before it reaches the user — a finding naming no object or observation goes back to its lens. The spawn prompt carries only the per-lens goal below plus the task diff; the read-only posture, BC vocabulary, and findings shape live in the prompt block.
+Spawn 4 lens subagents in parallel on the task diff — each with the prompt in [`subagents/al-review-lens.md`](../../references/subagents/al-review-lens.md), except lens 2 (BC best-practice) which uses [`subagents/al-review-lens-bc.md`](../../references/subagents/al-review-lens-bc.md) for its bc-code-intelligence reach (spawn each on the cheap tier — see the Model line in those files). Each returns reshape opportunities; the main session merges into one ordered apply queue, running pre-send check 3 ([voice-contract.md](../../references/voice-contract.md) Relaying subagent findings) on each before it reaches the user — a finding naming no object or observation goes back to its lens. The spawn prompt carries only the per-lens goal below plus the task diff; the read-only posture, BC vocabulary, and findings shape live in the prompt block.
 
 When the diff touches test code, the spawn prompt also names [test-layout.md](../../references/test-layout.md): its authoring contract is exactly what tidy passes break silently — consolidating "duplicate" integration-test library procedures violates duplicate-before-share, hoisting handlers off a test codeunit breaks the `[HandlerFunctions]` string binding, relocating a double breaks the per-app independence rule. Moving a test across the unit/integration boundary is never a lens call — that is replan, route `/al-steer`.
 
@@ -48,7 +48,7 @@ One reshape at a time, `/al-build` after each. Red → revert that step; recover
 
 - Renames and seam-introduction land before dedup — they touch many call sites and conflict otherwise.
 - Lens 3 structural reshape lands one at a time.
-- `/al-second-opinion` when apply queue is non-trivial.
+- Rubber-duck review when the apply queue is non-trivial ([rubber-duck-review.md](../../references/rubber-duck-review.md)).
 
 ## Lens 1, simplify and dedup
 
@@ -112,7 +112,7 @@ If state can't be read, fall back: `/al-mutate` after a behaviour-bearing reshap
 |---|---|
 | **Runs after**     | `/al-implement` took the current task to green, OR standalone on legacy code |
 | **Hands off to**   | `/al-mutate` (the next rigor step), or back to the user standalone |
-| **Calls directly** | `/al-research` (BC facts), `/al-build` (green between applies), `/al-second-opinion` (non-trivial apply queue) — the only skills it invokes |
+| **Calls directly** | `/al-research` (BC facts), `/al-build` (green between applies) — the only skills it invokes; rubber-duck consult on a non-trivial apply queue per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
 | **Spawns**         | 4 review-lens subagents from [`subagents/al-review-lens.md`](../../references/subagents/al-review-lens.md) / [`al-review-lens-bc.md`](../../references/subagents/al-review-lens-bc.md) |
 | **Replan venue**   | `/al-steer` |
 | **Sidebands**      | bc-standard-reference (BaseApp patterns), `/al-code-review` (non-structural concerns surface as out-of-scope notes), `/al-design` (standalone-on-legacy surfacing real architecture), `/grill-me` (non-obvious trade-off needs the user) |

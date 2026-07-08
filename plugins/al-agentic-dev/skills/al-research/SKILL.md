@@ -7,11 +7,11 @@ description: Verify AL/Business Central specifics from authoritative sources, qu
 
 # /al-research, Verify BC specifics
 
-Treat your own AL/BC knowledge as untrusted. Verify the specific BC fact in question, quote the canonical source, return. Read-only advisory: never pick designs. This is one of the three skills (with `/al-build` and `/al-second-opinion`) another skill may invoke directly — a calling skill that hits the escalation bar invokes it by name; a user can also run it standalone.
+Treat your own AL/BC knowledge as untrusted. Verify the specific BC fact in question, quote the canonical source, return. Read-only advisory: never pick designs. This is one of the two skills (with `/al-build`) another skill may invoke directly — a calling skill that hits the escalation bar invokes it by name; a user can also run it standalone.
 
 ## Escalation seat, not toll booth
 
-Direct quoted fetch satisfies the implement-time evidence bar (see `${CLAUDE_PLUGIN_ROOT}/references/voice-contract.md`): one fact → fetch, quote, cite, move on. This skill earns the call when arbitration is the work — two sources disagree, the question needs framing plus cross-family verification, or the fact lands in a durable design artifact (`event-model.md`, `architecture.md`, `CONTEXT.md`, ADRs) where single-source staleness compounds downstream.
+Direct quoted fetch satisfies the implement-time evidence bar (see `voice-contract.md` in this plugin's `references/`): one fact → fetch, quote, cite, move on. This skill earns the call when arbitration is the work — two sources disagree, the question needs framing plus independent verification, or the fact lands in a durable design artifact (`event-model.md`, `architecture.md`, `CONTEXT.md`, ADRs) where single-source staleness compounds downstream.
 
 ## Preconditions
 
@@ -35,7 +35,7 @@ Hedges (`might`, `probably`, `usually`) tell that a claim is unverified. Either 
 
 ## Topic recommender
 
-Curated BC knowledge tools recommend relevance-ranked topics; they do not answer for you. Fetch each on-domain topic, apply its anti-pattern indicators yourself. Call pattern, noise drop-list, and the mandatory `set_workspace_info` init: `${CLAUDE_PLUGIN_ROOT}/references/bc-code-intelligence-dispatch.md`, read before invoking `find_bc_knowledge` or `analyze_al_code`.
+Curated BC knowledge tools recommend relevance-ranked topics; they do not answer for you. Fetch each on-domain topic, apply its anti-pattern indicators yourself. Call pattern, noise drop-list, and the mandatory `set_workspace_info` init: `bc-code-intelligence-dispatch.md` in this plugin's `references/`, read before invoking `find_bc_knowledge` or `analyze_al_code`.
 
 ## Sources
 

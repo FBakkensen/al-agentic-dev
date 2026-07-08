@@ -89,7 +89,7 @@ Grilling vetoes the trigger → restore the prior `status:` value in frontmatter
 
 ## Owns `.out-of-scope/`
 
-Grilling vetoes a recurring scope item with a substantive reason (project scope, technical constraint, strategic decision, referenced ADR — not a deferral) → record at `.out-of-scope/<concept>.md`, so the next session can't re-litigate the rejection. Scan `.out-of-scope/*.md` during replan and grilling; on match, surface the prior rejection in the user's words. Template `${CLAUDE_SKILL_DIR}/references/out-of-scope.template.md` materialises on first need; a match appends a *Prior requests* entry rather than spawning a second file.
+Grilling vetoes a recurring scope item with a substantive reason (project scope, technical constraint, strategic decision, referenced ADR — not a deferral) → record at `.out-of-scope/<concept>.md`, so the next session can't re-litigate the rejection. Scan `.out-of-scope/*.md` during replan and grilling; on match, surface the prior rejection in the user's words. Template `references/out-of-scope.template.md` in this skill's base directory materialises on first need; a match appends a *Prior requests* entry rather than spawning a second file.
 
 ## Owns `.not-yet-specified/`
 

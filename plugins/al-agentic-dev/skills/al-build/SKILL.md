@@ -1,6 +1,7 @@
 ---
 name: al-build
 description: Build and test AL/Business Central projects. Use after modifying AL code or tests to verify the build gate passes. Runs compilation, publishing, and test execution in a single command. Required gate before committing AL changes.
+allowed-tools: ["execute", "read"]
 ---
 
 **Style:** Concise — cut filler, keep grammar. Opinionated — pick a side. Arrows (→) for causality. Technical terms exact, code and errors quoted verbatim.
@@ -63,7 +64,7 @@ Always delegate `/al-build` to one general subagent. Build output is verbose; ke
 
 After the worker returns the gate report, close the completed subagent thread before interpreting or reporting the result. Report the outcome as the mid-task Gate one-liner per [voice-contract.md](../../references/voice-contract.md) — never paste the worker's block raw.
 
-Spawn one general read-only subagent for the gate on `sonnet` — a mechanical gate run (see [model-selection.md](../../references/model-selection.md)). The spawn prompt includes verbatim: findings must name file, object, and the observed fact; no verdict words without the check that produced them.
+Spawn one general read-only subagent for the gate on the cheap tier — a mechanical gate run (see [model-selection.md](../../references/model-selection.md)). The spawn prompt includes verbatim: findings must name file, object, and the observed fact; no verdict words without the check that produced them.
 
 ### Worker rules
 

@@ -2,7 +2,7 @@
 
 Where a test lives and what a test app looks like. Sits alongside `test-strategy.md` (the execution pyramid — *why* layers exist), `tdd.md` (the red-green *cycle*), and `testability.md` (seams and doubles); this file owns the *placement* axis and the authoring contract of the test apps themselves. Cited by `/al-scope`, `/al-refine`, `/al-implement`, `/al-refactor`.
 
-Read-only. Read in place via `${CLAUDE_SKILL_DIR}/../../references/test-layout.md`.
+Read-only. Read in place from this plugin's `references/` directory.
 
 ## The layout
 

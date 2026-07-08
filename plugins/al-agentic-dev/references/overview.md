@@ -1,6 +1,6 @@
 # al-agentic-dev plugin overview
 
-Composable skills for AL/Business Central agentic development. One feature flows idea → merge through a pipeline of named skills, each owning a specific cut of the work. **You drive the pipeline:** every skill ends by naming the next natural step, and you invoke it by typing `/<skill-name>` — nothing auto-chains. A skill calls another skill only in three cases: `/al-research` (BC fact escalation), `/al-build` (compile/publish/test), and `/al-second-opinion` (an autonomous cross-family read a cheap model leans on mid-step). Everything else is a handoff you take. Skills also spawn lightweight **subagents** from shared prompt blocks (review lenses, the red-green worker) — described in harness-neutral terms so the plugin runs on Claude Code or another harness.
+Composable skills for AL/Business Central agentic development. One feature flows idea → merge through a pipeline of named skills, each owning a specific cut of the work. **You drive the pipeline:** every skill ends by naming the next natural step, and you invoke it by typing `/<skill-name>` — nothing auto-chains. A skill calls another skill only in two cases: `/al-research` (BC fact escalation) and `/al-build` (compile/publish/test); non-trivial artifacts additionally get an autonomous consult of the built-in **rubber-duck agent** (an independent read a cheap model leans on mid-step — [`rubber-duck-review.md`](rubber-duck-review.md)). Everything else is a handoff you take. Skills also spawn lightweight **subagents** from shared prompt blocks (review lenses, the red-green worker) via the task tool.
 
 ## Pipeline
 
@@ -16,7 +16,7 @@ Each `→` is a handoff the finishing skill names and **you** take; no step laun
 
 | Lane | Skills |
 |---|---|
-| **Side-band** (invoked from any main-pipeline skill or standalone) | `/al-research` (BC fact escalation) and `/al-second-opinion` (cross-family advisory) — two of the three skills another skill may call directly (with `/al-build`); plus `/al-steer` |
+| **Side-band** (invoked from any main-pipeline skill or standalone) | `/al-research` (BC fact escalation) — one of the two skills another skill may call directly (with `/al-build`); the rubber-duck consult ([`rubber-duck-review.md`](rubber-duck-review.md)); plus `/al-steer` |
 | **Infrastructure** | `/al-build` (compile, publish, run tests — the other skill another skill may call), `/al-debug-logging` (transient `FeatureTelemetry.LogUsage` probes) |
 | **Ops** (bracket the feature; run an `/al-build` script + flip task status) | `/al-provision` (`T-001`, refresh the build environment), `/al-validate-breaking-changes` (last, validate against the released baseline) |
 | **Shaping** (after `/al-implement` on a task, or standalone on legacy) | `/al-refactor`, `/al-mutate` |
@@ -36,7 +36,7 @@ State handoff is the filesystem, never in-memory: every skill can be invoked col
 | `/al-event-model` | User-facing journey: `event-model.md` in BC vocabulary (Role / Action / Business Event / View / Status). | User- or API-facing feature, after `/al-grill-adr`. Backend-only features skip this. |
 | `/al-design` | Feature architecture: `architecture.md`. Module map, BC patterns, R → P → W boundary, brownfield touchpoints, test strategy. | After `/al-event-model` for user/API features, or after `/al-grill-adr` for backend-only. |
 | `/al-scope` | Decomposes `architecture.md` into a slice-grouped `tasks/` folder, one file per task, bracketed by a `provision` first task and a `breaking-change` last task. | After `/al-design`. |
-| `/al-research` | Verify BC specifics from authoritative sources, quote them, return — the evidence-bar escalation seat. Callable from a session and by another skill. | Two sources disagree, a fact lands in a durable design artifact, or a fuzzy BC question needs framing + cross-family verification. Single-fact lookups go direct. |
+| `/al-research` | Verify BC specifics from authoritative sources, quote them, return — the evidence-bar escalation seat. Callable from a session and by another skill. | Two sources disagree, a fact lands in a durable design artifact, or a fuzzy BC question needs framing + independent verification. Single-fact lookups go direct. |
 | `/al-provision` | Runs the `kind: provision` task: refresh the build environment via `/al-build`'s `provision.ps1`, flip the task `done`/`blocked`. | The feature's first task, or any `kind: provision` task at `ready`. |
 | `/al-validate-breaking-changes` | Runs the `kind: breaking-change` task: validate the feature against the released baseline via `validate-breaking-changes.ps1`; a detected break stops for a human. | The feature's last task, once all other work is `done`. |
 | `/al-refine` | One task → `Test Specification` or `Verification Plan`. | Before working a specific task. |
@@ -44,8 +44,7 @@ State handoff is the filesystem, never in-memory: every skill can be invoked col
 | `/al-refactor` | Improve shape while green. No new behaviour. 4 review-lens subagents identify, the session applies. | After `/al-implement` takes a task to green, or standalone on legacy code. |
 | `/al-mutate` | Validate test rigor by injecting mutations one at a time. | The rigor step after `/al-refactor` for whatever arrived without a red, or standalone on legacy before `/al-refactor`. |
 | `/al-user-verification` | Guides you through the verify task one scenario at a time, in chat, punchline first — runs containers, the recording pre-flight, and Contract checks; you walk the non-recorded Journey Examples in your browser and report what you see (ask-before-reveal). Functional outcomes gate, usability observations → findings/tasks. Gates the next slice. | Verify task is `ready-for-verification` carrying `review: clean` — `/al-code-review` ran clean at slice-done, then `/al-refine` wrote a fresh `Verification Plan`. |
-| `/al-code-review` | Gate at slice-done and feature-done. Report-only by default: spawn review lenses, judge, cross-family-vet, then report the must-fix queue (→ `/al-implement`), nits, and the gate decision. `--fix` lands the must-fix findings in-loop (red-green subagent) and re-reviews once. | Auto-announced as the next step by `/al-implement` at slice-done (both slice types) and feature-done. |
-| `/al-second-opinion` | Cross-family read-only advisory review (shells to GitHub Copilot CLI, pinned to a GPT model). | Before reconciling non-trivial `Test Specification`, `Verification Plan`, mutation lists, refactor checklists, or verification verdicts. |
+| `/al-code-review` | Gate at slice-done and feature-done. Report-only by default: spawn review lenses, judge, rubber-duck-vet, then report the must-fix queue (→ `/al-implement`), nits, and the gate decision. `--fix` lands the must-fix findings in-loop (red-green subagent) and re-reviews once. | Auto-announced as the next step by `/al-implement` at slice-done (both slice types) and feature-done. |
 | `/al-steer` | Coach and navigator. Reads state, names next step, never edits code. Owns `.out-of-scope/` and `.not-yet-specified/`. Canonical replan venue. | "Where are we?", "what's next?", trigger fired in another skill. |
 | `/al-build` | Compile, publish, run tests; writes results to `.output/TestResults/<dirName>/`. | After modifying AL code or tests. Required gate before commit. |
 | `/al-debug-logging` | Temporary `DEBUG-*` `FeatureTelemetry.LogUsage` probes; read `telemetry.jsonl`; remove probes. Final state: zero `DEBUG-*` in tree. | Runtime behaviour diverges from source and tests can't reveal which path ran. |
@@ -54,11 +53,11 @@ State handoff is the filesystem, never in-memory: every skill can be invoked col
 
 ## Subagents
 
-Skills spawn lightweight workers from shared prompt blocks under `references/subagents/`. They are not `/commands` and not custom-agent definitions — a skill spawns a subagent with the named prompt. Each block names the Claude model to spawn on, per [`model-selection.md`](model-selection.md).
+Skills spawn lightweight workers from shared prompt blocks under `references/subagents/`. They are not slash commands and not custom-agent definitions — a skill spawns a subagent via the task tool with the named prompt. Each block names the model tier to spawn on, per [`model-selection.md`](model-selection.md).
 
 | Prompt block | Role | Spawned by |
 |---|---|---|
-| `subagents/al-red-green.md` | One AAA case RED→GREEN: write the failing test, confirm RED, write minimal production code, confirm GREEN, return an outcome note. Spawn on `sonnet`; escalate only if a case can't reach green. | `/al-implement` (per case), `/al-code-review --fix` (per must-fix finding) |
+| `subagents/al-red-green.md` | One AAA case RED→GREEN: write the failing test, confirm RED, write minimal production code, confirm GREEN, return an outcome note. Spawn on the cheap tier; escalate only if a case can't reach green. | `/al-implement` (per case), `/al-code-review --fix` (per must-fix finding) |
 | `subagents/al-review-lens.md` | One focused read-only AL/BC review pass, file-read only. Returns labeled findings; the main session dedupes and adversarially judges. | `/al-code-review` (lenses), `/al-refactor` (lenses) |
 | `subagents/al-review-lens-bc.md` | The BC-specific review lens with bc-code-intelligence MCP reach. | `/al-code-review`, `/al-refactor` |
 

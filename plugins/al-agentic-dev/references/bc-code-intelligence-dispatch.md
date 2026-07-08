@@ -51,16 +51,16 @@ A fixed number (the former flat `>=70` / `>=50`) is meaningless across these and
 
 **MCP absent or init fails** → the evidence bar stays satisfiable: quoted Microsoft Learn passage (constructs and names) or `bc-standard-reference` agent (names) per `voice-contract.md`. Do not block on the missing server.
 
-## What the MCP catches that vanilla Claude misses
+## What the MCP catches that an unaided model misses
 
 BC-specific execution-order and platform-cost knowledge:
 
-- **SetLoadFields placement.** BC executes `SetLoadFields → filter → query`. `SetLoadFields` after `SetRange`/`SetFilter` is syntactically valid and the optimization is lost; vanilla Claude reads it as fine. Topic `dean-debug/setloadfields-placement-before-filters` (and `-before-case-statements`).
+- **SetLoadFields placement.** BC executes `SetLoadFields → filter → query`. `SetLoadFields` after `SetRange`/`SetFilter` is syntactically valid and the optimization is lost; an unaided model reads it as fine. Topic `dean-debug/setloadfields-placement-before-filters` (and `-before-case-statements`).
 - **Lonely repeat** (`repeat…until` with no `Find` before).
-- **SingleInstance subscriber memory model** — state persisting across the session; leak patterns vanilla Claude does not connect to subscriber lifecycle.
-- **DeleteAll vs iterate** — performance vs business-logic-compliance tradeoff (DeleteAll bypasses `OnDelete` triggers + validation) that vanilla Claude treats as style.
+- **SingleInstance subscriber memory model** — state persisting across the session; leak patterns an unaided model does not connect to subscriber lifecycle.
+- **DeleteAll vs iterate** — performance vs business-logic-compliance tradeoff (DeleteAll bypasses `OnDelete` triggers + validation) that an unaided model treats as style.
 
-Refactor wins vanilla Claude already catches (memoize, dedupe, dead-param, guard-before-recurse) do not earn the MCP cost.
+Refactor wins an unaided model already catches (memoize, dedupe, dead-param, guard-before-recurse) do not earn the MCP cost.
 
 ## What the MCP does NOT do
 
@@ -72,3 +72,4 @@ Refactor wins vanilla Claude already catches (memoize, dedupe, dead-param, guard
 
 - Read by `/al-implement` (write-time construct lookup per the evidence bar in `voice-contract.md`), `/al-refactor` (structural-anti-pattern discipline), `/al-code-review` (per-file consultation + cross-file routing), `/al-research` (one of the source families, governed by its own topic-recommender discipline).
 - Upstream source: `JeremyVyska/bc-code-intelligence-mcp` (server) and `JeremyVyska/bc-code-intelligence` (knowledge). Advisory-grade, single-maintainer; pair its output with the deterministic gates (`/al-build`, CodeCop/AppSourceCop) and never make a gate depend on it alone. When a call returns nothing useful, check the source for the handler shape before concluding the tool is broken.
+

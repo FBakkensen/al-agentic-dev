@@ -9,7 +9,7 @@ description: Pick a `ready-for-implementation` technical task from the `tasks/` 
 
 Pick the next `ready-for-implementation` technical task from the `tasks/` folder. Consume its fresh `Test Specification`. Drive AAA cases red → green: `Unit` first, `Integration` second. Reconcile final procedure names and scopes in the task file. Flip status to `done` when the full suite is green and the spec reconciled. **Stop at green** — reshape (`/al-refactor`) and rigor (`/al-mutate`) are the next steps the user invokes, not work this skill runs. One task per session.
 
-This skill calls only `/al-research` (evidence-bar escalation), `/al-build` (compile/test), and `/al-second-opinion` (cross-family read on non-trivial work). It spawns a subagent per AAA case but invokes no other skill — it hands off by naming the next step, never by chaining.
+This skill calls only `/al-research` (evidence-bar escalation) and `/al-build` (compile/test), and consults the built-in rubber-duck agent for an independent cross-family read on non-trivial work ([rubber-duck-review.md](../../references/rubber-duck-review.md)). It spawns a subagent per AAA case but invokes no other skill — it hands off by naming the next step, never by chaining.
 
 **Layer.** Red-first at the Unit + Integration layers (see [`test-strategy.md`](../../references/test-strategy.md)). A production bug a higher layer surfaces is pushed down to this layer so the proof lives where an oracle sees it.
 
@@ -42,11 +42,13 @@ Default order:
 2. `Integration` cases red/green, one per spawned subagent.
 3. Full gate.
 
-For each case, **spawn a subagent with the prompt in [`subagents/al-red-green.md`](../../references/subagents/al-red-green.md)** on `sonnet`, escalating a tier only if the case can't reach green (see that file's Model line), passing: the single AAA case (Arrange/Act/Assert text from the `Test Specification`), the task's `New and Modified Objects` block, and the task file path. Read the subagent's outcome note before proceeding — and before relaying anything from it, run pre-send check 3 ([voice-contract.md](../../references/voice-contract.md) Relaying subagent findings): a note naming no object or observation goes back to the spawn; relay through the Gate/Stop shape, never raw. Then route on the verdict:
+For each case, **spawn a subagent with the prompt in [`subagents/al-red-green.md`](../../references/subagents/al-red-green.md)** on the cheap tier, escalating a tier only if the case can't reach green (see that file's Model line), passing: the single AAA case (Arrange/Act/Assert text from the `Test Specification`), the task's `New and Modified Objects` block, and the task file path. Read the subagent's outcome note before proceeding — and before relaying anything from it, run pre-send check 3 ([voice-contract.md](../../references/voice-contract.md) Relaying subagent findings): a note naming no object or observation goes back to the spawn; relay through the Gate/Stop shape, never raw. Then route on the verdict:
 
 - `GREEN` → run the full suite gate (a red anywhere, including a sibling task's test, blocks the `done` flip), then proceed to the next case.
 - `PUSH-UP` → handle the push-up commitment gate (see below).
 - New decision flagged / `BLOCKED` → `Next: /al-steer`.
+
+**Survive compaction.** A multi-case task outlives the context window: track per-case progress in the session todo list (one todo per AAA case, status flipped as each lands) — todos and plans survive context compaction; this skill's injected body and the per-case chatter do not. After a compaction, re-read this skill and the task file, then resume from the todo state.
 
 Exception: when a Unit seam should exist but current code is tangled, instruct the spawn to write an Integration characterization test first, then spawn again to extract the Unit seam and add the Unit case. Reconcile scope changes in the task file.
 
@@ -89,7 +91,7 @@ Eight triggers run as a gate before `done`. The tier test is what the unknown to
 
 A change that only applies a decision already made absorbs inline: missing scaffolding, permission set entry, object ID, caption, local BC-vocab rename, or reusing a seam pattern a sibling task established — apply, log it as a `deviations:` line when it rests on an assumption the user never blessed, rerun `/al-build`, continue. A new decision routes through `/al-steer`: schema changes, new event publishers, new codeunits, a genuinely new seam, test-outcome changes, or a production object the assertions require (trigger #2). A public-surface rename is not trivia — it is an AppSource decision, route it.
 
-Before flipping to `done`, do a final correctness read of the implementation against the reconciled task spec — production logic, AAA coverage, the `New and Modified Objects` surface. For non-trivial work, `/al-second-opinion` is available for an independent cross-family read before the durable status change.
+Before flipping to `done`, do a final correctness read of the implementation against the reconciled task spec — production logic, AAA coverage, the `New and Modified Objects` surface. For non-trivial work, consult the rubber-duck agent for an independent cross-family read before the durable status change ([rubber-duck-review.md](../../references/rubber-duck-review.md)).
 
 Flip surface: locate the task file by its `T-MMM` filename (e.g. `tasks/070-T-007-derive-audit-reason.md`) and edit anchored on its `status:` frontmatter line, swapping the value byte-exact:
 
@@ -128,6 +130,6 @@ If state can't be read, fall back to the typical next step: `/al-refactor` then 
 |---|---|
 | **Runs after**     | `/al-refine` (filled `Test Specification` in the task file and flipped task to `ready-for-implementation`) |
 | **Hands off to**   | `/al-refactor` on non-trivial task-done, then `/al-mutate` for logic that arrived without a red; next `ready-for-implementation` technical task; `/al-code-review` per-slice at slice-done (both slice types); `/al-code-review` per-feature at feature-done |
-| **Calls directly** | `/al-research` (evidence-bar escalation), `/al-build` (compile/test), `/al-second-opinion` (cross-family read, non-trivial work) — the only three skills it invokes |
+| **Calls directly** | `/al-research` (evidence-bar escalation), `/al-build` (compile/test) — the only skills it invokes; rubber-duck consult on non-trivial work per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
 | **Spawns**         | per-case subagent from [`subagents/al-red-green.md`](../../references/subagents/al-red-green.md) (RED→GREEN per AAA case) |
 | **Replan venue**   | `/al-steer` |

@@ -2,7 +2,7 @@
 
 Shared grammar for the `Test Specification` and `Verification Plan` sections in a per-task file (`specs/<NNN>-<slug>/tasks/NNN-T-MMM-<slug>.md`). Cited by `/al-refine`, `/al-implement`, `/al-code-review`, `/al-page-script`, and `/al-user-verification`.
 
-Read-only. Read in place via `${CLAUDE_SKILL_DIR}/../../references/test-specification.md`.
+Read-only. Read in place from this plugin's `references/` directory.
 
 The grammar separates three concerns:
 
@@ -34,7 +34,7 @@ Release blocking protects posting readiness by preventing Sales Orders from bein
 
 ### New and Modified Objects
 
-Mandatory on every technical task. Names the production AL surface the task lands — objects, fields, procedure signatures, events — so `/al-implement` consumes signatures instead of minting them mid-TDD. Production objects only: test codeunits and test procedures live in `AAA Cases` and `Covered By`, never here. A test-only task (red-suite rework, characterization additions) writes the labeled line `New and Modified Objects: none` in place of the `###` section; absence of both, or a section heading with neither entries nor the `none` line, is a `/al-refine` defect — the inline document-integrity check (`${CLAUDE_PLUGIN_ROOT}/references/doc-integrity.md`) blocks the `ready-for-implementation` flip on it.
+Mandatory on every technical task. Names the production AL surface the task lands — objects, fields, procedure signatures, events — so `/al-implement` consumes signatures instead of minting them mid-TDD. Production objects only: test codeunits and test procedures live in `AAA Cases` and `Covered By`, never here. A test-only task (red-suite rework, characterization additions) writes the labeled line `New and Modified Objects: none` in place of the `###` section; absence of both, or a section heading with neither entries nor the `none` line, is a `/al-refine` defect — the inline document-integrity check (`references/doc-integrity.md` in this plugin) blocks the `ready-for-implementation` flip on it.
 
 Signature-level, no bodies — bodies are what TDD writes. One object per landing line, `New:` or `Modified:` lede. Procedures carry full signature, visibility (`internal` / `local` / public), and their R → P → W letter from `architecture.md`. Fields carry AL type. Events carry the full publisher signature.
 
@@ -72,7 +72,7 @@ Contract notes:
 - Researched: `FindSet(true)` required for modify-in-loop → Learn al-record-findset.
 ```
 
-A bullet survives only if the next agent acts differently because of it. How a decision was reached never survives: provenance ("settled:", "second-opinion added", "resolved by user decision") belongs in the commit message, per the no-workflow-chatter rule in `voice-contract.md` and the session-internal-reasoning row in `notes-discipline.md`. `Researched: <fact> → <source>` is not decision provenance — it is the evidence-bar trace (`voice-contract.md`), the one citation that lands here; `/al-code-review` audits its absence on construct-touching tasks. Cross-task retelling trims to a pointer — `proved: T-001` — not the story.
+A bullet survives only if the next agent acts differently because of it. How a decision was reached never survives: provenance ("settled:", "rubber-duck added", "resolved by user decision") belongs in the commit message, per the no-workflow-chatter rule in `voice-contract.md` and the session-internal-reasoning row in `notes-discipline.md`. `Researched: <fact> → <source>` is not decision provenance — it is the evidence-bar trace (`voice-contract.md`), the one citation that lands here; `/al-code-review` audits its absence on construct-touching tasks. Cross-task retelling trims to a pointer — `proved: T-001` — not the story.
 
 ### Out of automated reach
 

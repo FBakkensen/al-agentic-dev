@@ -2,7 +2,7 @@
 
 Shared language for `/al-design`, `/al-refactor`, and `/al-code-review`. Use these terms exactly; do not substitute "component," "service," "API," "boundary," "class," or "entity." Consistent language is the whole point. Sits alongside the BC pattern catalogue (`bc-patterns.md`), does not replace it.
 
-Read-only. Read in place via `${CLAUDE_SKILL_DIR}/../../references/LANGUAGE.md`.
+Read-only. Read in place from this plugin's `references/` directory.
 
 Structural terms (Module, Depth, Leverage) come from Ousterhout (*A Philosophy of Software Design*); **Seam** from Feathers (*Working Effectively with Legacy Code*); **Connascence** from Page-Jones (*What Every Programmer Should Know About OOA*); **Command-Query Separation** from Meyer (*Object-Oriented Software Construction*); behavioural-decomposition terms from Event Modeling (Adam Dymitruk). A sourced term has an external definition the project cannot quietly redefine. Rejected aliases (`_Avoid_`) are themselves cited concepts; naming them is what makes the rejection meaningful.
 
