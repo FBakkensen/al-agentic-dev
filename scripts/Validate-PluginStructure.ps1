@@ -12,7 +12,9 @@
     pwsh scripts/Validate-PluginStructure.ps1
 #>
 [CmdletBinding()]
-param()
+param(
+    [string]$RepoRoot = (Join-Path $PSScriptRoot "..")
+)
 
 $errors = @()
 
@@ -47,9 +49,48 @@ function Get-MarketplacePluginNames {
     return $pluginNames
 }
 
-$repoRoot = Join-Path $PSScriptRoot ".."
+$repoRoot = Resolve-Path -Path $RepoRoot -ErrorAction Stop
 $marketplacePath = Join-Path $repoRoot ".github\plugin\marketplace.json"
 $pluginsPath = Join-Path $repoRoot "plugins"
+
+function Get-SkillFrontmatterBlock {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$SkillFile
+    )
+
+    $content = Get-Content -LiteralPath $SkillFile -Raw
+    $lines = $content -split "`r?`n"
+    if ($lines.Count -lt 3 -or $lines[0].Trim() -ne '---') {
+        throw "Missing opening frontmatter delimiter"
+    }
+
+    $closingIndex = -1
+    for ($i = 1; $i -lt $lines.Count; $i++) {
+        if ($lines[$i].Trim() -eq '---') {
+            $closingIndex = $i
+            break
+        }
+    }
+
+    if ($closingIndex -lt 0) {
+        throw "Missing closing frontmatter delimiter"
+    }
+
+    return ($lines[1..($closingIndex - 1)] -join "`n")
+}
+
+function Test-IsQuotedScalar {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Value
+    )
+
+    $trimmed = $Value.Trim()
+    if ($trimmed.Length -lt 2) { return $false }
+    return (($trimmed.StartsWith('"') -and $trimmed.EndsWith('"')) -or
+        ($trimmed.StartsWith("'") -and $trimmed.EndsWith("'")))
+}
 
 $pluginNames = @(Get-MarketplacePluginNames -Path $marketplacePath)
 
@@ -127,6 +168,37 @@ foreach ($pluginName in $pluginNames) {
             Write-Host "FAIL: hooks config at $hooksPath must declare `"version`": 1" -ForegroundColor Red
         } else {
             Write-Host "OK: $pluginName hooks config declares version 1" -ForegroundColor Green
+        }
+    }
+
+    $skillsPath = Join-Path $pluginPath "skills"
+    if (Test-Path $skillsPath) {
+        $skillFiles = @(Get-ChildItem -Path $skillsPath -Recurse -Filter SKILL.md -File)
+        foreach ($skillFile in $skillFiles) {
+            $frontmatter = $null
+            try {
+                $frontmatter = Get-SkillFrontmatterBlock -SkillFile $skillFile.FullName
+            } catch {
+                $errors += "Invalid or missing frontmatter in $($skillFile.FullName): $($_.Exception.Message)"
+                Write-Host "FAIL: invalid frontmatter block in $($skillFile.FullName)" -ForegroundColor Red
+                continue
+            }
+
+            $descriptionMatch = [regex]::Match($frontmatter, '(?m)^\s*description:\s*(.+?)\s*$')
+            if (-not $descriptionMatch.Success) {
+                $errors += "Missing description field in skill frontmatter: $($skillFile.FullName)"
+                Write-Host "FAIL: missing description in $($skillFile.FullName)" -ForegroundColor Red
+                continue
+            }
+
+            $descriptionValue = $descriptionMatch.Groups[1].Value.Trim()
+            if (($descriptionValue -match ':\s' -or $descriptionValue -match ':$') -and -not (Test-IsQuotedScalar -Value $descriptionValue)) {
+                $errors += "Unquoted description with colon-space in skill frontmatter: $($skillFile.FullName)"
+                Write-Host "FAIL: description must be quoted when it contains ': ' in $($skillFile.FullName)" -ForegroundColor Red
+                continue
+            }
+
+            Write-Host "OK: $($skillFile.FullName) skill frontmatter parsed" -ForegroundColor Green
         }
     }
 }

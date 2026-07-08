@@ -1,7 +1,7 @@
 ---
 name: al-validate-breaking-changes
 allowed-tools: ["execute", "read"]
-description: Execute the `kind: breaking-change` task in the `tasks/` folder for AL/Business Central — run al-build's `validate-breaking-changes.ps1` against the provisioned baseline, then flip the task `done` or `blocked`. Use as the feature's last task; a detected break stops for a human, never self-resolved.
+description: "Execute the `kind: breaking-change` task in the `tasks/` folder for AL/Business Central — run al-build's `validate-breaking-changes.ps1` against the provisioned baseline, then flip the task `done` or `blocked`. Use as the feature's last task; a detected break stops for a human, never self-resolved."
 ---
 
 **Style:** Concise — cut filler, keep grammar. Opinionated — pick a side. Arrows (→) for causality. Technical terms exact, code and errors quoted verbatim.
