@@ -24,7 +24,7 @@ Any precondition fails → **Stop**, surface the gap.
 
 ## Workflow
 
-**Plan first, execute second.** Host `/al-mutate` chooses included sites, skipped sites, and one operator per qualifying site. Cross-check non-trivial plans via a rubber-duck consult before worker execution ([rubber-duck-review.md](../../references/rubber-duck-review.md)): *"what mutations are missing or misaligned? AND does this surface any of the eight replan triggers? Return a bulleted list."* Reconcile each returned bullet. Worker executes the approved plan only; it does not add, remove, or replace mutants.
+**Plan first, execute second.** Host `/al-mutate` chooses included sites, skipped sites, and one operator per qualifying site. Cross-check non-trivial plans via a rubber-duck consult before worker execution ([rubber-duck-review.md](../../references/rubber-duck-review.md)): *"what mutations are missing or misaligned? AND does this surface any of the eight replan triggers? Return a bulleted list."* Reconcile each returned bullet. Workers execute the approved plan only, one mutant per worker; a worker does not add, remove, or replace mutants.
 
 **One mutation, one build, one revert.** Apply one mutation. Run `pwsh "<plugin>/skills/al-build/scripts/test.ps1"` directly with the selected gate. Classify. Revert with `git checkout -- .`. Verify tree matches `HEAD` before next mutation. Batched mutations conflate signal; un-reverted mutations poison production and corrupt every subsequent classification. The verify step catches a silent failed revert.
 
@@ -56,26 +56,24 @@ Any precondition fails → **Stop**, surface the gap.
 
 ## Delegation
 
-Use one delegated worker when host supports subagents. Host owns plan generation, plan approval, survivor/equivalence judgement, task-block verdicts, and any killer tests. Worker owns the mutate-build-recovery-revert cycle and `.output` report. Delegation unavailable → run inline with the same boundaries. The spawn prompt includes verbatim: findings must name file, object, and the observed fact; no verdict words without the check that produced them ([voice-contract.md](../../references/voice-contract.md) Relaying subagent findings).
+Delegate one worker per mutation when host supports subagents — the pass stays sequential: spawn a worker for one approved mutant, wait for its verdict, record it, then spawn the next. Never one worker for the whole plan; a worker holding many mutate-build-revert cycles accumulates gate output until it misclassifies, and a mid-run failure loses every verdict it held. Host owns plan generation, plan approval, preflight (baseline SHA, clean-tree proof), per-mutant verdict recording (the session todos), survivor/equivalence judgement, task-block verdicts, the final full `test.ps1` closeout, the `.output` report assembled from the recorded verdicts, and any killer tests. Each worker owns exactly one mutate-build-recovery-revert cycle and returns its verdict with evidence in its reply. Delegation unavailable → run inline with the same boundaries. Each spawn prompt is self-contained — the worker rules below plus the one mutant (file, site, operator, gate flags, baseline SHA) — and includes verbatim: findings must name file, object, and the observed fact; no verdict words without the check that produced them ([voice-contract.md](../../references/voice-contract.md) Relaying subagent findings).
 
-After the worker returns its mutation report, close the completed worker thread before the host resumes judgement, killer-test work, or closeout.
+After each worker returns its verdict, close the completed worker thread and record the verdict before spawning the next mutant or resuming judgement, killer-test work, or closeout.
 
-Spawn the worker on the cheap tier — a mechanical mutate-build-revert cycle (see [delegation.md](../../references/delegation.md)).
+Spawn each worker on the cheap tier — a mechanical mutate-build-revert cycle (see [delegation.md](../../references/delegation.md)).
 
 ### Worker rules
 
 ```
-Preflight: record baseline commit SHA, prove `git status --short` empty, prove `git diff --quiet HEAD`.
+Guard: prove `git status --short` empty and `git diff --quiet HEAD` against the host-provided baseline SHA before applying the mutant.
 
-Execute the approved plan serially. Do not edit source/spec/tasks/config except transient production mutations from the approved plan. Do not commit. Do not invoke `/al-build` as a nested skill. Run `pwsh "<plugin>/skills/al-build/scripts/test.ps1"` directly with the selected flags.
+Execute the one assigned mutant only. Do not edit source/spec/tasks/config except the assigned transient production mutation. Do not commit. Do not invoke `/al-build` as a nested skill. Run `pwsh "<plugin>/skills/al-build/scripts/test.ps1"` directly with the assigned flags.
 
-Classify each mutant by the gate's outcome signal, not the exit code (compile and test failures both exit 1): read the newest line of `.output/logs/build-timing.jsonl` — `outcome:"error"` → `invalid_stillborn` (compile/publish failed, no test ran; NOT killed); `outcome:"failed"` → `killed` (a test went red — assertion or runtime exception from the mutated path); `outcome:"passed"` → `survived` or `equivalent_candidate`. AL Runner's own exit-3 compile error maps to `outcome:"failed"`; because the app is analyzer-compiled before AL Runner runs, that combination is contradictory → `not_classified_runner_contract`, never killed. Record `invalid_stillborn` and continue; do not re-plan (re-planning a compiling operator at the site is host territory).
+Classify the mutant by the gate's outcome signal, not the exit code (compile and test failures both exit 1): read the newest line of `.output/logs/build-timing.jsonl` — `outcome:"error"` → `invalid_stillborn` (compile/publish failed, no test ran; NOT killed); `outcome:"failed"` → `killed` (a test went red — assertion or runtime exception from the mutated path); `outcome:"passed"` → `survived` or `equivalent_candidate`. AL Runner's own exit-3 compile error maps to `outcome:"failed"`; because the app is analyzer-compiled before AL Runner runs, that combination is contradictory → `not_classified_runner_contract`, never killed. Record `invalid_stillborn` and return; do not re-plan (re-planning a compiling operator at the site is host territory).
 
-After each mutant attempt, run `git checkout -- .`, then prove `git diff --quiet HEAD` and empty `git status --short` before the next mutant or before stopping. This broad revert is explicitly authorized only inside `/al-mutate` after committed clean baseline proof.
+After the attempt, run `git checkout -- .`, then prove `git diff --quiet HEAD` and empty `git status --short` before returning. This broad revert is explicitly authorized only inside `/al-mutate` after committed clean baseline proof.
 
-After all mutants are reverted, run final full `test.ps1` and record the result. Host does not rerun this closeout unless evidence is missing or contradictory.
-
-Write `.output/mutation-report/<YYYYMMDD-HHMMSS>.md` and `.output/TestResults/**` only. `.output` is not committed.
+Return the verdict, the gate command, the observed `outcome`, the decisive evidence line (the failing test name for a kill, the compiler output for a stillborn, the specific reason for an equivalence candidate), and any recovery attempts in the reply. Write `.output/TestResults/**` only (the gate produces it); the mutation report is host-assembled. `.output` is not committed.
 ```
 
 ### Infra recovery inside a live mutant
