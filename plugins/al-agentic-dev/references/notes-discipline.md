@@ -18,7 +18,7 @@ Cannot tell which side a piece belongs on → ask trigger test: *will this line 
 | Status | `status:` field in per-task-file frontmatter | `/al-implement`, `/al-code-review`, `/al-user-verification`, `/al-steer` |
 | Block reason (the headline, one line) | `blocked-on:` frontmatter field, written/removed in the same Edit as the `status:` flip; depth stays body prose | the skill flipping to/from `blocked` |
 | Absorbed unknown (assumption made inline without asking) | one-line entry appended to `deviations:` frontmatter; agent-depth stays body prose (`Contract notes` or a note) | the absorbing skill (`/al-implement` foremost) |
-| Human-facing status picture (what's moving, blocked, waiting on the developer) | the dashboard — rebuilt-whole HTML projection of frontmatter per [dashboard.md](./dashboard.md); never the task file body | whoever changes frontmatter re-renders |
+| Human-facing status picture (what's moving, blocked, waiting on the developer) | `/al-steer`'s chat-rendered board, grepped from frontmatter on demand; never the task file body | whoever reads it invokes `/al-steer` |
 | Slice membership | `slice: <slug>` field in per-task-file frontmatter | `/al-scope` (write), every reader |
 | Task kind (verify vs technical) | `kind: verify` or `kind: technical` in per-task-file frontmatter | `/al-scope` (write), every reader |
 | In-flight scaffolding the next agent on this branch needs | inside the task file body | writing skill (shape is its call) |
@@ -76,4 +76,4 @@ A trigger resting on a tool *diagnosis* (compile-error class, AL Runner gap, heu
 
 There is no Summary table and no index file. The status board is a view computed on demand by grepping `status:` across the `tasks/` folder; `/al-steer` renders it in chat. Status lives only in the `status:` frontmatter field of each per-task file — the single source of truth. The filesystem (`ls tasks/` = run order) is the manifest.
 
-The standing human-facing view is the **dashboard** ([dashboard.md](./dashboard.md)): a rebuilt-whole HTML projection of the same frontmatter, written to `.output/dashboard.html`. It owns no state — it can never disagree with the files, only lag them, and the render invariant closes the lag: **whoever changes task frontmatter re-renders the dashboard in the same working step.** Task files stay agent-facing; a line written into a task body "so the developer sees it" is in the wrong channel — the developer's channels are chat and the dashboard.
+The standing human-facing view is `/al-steer` in chat, reading the same frontmatter fresh on each invocation — it can never disagree with the files, only lag them until the next read. Task files stay agent-facing; a line written into a task body "so the developer sees it" is in the wrong channel — the developer's channels are chat and `/al-steer`.
