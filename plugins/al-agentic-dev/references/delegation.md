@@ -1,10 +1,10 @@
 # Delegation
 
-Whether to hand work to a spawned subagent, and which model it runs on. One home: the
-subagent prompt blocks under `subagents/` and the skills that spawn them name a tier and
+Whether to hand work to a spawned custom agent, and which model it runs on. One home: the
+custom agents under `agents/` and the skills that invoke them name a tier and
 point here; this file owns the triggers, the tier ordering, the effort rule, and the rerun
-diagnostic so they do not drift. Set the tier with the spawn's `model` parameter on the task
-tool, using the harness's current model IDs, and the thoroughness with `reasoning_effort`.
+diagnostic so they do not drift. Each agent's frontmatter `model:` field fixes its tier —
+no per-invocation override — using the harness's current model IDs.
 
 ## When to delegate
 
@@ -90,8 +90,8 @@ its intent.
 
 | Worker | Tier |
 |---|---|
-| `al-red-green` (one AAA case RED→GREEN) | cheap; a case that can't reach green runs the rerun diagnostic above — tier up (mid/smart) only on *didn't know* |
-| `al-review-lens` / `al-review-lens-bc` (one focused review pass) | cheap (carve-out) |
+| `al-red-green` custom agent (one AAA case RED→GREEN) | cheap, fixed — a case that can't reach green does not self-escalate (static `model:` frontmatter); the caller falls back to doing the case inline or a `general-purpose` spawn on *didn't know* |
+| `al-review-cr-*` / `al-review-refactor-*` custom agents (one focused review pass each) | cheap, fixed (carve-out) |
 | build gate worker (`/al-build`) | cheap |
 | mutation worker (`/al-mutate`) | cheap |
 

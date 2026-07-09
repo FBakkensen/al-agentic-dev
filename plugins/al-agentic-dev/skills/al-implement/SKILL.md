@@ -9,7 +9,7 @@ description: Pick a `ready-for-implementation` technical task from the `tasks/` 
 
 Pick the next `ready-for-implementation` technical task from the `tasks/` folder. Consume its fresh `Test Specification`. Drive AAA cases red → green: `Unit` first, `Integration` second. Reconcile final procedure names and scopes in the task file. Flip status to `done` when the full suite is green and the spec reconciled. **Stop at green** — reshape (`/al-refactor`) and rigor (`/al-mutate`) are the next steps the user invokes, not work this skill runs. One task per session.
 
-This skill calls only `/al-research` (evidence-bar escalation) and `/al-build` (compile/test), and consults the rubber-duck agent for an independent cross-family read on non-trivial work ([rubber-duck-review.md](../../references/rubber-duck-review.md)). It spawns a subagent per AAA case but invokes no other skill — it hands off by naming the next step, never by chaining.
+This skill calls only `/al-research` (evidence-bar escalation) and `/al-build` (compile/test), and consults the rubber-duck agent for an independent cross-family read on non-trivial work ([rubber-duck-review.md](../../references/rubber-duck-review.md)). It invokes the `al-red-green` custom agent per AAA case but invokes no other skill — it hands off by naming the next step, never by chaining.
 
 **Layer.** Red-first at the Unit + Integration layers (see [`test-strategy.md`](../../references/test-strategy.md)). A production bug a higher layer surfaces is pushed down to this layer so the proof lives where an oracle sees it.
 
@@ -19,7 +19,7 @@ This skill calls only `/al-research` (evidence-bar escalation) and `/al-build` (
 - `specs/<branch>/` holds the `tasks/` folder + `architecture.md`. Missing → **Stop**, `Next: /al-design`.
 - Target task `kind: technical`. `kind: verify` → **Stop**; `Next: /al-steer` or `/al-code-review` based on verification state. `kind: provision` → `Next: /al-provision`; `kind: breaking-change` → `Next: /al-validate-breaking-changes` (ops tasks, run-and-flip, never reach `ready-for-implementation`).
 - Target task `status: ready-for-implementation` with populated `Test Specification`. Plain `ready` → **Stop**, `Next: /al-refine T-NNN`. `ready-for-implementation` with empty or missing `Test Specification` → **Stop**, `Next: /al-steer`; status and proof disagree. `blocked` → **Stop**, `Next: /al-steer`. `done` → already green and reconciled; do not reopen here **unless** re-entered for a named follow-up on that same task: an `/al-mutate` reached-real-gap survivor (write the killer test) or an `/al-code-review` finding routed here as `T-NNN`. Work either red-first under the originating task, no status flip, reconciling `Contract notes` on green. Any other reason to touch a `done` task → **Stop**, `Next: /al-steer`.
-- Before code, read [`test-specification.md`](../../references/test-specification.md) and [`voice-contract.md`](../../references/voice-contract.md). Production names and signatures arrive minted in the task's `New and Modified Objects`; the per-case subagent reads its own implementation references on each spawn.
+- Before code, read [`test-specification.md`](../../references/test-specification.md) and [`voice-contract.md`](../../references/voice-contract.md). Production names and signatures arrive minted in the task's `New and Modified Objects`; the `al-red-green` agent reads its own implementation references on each invocation.
 
 ## What this session answers
 
@@ -39,10 +39,10 @@ RED → GREEN → gate, one case, then next. Bulk-RED locks test surface before 
 Default order:
 
 1. `Unit` cases red/green, one per spawned subagent.
-2. `Integration` cases red/green, one per spawned subagent.
+2. `Integration` cases red/green, one per invocation.
 3. Full gate.
 
-For each case, **spawn a subagent with the prompt in [`subagents/al-red-green.md`](../../references/subagents/al-red-green.md)** on the cheap tier, escalating a tier only if the case can't reach green (see that file's Model line), passing: the single AAA case (Arrange/Act/Assert text from the `Test Specification`), the task's `New and Modified Objects` block, and the task file path. Read the subagent's outcome note before proceeding — and before relaying anything from it, run pre-send check 3 ([voice-contract.md](../../references/voice-contract.md) Relaying subagent findings): a note naming no object or observation goes back to the spawn; relay through the Gate/Stop shape, never raw. Then route on the verdict:
+For each case, **invoke the `al-red-green` custom agent** (fixed cheap tier — no in-loop escalation; a case that can't reach green after retry falls back to you doing it inline or a `general-purpose` spawn), passing: the single AAA case (Arrange/Act/Assert text from the `Test Specification`), the task's `New and Modified Objects` block, and the task file path. Read the agent's outcome note before proceeding — and before relaying anything from it, run pre-send check 3 ([voice-contract.md](../../references/voice-contract.md) Relaying subagent findings): a note naming no object or observation goes back to the agent; relay through the Gate/Stop shape, never raw. Then route on the verdict:
 
 - `GREEN` → run the full suite gate (a red anywhere, including a sibling task's test, blocks the `done` flip), then proceed to the next case.
 - `PUSH-UP` → handle the push-up commitment gate (see below).
@@ -131,5 +131,5 @@ If state can't be read, fall back to the typical next step: `/al-refactor` then 
 | **Runs after**     | `/al-refine` (filled `Test Specification` in the task file and flipped task to `ready-for-implementation`) |
 | **Hands off to**   | `/al-refactor` on non-trivial task-done, then `/al-mutate` for logic that arrived without a red; next `ready-for-implementation` technical task; `/al-code-review` per-slice at slice-done (both slice types); `/al-code-review` per-feature at feature-done |
 | **Calls directly** | `/al-research` (evidence-bar escalation), `/al-build` (compile/test) — the only skills it invokes; rubber-duck consult on non-trivial work per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
-| **Spawns**         | per-case subagent from [`subagents/al-red-green.md`](../../references/subagents/al-red-green.md) (RED→GREEN per AAA case) |
+| **Spawns**         | `al-red-green` custom agent (RED→GREEN per AAA case) |
 | **Replan venue**   | `/al-steer` |

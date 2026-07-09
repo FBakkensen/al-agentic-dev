@@ -125,7 +125,7 @@ Place an advisor checkpoint inline at the moment the gate fires, not as a top-of
 
 The session owns the quality of what lands in chat, not the subagent — verify every subagent result before using it.
 
-- Every spawn prompt includes this line verbatim: **findings must name file, object, and the observed fact; no verdict words without the check that produced them.** The shipped prompt blocks under `subagents/` carry it themselves; ad-hoc spawns (gate workers, mutation workers, general delegations) get it in the spawn prompt.
+- Every spawn/invocation includes this line verbatim: **findings must name file, object, and the observed fact; no verdict words without the check that produced them.** The shipped custom agents under `agents/` carry it themselves; ad-hoc spawns (gate workers, mutation workers, general delegations) get it in the spawn prompt.
 - Before relaying a subagent finding, run pre-send check 3 on it: names no object or observation → send the agent back for the mechanism, or read the file yourself.
 - Relay through the verdict box or the owning skeleton — never forward a subagent's prose raw.
 

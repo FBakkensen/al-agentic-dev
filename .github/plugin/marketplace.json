@@ -19,11 +19,6 @@
       "description": "Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the decision tree. Use when user wants to stress-test a plan, get grilled on their design, or mentions 'grill me'."
     },
     {
-      "name": "bc-standard-reference",
-      "source": "./plugins/bc-standard-reference",
-      "description": "Locate canonical Business Central Standard behavior (BaseApp, System Application, APIV2, etc.) for events, codeunits, tables, pages, APIs."
-    },
-    {
       "name": "release-notes",
       "source": "./plugins/release-notes",
       "description": "Generate release notes from PR analysis."
@@ -31,7 +26,7 @@
     {
       "name": "al-agentic-dev",
       "source": "./plugins/al-agentic-dev",
-      "description": "Plugin tour: /al-agentic-dev-overview. Full AL/Business Central dev stack. Agentic flow: /al-steer, /al-grill-adr, /al-event-model, /al-design, /al-scope, /al-refine, /al-research, /al-implement, /al-page-script, /al-user-verification, /al-refactor, /al-mutate, /al-code-review, /al-quiz. Build/test: /al-build. Ops: /al-provision, /al-validate-breaking-changes. Telemetry probes: /al-debug-logging."
+      "description": "Plugin tour: /al-agentic-dev-overview. Full AL/Business Central dev stack. Agentic flow: /al-steer, /al-grill-adr, /al-event-model, /al-design, /al-scope, /al-refine, /al-research, /al-implement, /al-page-script, /al-user-verification, /al-refactor, /al-mutate, /al-code-review, /al-quiz. Build/test: /al-build. Ops: /al-provision, /al-validate-breaking-changes. Telemetry probes: /al-debug-logging. Agents: bc-standard-reference (canonical BaseApp / System Application / APIV2 lookup)."
     }
   ]
 }

@@ -31,9 +31,9 @@ Architectural vocabulary (Module, Interface, Implementation, Seam, Adapter, Dept
 
 ## Lenses
 
-Spawn 5 lens subagents in parallel on the task diff — each with the prompt in [`subagents/al-review-lens.md`](../../references/subagents/al-review-lens.md), except lens 2 (BC best-practice) which uses [`subagents/al-review-lens-bc.md`](../../references/subagents/al-review-lens-bc.md) for its bc-code-intelligence reach, and lens 5 (performance) which uses [`subagents/al-review-lens-perf.md`](../../references/subagents/al-review-lens-perf.md) for its al-performance scanner reach (spawn each on the cheap tier — see the Model line in those files). Each returns reshape opportunities; the main session merges into one ordered apply queue, running pre-send check 3 ([voice-contract.md](../../references/voice-contract.md) Relaying subagent findings) on each before it reaches the user — a finding naming no object or observation goes back to its lens. The spawn prompt carries only the per-lens goal below plus the task diff; the read-only posture, BC vocabulary, and findings shape live in the prompt block.
+Invoke the 5 lens agents in parallel on the task diff — `al-review-refactor-simplify`, `al-review-refactor-bc`, `al-review-refactor-structural`, `al-review-refactor-naming`, `al-review-refactor-perf` (see `plugins/al-agentic-dev/agents/`; all fixed to the cheap tier). Each returns reshape opportunities; the main session merges into one ordered apply queue, running pre-send check 3 ([voice-contract.md](../../references/voice-contract.md) Relaying subagent findings) on each before it reaches the user — a finding naming no object or observation goes back to its lens. The invocation carries only the task diff; the read-only posture, BC vocabulary, and findings shape are fixed in each agent's body.
 
-When the diff touches test code, the spawn prompt also names [test-layout.md](../../references/test-layout.md): its authoring contract is exactly what tidy passes break silently — consolidating "duplicate" integration-test library procedures violates duplicate-before-share, hoisting handlers off a test codeunit breaks the `[HandlerFunctions]` string binding, relocating a double breaks the per-app independence rule. Moving a test across the unit/integration boundary is never a lens call — that is replan, route `/al-steer`.
+When the diff touches test code, the invocation also names [test-layout.md](../../references/test-layout.md): its authoring contract is exactly what tidy passes break silently — consolidating "duplicate" integration-test library procedures violates duplicate-before-share, hoisting handlers off a test codeunit breaks the `[HandlerFunctions]` string binding, relocating a double breaks the per-app independence rule. Moving a test across the unit/integration boundary is never a lens call — that is replan, route `/al-steer`.
 
 | # | Lens | Focused goal |
 |---|---|---|
@@ -41,7 +41,7 @@ When the diff touches test code, the spawn prompt also names [test-layout.md](..
 | 2 | **BC best-practice** via bc-code-intelligence | Per [bc-code-intelligence-dispatch.md](../../references/bc-code-intelligence-dispatch.md): `find_bc_knowledge` → drop noise → `get_bc_topic`, cache within run, fetch fewer (only structural anti-patterns worth fixing this pass). Lens matches `anti_pattern_indicators` against the diff. **Platform reinvention** is in scope here — hand-rolled code where a shipped BC feature delivers (a setup table + management codeunit for what a field + flowfield does, validation code for a table relation or permission-set entry, a status pattern an enum covers); use the topic store to confirm the platform alternative exists before flagging |
 | 3 | **Structural shape** | R → P → W boundary, depth over indirection, seam introduction. Disciplines below carry substance |
 | 4 | **Naming** | Objects, procedures, variables, fields, parameters in BC vocabulary AND project terminology per `CONTEXT.md`, ADRs, `architecture.md`, `event-model.md` |
-| 5 | **Performance** via al-performance | `scan_al_code` per changed `.al` file (full content, `file_hint` = filename), findings gated at touched-procedure granularity — the lens's prompt block carries the dispatch. Forward only findings that are structural reshapes (loop restructure, existence-check pattern, write-pattern change); pure one-line fixes route as out-of-scope notes to `/al-code-review`, mirroring lens 2's split. Server absent → lens returns a skip note; reshape proceeds on 4 lenses with the gap named in the Gate report |
+| 5 | **Performance** via al-performance | `scan_al_code` per changed `.al` file (full content, `file_hint` = filename), findings gated at touched-procedure granularity — the `al-review-refactor-perf` agent body carries the dispatch. Forward only findings that are structural reshapes (loop restructure, existence-check pattern, write-pattern change); pure one-line fixes route as out-of-scope notes to `/al-code-review`, mirroring lens 2's split. Server absent → lens returns a skip note; reshape proceeds on 4 lenses with the gap named in the Gate report |
 
 ## Apply discipline
 
@@ -91,7 +91,7 @@ Citation chain: a rename pulling a BC name or verb from outside the codebase mee
 
 ## Lens 5, performance via al-performance
 
-The lens scans and filters ([`subagents/al-review-lens-perf.md`](../../references/subagents/al-review-lens-perf.md)); this skill applies. Two apply paths, by the scanner's auto-fixable marker:
+The lens scans and filters (`al-review-refactor-perf` agent); this skill applies. Two apply paths, by the scanner's auto-fixable marker:
 
 - **Auto-fixable** findings apply via `fix_al_file` — one file batch = one apply-queue entry. Dry-run first (the tool's default) and cross-check the proposed rewrites against the lens findings: a rewrite touching a pattern or procedure the lens never flagged → drop the tool for that file and reshape manually (the tool fixes every auto-fixable pattern in the file, and a per-task refactor owns only the diff-scoped findings). Cross-check clean → write, `/al-build`, red reverts the whole file batch.
 - **Not auto-fixable** structural findings join the normal apply queue as manual reshapes.
@@ -123,6 +123,6 @@ If state can't be read, fall back: `/al-mutate` after a behaviour-bearing reshap
 | **Runs after**     | `/al-implement` took the current task to green, OR standalone on legacy code |
 | **Hands off to**   | `/al-mutate` (the next rigor step), or back to the user standalone |
 | **Calls directly** | `/al-research` (BC facts), `/al-build` (green between applies) — the only skills it invokes; rubber-duck consult on a non-trivial apply queue per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
-| **Spawns**         | 5 review-lens subagents from [`subagents/al-review-lens.md`](../../references/subagents/al-review-lens.md) / [`al-review-lens-bc.md`](../../references/subagents/al-review-lens-bc.md) / [`al-review-lens-perf.md`](../../references/subagents/al-review-lens-perf.md) |
+| **Spawns**         | `al-review-refactor-simplify` / `al-review-refactor-bc` / `al-review-refactor-structural` / `al-review-refactor-naming` / `al-review-refactor-perf` custom agents |
 | **Replan venue**   | `/al-steer` |
 | **Sidebands**      | bc-standard-reference (BaseApp patterns), `/al-code-review` (non-structural concerns surface as out-of-scope notes), `/al-design` (standalone-on-legacy surfacing real architecture), `/grill-me` (non-obvious trade-off needs the user) |

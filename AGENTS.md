@@ -2,9 +2,8 @@ Marketplace of AI-assisted AL/Business Central development plugins for GitHub Co
 
 Plugins live under `plugins/`:
 
-- `al-agentic-dev/` — feature-level agentic flow (steer, grill-adr, event-model, design, scope, refine, research, implement, page-script, user-verification, refactor, mutate, code-review, quiz) plus the build/test gate (build, provision, validate-breaking-changes) and telemetry probes (debug-logging)
+- `al-agentic-dev/` — feature-level agentic flow (steer, grill-adr, event-model, design, scope, refine, research, implement, page-script, user-verification, refactor, mutate, code-review, quiz) plus the build/test gate (build, provision, validate-breaking-changes), telemetry probes (debug-logging), and the `bc-standard-reference` custom agent (BaseApp / System Application lookup against `microsoft/BCApps`)
 - `al-language-server/` — AL language server for the Copilot CLI LSP tool (ships `lsp.json`)
-- `bc-standard-reference/` — BaseApp / System Application lookup via a dedicated custom agent
 - `grill-me/` — interview and stress-test plans
 - `release-notes/` — PR-driven release note generation
 
@@ -35,7 +34,7 @@ plugins/<plugin-name>/
 └── lsp.json                      # Language-server config ({"lspServers": {...}})
 ```
 
-Actual shapes: `grill-me` and `release-notes` are skills-only; `al-agentic-dev` adds `hooks/` and plugin-level `references/`; `bc-standard-reference` is `agents/` + `references/` with no skills; `al-language-server` is `lsp.json` only (no skills, no AGENTS.md).
+Actual shapes: `grill-me` and `release-notes` are skills-only; `al-agentic-dev` adds `agents/`, `hooks/`, and plugin-level `references/`; `al-language-server` is `lsp.json` only (no skills, no AGENTS.md).
 
 Single-skill plugins put their skill at `skills/<plugin-name>/`; multi-skill plugins (like `al-agentic-dev`) put each skill at its own `skills/<skill-name>/`.
 

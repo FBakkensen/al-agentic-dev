@@ -1,6 +1,6 @@
 # al-agentic-dev plugin overview
 
-Composable skills for AL/Business Central agentic development. One feature flows idea → merge through a pipeline of named skills, each owning a specific cut of the work. **You drive the pipeline:** every skill ends by naming the next natural step, and you invoke it by typing `/<skill-name>` — nothing auto-chains. A skill calls another skill only in two cases: `/al-research` (BC fact escalation) and `/al-build` (compile/publish/test); non-trivial artifacts additionally get an autonomous consult of the **rubber-duck agent** (an independent read a cheap model leans on mid-step — [`rubber-duck-review.md`](rubber-duck-review.md)). Everything else is a handoff you take. Skills also spawn lightweight **subagents** from shared prompt blocks (review lenses, the red-green worker) via the task tool.
+Composable skills for AL/Business Central agentic development. One feature flows idea → merge through a pipeline of named skills, each owning a specific cut of the work. **You drive the pipeline:** every skill ends by naming the next natural step, and you invoke it by typing `/<skill-name>` — nothing auto-chains. A skill calls another skill only in two cases: `/al-research` (BC fact escalation) and `/al-build` (compile/publish/test); non-trivial artifacts additionally get an autonomous consult of the **rubber-duck agent** (an independent read a cheap model leans on mid-step — [`rubber-duck-review.md`](rubber-duck-review.md)). Everything else is a handoff you take. Skills also invoke lightweight **custom agents** (review lenses, the red-green worker) under `agents/` — real `.agent.md` definitions, not slash commands, never invoked by you directly.
 
 ## Pipeline
 
@@ -16,7 +16,7 @@ Each `→` is a handoff the finishing skill names and **you** take; no step laun
 
 | Lane | Skills |
 |---|---|
-| **Side-band** (invoked from any main-pipeline skill or standalone) | `/al-research` (BC fact escalation) — one of the two skills another skill may call directly (with `/al-build`); the rubber-duck consult ([`rubber-duck-review.md`](rubber-duck-review.md)); plus `/al-steer` |
+| **Side-band** (invoked from any main-pipeline skill or standalone) | `/al-research` (BC fact escalation) — one of the two skills another skill may call directly (with `/al-build`); the rubber-duck consult ([`rubber-duck-review.md`](rubber-duck-review.md)); plus `/al-steer`, `/al-sync-main` (rebase the branch onto main, mechanically renumber object/field collisions) |
 | **Infrastructure** | `/al-build` (compile, publish, run tests — the other skill another skill may call), `/al-debug-logging` (transient `FeatureTelemetry.LogUsage` probes) |
 | **Ops** (bracket the feature; run an `/al-build` script + flip task status) | `/al-provision` (`T-001`, refresh the build environment), `/al-validate-breaking-changes` (last, validate against the released baseline) |
 | **Shaping** (after `/al-implement` on a task, or standalone on legacy) | `/al-refactor`, `/al-mutate` |
@@ -46,21 +46,32 @@ State handoff is the filesystem, never in-memory: every skill can be invoked col
 | `/al-user-verification` | Guides you through the verify task one scenario at a time, in chat, punchline first — runs containers, the recording pre-flight, and Contract checks; you walk the non-recorded Journey Examples in your browser and report what you see (ask-before-reveal). Functional outcomes gate, usability observations → findings/tasks. Gates the next slice. | Verify task is `ready-for-verification` carrying `review: clean` — `/al-code-review` ran clean at slice-done, then `/al-refine` wrote a fresh `Verification Plan`. |
 | `/al-code-review` | Gate at slice-done and feature-done. Report-only by default: spawn review lenses, judge, rubber-duck-vet, then report the must-fix queue (→ `/al-implement`), nits, and the gate decision. `--fix` lands the must-fix findings in-loop (red-green subagent) and re-reviews once. | Auto-announced as the next step by `/al-implement` at slice-done (both slice types) and feature-done. |
 | `/al-steer` | Coach and navigator. Reads state, names next step, never edits code. Owns `.out-of-scope/` and `.not-yet-specified/`. Canonical replan venue. | "Where are we?", "what's next?", trigger fired in another skill. |
+| `/al-sync-main` | Rebase the current branch onto `main` (never merges); mechanically renumbers any object/field number collisions introduced on this branch to the next free slot in their `idRanges` bucket. Full `/al-build` gate before and after. Stops and asks on any real content conflict, naming collision, or unsafe reference rewrite; aborts the rebase cleanly on any stop. | `main` has moved on and the branch needs to catch up before continuing work or opening a PR. |
 | `/al-build` | Compile, publish, run tests; writes results to `.output/TestResults/<dirName>/`. | After modifying AL code or tests. Required gate before commit. |
 | `/al-debug-logging` | Temporary `DEBUG-*` `FeatureTelemetry.LogUsage` probes; read `telemetry.jsonl`; remove probes. Final state: zero `DEBUG-*` in tree. | Runtime behaviour diverges from source and tests can't reveal which path ran. |
 | `/al-quiz` | Quizzes *you* on recently landed changes, one question at a time in chat — proves your mental model of what shipped, or shows where it is wrong. Read-only, no gate. | After a long agentic run, before merging a feature, or returning after time away. |
 | `/al-page-script` | Guide the user to record the slice's framework-limited E2E Journey Examples (`Record: yes`) in BC's Page Scripting recorder — one scenario at a time, punchline first; the user records and downloads, the agent replays each on a fresh container and classifies reds. Reserved for behaviour no AL test can automate; commits on green. Produces the recordings `/al-user-verification` pre-flights. | After `/al-refine` writes a `Verification Plan` with `Record: yes` examples on a `review: clean` verify task (user-facing slice only). |
 
-## Subagents
+## Custom agents
 
-Skills spawn lightweight workers from shared prompt blocks under `references/subagents/`. They are not slash commands and not custom-agent definitions — a skill spawns a subagent via the task tool with the named prompt. Each block names the model tier to spawn on, per [`delegation.md`](delegation.md).
+Skills invoke lightweight workers as real GitHub Copilot CLI custom agents — `.agent.md` files under `agents/`, each with fixed frontmatter (`tools:`, `model:`, `user-invocable: false`) and a fixed body; not slash commands, and never directly invoked by you. Model tier for each is fixed at `claude-sonnet-5` (cheap) per [`delegation.md`](delegation.md) — the review carve-out there explains why review runs on many cheap narrow lenses instead of one smart reviewer.
 
-| Prompt block | Role | Spawned by |
+| Agent | Role | Invoked by |
 |---|---|---|
-| `subagents/al-red-green.md` | One AAA case RED→GREEN: write the failing test, confirm RED, write minimal production code, confirm GREEN, return an outcome note. Spawn on the cheap tier; escalate only if a case can't reach green. | `/al-implement` (per case), `/al-code-review --fix` (per must-fix finding) |
-| `subagents/al-review-lens.md` | One focused read-only AL/BC review pass, file-read only. Returns labeled findings; the main session dedupes and adversarially judges. | `/al-code-review` (lenses), `/al-refactor` (lenses) |
-| `subagents/al-review-lens-bc.md` | The BC-specific review lens with bc-code-intelligence MCP reach. | `/al-code-review`, `/al-refactor` |
-| `subagents/al-review-lens-perf.md` | The performance review lens with al-performance MCP reach: `scan_al_code` per changed file, touched-procedure filter, skip note when the server is absent. | `/al-code-review`, `/al-refactor` |
+| `al-red-green` | One AAA case RED→GREEN: write the failing test, confirm RED, write minimal production code, confirm GREEN, return an outcome note. Fixed cheap tier — no in-loop escalation. | `/al-implement` (per case), `/al-code-review --fix` (per must-fix finding) |
+| `al-review-cr-compliance` | `/al-code-review` lens 1: project compliance, naming, scope, evidence bar, surface reconciliation. | `/al-code-review` |
+| `al-review-cr-bugscan` | `/al-code-review` lens 2: shallow scan for large correctness bugs. | `/al-code-review` |
+| `al-review-cr-bc` | `/al-code-review` lens 3: BC-specific anti-patterns via bc-code-intelligence MCP. | `/al-code-review` |
+| `al-review-cr-comments` | `/al-code-review` lens 4: code-comment invariants + git history context. | `/al-code-review` |
+| `al-review-cr-appsource` | `/al-code-review` lens 5: AppSource public-surface addition lock-in (per-feature only). | `/al-code-review` |
+| `al-review-cr-perf` | `/al-code-review` lens 6: performance via al-performance MCP `scan_al_code`. | `/al-code-review` |
+| `al-review-refactor-simplify` | `/al-refactor` lens 1: dedup, dead code, over-build. | `/al-refactor` |
+| `al-review-refactor-bc` | `/al-refactor` lens 2: BC best-practice + platform-reinvention via bc-code-intelligence MCP. | `/al-refactor` |
+| `al-review-refactor-structural` | `/al-refactor` lens 3: R→P→W boundary, depth over indirection, seam introduction. | `/al-refactor` |
+| `al-review-refactor-naming` | `/al-refactor` lens 4: BC vocabulary + project terminology naming. | `/al-refactor` |
+| `al-review-refactor-perf` | `/al-refactor` lens 5: performance via al-performance MCP, structural reshapes only. | `/al-refactor` |
+| `bc-standard-reference` | Canonical BaseApp / System Application / APIV2 lookup, quoting Microsoft's shipped AL from `microsoft/BCApps` version-matched to your app. | `/al-research` names it as its BaseApp source |
+
 
 The former `al-doc-verify` worker is now an **inline check**: the writing skills (`/al-grill-adr`, `/al-event-model`, `/al-design`, `/al-scope`, `/al-refine`, `/al-steer`) verify each canonical artifact against `references/doc-integrity.md` themselves before the gate report — no subagent.
 

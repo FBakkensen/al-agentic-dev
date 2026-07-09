@@ -1,26 +1,27 @@
-# bc-agentic-dev-tools
+# gtm-bc-copilot-cli-playbook
 
-Business Central agentic development tools — a Claude Code plugin marketplace for AI-assisted AL development.
+Business Central agentic development tools — a GitHub Copilot CLI plugin marketplace for AI-assisted AL development.
 
 ## Install
 
 ```bash
-/plugin marketplace add fbakkensen/bc-agentic-dev-tools
-/plugin install <plugin-name>@bc-agentic-dev-tools
+copilot plugin marketplace add https://9altitudes.ghe.com/gtm-general/gtm-bc-copilot-cli-playbook.git
+copilot plugin install <plugin-name>@gtm-bc-copilot-cli-playbook
 ```
+
+Requires access to the 9altitudes GHE tenant.
 
 ## Plugins
 
-- `al-agentic-dev` — full AL/BC dev stack. Agentic flow (grill-adr, event-model, design, scope, refine, implement, user-verification, refactor, mutate, code-review, second-opinion, steer) + plugin agents (`al-doc-verify` document gate, `al-research` BC fact verification, `al-review-lens`/`-bc` review lenses) + build/test gate (`/al-build`) + telemetry probes (`/al-debug-logging`)
-- `al-language-server` — AL language server for the Claude Code LSP tool (requires the AL dotnet tool ≥ 18.0 on PATH)
-- `bc-standard-reference` — BaseApp / System Application / APIV2 canonical lookup
+- `al-agentic-dev` — full AL/BC dev stack. Agentic flow (`/al-steer`, `/al-grill-adr`, `/al-event-model`, `/al-design`, `/al-scope`, `/al-refine`, `/al-research`, `/al-implement`, `/al-page-script`, `/al-user-verification`, `/al-refactor`, `/al-mutate`, `/al-code-review`, `/al-quiz`) + build/test gate (`/al-build`, `/al-provision`, `/al-validate-breaking-changes`) + telemetry probes (`/al-debug-logging`) + the `bc-standard-reference` custom agent (canonical BaseApp / System Application / APIV2 lookup against `microsoft/BCApps`). Tour: `/al-agentic-dev-overview`
+- `al-language-server` — AL language server for the Copilot CLI LSP tool (requires the AL dotnet tool ≥ 18.0 on PATH)
 - `grill-me` — interview and stress-test plans
 - `release-notes` — PR-driven release note generation
 
 ## Manifest
 
-- Marketplace: `.claude-plugin/marketplace.json`
-- Plugin: `plugins/<plugin-name>/.claude-plugin/plugin.json`
+- Marketplace: `.github/plugin/marketplace.json`
+- Plugin: `plugins/<plugin-name>/plugin.json`
 
 ## License
 
