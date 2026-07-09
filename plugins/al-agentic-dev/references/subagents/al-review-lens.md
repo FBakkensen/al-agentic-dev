@@ -1,6 +1,6 @@
 # Subagent prompt — al-review-lens (one focused AL/BC review pass, no MCP)
 
-Spawnable prompt block. `/al-code-review` and `/al-refactor` fan out review lenses by spawning one subagent per lens with the prompt below plus a single focused goal and the diff/scope. File-read only, no MCP. For the bc-code-intelligence variant use `al-review-lens-bc.md`.
+Spawnable prompt block. `/al-code-review` and `/al-refactor` fan out review lenses by spawning one subagent per lens with the prompt below plus a single focused goal and the diff/scope. File-read only, no MCP. For the bc-code-intelligence variant use `al-review-lens-bc.md`; for the al-performance scanner variant use `al-review-lens-perf.md`.
 
 **Model:** spawn on the cheap tier — a focused single-goal pass. The decomposition into many narrow lenses plus the rubber-duck veto substitutes for one smart reviewer (the review carve-out in [`../delegation.md`](../delegation.md)), so the lens stays cheap on purpose.
 
