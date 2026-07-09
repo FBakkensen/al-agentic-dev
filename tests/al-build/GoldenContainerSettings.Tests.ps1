@@ -1,0 +1,110 @@
+#Requires -Version 7.2
+
+BeforeAll {
+    function Get-StaticCommandParameterValue {
+        param(
+            [System.Management.Automation.Language.CommandAst]$Command,
+            [string]$ParameterName
+        )
+
+        for ($index = 0; $index -lt $Command.CommandElements.Count; $index++) {
+            $element = $Command.CommandElements[$index]
+            if ($element -isnot [System.Management.Automation.Language.CommandParameterAst] -or
+                $element.ParameterName -ne $ParameterName) {
+                continue
+            }
+
+            $valueIndex = $index + 1
+            if ($valueIndex -ge $Command.CommandElements.Count -or
+                $Command.CommandElements[$valueIndex] -is [System.Management.Automation.Language.CommandParameterAst]) {
+                return $null
+            }
+
+            $value = $Command.CommandElements[$valueIndex]
+            if ($value -is [System.Management.Automation.Language.StringConstantExpressionAst]) {
+                return $value.Value
+            }
+
+            return $null
+        }
+
+        return $null
+    }
+
+    $scriptsRoot = Join-Path $PSScriptRoot '..' '..' 'plugins' 'al-agentic-dev' 'skills' 'al-build' 'scripts'
+    $script:GoldenContainerScriptPath = Resolve-Path (Join-Path $scriptsRoot 'new-bc-container.ps1')
+    $script:BuildOperationsModulePath = Resolve-Path (Join-Path $scriptsRoot 'build-operations.psm1')
+
+    $tokens = $null
+    $parseErrors = $null
+    $script:GoldenContainerAst = [System.Management.Automation.Language.Parser]::ParseFile(
+        $script:GoldenContainerScriptPath,
+        [ref]$tokens,
+        [ref]$parseErrors
+    )
+    if ($parseErrors.Count -gt 0) {
+        throw "new-bc-container.ps1 has parse errors: $($parseErrors.Message -join '; ')"
+    }
+
+    $tokens = $null
+    $parseErrors = $null
+    $script:BuildOperationsAst = [System.Management.Automation.Language.Parser]::ParseFile(
+        $script:BuildOperationsModulePath,
+        [ref]$tokens,
+        [ref]$parseErrors
+    )
+    if ($parseErrors.Count -gt 0) {
+        throw "build-operations.psm1 has parse errors: $($parseErrors.Message -join '; ')"
+    }
+
+    $script:ServerConfigurationCommands = @($script:GoldenContainerAst.FindAll({
+        param($node)
+        $node -is [System.Management.Automation.Language.CommandAst] -and
+        $node.GetCommandName() -eq 'Set-BcContainerServerConfiguration'
+    }, $true))
+}
+
+Describe 'Golden container server settings' {
+    It 'disables server debugging' {
+        $commands = @($script:ServerConfigurationCommands | Where-Object {
+            (Get-StaticCommandParameterValue -Command $_ -ParameterName 'keyName') -eq 'EnableDebugging'
+        })
+
+        $commands | Should -HaveCount 1
+        Get-StaticCommandParameterValue -Command $commands[0] -ParameterName 'keyValue' | Should -Be 'false'
+    }
+
+    It 'keeps symbol loading enabled at server startup' {
+        $commands = @($script:ServerConfigurationCommands | Where-Object {
+            (Get-StaticCommandParameterValue -Command $_ -ParameterName 'keyName') -eq 'EnableSymbolLoadingAtServerStartup'
+        })
+
+        $commands | Should -HaveCount 1
+        Get-StaticCommandParameterValue -Command $commands[0] -ParameterName 'keyValue' | Should -Be 'true'
+    }
+}
+
+Describe 'Gate publishing contract' {
+    It 'keeps every Invoke-ALPublish publish on the developer endpoint' {
+        $invokeAlPublish = @($script:BuildOperationsAst.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+            $node.Name -eq 'Invoke-ALPublish'
+        }, $true))
+        $invokeAlPublish | Should -HaveCount 1
+
+        $publishCommands = @($invokeAlPublish[0].Body.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.CommandAst] -and
+            $node.GetCommandName() -eq 'Publish-BcContainerApp'
+        }, $true))
+        $publishCommands | Should -Not -BeNullOrEmpty
+
+        foreach ($command in $publishCommands) {
+            @($command.CommandElements | Where-Object {
+                $_ -is [System.Management.Automation.Language.CommandParameterAst] -and
+                $_.ParameterName -eq 'useDevEndpoint'
+            }) | Should -HaveCount 1
+        }
+    }
+}

@@ -113,11 +113,11 @@ Set-BcContainerServerConfiguration `
     -keyName "EnableSymbolLoadingAtServerStartup" `
     -keyValue "true"
 
-Write-BuildMessage -Type Step -Message "Enabling debugging..."
+Write-BuildMessage -Type Step -Message "Disabling debugging..."
 Set-BcContainerServerConfiguration `
     -containerName $containerName `
     -keyName "EnableDebugging" `
-    -keyValue "true"
+    -keyValue "false"
 
 Write-BuildMessage -Type Step -Message "Configuring data cache size..."
 Set-BcContainerServerConfiguration `
@@ -192,7 +192,7 @@ Write-BuildMessage -Type Detail -Message "Authentication: $($config.ContainerAut
 Write-BuildMessage -Type Detail -Message "Credentials: $($config.ContainerUsername) / $($config.ContainerPassword)"
 Write-BuildMessage -Type Detail -Message "AL Test Runner Service: Installed"
 Write-BuildMessage -Type Detail -Message "AL-Go Dependencies: $installedCount app(s) installed"
-Write-BuildMessage -Type Detail -Message "Development Settings: Enabled (symbols, debugging, cache size 11)"
+Write-BuildMessage -Type Detail -Message "Development Settings: symbols enabled, debugging disabled, cache size 11"
 if ($config.ApplicationInsightsConnectionString) {
     Write-BuildMessage -Type Detail -Message "Application Insights: Enabled (telemetry active)"
 } else {
