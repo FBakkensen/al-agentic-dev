@@ -2,7 +2,7 @@
 name: al-review-cr-compliance
 description: Catch project-compliance, naming, evidence-bar, push-up, scope, and reconcile drift findings for al-code-review on a diff or scope.
 tools: ["read", "search", "microsoft_learn/*"]
-model: claude-opus-4.8
+model: gpt-5.6-terra
 user-invocable: false
 ---
 

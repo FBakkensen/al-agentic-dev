@@ -2,7 +2,7 @@
 name: al-review-refactor-perf
 description: Find diff-scoped structural performance reshape opportunities for al-refactor by dispatching the al-performance scanner per changed AL file.
 tools: ["read", "search", "al-performance/*", "microsoft_learn/*"]
-model: claude-sonnet-5
+model: gpt-5.6-terra
 user-invocable: false
 ---
 

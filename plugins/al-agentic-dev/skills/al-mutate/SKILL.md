@@ -60,7 +60,7 @@ Delegate one worker per mutation when host supports subagents — the pass stays
 
 After each worker returns its verdict, close the completed worker thread and record the verdict before spawning the next mutant or resuming judgement, killer-test work, or closeout.
 
-Spawn each worker on the cheap tier — a mechanical mutate-build-revert cycle (see [delegation.md](../../references/delegation.md)).
+Spawn each worker on the Terra worker role — the cycle makes a transient source edit and classifies the gate result (see [delegation.md](../../references/delegation.md)).
 
 ### Worker rules
 

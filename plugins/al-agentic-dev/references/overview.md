@@ -1,6 +1,6 @@
 # al-agentic-dev plugin overview
 
-Composable skills for AL/Business Central agentic development. One feature flows idea → merge through a pipeline of named skills, each owning a specific cut of the work. **You drive the pipeline:** every skill ends by naming the next natural step, and you invoke it by typing `/<skill-name>` — nothing auto-chains. A skill calls another skill only in two cases: `/al-research` (BC fact escalation) and `/al-build` (compile/publish/test); non-trivial artifacts additionally get an autonomous consult of the **rubber-duck agent** (an independent read a cheap model leans on mid-step — [`rubber-duck-review.md`](rubber-duck-review.md)). Everything else is a handoff you take. Skills also invoke lightweight **custom agents** (review lenses, the red-green worker) under `agents/` — real `.agent.md` definitions, not slash commands, never invoked by you directly.
+Composable skills for AL/Business Central agentic development. One feature flows idea → merge through a pipeline of named skills, each owning a specific cut of the work. **You drive the pipeline:** every skill ends by naming the next natural step, and you invoke it by typing `/<skill-name>` — nothing auto-chains. A skill calls another skill only in two cases: `/al-research` (BC fact escalation) and `/al-build` (compile/publish/test); non-trivial artifacts additionally get an autonomous consult of the **rubber-duck agent** (an independent read a worker model leans on mid-step — [`rubber-duck-review.md`](rubber-duck-review.md)). Everything else is a handoff you take. Skills also invoke lightweight **custom agents** (review lenses, the red-green worker) under `agents/` — real `.agent.md` definitions, not slash commands, never invoked by you directly.
 
 ## Pipeline
 
@@ -54,11 +54,11 @@ State handoff is the filesystem, never in-memory: every skill can be invoked col
 
 ## Custom agents
 
-Skills invoke lightweight workers as real GitHub Copilot CLI custom agents — `.agent.md` files under `agents/`, each with fixed frontmatter (`tools:`, `model:`, `user-invocable: false`) and a fixed body; not slash commands, and never directly invoked by you. Model tier for each is fixed at `claude-sonnet-5` (cheap) per [`delegation.md`](delegation.md) — the review carve-out there explains why review runs on many cheap narrow lenses instead of one smart reviewer.
+Skills invoke workers as real GitHub Copilot CLI custom agents — `.agent.md` files under `agents/`, each with fixed frontmatter (`tools:`, `model:`, `user-invocable: false`) and a fixed body; not slash commands, and never directly invoked by you. Model role is fixed at the Terra worker role except `al-review-cr-bugscan`, which is pinned smart for correctness judgment; [`delegation.md`](delegation.md) owns the map.
 
 | Agent | Role | Invoked by |
 |---|---|---|
-| `al-red-green` | One AAA case RED→GREEN: write the failing test, confirm RED, write minimal production code, confirm GREEN, return an outcome note. Fixed cheap tier — no in-loop escalation. | `/al-implement` (per case), `/al-code-review --fix` (per must-fix finding) |
+| `al-red-green` | One AAA case RED→GREEN: write the failing test, confirm RED, write minimal production code, confirm GREEN, return an outcome note. Fixed worker role — no in-loop escalation. | `/al-implement` (per case), `/al-code-review --fix` (per must-fix finding) |
 | `al-review-cr-compliance` | `/al-code-review` lens 1: project compliance, naming, scope, evidence bar, surface reconciliation. | `/al-code-review` |
 | `al-review-cr-bugscan` | `/al-code-review` lens 2: shallow scan for large correctness bugs. | `/al-code-review` |
 | `al-review-cr-bc` | `/al-code-review` lens 3: BC-specific anti-patterns via bc-code-intelligence MCP. | `/al-code-review` |

@@ -2,7 +2,7 @@
 name: bc-standard-reference
 description: Locate canonical Business Central Standard behavior (BaseApp, System Application, Business Foundation, APIV2) — events, publishers, codeunits, tables/fields, tests, pages, APIs — quoted verbatim from Microsoft's shipped AL. Spawn when a question needs standard behavior the workspace doesn't own.
 tools: ["read", "search", "execute", "web", "al-symbols-mcp/*", "microsoft_learn/*"]
-model: claude-sonnet-5
+model: gpt-5.6-terra
 user-invocable: false
 ---
 

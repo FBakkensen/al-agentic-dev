@@ -8,16 +8,16 @@ catches what same-family self-review confirms.
 
 **Fallback when the agent type is missing.** `rubber-duck` drops out of the task tool's
 `agent_type` enum on some session models (the pairing is gpt↔claude only). When it is
-missing: spawn `general-purpose` with a critic prompt on the *other* model family — session
-on a Claude model → a GPT-family model, session on a GPT model → a Claude-family model —
-at medium reasoning. The family rule is the contract; look up current IDs in the task
-tool's model list. There is no skip path: the consult happens at every checkpoint that
+missing: spawn `general-purpose` with a critic prompt on the *other* model family — a GPT-family
+session → `claude-fable-5`; a Claude-family session, or any other family →
+`gpt-5.6-terra` — at medium reasoning. The family rule is the contract; look up current IDs
+in the task tool's model list when either pinned model rotates. There is no skip path: the consult happens at every checkpoint that
 calls for it, by one route or the other. Only if the task tool itself cannot spawn at all
 does the caller state `Rubber-duck review skipped: <reason>` in one line and continue —
 no halt, no retry loop, no invented findings.
 
 The consult is one of the moves a skill may make **autonomously** mid-step, no user
-round-trip — load-bearing for the cheap-model goal: a smaller model running a pipeline
+round-trip — load-bearing for the worker-model goal: a smaller model running a pipeline
 skill leans on the independent read to stay honest.
 
 ## Pass the artifact, not the question

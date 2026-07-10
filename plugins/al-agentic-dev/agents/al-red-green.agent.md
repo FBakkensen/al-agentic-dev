@@ -2,7 +2,7 @@
 name: al-red-green
 description: Drive one AAA case RED→GREEN for al-implement or al-code-review --fix — write the test, prove RED, land the least production code, prove GREEN, and stop.
 tools: ["read", "edit", "execute", "search", "skill", "al-symbols-mcp/*", "bc-code-intelligence-mcp/*", "microsoft_learn/*", "al-objid-mcp-server/*"]
-model: claude-sonnet-5
+model: gpt-5.6-terra
 user-invocable: false
 ---
 

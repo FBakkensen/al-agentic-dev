@@ -2,7 +2,7 @@
 name: al-review-refactor-simplify
 description: Find simplify, dedup, dead-code, and over-build reshape opportunities for al-refactor on a task diff.
 tools: ["read", "search", "microsoft_learn/*"]
-model: claude-sonnet-5
+model: gpt-5.6-terra
 user-invocable: false
 ---
 

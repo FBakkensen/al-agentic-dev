@@ -2,7 +2,7 @@
 name: al-review-cr-bc
 description: Catch BC-specific anti-patterns and platform reinvention for al-code-review by dispatching through bc-code-intelligence on a diff or scope.
 tools: ["read", "search", "bc-code-intelligence-mcp/*", "microsoft_learn/*"]
-model: claude-sonnet-5
+model: gpt-5.6-terra
 user-invocable: false
 ---
 

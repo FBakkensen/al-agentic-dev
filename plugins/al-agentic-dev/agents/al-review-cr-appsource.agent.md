@@ -2,7 +2,7 @@
 name: al-review-cr-appsource
 description: Catch accidental AppSource public-surface lock-in for al-code-review when a diff adds public symbols on shipped objects.
 tools: ["read", "search", "microsoft_learn/*"]
-model: claude-sonnet-5
+model: gpt-5.6-terra
 user-invocable: false
 ---
 

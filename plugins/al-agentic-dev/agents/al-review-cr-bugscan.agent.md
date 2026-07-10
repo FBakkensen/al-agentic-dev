@@ -2,7 +2,7 @@
 name: al-review-cr-bugscan
 description: Catch correctness and obvious logic faults for al-code-review on a diff or scope, skipping style and lint-class noise.
 tools: ["read", "search", "microsoft_learn/*"]
-model: claude-opus-4.8
+model: claude-fable-5
 user-invocable: false
 ---
 
