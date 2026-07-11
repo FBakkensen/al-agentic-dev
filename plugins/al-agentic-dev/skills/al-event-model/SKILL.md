@@ -19,7 +19,7 @@ No implementation structure (modules, codeunits, table fields, event subscribers
 
 - `/al-grill-adr` ran for this idea; without sharpened `CONTEXT.md` and domain ADRs, fuzzy terms compound into wrong Role names or fictitious Business Events. **Stop**, run it first.
 - Feature has user or API surface. Backend-only features (no human, no API consumer, internal batch only) skip this skill; `/al-design` runs its missing-storm checkpoint.
-- On `main`: this skill creates branch + spec folder (first per-feature skill to run). On feature branch: reshape `event-model.md` in place, with user's awareness.
+- First per-feature skill: branch + spec folder setup follows [worktree-feature-branching.md](../../references/worktree-feature-branching.md). On an in-flight feature branch, reshape `event-model.md` in place, with user's awareness.
 
 ## What goes into event-model.md
 
@@ -54,7 +54,7 @@ Evidence bar per [voice-contract.md](../../references/voice-contract.md). `event
 
 ## Branch + folder + write
 
-On `^\d{3}-`: spec folder exists, reshape `event-model.md` in place. On `main`: first per-feature skill; resolve `<NNN>` per [cross-branch-numbering.md](../../references/cross-branch-numbering.md), derive 2–4-word kebab-case slug (do not ask), announce both, create branch `<NNN>-<slug>` + `specs/<NNN>-<slug>/`. Branch already exists locally or remotely → **Stop**.
+Read [worktree-feature-branching.md](../../references/worktree-feature-branching.md) before this step. It classifies the checkout, resolves `<NNN>`, derives the 2-4-word kebab-case slug (do not ask), announces destructive remote cleanup, and creates or safely converts the branch + `specs/<NNN>-<slug>/`. An unsafe checkout or existing target → **Stop**.
 
 Then write `event-model.md`, telegraphic (drop articles, padding, hedges; fragments fine). Markdown-only constraints in [markdown-spec-discipline.md](../../references/markdown-spec-discipline.md), voice in [voice-contract.md](../../references/voice-contract.md) — both mandatory reads before writing. No surgical-edit contract; reshape via re-running. Vocabulary in [LANGUAGE.md](../../references/LANGUAGE.md) (*Slice* entry).
 

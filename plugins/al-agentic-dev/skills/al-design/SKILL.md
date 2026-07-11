@@ -21,7 +21,7 @@ Never write task-level proof. `/al-scope` owns the `tasks/` folder; `/al-refine`
 
 - `/al-grill-adr` ran for this idea; without sharpened intent in `CONTEXT.md` / domain ADRs you cannot tell domain confusion from genuine architectural choice. **Stop**, run it first.
 - User/API-facing: `/al-event-model` ran, `event-model.md` in spec folder; without it this skill re-litigates user-side picks inline and entanglement returns. Missing → run missing-storm checkpoint: ask whether feature is backend-only (no human, no API consumer) or whether `/al-event-model` was forgotten. **Stop** unless user confirms backend-only.
-- Branch creation shared with `/al-event-model`. On `^\d{3}-`: branch + spec folder exist, write into them. On `main` (backend-only, or first per-feature skill): this skill creates them.
+- Branch creation shared with `/al-event-model`. The first-feature path follows [worktree-feature-branching.md](../../references/worktree-feature-branching.md); on `^\d{3}-`, branch + spec folder exist and this skill writes into them.
 - Existing `architecture.md` → reshaping; re-run with user's awareness.
 
 ## What goes into architecture.md
@@ -79,7 +79,7 @@ Each pass runs its own `/al-research` and receives BC vocabulary from `CONTEXT.m
 
 ## Branch + folder + write
 
-On `^\d{3}-`: `/al-event-model` created branch + spec folder; write `architecture.md` into existing folder. On `main`: this is first per-feature skill (backend-only, or `/al-event-model` skipped after missing-storm resolved to backend-only). Resolve `<NNN>` per [cross-branch-numbering.md](../../references/cross-branch-numbering.md) (cross-branch scan, not local-only), derive a 2-4-word kebab-case slug (do not ask), announce both, create branch `<NNN>-<slug>` + `specs/<NNN>-<slug>/`. Branch already exists locally or remotely → **Stop**.
+Read [worktree-feature-branching.md](../../references/worktree-feature-branching.md) before this step. It classifies the checkout, resolves `<NNN>`, derives the 2-4-word kebab-case slug (do not ask), announces destructive remote cleanup, and creates or safely converts the branch + `specs/<NNN>-<slug>/`. An unsafe checkout or existing target → **Stop**.
 
 Then write `architecture.md`. Markdown only; constraints in [markdown-spec-discipline.md](../../references/markdown-spec-discipline.md). Voice in [voice-contract.md](../../references/voice-contract.md). Both mandatory reads before writing. Write telegraphic; drop articles, padding, hedges; fragments fine. No surgical-edit contract; reshape via re-running. Name relationships (module deps, flow) in prose; no mermaid fences.
 
