@@ -2,12 +2,19 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
+<meta name="color-scheme" content="dark" />
 <title>AL Kanban</title>
 <style>
   :root {
-    --bg: #f6f8fa; --card: #ffffff; --border: #d0d7de; --text: #1f2328;
-    --muted: #656d76; --accent: #0969da; --danger: #cf222e; --ok: #1a7f37;
-    --pending: #9a6700; --stale: #6e7781;
+    /* GitHub Primer dark. Dark-only: the canvas host exposes no theme signal
+       (nothing in CanvasHostContext) and webview prefers-color-scheme tracks
+       the OS, not the app theme — see README. */
+    color-scheme: dark;
+    --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #e6edf2;
+    --muted: #8b949e; --accent: #58a6ff; --accent-emphasis: #388bfd;
+    --danger: #f85149; --ok: #3fb950;
+    --pending: #d29922; --stale: #6e7681;
+    --attention-subtle: rgba(187, 128, 9, .15); --neutral-subtle: #21262d;
   }
   * { box-sizing: border-box; }
   body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 13px; }
@@ -33,13 +40,13 @@
   .card.done .tid::after { content: " ✓"; color: var(--ok); }
   .card.blocked { border-left: 4px solid var(--danger); }
   .flag { color: var(--danger); font-size: 10.5px; margin-top: 4px; }
-  .card.unparseable { border-left: 4px solid var(--pending); background: #fff8e5; }
+  .card.unparseable { border-left: 4px solid var(--pending); background: var(--attention-subtle); }
   button.advance { margin-top: 5px; font-size: 11px; padding: 2px 8px; border: 1px solid var(--accent); color: var(--accent); background: var(--card); border-radius: 5px; cursor: pointer; }
-  button.advance:hover { background: var(--accent); color: #fff; }
+  button.advance:hover { background: var(--accent-emphasis); color: #ffffff; border-color: var(--accent-emphasis); }
   .badge { display: inline-block; font-size: 10px; border-radius: 8px; padding: 1px 7px; margin-top: 4px; }
-  .badge.pending { background: #fff1c2; color: var(--pending); border: 1px solid var(--pending); }
-  .badge.stale { background: #eee; color: var(--stale); border: 1px dashed var(--stale); cursor: pointer; }
-  #drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 340px; background: var(--card); border-left: 1px solid var(--border); box-shadow: -4px 0 12px rgba(0,0,0,.08); padding: 16px; overflow-y: auto; display: none; }
+  .badge.pending { background: var(--attention-subtle); color: var(--pending); border: 1px solid var(--pending); }
+  .badge.stale { background: var(--neutral-subtle); color: var(--stale); border: 1px dashed var(--stale); cursor: pointer; }
+  #drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 340px; background: var(--card); border-left: 1px solid var(--border); box-shadow: -4px 0 12px rgba(1,4,9,.7); padding: 16px; overflow-y: auto; display: none; }
   #drawer.open { display: block; }
   #drawer h2 { font-size: 15px; margin: 0 0 4px; }
   #drawer .close { position: absolute; top: 10px; right: 12px; cursor: pointer; border: none; background: none; font-size: 16px; color: var(--muted); }

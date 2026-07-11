@@ -19,6 +19,7 @@ Without input the board auto-discovers: the `specs/*/tasks/` whose parent folder
 ## Requirements and limitations
 
 - **Rendering requires the GitHub Copilot desktop app.** The extension model is shared with the terminal Copilot CLI — the extension loads there too — but the CLI has no canvas render surface, so terminal-only users will not see the board even with the plugin installed.
+- **Dark theme only** (GitHub Primer dark palette). The canvas host exposes no theme signal (`CanvasHostContext` in `canvas.d.ts` carries none), and the webview's `prefers-color-scheme` reflects the OS setting rather than the app's theme — so a light variant could not follow the app anyway.
 - Freshness comes from `fs.watch` on the tasks folder + SSE push; card moves land within ~1 second of a file save.
 - No build step, no npm dependencies: `extension.mjs` (Node built-ins + `@github/copilot-sdk`) and one static `board.html`.
 - A task file whose frontmatter fails to parse renders as a visible "unparseable" card; it never crashes the board.
