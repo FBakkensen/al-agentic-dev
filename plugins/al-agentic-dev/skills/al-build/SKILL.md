@@ -196,7 +196,7 @@ Situation → action:
 
 ## Composition
 
-- `/al-implement` — calls this after every RED, GREEN, `/al-refactor`, before flipping the task `status:` to `done`.
+- `/al-implement` — calls this after every RED, GREEN, `/al-refactor`, before stamping the task `phase: implemented`.
 - `/al-debug-logging` — consumes `telemetry.jsonl` produced here (in per-app subfolders).
 - `init.ps1`, `provision.ps1` — one-time setup before this skill is usable.
 

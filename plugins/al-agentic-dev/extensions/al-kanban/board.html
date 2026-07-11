@@ -43,6 +43,8 @@
   .card.unparseable { border-left: 4px solid var(--pending); background: var(--attention-subtle); }
   button.advance { margin-top: 5px; font-size: 11px; padding: 2px 8px; border: 1px solid var(--accent); color: var(--accent); background: var(--card); border-radius: 5px; cursor: pointer; }
   button.advance:hover { background: var(--accent-emphasis); color: #ffffff; border-color: var(--accent-emphasis); }
+  button.markdone { margin-top: 5px; margin-left: 4px; font-size: 11px; padding: 2px 8px; border: 1px solid var(--ok); color: var(--ok); background: var(--card); border-radius: 5px; cursor: pointer; }
+  button.markdone:hover { background: var(--ok); color: #0d1117; }
   .badge { display: inline-block; font-size: 10px; border-radius: 8px; padding: 1px 7px; margin-top: 4px; }
   .badge.pending { background: var(--attention-subtle); color: var(--pending); border: 1px solid var(--pending); }
   .badge.stale { background: var(--neutral-subtle); color: var(--stale); border: 1px dashed var(--stale); cursor: pointer; }
@@ -68,8 +70,8 @@
 <div id="drawer"></div>
 <script>
 "use strict";
-const TECH_COLUMNS = ["Ready", "Refined", "Implemented", "Refactored", "Mutated"];
-const VERIFY_COLUMNS = ["Waiting on gate", "Opened by review", "Planned", "Page-scripted", "Verified"];
+const TECH_COLUMNS = ["Ready", "Refined", "Implemented", "Refactored", "Mutated", "Done"];
+const VERIFY_COLUMNS = ["Waiting on gate", "Opened by review", "Planned", "Page-scripted", "Done"];
 const STALE_MS = 5 * 60 * 1000;
 
 // pending badges: taskId -> {command, status, phase, sentAt, stale}
@@ -104,11 +106,13 @@ function cardHtml(t) {
     ? `<div class="flag">⛔ ${esc(t.blockedOn)}</div>` : "";
   const adv = t.advance
     ? `<button class="advance" data-task="${esc(t.id)}" data-skill="${esc(t.advance.skill)}">Advance → /${esc(t.advance.skill)}</button>` : "";
+  const mark = t.markDone
+    ? `<button class="markdone" data-markdone="${esc(t.id)}">Mark done ✓</button>` : "";
   return `<div class="${cls.join(" ")}" data-open="${esc(t.id)}">
     <div class="tid">${esc(t.id)}</div>
     <div class="ttl">${esc(t.title)}</div>
     <div class="meta">${esc(t.status)}${t.phase ? " · " + esc(t.phase) : ""}</div>
-    ${flag}${adv}${badgeHtml(t.id)}
+    ${flag}${adv}${mark}${badgeHtml(t.id)}
   </div>`;
 }
 
@@ -201,16 +205,17 @@ function renderDrawer() {
       <dt>File</dt><dd>${esc(t.file)}</dd>
     </dl>
     ${t.advance ? `<button class="advance" data-task="${esc(t.id)}" data-skill="${esc(t.advance.skill)}">Advance → /${esc(t.advance.skill)}</button>` : ""}
+    ${t.markDone ? `<button class="markdone" data-markdone="${esc(t.id)}">Mark done ✓</button>` : ""}
     ${badgeHtml(t.id)}`;
   drawer.classList.add("open");
 }
 
-async function advance(taskId, skill) {
+async function sendCommand(taskId, endpoint, commandLabel) {
   const t = snapshot.tasks.find((x) => x.id === taskId);
-  const res = await fetch("/advance", { method: "POST", body: JSON.stringify({ task: taskId }) });
+  const res = await fetch(endpoint, { method: "POST", body: JSON.stringify({ task: taskId }) });
   if (res.ok) {
     pending.set(taskId, {
-      command: "/" + skill, status: t?.status, phase: t?.phase, sentAt: Date.now(), stale: false,
+      command: commandLabel, status: t?.status, phase: t?.phase, sentAt: Date.now(), stale: false,
     });
     setTimeout(() => {
       const p = pending.get(taskId);
@@ -224,7 +229,13 @@ document.body.addEventListener("click", (e) => {
   const advBtn = e.target.closest("button.advance");
   if (advBtn) {
     e.stopPropagation();
-    advance(advBtn.dataset.task, advBtn.dataset.skill);
+    sendCommand(advBtn.dataset.task, "/advance", "/" + advBtn.dataset.skill);
+    return;
+  }
+  const markBtn = e.target.closest("button.markdone");
+  if (markBtn) {
+    e.stopPropagation();
+    sendCommand(markBtn.dataset.markdone, "/mark-done", "mark done");
     return;
   }
   const dismiss = e.target.closest("[data-dismiss]");

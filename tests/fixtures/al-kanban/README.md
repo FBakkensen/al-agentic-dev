@@ -10,7 +10,10 @@ Point the al-kanban canvas at this folder (`open_canvas` input `{ "tasksFolder":
 | Refined | T-005, T-007 (blocked flag) | 2 |
 | Implemented | T-004 | 1 |
 | Refactored | T-003 | 1 |
-| Mutated | T-002, T-009, T-011, T-013, T-015 | 5 |
+| Mutated | T-009 | 1 |
+| Done | T-002, T-011, T-013, T-015 | 4 |
+
+T-015 is `done` with `phase: implemented` — an early move-on (hardening waived) that still lands in Done.
 
 10 technical cards across 5 swimlanes (slices): post-validates-allocation (6), audit-trail (1), charge-summary-fact-box (1), mismatch-notification (1), posting-preview (1).
 
@@ -22,7 +25,7 @@ Point the al-kanban canvas at this folder (`open_canvas` input `{ "tasksFolder":
 | Opened by review | T-010 | 1 |
 | Planned | T-012 | 1 |
 | Page-scripted | T-014 | 1 |
-| Verified | T-016 | 1 |
+| Done | T-016 | 1 |
 
 ## Chips (not cards)
 
@@ -46,10 +49,20 @@ Point the al-kanban canvas at this folder (`open_canvas` input `{ "tasksFolder":
 | T-005 | Run the /al-implement skill on task T-005 |
 | T-004 | Run the /al-refactor skill on task T-004 |
 | T-003 | Run the /al-mutate skill on task T-003 |
+| T-009 | Run the /al-implement skill on task T-009 (survivors pending → killer-test loop) |
 | T-010 | Run the /al-refine skill on task T-010 |
 | T-012 | Run the /al-page-script skill on task T-012 (`Record: yes` present, phase `planned`) |
 | T-014 | Run the /al-user-verification skill on task T-014 |
-| all others (incl. both chips) | no button |
+| all others (incl. both chips and every Done card) | no button |
+
+## Mark done buttons expected
+
+Only on technical cards in the hardening window (phase `implemented`/`refactored`/`mutated`, status still `ready-for-implementation`):
+
+| Card | Present |
+|---|---|
+| T-004, T-003, T-009 | yes |
+| all others | no |
 
 ## Drawer spot-checks
 

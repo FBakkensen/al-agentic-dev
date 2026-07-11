@@ -1,6 +1,6 @@
 ---
 task: T-003
-status: done
+status: ready-for-implementation
 phase: refactored
 slice: post-validates-allocation
 kind: technical

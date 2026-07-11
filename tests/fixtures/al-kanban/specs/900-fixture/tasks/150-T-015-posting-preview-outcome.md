@@ -1,7 +1,7 @@
 ---
 task: T-015
 status: done
-phase: mutated
+phase: implemented
 slice: posting-preview
 kind: technical
 depends_on: [T-003]

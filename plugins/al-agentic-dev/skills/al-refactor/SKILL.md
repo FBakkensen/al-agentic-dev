@@ -12,7 +12,7 @@ Reshape AL so modules that earn their keep deepen and the ones that don't dissol
 ## Preconditions
 
 - Build green. Refactor against red build is debug → belongs in `/al-implement`.
-- Run after `/al-implement` takes the current task to green (the user's next step at task-done), OR standalone on legacy code.
+- Run after `/al-implement` takes the current task to green (the user's next step at `phase: implemented`), OR standalone on legacy code.
 - Branch matches `^\d{3}-` with `specs/<branch>/tasks/`, OR pure legacy reshape with no owning task. Owning task `blocked` → run `/al-steer`.
 - Legacy-code mode (no covering tests): write baseline tests first. See [legacy-refactor-plan.md](references/legacy-refactor-plan.md).
 
@@ -106,7 +106,7 @@ Server absent → the lens's skip note lands in the Gate report and reshape proc
 
 **No new behaviour.** Diff leaves observable behaviour identical. New behaviour belongs to `/al-implement` (new task) or `/al-refine` (re-plan).
 
-Emits the Gate report once at module / pattern / seam altitude (not procedure level), rendered box-first and passed through the pre-send checks, naming the application invariant preserved and the next step. On a task-scoped run (invoked on a task's diff after `/al-implement`), stamp `phase: refactored` on that task's frontmatter when the reshape lands green (overwrite `phase: implemented`; skip on standalone legacy runs with no task); `status:` stays `done`. `/al-refactor` does not edit `architecture.md` and writes no Notes by default; beyond the phase stamp, a task file under `tasks/` is touched only when an operational outcome demands it, per the surgical-edit contract in [markdown-spec-discipline.md](../../references/markdown-spec-discipline.md). See [voice-contract.md](../../references/voice-contract.md).
+Emits the Gate report once at module / pattern / seam altitude (not procedure level), rendered box-first and passed through the pre-send checks, naming the application invariant preserved and the next step. On a task-scoped run (invoked on a task's diff after `/al-implement`), stamp `phase: refactored` on that task's frontmatter when the reshape lands green (overwrite `phase: implemented`; skip on standalone legacy runs with no task); `status:` stays `ready-for-implementation` — `/al-mutate` flips it `done` on a clean verdict, or the developer marks it done early. `/al-refactor` does not edit `architecture.md` and writes no Notes by default; beyond the phase stamp, a task file under `tasks/` is touched only when an operational outcome demands it, per the surgical-edit contract in [markdown-spec-discipline.md](../../references/markdown-spec-discipline.md). See [voice-contract.md](../../references/voice-contract.md).
 
 ## Next step
 
