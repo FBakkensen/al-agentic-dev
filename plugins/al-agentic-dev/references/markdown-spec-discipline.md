@@ -38,7 +38,7 @@ There is **no index file**. The filesystem is the ordered manifest (`ls` = run o
 
 ## The surgical-edit floor
 
-Each per-task file carries one surgical-edit contract: maintaining skills find a task by its `T-MMM` filename (or by `task:` in frontmatter) and flip its `status:` field. Everything else regenerates whole.
+Each per-task file carries one surgical-edit contract: maintaining skills find a task by its `T-MMM` filename (or by `task:` in frontmatter) and flip its `status:` field — stamping `phase:` in the same write when the step finishes a pipeline stage. Everything else regenerates whole.
 
 YAML frontmatter at the top of every per-task file, then an H1 title, then the body:
 
@@ -63,6 +63,7 @@ Frontmatter fields, single source of truth for state and graph:
 |---|---|---|---|
 | `task: T-NNN` | the task; matches the filename's `T-MMM` | every skill that touches a task | `/al-scope` |
 | `status: ready \| ready-for-implementation \| ready-for-verification \| blocked \| done` | the status, single source of truth | `/al-refine`, `/al-implement`, `/al-code-review`, `/al-page-script`, `/al-user-verification`, `/al-steer` | `/al-scope` writes unrefined tasks as `ready` when they have enough context for `/al-refine`, otherwise `blocked`; `/al-refine` flips technical tasks `ready` → `ready-for-implementation` after writing a fresh `Test Specification`, and verify tasks `ready` → `ready-for-verification` after writing a fresh `Verification Plan`; downstream evidence flips executable tasks to `done`; `/al-code-review` opens a user/API-facing slice's verify task `blocked` → `ready` on a clean first review; missing dependency or context flips tasks to `blocked` |
+| `phase: refined \| implemented \| refactored \| mutated` *(technical)*, `planned \| page-scripted` *(verify; optional on both kinds)* | the last pipeline step that **finished** — past-tense, durable. Absence means nothing beyond scope has finished. Unlike `status:`, it survives a flip to `blocked`, so the pipeline position is never lost to a block | `/al-steer` (board render), the al-kanban canvas (column placement) | the skill that finishes the step, in the same Edit as its status flip where one exists: `/al-refine` stamps `refined` (technical, with the `ready-for-implementation` flip) / `planned` (verify, with the `ready-for-verification` flip); `/al-implement` stamps `implemented` with the `done` flip; `/al-refactor` stamps `refactored` when the reshape lands green; `/al-mutate` stamps `mutated` with its verdict; `/al-page-script` stamps `page-scripted` on the green replay batch. Only the next owning skill overwrites it; no skill deletes it. Ops kinds (`provision`, `breaking-change`) never carry it. No value duplicates `status:` — there is no `scoped` (that is absence + `status: ready`) and no `verified` (that is `status: done` on a verify task) |
 | `slice: <slug>` | slice membership; matches one `event-model.md` timeline step (user/API-facing) or `architecture.md` slice (backend-only) | `/al-implement` (detect last technical task in slice → announce `/al-code-review`), `/al-code-review` (per-slice diff scope, gate flip target), `/al-steer` (group by slice when reporting) | `/al-scope` |
 | `kind: technical \| verify \| provision \| breaking-change` | task kind; routes `technical`→`/al-implement`, `verify`→`/al-code-review` (slice-done gate) then `/al-page-script`+`/al-user-verification`, `provision`→`/al-provision`, `breaking-change`→`/al-validate-breaking-changes` | `/al-implement` (stop on non-technical), `/al-refine` (branch by kind; the two ops kinds bypass it), `/al-page-script` + `/al-user-verification` (preconditions), `/al-provision` + `/al-validate-breaking-changes` (run-and-flip) | `/al-scope` |
 | `depends_on: [T-NNN, …]` | hard dependency edges — cannot land without those | `/al-refine`, `/al-implement` (gate readiness), `/al-steer` (graph for replan), cross-slice gate | `/al-scope`; `/al-steer` on replan |
@@ -76,11 +77,13 @@ Empty edge lists may be written as `[]` or omitted; a present list holds bare `T
 
 Status meanings are fixed: `ready` is ready for `/al-refine` only; `ready-for-implementation` means a technical task has a fresh `Test Specification`; `ready-for-verification` means a verify task has a fresh `Verification Plan`; `blocked` means dependency or context is missing; `done` means downstream evidence exists.
 
+`status:` and `phase:` answer different questions: `status:` is *what the task is ready for now* (and gets erased by a `blocked` flip), `phase:` is *what last finished* (and never gets erased). A skill flipping a task to `blocked` leaves `phase:` untouched; the skill that later resumes the pipeline overwrites it as its own step finishes. Post-`done` steps on technical tasks (`/al-refactor`, `/al-mutate`) move only `phase:` — `status:` stays `done`.
+
 **Ops kinds** (`provision`, `breaking-change`) are the exception to the `/al-refine` lifecycle: they carry no proof artifact and sit on reserved slugs `slice: provision` / `slice: breaking-change` (not feature slices). Their lifecycle is `ready` → `done` (or `blocked` on failure) — they never pass through `ready-for-implementation`/`ready-for-verification`. `/al-scope` emits `kind: provision` as `T-001` (opens `ready`) and `kind: breaking-change` last (opens `blocked`, `depends_on:` the final terminal task). For them, `ready` means run the owning skill (`/al-provision`/`/al-validate-breaking-changes`), and `/al-refine` declines them with a redirect. Each `blocked` → `ready` flip has a named owner, like the cross-slice gate: `/al-provision` opens the first slice's technical tasks on its `done`; the per-feature `/al-code-review` opens the breaking-change task on a clean pass.
 
 `review: clean` is transient: it exists from the moment `/al-code-review` reviews the slice clean — stamped when code-review opens the verify task to `ready` at slice-done — and lives across the `ready` → `ready-for-verification` window until the verify walk signs off or the slice re-opens. Strip rules, all write-side: a flip to `blocked` or `done` deletes the field **in the same Edit** (the slice is re-opening or signing off); the `/al-refine` flip `ready` → `ready-for-verification` **preserves** it (refine moves no production code, so the review still vouches); and any skill opening a technical task in the slice (`/al-steer`'s push-down fix task after a page-script red, or a replan inserting technical work) deletes it too — and a still-`ready` verify task, opened by the review but not yet refined, flips back to `blocked` in the same edit (the slice re-opened before refinement). New slice code invalidates the review, and the push-down path moves no status byte, so the strip cannot ride on a flip. `/al-page-script` green deliberately leaves the field alone: the commit adds a recording, no production AL, so the review still vouches for the slice diff. Absence means not-reviewed or re-review due; presence is the only durable clean-review evidence for user/API-facing slices. Backend-only slices carry no field — their clean review flips the next slice `blocked` → `ready`, which is durable by itself.
 
-`task: T-NNN` is unique across the folder (it matches the filename). The status flip is an Edit on the `status:` line; on technical tasks only the `status:` value differs, on verify tasks carrying `review: clean` a flip to `blocked`/`done` also strips that line in the same Edit (the `ready` → `ready-for-verification` refine flip leaves it). Stale read trips the byte match.
+`task: T-NNN` is unique across the folder (it matches the filename). The status flip is an Edit on the `status:` line; a skill whose flip also finishes a pipeline stage adds or overwrites the `phase:` line in the same write (`/al-refine`, `/al-implement`), and post-`done` steps (`/al-refactor`, `/al-mutate`, `/al-page-script`) edit only `phase:`. On verify tasks carrying `review: clean` a flip to `blocked`/`done` also strips that line in the same Edit (the `ready` → `ready-for-verification` refine flip leaves it). Stale read trips the byte match.
 
 There is no visible `[ ]`/`[x]` heading marker — `status:` in frontmatter is the only state, and the file is short enough to read it at the top. The H1 is just the title (`# T-007 — Release order, valid item charge`).
 
@@ -96,14 +99,18 @@ Task files are **agent-facing**: every line earns its place by a downstream skil
 
 `/al-implement` and `/al-steer` flip `status:` via the Edit tool, anchored on the `status:` frontmatter line of the task's file.
 
-**Status flip example** (`/al-implement` from `ready-for-implementation` to `done` on T-007, in `tasks/070-T-007-derive-audit-reason.md`):
+**Status flip example** (`/al-implement` from `ready-for-implementation` to `done` on T-007, in `tasks/070-T-007-derive-audit-reason.md` — the flip finishes the implement stage, so `phase:` moves in the same Edit):
 
 ```
-old_string: status: ready-for-implementation
-new_string: status: done
+old_string:
+  status: ready-for-implementation
+  phase: refined
+new_string:
+  status: done
+  phase: implemented
 ```
 
-One Edit, one field. The read-before-edit catches a stale assumption (if you think `ready-for-implementation` but the file says `ready`, Edit fails fast rather than corrupting state). Read the whole short file first; the `status:` line is unambiguous within one task file.
+One Edit call: `old_string` and `new_string` are each a single two-line string spanning the adjacent `status:` and `phase:` lines (indentation above marks the lines belonging to each string; the file itself has none). A flip that finishes no stage (e.g. a flip to `blocked`) edits the `status:` line alone and leaves `phase:` untouched. The read-before-edit catches a stale assumption (if you think `ready-for-implementation` but the file says `ready`, Edit fails fast rather than corrupting state). Read the whole short file first; the `status:` line is unambiguous within one task file.
 
 **Verify-task flip with field strip** (`/al-user-verification` from `ready-for-verification` to `blocked` on T-010, stripping `review: clean`): two Edits in the same write — flip `status:` and delete the `review: clean` line — or regenerate the frontmatter block whole. The field is stripped on any flip to `blocked` or `done`; it survives only the `/al-refine` flip `ready` → `ready-for-verification` (refine moves no production code). A stale `review: clean` on a re-opened or signed-off task would vouch for a diff it never saw, so the strip is not optional.
 

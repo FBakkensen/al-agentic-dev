@@ -1,6 +1,7 @@
 ---
 task: T-005
 status: ready-for-implementation
+phase: refined
 slice: audit-trail
 kind: technical
 depends_on: [T-002, T-006]

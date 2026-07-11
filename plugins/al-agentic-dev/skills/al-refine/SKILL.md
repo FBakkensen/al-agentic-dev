@@ -104,14 +104,14 @@ A **fail** (structural or boundary blocker) blocks the `ready-for-implementation
 
 ## Status flip
 
-After writing and reconciling the fresh proof section, locate the task file by its `T-MMM` filename and flip its `status:` frontmatter line only:
+After writing and reconciling the fresh proof section, locate the task file by its `T-MMM` filename and flip its `status:` frontmatter line, stamping `phase:` in the same edit — the durable record that refine finished, which unlike `status:` survives a later flip to `blocked`:
 
 ```markdown
-technical: status: ready → status: ready-for-implementation
-verify:    status: ready → status: ready-for-verification
+technical: status: ready → status: ready-for-implementation, phase: refined
+verify:    status: ready → status: ready-for-verification,   phase: planned
 ```
 
-No `in-progress` state.
+Add the `phase:` line after `status:` if absent, overwrite it if present (a re-refine re-stamps). No `in-progress` state.
 
 **Advisor checkpoint.** Before writing the first `Test Specification` or `Verification Plan` into the task file, do a final shape check — coverage, the New/Modified split, the push-up set. For non-trivial proof, the rubber-duck agent gives an independent cross-family read ([rubber-duck-review.md](../../references/rubber-duck-review.md)); the shape is hard to retract once downstream skills consume it.
 
@@ -120,7 +120,7 @@ No `in-progress` state.
 Read off the flipped task — the handoff passes the pre-send checks in [voice-contract.md](../../references/voice-contract.md):
 
 - **Technical task → `ready-for-implementation`:** `Next: /al-implement T-NNN` — drive the `Test Specification` red→green.
-- **Verify task → `ready-for-verification`:** the verify task arrived carrying `review: clean` (`/al-code-review` ran at slice-done and opened it); the `status:`-only flip preserves it. `Next:` state-conditional on the slice's recordings — `/al-page-script T-NNN` (a `Record: yes` Journey Example's recording missing) or `/al-user-verification T-NNN` (all present, or no `Record: yes` example). The review already ran — do not route back through `/al-code-review`.
+- **Verify task → `ready-for-verification`:** the verify task arrived carrying `review: clean` (`/al-code-review` ran at slice-done and opened it); the state flip (`status:` plus the `phase: planned` stamp) preserves it. `Next:` state-conditional on the slice's recordings — `/al-page-script T-NNN` (a `Record: yes` Journey Example's recording missing) or `/al-user-verification T-NNN` (all present, or no `Record: yes` example). The review already ran — do not route back through `/al-code-review`.
 - **Stayed/flipped `blocked`:** `Next: /al-research` (BC fact), `/al-grill-adr` (domain term), or `/al-steer` (replan) per why it would not ground.
 
 If state can't be read, fall back to `/al-implement` for a technical task; for a verify task (which reached `/al-refine` only because `/al-code-review` already ran) → `/al-user-verification`, or `/al-steer` when unsure — never back through `/al-code-review`.

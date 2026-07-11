@@ -1,6 +1,7 @@
 ---
 task: T-003
 status: done
+phase: refactored
 slice: post-validates-allocation
 kind: technical
 depends_on: [T-001, T-002]

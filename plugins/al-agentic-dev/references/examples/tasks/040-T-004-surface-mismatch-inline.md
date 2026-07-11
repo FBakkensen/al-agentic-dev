@@ -1,6 +1,7 @@
 ---
 task: T-004
 status: done
+phase: implemented
 slice: post-validates-allocation
 kind: technical
 depends_on: [T-003]
