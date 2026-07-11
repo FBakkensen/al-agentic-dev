@@ -8,7 +8,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, utimesSync, rmSync } from "node:
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
-import { parseFrontmatter, computeAdvance, discoverTasksFolder, technicalColumn, verifyColumn } from "./lib.mjs";
+import { parseFrontmatter, computeAdvance, discoverTasksFolder, technicalColumn, verifyColumn, readSnapshot } from "./lib.mjs";
 
 // ---------------------------------------------------------------------------
 // 1. Frontmatter parser
@@ -211,4 +211,68 @@ test("advance: grandfathered tasks without phase still get their next command", 
   assert.equal(computeAdvance({ kind: "technical", status: "ready-for-implementation" }), "al-implement");
   assert.equal(computeAdvance({ kind: "verify", status: "ready-for-verification", recordYes: true }), "al-page-script");
   assert.equal(computeAdvance({ kind: "verify", status: "ready-for-verification" }), "al-user-verification");
+});
+
+// ---------------------------------------------------------------------------
+// 5. readSnapshot — card assembly over a real folder
+// ---------------------------------------------------------------------------
+
+test("readSnapshot: valid task assembles the full card", (t) => {
+  const dir = tempRoot(t);
+  writeFileSync(join(dir, "010-T-001-valid.md"), [
+    "---",
+    "task: T-001",
+    "status: ready",
+    "slice: charge-core",
+    "kind: technical",
+    "---",
+    "# T-001 — Read charge assignments",
+    "",
+    "Read assignments from the posted document.",
+    "",
+    "Record: yes",
+  ].join("\n"));
+  const snap = readSnapshot(dir, []);
+  assert.equal(snap.tasks.length, 1);
+  const card = snap.tasks[0];
+  assert.equal(card.id, "T-001");
+  assert.equal(card.title, "Read charge assignments"); // text after the em-dash
+  assert.equal(card.goal, "Read assignments from the posted document.");
+  assert.equal(card.slice, "charge-core");
+  assert.equal(card.recordYes, true);
+  assert.equal(card.column, "Ready");
+  assert.deepEqual(card.advance, { skill: "al-refine", prompt: "Run the /al-refine skill on task T-001" });
+});
+
+test("readSnapshot: parse failure → unparseable card with error, board never crashes", (t) => {
+  const dir = tempRoot(t);
+  writeFileSync(join(dir, "020-T-002-broken.md"), "---\ntask: T-002\nslice: [this inline list never closes\nstatus: ready\n---\n# broken\n");
+  const snap = readSnapshot(dir, []);
+  assert.equal(snap.tasks.length, 1);
+  assert.equal(snap.tasks[0].unparseable, true);
+  assert.match(snap.tasks[0].error, /unclosed inline list/);
+});
+
+test("readSnapshot: frontmatter without task: → unparseable card naming the cause", (t) => {
+  const dir = tempRoot(t);
+  writeFileSync(join(dir, "030-no-id.md"), "---\nstatus: ready\nkind: technical\n---\n# no id\n");
+  const snap = readSnapshot(dir, []);
+  assert.equal(snap.tasks.length, 1);
+  assert.equal(snap.tasks[0].unparseable, true);
+  assert.equal(snap.tasks[0].error, "missing task: field");
+});
+
+test("readSnapshot: 000-feature.md without frontmatter is skipped, not a card", (t) => {
+  const dir = tempRoot(t);
+  writeFileSync(join(dir, "000-feature.md"), "# Feature header\n\nIntent prose, no frontmatter.\n");
+  writeFileSync(join(dir, "010-T-001-x.md"), "---\ntask: T-001\nstatus: ready\nkind: technical\n---\n# T-001 — X\n");
+  const snap = readSnapshot(dir, []);
+  assert.deepEqual(snap.tasks.map((x) => x.id), ["T-001"]);
+});
+
+test("readSnapshot: null folder → empty snapshot carrying the searched paths", () => {
+  const snap = readSnapshot(null, ["a", "b"]);
+  assert.equal(snap.folder, null);
+  assert.deepEqual(snap.tasks, []);
+  assert.deepEqual(snap.searched, ["a", "b"]);
 });

@@ -103,7 +103,7 @@ function cardHtml(t) {
   const flag = t.status === "blocked" && t.blockedOn
     ? `<div class="flag">⛔ ${esc(t.blockedOn)}</div>` : "";
   const adv = t.advance
-    ? `<button class="advance" data-task="${esc(t.id)}" data-prompt="${esc(t.advance.prompt)}" data-skill="${esc(t.advance.skill)}">Advance → /${esc(t.advance.skill)}</button>` : "";
+    ? `<button class="advance" data-task="${esc(t.id)}" data-skill="${esc(t.advance.skill)}">Advance → /${esc(t.advance.skill)}</button>` : "";
   return `<div class="${cls.join(" ")}" data-open="${esc(t.id)}">
     <div class="tid">${esc(t.id)}</div>
     <div class="ttl">${esc(t.title)}</div>
@@ -137,7 +137,7 @@ function stripTable(columns, tasks, lanes) {
 function chipHtml(t) {
   const cls = t.status === "done" ? "done" : t.status === "blocked" ? "blocked" : "ready";
   const adv = t.advance
-    ? ` <button class="advance" data-task="${esc(t.id)}" data-prompt="${esc(t.advance.prompt)}" data-skill="${esc(t.advance.skill)}">/${esc(t.advance.skill)}</button>` : "";
+    ? ` <button class="advance" data-task="${esc(t.id)}" data-skill="${esc(t.advance.skill)}">/${esc(t.advance.skill)}</button>` : "";
   return `<span class="chip ${cls}" title="${esc(t.title)}"><span class="dot"></span>${esc(t.id)} ${esc(t.kind)} · ${esc(t.status)}${adv}${badgeHtml(t.id)}</span>`;
 }
 
@@ -200,12 +200,12 @@ function renderDrawer() {
       ${t.deviations.length ? `<dt>Deviations</dt><dd><ul>${t.deviations.map((d) => `<li>${esc(d)}</li>`).join("")}</ul></dd>` : ""}
       <dt>File</dt><dd>${esc(t.file)}</dd>
     </dl>
-    ${t.advance ? `<button class="advance" data-task="${esc(t.id)}" data-prompt="${esc(t.advance.prompt)}" data-skill="${esc(t.advance.skill)}">Advance → /${esc(t.advance.skill)}</button>` : ""}
+    ${t.advance ? `<button class="advance" data-task="${esc(t.id)}" data-skill="${esc(t.advance.skill)}">Advance → /${esc(t.advance.skill)}</button>` : ""}
     ${badgeHtml(t.id)}`;
   drawer.classList.add("open");
 }
 
-async function advance(taskId, prompt, skill) {
+async function advance(taskId, skill) {
   const t = snapshot.tasks.find((x) => x.id === taskId);
   const res = await fetch("/advance", { method: "POST", body: JSON.stringify({ task: taskId }) });
   if (res.ok) {
@@ -224,7 +224,7 @@ document.body.addEventListener("click", (e) => {
   const advBtn = e.target.closest("button.advance");
   if (advBtn) {
     e.stopPropagation();
-    advance(advBtn.dataset.task, advBtn.dataset.prompt, advBtn.dataset.skill);
+    advance(advBtn.dataset.task, advBtn.dataset.skill);
     return;
   }
   const dismiss = e.target.closest("[data-dismiss]");
