@@ -8,7 +8,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, utimesSync, rmSync } from "node:
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
-import { parseFrontmatter, computeAdvance, discoverTasksFolder } from "./lib.mjs";
+import { parseFrontmatter, computeAdvance, discoverTasksFolder, technicalColumn, verifyColumn } from "./lib.mjs";
 
 // ---------------------------------------------------------------------------
 // 1. Frontmatter parser
@@ -90,7 +90,6 @@ test("advance: technical no-button states", () => {
   assert.equal(adv("technical", "blocked"), null);
   assert.equal(adv("technical", "blocked", "refined"), null); // phase survives block, no button
   assert.equal(adv("technical", "ready", "refined"), null); // inconsistent state → no button
-  assert.equal(adv("technical", "ready-for-implementation"), null); // stamp missing
 });
 
 test("advance: verify pipeline", () => {
@@ -181,4 +180,35 @@ test("discovery: specs dir with no tasks subfolders → empty state", (t) => {
   mkdirSync(join(root, "specs", "100-no-tasks-here"), { recursive: true });
   const r = discoverTasksFolder(root, undefined);
   assert.equal(r.folder, null);
+});
+
+test("discovery: explicit input that is a file, not a directory → null", (t) => {
+  const root = tempRoot(t);
+  writeFileSync(join(root, "tasks"), "not a folder");
+  const r = discoverTasksFolder(root, "tasks");
+  assert.equal(r.folder, null);
+  assert.match(r.searched[0], /tasks/);
+});
+
+// ---------------------------------------------------------------------------
+// 4. Column placement — grandfathered tasks without a phase stamp
+// ---------------------------------------------------------------------------
+
+test("columns: technical done without phase (grandfathered) → Implemented, not Ready", () => {
+  assert.equal(technicalColumn({ status: "done" }), "Implemented");
+  assert.equal(technicalColumn({ status: "ready-for-implementation" }), "Refined");
+  assert.equal(technicalColumn({ status: "ready" }), "Ready");
+  assert.equal(technicalColumn({ status: "blocked" }), "Ready");
+});
+
+test("columns: verify ready-for-verification without phase (grandfathered) → Planned, not Waiting on gate", () => {
+  assert.equal(verifyColumn({ status: "ready-for-verification" }), "Planned");
+  assert.equal(verifyColumn({ status: "blocked" }), "Waiting on gate");
+});
+
+test("advance: grandfathered tasks without phase still get their next command", () => {
+  assert.equal(computeAdvance({ kind: "technical", status: "done" }), "al-refactor");
+  assert.equal(computeAdvance({ kind: "technical", status: "ready-for-implementation" }), "al-implement");
+  assert.equal(computeAdvance({ kind: "verify", status: "ready-for-verification", recordYes: true }), "al-page-script");
+  assert.equal(computeAdvance({ kind: "verify", status: "ready-for-verification" }), "al-user-verification");
 });

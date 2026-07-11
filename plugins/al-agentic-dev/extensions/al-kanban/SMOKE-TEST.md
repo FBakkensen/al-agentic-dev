@@ -1,6 +1,6 @@
 # al-kanban smoke test — live gate
 
-Run this in a **GitHub Copilot desktop-app session** (not a terminal `copilot` run — the terminal CLI loads the extension but has no canvas render surface) on the AL project `GTM-BC-9AAdvMan-ItemConfigurator`, with the al-agentic-dev plugin installed at a version that ships this extension.
+Run this in a **GitHub Copilot desktop-app session** (not a terminal `copilot` run — the terminal CLI loads the extension but has no canvas render surface) on a real AL project that uses the al-agentic-dev task pipeline (any repo with `specs/<NNN>-<slug>/tasks/`), with the al-agentic-dev plugin installed at a version that ships this extension.
 
 ## 1. Open the board
 
@@ -29,4 +29,4 @@ Run this in a **GitHub Copilot desktop-app session** (not a terminal `copilot` r
 ## 5. Teardown
 
 - Close the canvas panel.
-- **Pass:** no orphan node listener remains — `netstat -ano | findstr <port>` (port from the panel URL) shows nothing, and a subsequent reopen gets a fresh port and works.
+- **Pass:** no orphan node listener remains — `netstat -ano | findstr <port>` (Windows) or `lsof -i :<port>` (macOS/Linux), with the port from the panel URL, shows nothing; a subsequent reopen gets a fresh port and works.

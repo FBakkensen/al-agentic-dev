@@ -102,13 +102,15 @@ Task files are **agent-facing**: every line earns its place by a downstream skil
 **Status flip example** (`/al-implement` from `ready-for-implementation` to `done` on T-007, in `tasks/070-T-007-derive-audit-reason.md` — the flip finishes the implement stage, so `phase:` moves in the same Edit):
 
 ```
-old_string: status: ready-for-implementation
-phase: refined
-new_string: status: done
-phase: implemented
+old_string:
+  status: ready-for-implementation
+  phase: refined
+new_string:
+  status: done
+  phase: implemented
 ```
 
-One Edit, two adjacent lines. A flip that finishes no stage (e.g. a flip to `blocked`) edits the `status:` line alone and leaves `phase:` untouched. The read-before-edit catches a stale assumption (if you think `ready-for-implementation` but the file says `ready`, Edit fails fast rather than corrupting state). Read the whole short file first; the `status:` line is unambiguous within one task file.
+One Edit call: `old_string` and `new_string` are each a single two-line string spanning the adjacent `status:` and `phase:` lines (indentation above marks the lines belonging to each string; the file itself has none). A flip that finishes no stage (e.g. a flip to `blocked`) edits the `status:` line alone and leaves `phase:` untouched. The read-before-edit catches a stale assumption (if you think `ready-for-implementation` but the file says `ready`, Edit fails fast rather than corrupting state). Read the whole short file first; the `status:` line is unambiguous within one task file.
 
 **Verify-task flip with field strip** (`/al-user-verification` from `ready-for-verification` to `blocked` on T-010, stripping `review: clean`): two Edits in the same write — flip `status:` and delete the `review: clean` line — or regenerate the frontmatter block whole. The field is stripped on any flip to `blocked` or `done`; it survives only the `/al-refine` flip `ready` → `ready-for-verification` (refine moves no production code). A stale `review: clean` on a re-opened or signed-off task would vouch for a diff it never saw, so the strip is not optional.
 

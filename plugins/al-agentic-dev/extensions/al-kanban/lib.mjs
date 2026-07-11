@@ -2,7 +2,7 @@
 // placement, folder discovery, snapshot building. SDK-free so it loads under
 // plain `node --test` as well as the extension host.
 
-import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join, dirname, resolve, basename } from "node:path";
 
@@ -60,15 +60,17 @@ export function parseFrontmatter(text) {
 export function computeAdvance(t) {
   const { kind, status, phase, reviewClean, recordYes } = t;
   if (kind === "technical") {
+    // A missing phase on a non-ready status is a grandfathered task (pre-phase
+    // contract): the status alone proves the stage, so advance from there.
     if (status === "ready" && !phase) return "al-refine";
-    if (status === "ready-for-implementation" && phase === "refined") return "al-implement";
-    if (status === "done" && phase === "implemented") return "al-refactor";
+    if (status === "ready-for-implementation" && (phase === "refined" || !phase)) return "al-implement";
+    if (status === "done" && (phase === "implemented" || !phase)) return "al-refactor";
     if (status === "done" && phase === "refactored") return "al-mutate";
     return null;
   }
   if (kind === "verify") {
     if (status === "ready" && reviewClean && !phase) return "al-refine";
-    if (status === "ready-for-verification" && phase === "planned")
+    if (status === "ready-for-verification" && (phase === "planned" || !phase))
       return recordYes ? "al-page-script" : "al-user-verification";
     if (status === "ready-for-verification" && phase === "page-scripted")
       return "al-user-verification";
@@ -88,14 +90,21 @@ export function technicalColumn(t) {
   if (t.phase === "implemented") return "Implemented";
   if (t.phase === "refactored") return "Refactored";
   if (t.phase === "mutated") return "Mutated";
-  // no phase: blocked-at-scope-time and ready both land in Ready
+  // No phase on a non-ready status = grandfathered task (pre-phase contract):
+  // the status alone proves the stage floor. done → implement finished
+  // (refactor/mutate unproven); ready-for-implementation → refine finished.
+  if (t.status === "done") return "Implemented";
+  if (t.status === "ready-for-implementation") return "Refined";
+  // blocked-at-scope-time and ready both land in Ready
   return "Ready";
 }
 
 export function verifyColumn(t) {
   if (t.status === "done") return "Verified";
   if (t.phase === "page-scripted") return "Page-scripted";
-  if (t.phase === "planned") return "Planned";
+  // ready-for-verification without a phase stamp is a grandfathered task:
+  // the status itself proves a Verification Plan exists (refine finished).
+  if (t.phase === "planned" || t.status === "ready-for-verification") return "Planned";
   if (t.status === "ready" && t.reviewClean) return "Opened by review";
   return "Waiting on gate";
 }
@@ -115,21 +124,29 @@ function gitBranch(cwd) {
   }
 }
 
+function isDirectory(p) {
+  try {
+    return statSync(p).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
 export function discoverTasksFolder(workingDirectory, inputFolder) {
   const searched = [];
   if (inputFolder) {
     const abs = resolve(workingDirectory, inputFolder);
     searched.push(abs);
-    if (existsSync(abs)) return { folder: abs, searched };
+    if (isDirectory(abs)) return { folder: abs, searched };
     return { folder: null, searched };
   }
   const specsRoot = join(workingDirectory, "specs");
   searched.push(join(specsRoot, "*", "tasks"));
-  if (!existsSync(specsRoot)) return { folder: null, searched };
+  if (!isDirectory(specsRoot)) return { folder: null, searched };
   const candidates = readdirSync(specsRoot, { withFileTypes: true })
     .filter((d) => d.isDirectory())
     .map((d) => join(specsRoot, d.name, "tasks"))
-    .filter((p) => existsSync(p));
+    .filter(isDirectory);
   if (candidates.length === 0) return { folder: null, searched };
   const branch = gitBranch(workingDirectory);
   if (branch) {

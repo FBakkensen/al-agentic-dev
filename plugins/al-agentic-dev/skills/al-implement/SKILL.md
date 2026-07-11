@@ -96,11 +96,15 @@ Before flipping to `done`, do a final correctness read of the implementation aga
 Flip surface: locate the task file by its `T-MMM` filename (e.g. `tasks/070-T-007-derive-audit-reason.md`) and edit anchored on its `status:` frontmatter line, swapping the value byte-exact and stamping `phase: implemented` in the same write (add the line after `status:` if absent, overwrite if present):
 
 ```markdown
-old_string: status: ready-for-implementation
-new_string: status: done
-old_string: phase: refined
-new_string: phase: implemented
+old_string:
+  status: ready-for-implementation
+  phase: refined
+new_string:
+  status: done
+  phase: implemented
 ```
+
+One Edit call — each string spans the two adjacent frontmatter lines (indentation marks string membership; the file has none).
 
 Everything else inside the task body follows the task shape. See [notes-discipline.md](../../references/notes-discipline.md), [markdown-spec-discipline.md](../../references/markdown-spec-discipline.md), [voice-contract.md](../../references/voice-contract.md).
 
