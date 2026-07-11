@@ -1,6 +1,7 @@
 ---
 task: T-002
 status: done
+phase: mutated
 slice: post-validates-allocation
 kind: technical
 depends_on: []

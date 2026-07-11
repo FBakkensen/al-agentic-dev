@@ -67,7 +67,7 @@ Patterns to recognise, not a checklist. Other skills flag triggers as `**Replan 
 
 ## Trigger response is intent, not mechanics
 
-Trigger invalidates the plan for the task → flip `status:` to `blocked` in frontmatter, record trigger ID + reason in the task body. Trigger surfaces new info that does not invalidate → leave status, note it in the task body. Judgement, not fixed mechanics.
+Trigger invalidates the plan for the task → flip `status:` to `blocked` in frontmatter, record trigger ID + reason in the task body; leave `phase:` untouched — it records what last finished and survives the block, so the pipeline position is intact when the task reopens. Trigger surfaces new info that does not invalidate → leave status, note it in the task body. Judgement, not fixed mechanics.
 
 A trigger resting on a tool diagnosis (compile-error class, AL Runner gap, heuristic "structural blocker") is re-confirmed once before the `blocked` flip — a first-pass diagnosis is frequently a cascade artifact (an AL0305 missing-dependency reads as an AL0327 runner gap), and a block on a phantom is false state the next session has to unwind. A trigger resting on a recorded fact (`depends_on:`, Goal text, an observed verification mismatch) is acted on as-is.
 

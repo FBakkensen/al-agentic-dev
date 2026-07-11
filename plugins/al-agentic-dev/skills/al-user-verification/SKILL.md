@@ -105,7 +105,7 @@ First functional fail in any `Record: no` Journey Example or Contract example, o
 - Walk/Exploration fail → ask the user to save a screenshot under `.output/verification/T-NNN/` (gitignored; agent cannot persist a chat-pasted image) and reference that path in the inline record so `/al-steer` finds it in a later session.
 - Contract fail → captured request/response is the evidence; no screenshot needed.
 
-Record inside the task file: which example (`V#`, `C#`, or `X#`) and which step/check/prompt; observed vs expected verbatim from the user's report (or captured output), screenshot referenced by its `.output/verification/T-NNN/` path; `**Replan flag**: trigger #8 (verification failed)`. Flip `status: blocked`, stripping `review: clean` in the same write — a stale `review: clean` would vouch for a diff it never saw. Announce route to `/al-steer T-NNN`. This skill does not propose the fix; surface failure and stop. A usability finding is **never** a functional fail.
+Record inside the task file: which example (`V#`, `C#`, or `X#`) and which step/check/prompt; observed vs expected verbatim from the user's report (or captured output), screenshot referenced by its `.output/verification/T-NNN/` path; `**Replan flag**: trigger #8 (verification failed)`. Flip `status: blocked`, stripping `review: clean` in the same write — a stale `review: clean` would vouch for a diff it never saw — and leaving `phase:` untouched (it survives the block). Announce route to `/al-steer T-NNN`. This skill does not propose the fix; surface failure and stop. A usability finding is **never** a functional fail.
 
 ### Rubber-duck review before the gate
 
@@ -115,7 +115,7 @@ All checkable examples pass → before flipping `done`, consult the rubber-duck 
 
 - **Check passes** → move to next check.
 - **Last check of a scenario** → append the scenario's line to the inline partial-run record (example id, verdict, observed values, exact questions as posed — the rubber-duck artifact needs them verbatim, and a session boundary erases the chat transcript). Then move to the next scenario/charter.
-- **All checkable examples pass + pre-flight green + rubber-duck review reconciled** → flip `status: done`, stripping `review: clean` in the same write. Collapse the inline partial-run record into the Closeout shape from [`test-specification.md`](../../references/test-specification.md), including the `Record: yes` scenarios as replay-confirmed.
+- **All checkable examples pass + pre-flight green + rubber-duck review reconciled** → flip `status: done`, stripping `review: clean` in the same write (`phase:` stays as `/al-page-script` left it — the Done state reads off `status:` alone). Collapse the inline partial-run record into the Closeout shape from [`test-specification.md`](../../references/test-specification.md), including the `Record: yes` scenarios as replay-confirmed.
 - **Usability findings** → materialise as candidate task files in the slice, named `NNN-T-MMM-<slug>.md` with a fresh `T-MMM` id and a run-order prefix per the gap rule in [`markdown-spec-discipline.md`](../../references/markdown-spec-discipline.md), frontmatter `status: ready`, `kind: technical`, same `slice:`. Non-gating; `/grill-me` adjudicates ambiguous ones. They queue *after* the next slice's opened tasks unless the user promotes one.
 - **Next slice** → flip every technical task in the next slice (whose first task carries `depends_on:` this verify task) from `blocked` to `ready`. The cross-slice gate is the only mechanism that opens the next slice.
 

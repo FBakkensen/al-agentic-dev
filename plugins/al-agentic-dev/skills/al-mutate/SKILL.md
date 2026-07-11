@@ -90,7 +90,7 @@ Write durable session report at `.output/mutation-report/<YYYYMMDD-HHMMSS>.md`. 
 
 The task file gets the `Closeout` mutation verdict shape from [test-specification.md](../../references/test-specification.md): borderless two-column table (baseline SHA, report path, mutant count with a rationale lede, killed, survivors, stillborn when non-zero, final full-gate result) plus labeled `Survivor:` / `Why kept:` lines per survivor and `Stillborn:` / `Re-planned:` lines per stillborn. One fact per landing line; no prose wall, no full mutation table in the task file.
 
-`/al-mutate` does not flip status. See [markdown-spec-discipline.md](../../references/markdown-spec-discipline.md) and [voice-contract.md](../../references/voice-contract.md). Emit the Gate report once at pass close, rendered box-first and passed through the pre-send checks, naming rigor proved (or not) for user-facing behaviour under test, soft spots that remain by design, and the user's call; the task-file `Closeout` mutation verdict lands alongside it.
+`/al-mutate` does not flip status; it stamps `phase: mutated` on the task's frontmatter as it writes the verdict — the durable record that mutation testing finished (overwrite the existing `phase:` value; add the line after `status:` if absent). See [markdown-spec-discipline.md](../../references/markdown-spec-discipline.md) and [voice-contract.md](../../references/voice-contract.md). Emit the Gate report once at pass close, rendered box-first and passed through the pre-send checks, naming rigor proved (or not) for user-facing behaviour under test, soft spots that remain by design, and the user's call; the task-file `Closeout` mutation verdict lands alongside it.
 
 ## Next step
 

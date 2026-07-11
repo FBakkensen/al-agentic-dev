@@ -72,6 +72,8 @@ depends_on: [T-004]
 - `slice: <slug>`: kebab-case, from `event-model.md` timeline step or `architecture.md` slice. `provision` / `breaking-change` are reserved non-feature slugs.
 - `kind: technical | verify | provision | breaking-change`: routes downstream (technical → `/al-refine` → `/al-implement`; verify → `/al-refine` → `/al-page-script` → `/al-user-verification`; the two ops kinds bypass `/al-refine`, run-and-flip).
 
+al-scope writes **no `phase:` line**: the field records the last pipeline step that *finished*, and at scope time nothing has — absence is the encoding for "scoped". Downstream skills stamp it as they finish their step ([markdown-spec-discipline.md](../../references/markdown-spec-discipline.md)).
+
 No `[ ]`/`[x]` heading marker: `status:` in frontmatter is the only state and the byte the Edit anchors on. Per-slice intent in `000-feature.md`, section order, alert blocks: your call per feature.
 
 ## Description
