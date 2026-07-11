@@ -30,7 +30,7 @@ The sign-off accounts for the `Record: yes` scenarios explicitly: they are confi
 ## Preconditions
 
 - Branch matches `^\d{3}-`. If not: **Stop**. Verify task only exists inside an in-flight feature.
-- `specs/<branch>/tasks/` holds a `kind: verify` task with `status: ready-for-verification` and a populated `Verification Plan`. Plain `ready` → **Stop**, `/al-refine T-NNN`. `ready-for-verification` with an empty plan → **Stop**, `/al-steer`; status and proof disagree. `blocked` → `/al-steer`. `done` → downstream evidence exists; do not reopen here.
+- `specs/<branch>/tasks/` holds a `kind: verify` task with `status: ready-for-verification` and a populated `Verification Plan`. Plain `ready` → **Stop**, `/al-refine T-NNN`. `ready-for-verification` with an empty plan → **Stop**, `/al-steer`; status and proof disagree. `blocked` → `/al-steer`. `done` → finished, nothing further intended; do not reopen here.
 - `review: clean` present in the verify task's frontmatter — the durable clean per-slice `/al-code-review` evidence, stamped at slice-done (the status byte alone reads identically before and after review). Missing → **Stop**, re-enter via `/al-code-review T-NNN`.
 - `event-model.md` present alongside; verify tasks only exist for user/API-facing features. Verify task without `event-model.md` → contract violation, **Stop**, route to `/al-steer`.
 - Read [`test-specification.md`](../../references/test-specification.md) and [`test-strategy.md`](../../references/test-strategy.md) before guiding; this skill consumes the `Verification Plan` grammar (incl. the `Record:` flag) and layer rules.

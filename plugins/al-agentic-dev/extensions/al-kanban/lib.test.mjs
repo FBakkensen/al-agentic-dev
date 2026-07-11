@@ -8,7 +8,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, utimesSync, rmSync } from "node:
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
-import { parseFrontmatter, computeAdvance, discoverTasksFolder, technicalColumn, verifyColumn, readSnapshot } from "./lib.mjs";
+import { parseFrontmatter, computeAdvance, computeMarkDone, discoverTasksFolder, technicalColumn, verifyColumn, readSnapshot } from "./lib.mjs";
 
 // ---------------------------------------------------------------------------
 // 1. Frontmatter parser
@@ -78,15 +78,24 @@ test("parser: CRLF line endings", () => {
 const adv = (kind, status, phase = "", extra = {}) =>
   computeAdvance({ kind, status, phase, reviewClean: false, recordYes: false, ...extra });
 
-test("advance: technical pipeline", () => {
+test("advance: technical pipeline (status stays ready-for-implementation through hardening)", () => {
   assert.equal(adv("technical", "ready"), "al-refine");
   assert.equal(adv("technical", "ready-for-implementation", "refined"), "al-implement");
-  assert.equal(adv("technical", "done", "implemented"), "al-refactor");
-  assert.equal(adv("technical", "done", "refactored"), "al-mutate");
+  assert.equal(adv("technical", "ready-for-implementation", "implemented"), "al-refactor");
+  assert.equal(adv("technical", "ready-for-implementation", "refactored"), "al-mutate");
+  // mutated but not done = survivors pending → killer-test loop via implement
+  assert.equal(adv("technical", "ready-for-implementation", "mutated"), "al-implement");
+});
+
+test("advance: done is terminal for every kind and phase", () => {
+  assert.equal(adv("technical", "done", "mutated"), null);
+  assert.equal(adv("technical", "done", "implemented"), null); // early move-on
+  assert.equal(adv("technical", "done", "refactored"), null);
+  assert.equal(adv("technical", "done"), null);
+  assert.equal(adv("verify", "done", "page-scripted"), null);
 });
 
 test("advance: technical no-button states", () => {
-  assert.equal(adv("technical", "done", "mutated"), null); // pipeline exhausted
   assert.equal(adv("technical", "blocked"), null);
   assert.equal(adv("technical", "blocked", "refined"), null); // phase survives block, no button
   assert.equal(adv("technical", "ready", "refined"), null); // inconsistent state → no button
@@ -102,7 +111,6 @@ test("advance: verify pipeline", () => {
 test("advance: verify no-button states", () => {
   assert.equal(adv("verify", "ready"), null); // no review: clean → still waiting
   assert.equal(adv("verify", "blocked"), null); // waiting on gate
-  assert.equal(adv("verify", "done", "page-scripted"), null); // verified
   assert.equal(adv("verify", "ready", "planned", { reviewClean: true }), null); // stale phase
 });
 
@@ -111,6 +119,31 @@ test("advance: ops kinds", () => {
   assert.equal(adv("provision", "done"), null);
   assert.equal(adv("breaking-change", "ready"), "al-validate-breaking-changes");
   assert.equal(adv("breaking-change", "blocked"), null);
+});
+
+// ---------------------------------------------------------------------------
+// 2b. Mark done — hardening-window waiver on technical tasks only
+// ---------------------------------------------------------------------------
+
+const md = (kind, status, phase = "") => computeMarkDone({ id: "T-004", kind, status, phase });
+
+test("markDone: offered through the technical hardening window", () => {
+  for (const phase of ["implemented", "refactored", "mutated"]) {
+    const m = md("technical", "ready-for-implementation", phase);
+    assert.ok(m, `expected markDone for phase ${phase}`);
+    assert.match(m.prompt, /Mark task T-004 done/);
+    assert.match(m.prompt, new RegExp(phase));
+    assert.match(m.prompt, /waived/);
+  }
+});
+
+test("markDone: not offered outside the window", () => {
+  assert.equal(md("technical", "ready-for-implementation", "refined"), null); // nothing to waive yet
+  assert.equal(md("technical", "ready"), null);
+  assert.equal(md("technical", "done", "mutated"), null); // already done
+  assert.equal(md("technical", "blocked", "implemented"), null);
+  assert.equal(md("verify", "ready-for-verification", "planned"), null); // technical only
+  assert.equal(md("provision", "ready"), null);
 });
 
 // ---------------------------------------------------------------------------
@@ -191,23 +224,31 @@ test("discovery: explicit input that is a file, not a directory → null", (t) =
 });
 
 // ---------------------------------------------------------------------------
-// 4. Column placement — grandfathered tasks without a phase stamp
+// 4. Column placement — done column and grandfathered tasks
 // ---------------------------------------------------------------------------
 
-test("columns: technical done without phase (grandfathered) → Implemented, not Ready", () => {
-  assert.equal(technicalColumn({ status: "done" }), "Implemented");
-  assert.equal(technicalColumn({ status: "ready-for-implementation" }), "Refined");
+test("columns: technical done → Done regardless of phase", () => {
+  assert.equal(technicalColumn({ status: "done", phase: "mutated" }), "Done");
+  assert.equal(technicalColumn({ status: "done", phase: "implemented" }), "Done"); // early move-on
+  assert.equal(technicalColumn({ status: "done" }), "Done"); // pre-phase-contract data
+});
+
+test("columns: technical hardening window placed by phase", () => {
+  assert.equal(technicalColumn({ status: "ready-for-implementation", phase: "implemented" }), "Implemented");
+  assert.equal(technicalColumn({ status: "ready-for-implementation", phase: "refactored" }), "Refactored");
+  assert.equal(technicalColumn({ status: "ready-for-implementation", phase: "mutated" }), "Mutated");
+  assert.equal(technicalColumn({ status: "ready-for-implementation" }), "Refined"); // grandfathered
   assert.equal(technicalColumn({ status: "ready" }), "Ready");
   assert.equal(technicalColumn({ status: "blocked" }), "Ready");
 });
 
-test("columns: verify ready-for-verification without phase (grandfathered) → Planned, not Waiting on gate", () => {
+test("columns: verify done → Done; grandfathered ready-for-verification → Planned", () => {
+  assert.equal(verifyColumn({ status: "done", phase: "page-scripted" }), "Done");
   assert.equal(verifyColumn({ status: "ready-for-verification" }), "Planned");
   assert.equal(verifyColumn({ status: "blocked" }), "Waiting on gate");
 });
 
 test("advance: grandfathered tasks without phase still get their next command", () => {
-  assert.equal(computeAdvance({ kind: "technical", status: "done" }), "al-refactor");
   assert.equal(computeAdvance({ kind: "technical", status: "ready-for-implementation" }), "al-implement");
   assert.equal(computeAdvance({ kind: "verify", status: "ready-for-verification", recordYes: true }), "al-page-script");
   assert.equal(computeAdvance({ kind: "verify", status: "ready-for-verification" }), "al-user-verification");

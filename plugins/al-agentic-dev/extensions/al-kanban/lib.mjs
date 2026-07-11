@@ -55,17 +55,21 @@ export function parseFrontmatter(text) {
 
 // ---------------------------------------------------------------------------
 // Advance mapping: (kind, status, phase) → next skill, or null.
+// `status: done` is terminal for every kind — never an advance.
 // ---------------------------------------------------------------------------
 
 export function computeAdvance(t) {
   const { kind, status, phase, reviewClean, recordYes } = t;
+  if (status === "done") return null;
   if (kind === "technical") {
-    // A missing phase on a non-ready status is a grandfathered task (pre-phase
-    // contract): the status alone proves the stage, so advance from there.
     if (status === "ready" && !phase) return "al-refine";
-    if (status === "ready-for-implementation" && (phase === "refined" || !phase)) return "al-implement";
-    if (status === "done" && (phase === "implemented" || !phase)) return "al-refactor";
-    if (status === "done" && phase === "refactored") return "al-mutate";
+    if (status === "ready-for-implementation") {
+      if (phase === "refined" || !phase) return "al-implement";
+      if (phase === "implemented") return "al-refactor";
+      if (phase === "refactored") return "al-mutate";
+      // mutated but not done = survivors pending → killer test via implement
+      if (phase === "mutated") return "al-implement";
+    }
     return null;
   }
   if (kind === "verify") {
@@ -82,25 +86,40 @@ export function computeAdvance(t) {
 }
 
 // ---------------------------------------------------------------------------
+// Mark done: available on a technical task in the hardening window
+// (implemented/refactored/mutated, not yet done) — the developer's "move on"
+// call that waives the remaining hardening steps.
+// ---------------------------------------------------------------------------
+
+export function computeMarkDone(t) {
+  if (t.kind !== "technical" || t.status !== "ready-for-implementation") return null;
+  if (!["implemented", "refactored", "mutated"].includes(t.phase)) return null;
+  return {
+    prompt: `Mark task ${t.id} done: flip status: to done in its frontmatter (leave phase: at ${t.phase}) — the remaining hardening steps are deliberately waived.`,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Column placement (server-side, so all board instances agree).
 // ---------------------------------------------------------------------------
 
 export function technicalColumn(t) {
+  // done is terminal for every kind: Done column regardless of how far the
+  // hardening got (phase stays the honest what-ran record on the card).
+  if (t.status === "done") return "Done";
   if (t.phase === "refined") return "Refined";
   if (t.phase === "implemented") return "Implemented";
   if (t.phase === "refactored") return "Refactored";
   if (t.phase === "mutated") return "Mutated";
-  // No phase on a non-ready status = grandfathered task (pre-phase contract):
-  // the status alone proves the stage floor. done → implement finished
-  // (refactor/mutate unproven); ready-for-implementation → refine finished.
-  if (t.status === "done") return "Implemented";
+  // No phase on ready-for-implementation = grandfathered task (pre-phase
+  // contract): the status proves refine finished.
   if (t.status === "ready-for-implementation") return "Refined";
   // blocked-at-scope-time and ready both land in Ready
   return "Ready";
 }
 
 export function verifyColumn(t) {
-  if (t.status === "done") return "Verified";
+  if (t.status === "done") return "Done";
   if (t.phase === "page-scripted") return "Page-scripted";
   // ready-for-verification without a phase stamp is a grandfathered task:
   // the status itself proves a Verification Plan exists (refine finished).
@@ -226,6 +245,7 @@ export function readSnapshot(folder, searched) {
     };
     const skill = computeAdvance(t);
     t.advance = skill ? { skill, prompt: `Run the /${skill} skill on task ${t.id}` } : null;
+    t.markDone = computeMarkDone(t);
     t.column = t.kind === "technical" ? technicalColumn(t)
       : t.kind === "verify" ? verifyColumn(t) : null;
     snap.tasks.push(t);

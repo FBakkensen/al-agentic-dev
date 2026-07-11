@@ -145,7 +145,7 @@ Two tiers. The event type determines the tier.
 
 One line, no box. `**GREEN** <what changed> → <next step>.` or `**RED** <what failed> → <next step>.`
 
-**Task-close gate** — status flips to `done` or `blocked`:
+**Task-close gate** — status flips to `done` or `blocked`, or a skill's closing stamp lands without a status flip (`/al-implement`'s `phase: implemented` at green, `/al-mutate`'s verdict with survivors):
 
 Rendered as the verdict box — a borderless two-column table with exactly these four rows:
 

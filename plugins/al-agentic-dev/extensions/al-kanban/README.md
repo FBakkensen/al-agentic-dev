@@ -1,8 +1,8 @@
 # al-kanban — canvas extension
 
-Live kanban board over the al-agentic-dev task pipeline. Renders the `specs/<NNN>-<slug>/tasks/` folder of the current workspace as two strips — technical tasks (Ready → Refined → Implemented → Refactored → Mutated, swimlanes per slice) and verify tasks (Waiting on gate → Opened by review → Planned → Page-scripted → Verified) — plus provision/breaking-change chips. Column placement derives from `status:` + `phase:` frontmatter.
+Live kanban board over the al-agentic-dev task pipeline. Renders the `specs/<NNN>-<slug>/tasks/` folder of the current workspace as two strips — technical tasks (Ready → Refined → Implemented → Refactored → Mutated → Done, swimlanes per slice) and verify tasks (Waiting on gate → Opened by review → Planned → Page-scripted → Done) — plus provision/breaking-change chips. Column placement derives from `status:` + `phase:` frontmatter: `status: done` is terminal for every kind and lands in Done regardless of phase; before done, technical cards sit in the column of their last stamped phase.
 
-**Read-only.** The board never writes task files; skills remain the only writers. The **Advance** button on a card sends the next pipeline command (e.g. `Run the /al-refine skill on task T-003`) into the chat session and marks the card with an optimistic *pending* badge — the badge clears when the file's `status:`/`phase:` actually changes, and goes stale (dismissible) after 5 minutes if no change arrives.
+**Read-only.** The board never writes task files; skills remain the only writers. The **Advance** button on a card sends the next pipeline command (e.g. `Run the /al-refine skill on task T-003`) into the chat session; the **Mark done** button (technical cards in the hardening window — phase `implemented`/`refactored`/`mutated`, not yet done) sends a prompt asking the agent to flip `status:` to `done`, waiving the remaining hardening steps. Both mark the card with an optimistic *pending* badge — the badge clears when the file's `status:`/`phase:` actually changes, and goes stale (dismissible) after 5 minutes if no change arrives.
 
 ## How it loads
 

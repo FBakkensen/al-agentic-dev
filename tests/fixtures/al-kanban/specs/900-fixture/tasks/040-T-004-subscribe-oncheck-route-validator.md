@@ -1,6 +1,6 @@
 ---
 task: T-004
-status: done
+status: ready-for-implementation
 phase: implemented
 slice: post-validates-allocation
 kind: technical

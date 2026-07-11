@@ -12,7 +12,7 @@ The grammar separates three concerns:
 
 ## Technical task: Test Specification
 
-Technical tasks use a `Test Specification` section. `/al-refine` writes it for one named technical task from the current app/tests before implementation. `/al-scope` writes task shells only and does not pre-seed proof sections. `/al-implement` reconciles the specification to actual test procedure names and final scopes before flipping the task to `done`.
+Technical tasks use a `Test Specification` section. `/al-refine` writes it for one named technical task from the current app/tests before implementation. `/al-scope` writes task shells only and does not pre-seed proof sections. `/al-implement` reconciles the specification to actual test procedure names and final scopes before stamping the task `phase: implemented`.
 
 Use one primary coverage table per technical task:
 

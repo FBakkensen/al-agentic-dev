@@ -58,7 +58,8 @@ function startInstance(instanceId, workingDirectory, input, session) {
       res.write(": connected\n\n");
       sseClients.add(res);
       req.on("close", () => sseClients.delete(res));
-    } else if (url.pathname === "/advance" && req.method === "POST") {
+    } else if ((url.pathname === "/advance" || url.pathname === "/mark-done") && req.method === "POST") {
+      const wantMarkDone = url.pathname === "/mark-done";
       let bodyText = "";
       req.on("data", (c) => (bodyText += c));
       req.on("end", async () => {
@@ -67,14 +68,15 @@ function startInstance(instanceId, workingDirectory, input, session) {
           // from current frontmatter so the board can never inject prompt text.
           const { task } = JSON.parse(bodyText);
           if (typeof task !== "string" || !/^T-\d{3}$/.test(task)) {
-            throw new Error("advance expects { task: \"T-NNN\" }");
+            throw new Error(`${url.pathname.slice(1)} expects { task: "T-NNN" }`);
           }
           const snap = readSnapshot(state.folder, state.searched);
           const t = snap.tasks.find((x) => x.id === task && !x.unparseable);
-          if (!t?.advance) throw new Error(`no advance available for ${task}`);
-          await session.send({ prompt: t.advance.prompt });
+          const action = wantMarkDone ? t?.markDone : t?.advance;
+          if (!action) throw new Error(`no ${url.pathname.slice(1)} available for ${task}`);
+          await session.send({ prompt: action.prompt });
           res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify({ ok: true, prompt: t.advance.prompt }));
+          res.end(JSON.stringify({ ok: true, prompt: action.prompt }));
         } catch (err) {
           res.statusCode = 400;
           res.end(JSON.stringify({ ok: false, error: String(err.message || err) }));
@@ -120,7 +122,7 @@ const session = await joinSession({
       id: "al-kanban",
       displayName: "AL Kanban",
       description:
-        "Live kanban board over the al-agentic-dev task pipeline (specs/<NNN>-<slug>/tasks/). Read-only; Advance sends the next skill command into the chat.",
+        "Live kanban board over the al-agentic-dev task pipeline (specs/<NNN>-<slug>/tasks/). Read-only; Advance and Mark done send commands into the chat.",
       inputSchema: {
         type: "object",
         properties: {
