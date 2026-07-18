@@ -54,7 +54,7 @@ State handoff is the filesystem, never in-memory: every skill can be invoked col
 
 ## Custom agents
 
-Skills invoke workers as real GitHub Copilot CLI custom agents — `.agent.md` files under `agents/`, each with fixed frontmatter (`tools:`, `model:`, `user-invocable: false`) and a fixed body; not slash commands, and never directly invoked by you. Model role is fixed at the Terra worker role except `al-review-cr-bugscan`, which is pinned smart for correctness judgment; [`delegation.md`](delegation.md) owns the map.
+Skills invoke workers as real GitHub Copilot CLI custom agents — `.agent.md` files under `agents/`, each with fixed frontmatter (`tools:`, `model:`, `user-invocable: false`) and a fixed body; not slash commands, and never directly invoked by you. Each agent's `model:` field is set once in frontmatter and fixed — no invocation-time override, no silent substitution. The fleet is 18 agents across four roles: 13 on the worker role (`gpt-5.6-terra`, the default), 2 on the smart role (`claude-fable-5`: `al-review-cr-bugscan` for correctness judgment, `al-design-option` for whole-candidate architecture judgment), 2 on the arbiter role (`gpt-5.6-sol`: `al-researcher` for cross-source fact arbitration, `al-review-judge` for review-finding adjudication), and 1 on the bounded-executor role (`gpt-5.6-luna`: `al-gate-runner`); [`delegation.md`](delegation.md) owns the map.
 
 | Agent | Role | Invoked by |
 |---|---|---|
@@ -70,8 +70,12 @@ Skills invoke workers as real GitHub Copilot CLI custom agents — `.agent.md` f
 | `al-review-refactor-structural` | `/al-refactor` lens 3: R→P→W boundary, depth over indirection, seam introduction. | `/al-refactor` |
 | `al-review-refactor-naming` | `/al-refactor` lens 4: BC vocabulary + project terminology naming. | `/al-refactor` |
 | `al-review-refactor-perf` | `/al-refactor` lens 5: performance via al-performance MCP, structural reshapes only. | `/al-refactor` |
+| `al-review-judge` | Dedups, substantiates, and ranks one supplied batch of `/al-code-review` or `/al-refactor` lens findings against its scoped diff. Arbiter role. | `/al-code-review`, `/al-refactor` |
 | `bc-standard-reference` | Canonical BaseApp / System Application / APIV2 lookup, quoting Microsoft's shipped AL from `microsoft/BCApps` version-matched to your app. | `/al-research` names it as its BaseApp source |
-
+| `al-researcher` | Arbitrates one framed consequential BC fact across source families, quoting evidence and reconciling disagreement. Arbiter role. | `/al-research` |
+| `al-design-option` | Develops one self-contained architecture candidate under a supplied divergent constraint. Smart role — `/al-design` fans out three in parallel and chooses among them itself. | `/al-design` |
+| `al-gate-runner` | Runs one supplied build, provision, or breaking-change gate command and relays its authoritative artifacts, no interpretation. Bounded-executor role. | `/al-build`, `/al-provision`, `/al-validate-breaking-changes`, `/al-mutate` final closeout |
+| `al-mutant-cycle` | Runs one supplied mutate→gate→revert cycle and returns observed evidence; the caller classifies the mutant. Worker role. | `/al-mutate` |
 
 The former `al-doc-verify` worker is now an **inline check**: the writing skills (`/al-grill-adr`, `/al-event-model`, `/al-design`, `/al-scope`, `/al-refine`, `/al-steer`) verify each canonical artifact against `references/doc-integrity.md` themselves before the gate report — no subagent.
 

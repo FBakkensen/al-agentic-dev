@@ -7,7 +7,7 @@ description: Reshape AL/Business Central production and test code while tests st
 
 # /al-refactor, Improve shape while green
 
-Reshape AL so modules that earn their keep deepen and the ones that don't dissolve. Observable behaviour does not change. 5 lenses identify; main session merges, dedupes, applies serially with `/al-build` between.
+Reshape AL so modules that earn their keep deepen and the ones that don't dissolve. Observable behaviour does not change. 5 lenses identify; `al-review-judge` dedupes and substantiates; main session orders and applies serially with `/al-build` between.
 
 ## Preconditions
 
@@ -31,7 +31,9 @@ Architectural vocabulary (Module, Interface, Implementation, Seam, Adapter, Dept
 
 ## Lenses
 
-Invoke the 5 lens agents in parallel on the task diff — `al-review-refactor-simplify`, `al-review-refactor-bc`, `al-review-refactor-structural`, `al-review-refactor-naming`, `al-review-refactor-perf` (see `plugins/al-agentic-dev/agents/`; all fixed to the Terra worker role). Each returns reshape opportunities; the main session merges into one ordered apply queue, running pre-send check 3 ([voice-contract.md](../../references/voice-contract.md) Relaying subagent findings) on each before it reaches the user — a finding naming no object or observation goes back to its lens. The invocation carries only the task diff; the read-only posture, BC vocabulary, and findings shape are fixed in each agent's body.
+Invoke the 5 lens agents in parallel on the task diff — `al-review-refactor-simplify`, `al-review-refactor-bc`, `al-review-refactor-structural`, `al-review-refactor-naming`, `al-review-refactor-perf` (see `plugins/al-agentic-dev/agents/`; all fixed to the Terra worker role). Each returns raw reshape opportunities; the read-only posture, BC vocabulary, and findings shape are fixed in each agent's body, and the invocation carries only the task diff.
+
+Invoke the named `al-review-judge` custom agent once, passing the task diff plus all 5 lenses' raw findings blocks (arbiter role, fixed — see [delegation.md](../../references/delegation.md) and `plugins/al-agentic-dev/agents/al-review-judge.agent.md`). It dedupes the overlap, substantiates each survivor against the diff — default to false-positive when it can't be substantiated — and classifies: `MUST-FIX` / `SHOULD-FIX` survivors are real reshape opportunities, ranked by the consequence of leaving the diff as it is; `NO-ACTION` survivors (duplicate, unsubstantiated, out of scope, or already-intentional) are dropped. The judge never chooses apply order, sequences edits, or touches build/workflow state — this skill orders every real survivor into one apply queue per the ordering rule below (Apply discipline), running pre-send check 3 ([voice-contract.md](../../references/voice-contract.md) Relaying subagent findings) on each before it reaches the user — a finding naming no object or observation goes back to its lens. **`al-review-judge` unavailable** → report `BLOCKED`, name `al-review-judge` as the missing agent, and stop; no inline substitution (see [delegation.md](../../references/delegation.md)).
 
 When the diff touches test code, the invocation also names [test-layout.md](../../references/test-layout.md): its authoring contract is exactly what tidy passes break silently — consolidating "duplicate" integration-test library procedures violates duplicate-before-share, hoisting handlers off a test codeunit breaks the `[HandlerFunctions]` string binding, relocating a double breaks the per-app independence rule. Moving a test across the unit/integration boundary is never a lens call — that is replan, route `/al-steer`.
 
@@ -123,6 +125,6 @@ If state can't be read, fall back: `/al-mutate` after a behaviour-bearing reshap
 | **Runs after**     | `/al-implement` took the current task to green, OR standalone on legacy code |
 | **Hands off to**   | `/al-mutate` (the next rigor step), or back to the user standalone |
 | **Calls directly** | `/al-research` (BC facts), `/al-build` (green between applies) — the only skills it invokes; rubber-duck consult on a non-trivial apply queue per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
-| **Spawns**         | `al-review-refactor-simplify` / `al-review-refactor-bc` / `al-review-refactor-structural` / `al-review-refactor-naming` / `al-review-refactor-perf` custom agents |
+| **Spawns**         | `al-review-refactor-simplify` / `al-review-refactor-bc` / `al-review-refactor-structural` / `al-review-refactor-naming` / `al-review-refactor-perf` custom agents; `al-review-judge` after the lens pass |
 | **Replan venue**   | `/al-steer` |
 | **Sidebands**      | bc-standard-reference (BaseApp patterns), `/al-code-review` (non-structural concerns surface as out-of-scope notes), `/al-design` (standalone-on-legacy surfacing real architecture), `/grill-me` (non-obvious trade-off needs the user) |

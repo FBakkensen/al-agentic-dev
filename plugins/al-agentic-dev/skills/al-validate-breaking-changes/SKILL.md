@@ -24,7 +24,9 @@ pwsh "<this-skill-dir>/../al-build/scripts/validate-breaking-changes.ps1"
 
 Substitute `<this-skill-dir>` with this skill's base directory (announced at skill activation) — `al-build` is a sibling skill in the same plugin.
 
-Delegate to one general subagent — verbose; keep it out of the main session. The script reads the baseline cache `/al-provision` populated (never downloads), and **self-skips** when `breakingChange.enabled=false` (exit `0`, "disabled"). The worker returns the exit code; it edits nothing.
+Delegate to the named `al-gate-runner` custom agent — bounded executor role (see [delegation.md](../../references/delegation.md)) — verbose; keep it out of the main session. The script reads the baseline cache `/al-provision` populated (never downloads), and **self-skips** when `breakingChange.enabled=false` (exit `0`, "disabled"). The worker relays its exit code and bounded verbatim stdout/stderr excerpt (plus any supplied authoritative artifacts), and edits nothing; this skill maps the exit code.
+
+**Already inside an agent** mid-workflow → run `validate-breaking-changes.ps1` directly inline instead; nested custom-agent spawning does not happen, and this is not model substitution since no new spawn occurs. **`al-gate-runner` unavailable** for a fresh spawn → report `BLOCKED`, name `al-gate-runner` as the missing agent, and stop; no generic-subagent substitution (see [delegation.md](../../references/delegation.md)).
 
 ## Flip
 

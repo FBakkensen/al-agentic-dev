@@ -67,7 +67,7 @@ Three of four does not earn the callout. This skill does not write ADR files.
 
 ## Parallel design-twice, non-trivial calls
 
-Non-trivial = multi-module, brownfield refactor, or novel pattern selection. When host supports subagents, run three parallel delegated passes with divergent constraints:
+Non-trivial = multi-module, brownfield refactor, or novel pattern selection. When host supports subagents, invoke the named `al-design-option` custom agent three times in parallel, each call carrying identical grounded context (idea or `event-model.md`, `CONTEXT.md` domain vocabulary + ADRs, existing `architecture.md` when reshaping, brownfield touchpoints) and one of the three divergent constraints below (smart role, fixed — see [delegation.md](../../references/delegation.md) and `plugins/al-agentic-dev/agents/al-design-option.agent.md`):
 
 | Pass | Constraint |
 |---|---|
@@ -75,7 +75,9 @@ Non-trivial = multi-module, brownfield refactor, or novel pattern selection. Whe
 | 2 | Maximise flexibility, many use cases, easy extension. |
 | 3 | Optimise the most common caller, default case trivial. |
 
-Each pass runs its own `/al-research` and receives BC vocabulary from `CONTEXT.md` plus architectural vocabulary from [LANGUAGE.md](../../references/LANGUAGE.md) → all three name things consistently. Output per pass: module map + per-module interface, named adapters at every seam, the one trade-off line that distinguishes this design. Present all three sequentially, compare along **depth** / **locality** / **seam placement**, pick one (or hybrid) opinionatedly, run `/grill-me` when choice is user's call; a rubber-duck consult reconciles non-trivial picks ([rubber-duck-review.md](../../references/rubber-duck-review.md)). When the choice goes to the user: one question, lettered options, recommendation first ([voice-contract.md](../../references/voice-contract.md) One decision per question).
+Each call establishes its own workspace and platform facts from read-only sources and separates sourced facts from assumptions, using BC vocabulary from `CONTEXT.md` plus architectural vocabulary from [LANGUAGE.md](../../references/LANGUAGE.md) → all three name things consistently. Each returns one self-contained `ARCHITECTURE CANDIDATE` (its fixed return shape: constraint restated, shape, BC event flow, seams, trade-offs, evidence, assumptions) — it never compares, recommends, or picks among candidates; that judgment stays here. **`al-design-option` unavailable** → report `BLOCKED`, name `al-design-option` as the missing agent, and stop; no inline or ad hoc general-subagent substitution (see [delegation.md](../../references/delegation.md)).
+
+Present all three sequentially, compare along **depth** / **locality** / **seam placement**, pick one (or hybrid) opinionatedly, run `/grill-me` when choice is user's call; a rubber-duck consult reconciles non-trivial picks ([rubber-duck-review.md](../../references/rubber-duck-review.md)). When the choice goes to the user: one question, lettered options, recommendation first ([voice-contract.md](../../references/voice-contract.md) One decision per question).
 
 ## Branch + folder + write
 
@@ -104,6 +106,7 @@ Once when `architecture.md` lands. Gate report — rendered box-first, passed th
 | **Runs after**     | `/al-event-model` (user/API-facing features) or `/al-grill-adr` (backend-only) |
 | **Hands off to**   | `/al-scope` |
 | **Calls directly** | `/al-research` (BC facts) — the only skill it invokes; rubber-duck consult on design-twice picks per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
+| **Spawns**         | `al-design-option` custom agent, three parallel calls (non-trivial design-twice calls only) |
 | **Replan venue**   | `/al-steer` |
 | **Sidebands**      | `bc-standard-reference` (pure BaseApp questions), `/grill-me` (design-twice reconciliation) |
 
