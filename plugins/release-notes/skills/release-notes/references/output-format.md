@@ -1,8 +1,8 @@
 # Output Format
 
-Render the final markdown using the template below. Skip empty sections — never emit a header with no entries underneath. User-Facing Changes always precedes Technical Summary. No PR or issue links anywhere; release notes are self-contained.
+Render this template. Drop empty sections; User-Facing Changes precedes Technical Summary. Release notes are self-contained: no PR or issue links.
 
-Version comes from `summary.appJsonDiff.version.new` (fall back to `summary.toVersion`). BC compatibility comes from `summary.appJsonDiff.application`.
+Version → `summary.appJsonDiff.version.new`, else `summary.toVersion`. BC compatibility → `summary.appJsonDiff.application`.
 
 ## Canonical template
 
@@ -74,9 +74,11 @@ Version comes from `summary.appJsonDiff.version.new` (fall back to `summary.toVe
 
 ## Section rules
 
-- **Skip empty sections.** Drop the header entirely when no entry would land beneath it.
-- **User-Facing first.** Always above Technical Summary.
-- **No links.** No PR numbers, no issue numbers, no URLs. Names are the citation.
-- **Version from summary.** Pull from `summary.appJsonDiff.version.new` first, `summary.toVersion` as fallback. Do not infer from elsewhere.
-- **Emoji on section headers only.** Keep `🚀`, `✨`, `🐛`, `⚠️` exactly as shown — they are part of the markdown contract. Do not add emoji elsewhere in the body.
-- **Migration steps are imperative.** `Replace X with Y. Re-run upgrade codeunit. Recompile dependent extensions.` — not `It is recommended to consider replacing X.`
+| Rule | Contract |
+|---|---|
+| Empty section | Omit its header. |
+| Order | User-Facing Changes stays above Technical Summary. |
+| Citations | No PR numbers, issue numbers, or URLs; names are the citation. |
+| Version | Use the summary source above; do not infer. |
+| Emoji | Keep `🚀`, `✨`, `🐛`, `⚠️` exactly on section headers only. |
+| Migration | Imperative and ordered: `Replace X with Y. Re-run upgrade codeunit. Recompile dependent extensions.` |

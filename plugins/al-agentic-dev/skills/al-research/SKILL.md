@@ -7,7 +7,7 @@ description: Verify AL/Business Central specifics from authoritative sources, qu
 
 # /al-research, Verify BC specifics
 
-Treat your own AL/BC knowledge as untrusted. Frame the question, invoke the named `al-researcher` custom agent to verify the specific BC fact and quote the canonical source, then relay the finding and route it. Read-only advisory: never pick designs. This is one of the two skills (with `/al-build`) another skill may invoke directly — a calling skill that hits the escalation bar invokes it by name; a user can also run it standalone.
+Treat your own AL/BC knowledge as untrusted: frame the question, invoke the named `al-researcher` custom agent to verify the specific BC fact and quote the canonical source, then relay the finding and route it. Read-only advisory: never pick designs. One of two skills (with `/al-build`) another skill may invoke directly — a calling skill hitting the escalation bar invokes it by name, a user can run it standalone.
 
 ## Escalation seat, not toll booth
 
@@ -21,7 +21,7 @@ Direct quoted fetch satisfies the implement-time evidence bar (see `voice-contra
 
 ## Delegation
 
-Once the question is framed and the preconditions hold, invoke the named `al-researcher` custom agent to do the verification: cross-family checking, quoting, conflict surfacing per the discipline below. Pass the framed question, why the escalation bar was earned, and any candidate sources or conflicting claims already in hand. This skill keeps everything else — framing, relaying the finding to the caller or user, landing citations into the calling artifact, and routing a surfaced conflict.
+Once framed with preconditions held, invoke the named `al-researcher` custom agent for cross-family checking, quoting, and conflict surfacing per the discipline below. Pass the framed question, why the escalation bar was earned, and any candidate sources or conflicting claims already in hand. This skill keeps everything else — framing, relaying the finding to the caller or user, landing citations into the calling artifact, and routing a surfaced conflict.
 
 **bc-standard-reference carve-out.** When the question is specifically "what does Microsoft's shipped BaseApp/System Application/APIV2 code do", invoke the `bc-standard-reference` custom agent directly instead of routing it through `al-researcher` — that lookup already has its own named agent, and one custom agent does not spawn another during this rollout. Do both in the same pass when a question needs cross-family verification *and* a shipped-code quote: invoke each directly, then reconcile.
 

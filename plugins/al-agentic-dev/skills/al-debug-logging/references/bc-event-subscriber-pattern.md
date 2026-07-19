@@ -1,12 +1,12 @@
 # Probing standard BC and production flows via event subscribers
 
-Reference for `/al-debug-logging` when the code under observation lives in BaseApp, the System Application, a third-party app, or any extension you cannot edit. The in-place `DEBUG-*` probe pattern needs source access. Subscribe to the events the inaccessible code already publishes; emit `DEBUG-*` `FeatureTelemetry.LogUsage` calls from your subscriber. The subscriber is itself a probe — attached to a real published extension point.
+Reference for `/al-debug-logging` when the observed code is in BaseApp, the System Application, a third-party app, or another extension you cannot edit. In-place `DEBUG-*` probes need source access; subscribe to events the inaccessible code publishes and emit `DEBUG-*` `FeatureTelemetry.LogUsage` from the subscriber. The subscriber is a probe attached to a real published extension point.
 
-Pattern is general — any BC subsystem that publishes events can be observed this way. When you do control the source, prefer an in-place probe: closer to the decision, easier to remove.
+Any BC subsystem that publishes events can be observed this way. When you control the source, prefer an in-place probe: closer to the decision and easier to remove.
 
 ## Find the event
 
-Use `bc-standard-reference` agent to locate published events near the suspected behaviour. Look for events on either side of the suspected branch (`OnBefore*` and `OnAfter*` of the same operation) so the order in `telemetry.jsonl` reveals which path ran.
+Use `bc-standard-reference` to locate published events near the suspected behaviour. Find events on both sides of the branch (`OnBefore*` and `OnAfter*` for one operation) so `telemetry.jsonl` order reveals the path.
 
 ## Pattern
 
@@ -30,7 +30,7 @@ codeunit 50XXX "Debug [Subsystem] Subsc"
 }
 ```
 
-Run whatever harness exercises the BaseApp flow (posting a document, running a workflow, opening a page action), then read `.output/TestResults/*/telemetry.jsonl`:
+Run the harness that exercises the BaseApp flow — post a document, run a workflow, or open a page action — then read `.output/TestResults/*/telemetry.jsonl`:
 
 ```text
 rg "DEBUG-BC-" .output/TestResults/*/telemetry.jsonl
@@ -40,9 +40,9 @@ rg "DEBUG-BC-" .output/TestResults/*/telemetry.jsonl
 Select-String -Path .output/TestResults/*/telemetry.jsonl -Pattern "DEBUG-BC-"
 ```
 
-When the investigation is done, delete the subscriber codeunit. Scaffolding, not production code.
+Investigation complete → delete the subscriber codeunit. It is scaffolding, never production code.
 
-A negative result is a result. Subscribing to `Price Calculation - V16`'s `OnAfterFindLines` once produced a `telemetry.jsonl` where the subscriber never fired — the silence *was* the diagnosis: the V16 calculator was not enabled, and the fix lived in test setup, not in the calculator. The probe does not need to *catch* something to answer the question.
+A negative result answers the question. A subscriber to the `Price Calculation - V16` event `OnAfterFindLines` once never fired in `telemetry.jsonl`: V16 was not enabled, so the fix belonged in test setup, not the calculator. A probe need not catch an event to provide evidence.
 
 ## Hygiene
 

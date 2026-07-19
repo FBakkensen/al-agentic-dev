@@ -7,10 +7,10 @@ description: User-facing orientation for the al-agentic-dev plugin — pipeline 
 
 # /al-agentic-dev-overview, Plugin tour
 
-Read `../../references/overview.md` relative to this skill's base directory and emit verbatim — the whole file is the response body. Write nothing; inspect no repo state.
+Read `../../references/overview.md` from this skill's base directory. Emit it verbatim as the whole response. Write nothing and inspect no repository state.
 
-Pure static emit is the seam: this skill answers "what does the plugin contain", `/al-steer` answers "what should I do right now". A prompt that wants state-aware navigation ("what's next", "where are we") is `/al-steer` — route, don't tour.
+Static tour → what the plugin contains. `/al-steer` → current state and next action. Route "what's next?" and "where are we?" to `/al-steer`; do not tour.
 
 ## Next step
 
-Orientation only. `Next: /al-steer` for the state-aware "where am I / what next" read off the current feature.
+Orientation only. `Next: /al-steer` for a state-aware read of the current feature.

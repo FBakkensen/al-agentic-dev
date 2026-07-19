@@ -62,7 +62,7 @@ Use this after changing dependency-install or gh-CLI dispatch in `new-bc-contain
    - one github.com entry (a small public AL-Go-published repo, version `latest`),
    - one `*.ghe.com` entry (only if you have GHE creds; otherwise omit).
 4. Run `gh auth status` to confirm authentication to each host listed.
-5. Run `pwsh "$marketplace/plugins/al-build/skills/al-build/scripts/new-bc-container.ps1"`.
+5. Run `pwsh "$marketplace/plugins/al-agentic-dev/skills/al-build/scripts/new-bc-container.ps1"`.
 6. Expected: each probing-path app downloaded, published, container prepared for commit; script exits 0.
 
 ### Failure-mode checks (run each in isolation)

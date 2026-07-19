@@ -6,19 +6,19 @@ allowed-tools: ["execute", "read"]
 
 **Style:** Concise — cut filler, keep grammar. Opinionated — pick a side. Arrows (→) for causality. Technical terms exact, code and errors quoted verbatim.
 
-# /al-build — Build and test gate
+# /al-build — build and test gate
 
-Run after every AL change, and as the required gate before committing. Zero warnings, zero errors. Anything else is red.
+Run after every AL change and before committing. Zero warnings and zero errors → green; anything else → red.
 
-**Layer.** Executes the **Unit** (AL-Runner) and **Integration** (container + TestPage) layers. See [`test-strategy.md`](../../references/test-strategy.md).
+**Layers.** Runs **Unit** (AL-Runner) and **Integration** (container + TestPage). See [`test-strategy.md`](../../references/test-strategy.md).
 
-## First time
+## Setup
 
 1. `pwsh "<skill-folder>/scripts/init.ps1"` → drops `al-build.json` in repo root.
 2. Set `testApps` to list your test app directories.
 3. `pwsh "<skill-folder>/scripts/provision.ps1"` → one-time symbol + container setup.
 
-`Stop. Run pwsh "<skill-folder>/scripts/provision.ps1" first.` if `test.ps1` complains compiler or symbols are missing.
+Compiler or symbols missing → **Stop.** Run `pwsh "<skill-folder>/scripts/provision.ps1"` first.
 
 ## Canonical gate
 
@@ -28,13 +28,13 @@ Set location to consumer repo root, then:
 pwsh "<skill-folder>/scripts/test.ps1"
 ```
 
-Always run full gate. Do not filter tests by codeunit. Not bare `alc.exe` → symbol resolution, container publish, telemetry capture live in `test.ps1`.
+Always run the full gate. Do not filter by codeunit or use bare `alc.exe`: `test.ps1` owns symbol resolution, container publish, and telemetry capture.
 
 Force republish: `pwsh "<skill-folder>/scripts/test.ps1" -Force`
 
 ### Gate metrics (automatic)
 
-Every `test.ps1` run self-records one entry to `.output/logs/build-timing.jsonl` plus a user-level mirror at `~/.al-build/gate-metrics.jsonl` (override: `ALBT_GATE_METRICS_GLOBAL_PATH`). No caller flags — phase attribution derives from the recorded evidence at report time. Summarize where gate time goes: `pwsh "<skill-folder>/scripts/report-gate-metrics.ps1"` (repo-local) or `-GlobalLog` (cross-repo).
+Each `test.ps1` run records one entry in `.output/logs/build-timing.jsonl` and mirrors it to `~/.al-build/gate-metrics.jsonl` (override: `ALBT_GATE_METRICS_GLOBAL_PATH`). Phase attribution derives from recorded evidence; callers pass no flags. Report repo-local metrics with `pwsh "<skill-folder>/scripts/report-gate-metrics.ps1"` or cross-repo metrics with `-GlobalLog`.
 
 ### Fast unit test (inner loop)
 
@@ -44,7 +44,7 @@ When `unitTestApp` configured in `al-build.json`, run only AL Runner unit tests:
 pwsh "<skill-folder>/scripts/test.ps1" -UnitTestOnly
 ```
 
-Compiles all apps — main, every `testApps` entry, and the unit-test app — through the analyzer gate (integration compile errors still surface), runs AL Runner, exits — no container needed. Because `testApps` now compile in this mode too, they must resolve: a unit-only project sets `"testApps": []` (the default is `["test"]`, which fail-loud throws if no `test/` dir exists). Use during the RED→GREEN inner loop in `/al-implement` for fast feedback.
+Compiles the main app, every `testApps` entry, and the unit-test app through the analyzer gate; then runs AL Runner and exits without a container. `testApps` must resolve in this mode: unit-only projects set `"testApps": []`; the default `["test"]` fails loudly without `test/`. Use this fast feedback loop during `/al-implement` RED→GREEN.
 
 **Outputs (per test run):**
 
@@ -54,15 +54,15 @@ Compiles all apps — main, every `testApps` entry, and the unit-test app — th
 - `.output/TestResults/summary.json` → machine-readable summary: `gate` (`full`/`unit`), `totals` per runner, `runs[]` with one record per test run (`runner`, `appName`, `dir`, `passed`, `counts`, `resultFile`, `telemetryFile`).
 - `.output/logs/build-timing.jsonl` → one gate-metrics entry per run (every exit path: pass, fail, throw), mirrored to `~/.al-build/gate-metrics.jsonl`.
 
-Take `resultFile` paths from `summary.json` run records — don't glob; a stale file from an earlier gate may sit beside a fresh one. `test.ps1` writes `summary.json` only once a run reaches a result-emission point (a unit-test failure, a unit-only pass, or the end of a full gate); a run that stops earlier — a bad `al-build.json`, a compile failure — leaves whatever `summary.json` was already on disk untouched. A relay reporting `summary.json` as `missing` means no file exists at that path; a relay reporting it present is not on its own proof this run wrote it — corroborate against the relayed exit code and bounded output excerpt before treating its content as this run's result.
+Take `resultFile` paths from `summary.json` run records; never glob because stale files can sit beside fresh output. `test.ps1` writes `summary.json` only after a unit-test failure, unit-only pass, or full-gate completion; bad `al-build.json` or a compile failure leaves a prior file untouched. `missing` means no file exists; a present file is current-run evidence only when the relayed exit code and bounded excerpt corroborate it.
 
 Test failure with an unclear cause → name `/al-debug-logging` as the next step; a clear assertion or compile failure needs no telemetry. Don't grep the build log for clues telemetry already answers.
 
 ## Delegation
 
-Always delegate `/al-build` to the named `al-gate-runner` custom agent — bounded executor role, a mechanical gate run that relays authoritative result files (see [delegation.md](../../references/delegation.md)). Build output is verbose; keep it out of the main session.
+Fresh `/al-build` runs delegate to the named `al-gate-runner` custom agent — the bounded executor that relays authoritative result files (see [delegation.md](../../references/delegation.md)). Keep verbose build output out of the main session.
 
-**Already inside an agent** (a red-green case, a mutation cycle, or any other agent already mid-workflow) → run the gate script directly inline instead; nested custom-agent spawning does not happen, and this is not model substitution since no new spawn occurs. **`al-gate-runner` unavailable** for a fresh spawn → report `BLOCKED`, name `al-gate-runner` as the missing agent, and stop; no generic-subagent or inline substitution (see [delegation.md](../../references/delegation.md)).
+Already inside an agent mid-workflow → run the gate script inline; nested custom-agent spawning does not occur. `al-gate-runner` unavailable for a fresh spawn → report `BLOCKED`, name it as missing, and stop. No generic-subagent or inline substitution (see [delegation.md](../../references/delegation.md)).
 
 After the worker returns the gate report, close the completed thread before interpreting or reporting the result. Report the outcome as the mid-task Gate one-liner per [voice-contract.md](../../references/voice-contract.md) — never paste the worker's block raw.
 
@@ -80,11 +80,11 @@ Relay the observed exit code and the authoritative artifact paths and content ve
 
 ### Gate report
 
-The worker relays the exit code, raw artifacts, and one mechanically selected output excerpt only — never an interpreted verdict. After it returns, derive the gate report yourself as YAML-like plain text in a fenced `text` block.
+The worker relays only the exit code, raw artifacts, and one mechanically selected output excerpt — never a verdict. Then derive the gate report as YAML-like plain text in a fenced `text` block.
 
 Take `gate`, `totals`, and all counts from the relayed `.output/TestResults/summary.json` content — the source of truth; echo `appName`, `dir`, `resultFile`, `telemetryFile`, and every `counts` number verbatim. **Never derive counts from console lines: `Codeunit … Success` lines are test codeunits (containers of tests), not tests.** Report totals per runner; never sum across runners — the unit test app runs through both al-runner and the container, so a cross-runner sum counts the same tests twice. If `counts` is `null` for a run, report `counts: unavailable` — do not substitute zeros. Omit `totals` and `runs` if no summary exists.
 
-On a non-zero exit, parse the failing run's relayed `resultFile` (JUnit XML, both runners) for failing test names and the `<failure message=…>` text. If XML is unavailable, use explicit failure lines from the relayed bounded output excerpt; if neither exists, omit `failing_tests`. A compilation failure stops before `summary.json` is (re)written this run — if the relayed artifact is `missing`, or present but not corroborated by the relayed exit code and excerpt as this run's own, treat its counts as unusable and derive the mandatory `root_signal` from the bounded excerpt instead, not from stale or missing test counts. If the excerpt is `missing`, use only `command exited <exit_code>; no command output captured`. Omit `first_error` and `log_excerpt` unless corresponding evidence exists. `log_excerpt` is capped at the relay's nine lines. `root_signal` is mandatory for `FAIL` and must compress observed evidence only; no cause speculation.
+For a non-zero exit, parse the failing relayed `resultFile` (JUnit XML from either runner) for test names and `<failure message=…>`. If XML is unavailable, use explicit failure lines from the bounded excerpt; if neither exists, omit `failing_tests`. A compilation failure can leave `summary.json` stale: `missing`, or present but uncorroborated by this exit code and excerpt, makes its counts unusable; derive required `root_signal` from the excerpt instead. With a missing excerpt, use only `command exited <exit_code>; no command output captured`. Omit `first_error` and `log_excerpt` without evidence; cap `log_excerpt` at the relayed nine lines. `root_signal` is mandatory for `FAIL` and compresses observed evidence only — never cause speculation.
 
 PASS example:
 

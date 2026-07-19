@@ -1,6 +1,6 @@
 # al-agentic-dev plugin overview
 
-Composable skills for AL/Business Central agentic development. One feature flows idea → merge through a pipeline of named skills, each owning a specific cut of the work. **You drive the pipeline:** every skill ends by naming the next natural step, and you invoke it by typing `/<skill-name>` — nothing auto-chains. A skill calls another skill only in two cases: `/al-research` (BC fact escalation) and `/al-build` (compile/publish/test); non-trivial artifacts additionally get an autonomous consult of the **rubber-duck agent** (an independent read a worker model leans on mid-step — [`rubber-duck-review.md`](rubber-duck-review.md)). Everything else is a handoff you take. Skills also invoke lightweight **custom agents** (review lenses, the red-green worker) under `agents/` — real `.agent.md` definitions, not slash commands, never invoked by you directly.
+Composable AL/Business Central skills, idea → merge. **You drive:** each skill names its handoff; you invoke `/<skill-name>`; nothing auto-chains. Only `/al-research` (BC fact escalation) and `/al-build` (compile/publish/test) are direct skill calls. Non-trivial artifacts also consult the autonomous **rubber-duck agent** ([`rubber-duck-review.md`](rubber-duck-review.md)); custom agents in `agents/` are `.agent.md` workers, never slash commands or directly invoked by you.
 
 ## Pipeline
 
@@ -12,7 +12,7 @@ Composable skills for AL/Business Central agentic development. One feature flows
                    skips this step)
 ```
 
-Each `→` is a handoff the finishing skill names and **you** take; no step launches the next. Per technical task the inner cycle is `/al-implement` (red→green, stops at green) → `/al-refactor` (reshape while green) → `/al-mutate` (validate test rigor) → the slice gate. `/al-refactor` is strongly directed for non-trivial work, `/al-mutate` for whatever arrived without a red — but you decide whether and when to run them.
+Each `→` is your handoff. Technical-task cycle: `/al-implement` (red→green, stop) → `/al-refactor` (reshape while green) → `/al-mutate` (test rigor) → slice gate. `/al-refactor` is strongly directed for non-trivial work; `/al-mutate` for work without a red; you decide when to run both.
 
 | Lane | Skills |
 |---|---|
@@ -23,9 +23,9 @@ Each `→` is a handoff the finishing skill names and **you** take; no step laun
 | **Verification** (user-facing slices, after `/al-code-review` per-slice) | `/al-page-script` (guide the user to record framework-limited E2E), `/al-user-verification` (walk the rest + gate the slice) |
 | **Meta** | `/al-agentic-dev-overview` (this skill), `/al-quiz` (quiz the developer on landed changes — keeps the human's mental model in contact with the codebase) |
 
-Slice mechanics: `/al-refine` opens one `ready` task at a time. Technical tasks become `ready-for-implementation` and stay there through the hardening window while `phase:` advances: `/al-implement` drives them to green (`phase: implemented`), `/al-refactor` reshapes the task diff while green (`phase: refactored`), `/al-mutate` validates the tests catch the decision logic and flips the task `done` on a clean verdict — or you mark the task done early, waiving the remaining steps. When a slice's technical tasks are done (slice-done), the closing skill announces `/al-code-review` per-slice — it reviews the code, not the user walk, so it runs before the verify task is opened. For a user/API-facing slice a clean review opens the verify track: code-review stamps `review: clean` and flips the verify task to `ready`; `/al-refine` writes its `Verification Plan` → `ready-for-verification`; then page-script/user-verification. `/al-page-script` guides you to record the slice's framework-limited E2E Journey Examples (those marked `Record: yes` — behaviour no AL test can automate) in BC's Page Scripting recorder, one scenario at a time, and replays each on a fresh container; then `/al-user-verification` pre-flights the recording batch, runs Contract Examples, and walks you through the non-recorded Journey Examples (`Record: no`) and Exploration Charters in your own browser before the next slice opens to `ready` for refinement. Backend-only slices skip page-script and user-verification, chaining through `/al-code-review` into the next slice. `/al-scope` brackets the feature with two ops tasks: a `kind: provision` task first (`/al-provision` refreshes the build environment — compiler, symbols, breaking-change baseline) and a `kind: breaking-change` task last (`/al-validate-breaking-changes` checks the feature against the released baseline before merge); both run a script and flip status, bypassing `/al-refine`. At feature-done (every task in feature `done`), `/al-code-review` fires per-feature before merge.
+`/al-refine` opens one `ready` task. Technical work stays `ready-for-implementation` while `phase:` advances: `/al-implement` → `implemented`, `/al-refactor` → `refactored`, `/al-mutate` → `done` on a clean rigor verdict; early done waives remaining hardening. Slice-done → `/al-code-review` before any user walk. A clean user/API review writes `review: clean`, opens verify `ready`, then `/al-refine` writes `Verification Plan` → `ready-for-verification`. `/al-page-script` records and fresh-container replays `Record: yes` framework-limited E2E examples; `/al-user-verification` pre-flights them, runs Contract Examples, then walks `Record: no` Journey Examples and Exploration Charters. Backend-only slices skip both. `/al-scope` brackets the feature with `kind: provision` (`/al-provision`) and `kind: breaking-change` (`/al-validate-breaking-changes`) script-run ops tasks; both bypass `/al-refine`. Feature-done → per-feature `/al-code-review` before merge.
 
-State handoff is the filesystem, never in-memory: every skill can be invoked cold from a session and reconstruct where it is from the `specs/` artifacts and task frontmatter. Status-frontmatter writes (a `done` flip, opening an unblocked dependent) are state writes the owning skill does inline — that is not a cross-skill call.
+State lives in `specs/` and task frontmatter, never memory; every skill can start cold. The owner writes its `done` flips and unblocked dependents inline — state writes, not cross-skill calls.
 
 ## Skills
 
@@ -54,7 +54,7 @@ State handoff is the filesystem, never in-memory: every skill can be invoked col
 
 ## Custom agents
 
-Skills invoke workers as real GitHub Copilot CLI custom agents — `.agent.md` files under `agents/`, each with fixed frontmatter (`tools:`, `model:`, `user-invocable: false`) and a fixed body; not slash commands, and never directly invoked by you. Each agent's `model:` field is set once in frontmatter and fixed — no invocation-time override, no silent substitution. The fleet is 18 agents across four roles: 13 on the worker role (`gpt-5.6-terra`, the default), 2 on the smart role (`claude-fable-5`: `al-review-cr-bugscan` for correctness judgment, `al-design-option` for whole-candidate architecture judgment), 2 on the arbiter role (`gpt-5.6-sol`: `al-researcher` for cross-source fact arbitration, `al-review-judge` for review-finding adjudication), and 1 on the bounded-executor role (`gpt-5.6-luna`: `al-gate-runner`); [`delegation.md`](delegation.md) owns the map.
+Skills invoke fixed `.agent.md` workers under `agents/`; they are not slash commands and you never call them directly. Each agent fixes `tools:`, `model:`, and `user-invocable: false` in frontmatter — no invocation override or substitution. The fleet is **18**: **10** workers (`gpt-5.6-terra` default), **6** smart agents (`claude-fable-5`: `al-design-option`, `al-review-cr-bugscan`, `al-review-judge`, `al-review-refactor-bc`, `al-review-refactor-simplify`, `al-review-refactor-structural`), **1** arbiter (`gpt-5.6-sol`: `al-researcher`), and **1** bounded executor (`gpt-5.6-luna`: `al-gate-runner`). [`delegation.md`](delegation.md) owns the map.
 
 | Agent | Role | Invoked by |
 |---|---|---|
@@ -70,35 +70,33 @@ Skills invoke workers as real GitHub Copilot CLI custom agents — `.agent.md` f
 | `al-review-refactor-structural` | `/al-refactor` lens 3: R→P→W boundary, depth over indirection, seam introduction. | `/al-refactor` |
 | `al-review-refactor-naming` | `/al-refactor` lens 4: BC vocabulary + project terminology naming. | `/al-refactor` |
 | `al-review-refactor-perf` | `/al-refactor` lens 5: performance via al-performance MCP, structural reshapes only. | `/al-refactor` |
-| `al-review-judge` | Dedups, substantiates, and ranks one supplied batch of `/al-code-review` or `/al-refactor` lens findings against its scoped diff. Arbiter role. | `/al-code-review`, `/al-refactor` |
+| `al-review-judge` | Dedups, substantiates, and ranks one supplied batch of `/al-code-review` or `/al-refactor` lens findings against its scoped diff. Smart role. | `/al-code-review`, `/al-refactor` |
 | `bc-standard-reference` | Canonical BaseApp / System Application / APIV2 lookup, quoting Microsoft's shipped AL from `microsoft/BCApps` version-matched to your app. | `/al-research` names it as its BaseApp source |
 | `al-researcher` | Arbitrates one framed consequential BC fact across source families, quoting evidence and reconciling disagreement. Arbiter role. | `/al-research` |
 | `al-design-option` | Develops one self-contained architecture candidate under a supplied divergent constraint. Smart role — `/al-design` fans out three in parallel and chooses among them itself. | `/al-design` |
 | `al-gate-runner` | Runs one supplied build, provision, or breaking-change gate command and relays its authoritative artifacts, no interpretation. Bounded-executor role. | `/al-build`, `/al-provision`, `/al-validate-breaking-changes`, `/al-mutate` final closeout |
 | `al-mutant-cycle` | Runs one supplied mutate→gate→revert cycle and returns observed evidence; the caller classifies the mutant. Worker role. | `/al-mutate` |
 
-The former `al-doc-verify` worker is now an **inline check**: the writing skills (`/al-grill-adr`, `/al-event-model`, `/al-design`, `/al-scope`, `/al-refine`, `/al-steer`) verify each canonical artifact against `references/doc-integrity.md` themselves before the gate report — no subagent.
+`al-doc-verify` is now an inline check: `/al-grill-adr`, `/al-event-model`, `/al-design`, `/al-scope`, `/al-refine`, and `/al-steer` verify canonical artifacts against `references/doc-integrity.md` before gate reporting.
 
 ## Persistence layers
 
-Two layers, on purpose.
+| Layer | Contents and owner |
+|---|---|
+| Repo-root, durable | `CONTEXT.md`, `docs/adr/`, `.out-of-scope/`, `.not-yet-specified/`. `/al-grill-adr` owns CONTEXT and domain ADRs; `/al-steer` owns out-of-scope and the deferred-question ledger. Writing skills run document-integrity on CONTEXT and ADR writes; the two dot-folders are outside that gate. |
+| Branch-scoped | `specs/<NNN>-<slug>/event-model.md` for user/API features, `architecture.md`, and `tasks/`; slug matches the branch. |
 
-- **Repo-root, durable across features**: `CONTEXT.md`, `docs/adr/`, `.out-of-scope/`, `.not-yet-specified/` (the deferred-question ledger, one file per question: in-scope questions that matter but can't be decided yet — `/al-grill-adr` and `/al-design` write them, `/al-refine` scans before speccing, `/al-steer` grooms until each question graduates to a decision or moves to `.out-of-scope/`). Owners: `/al-grill-adr` (CONTEXT + domain ADRs), `/al-steer` (out-of-scope and the deferred-question ledger). The writing skills run the inline document-integrity check on `CONTEXT.md` and domain ADR writes before handoff; `.out-of-scope/` and `.not-yet-specified/` are outside the document gate.
-- **Branch-scoped, per in-flight feature**: `specs/<NNN>-<slug>/event-model.md` (present for user/API-facing features) + `architecture.md` + a `tasks/` folder. Slug matches the current git branch.
-
-The `tasks/` folder holds one file per task plus a `000-feature.md` header (Goal + slice intent, no status). Each per-task file is `NNN-T-MMM-<slug>.md`: the `NNN` filename prefix is the run order (`ls tasks/` lists tasks as they execute, gapped by 10), `T-MMM` is a stable locator id. State and graph live in YAML frontmatter at the top of each file: `task:`, `status:`, `slice:`, `kind:`, `depends_on:`, `refactors:`, `fixes:`, plus `blocked-on:` (one-line block reason, present while `blocked`) and `deviations:` (one-line entries for assumptions the agent absorbed without asking). Status values: `ready`, `ready-for-implementation`, `ready-for-verification`, `blocked`, `done`. `ready` means ready for `/al-refine`; executable tasks use `ready-for-implementation` or `ready-for-verification`. `T-MMM` ids monotonic, never reused. `kind: verify` marks the per-slice user-verification task; `kind: technical` marks technical tasks; `kind: provision` / `kind: breaking-change` mark the bracketing ops tasks (run a script, flip status, no `/al-refine`). Verify tasks gain a transient `review: clean` frontmatter field when `/al-code-review` per-slice runs clean at slice-done (stamped as it opens the verify task to `ready`); it rides through the `/al-refine` flip to `ready-for-verification`, and strips on any flip to `blocked`/`done` or when new technical work opens in the slice. There is no index file — the filesystem is the manifest, the board is grepped on demand and rendered by `/al-steer`. Your standing view is `/al-steer` in chat: what's moving, what's blocked and why, which assumptions the agent absorbed, and what waits on you. Task files themselves are agent-facing; you should never need to open one.
+`tasks/` contains `000-feature.md` (Goal and slice intent, no status) plus `NNN-T-MMM-<slug>.md` task files. `NNN` is gapped run order; `T-MMM` is monotonic and never reused. YAML frontmatter holds `task:`, `status:`, `slice:`, `kind:`, `depends_on:`, `refactors:`, `fixes:`, `blocked-on:` while blocked, and `deviations:` for absorbed assumptions. Status is `ready`, `ready-for-implementation`, `ready-for-verification`, `blocked`, or `done`; `ready` awaits `/al-refine`, executable work uses the two ready-for states. `kind:` is `technical`, per-slice `verify`, or bracketing `provision` / `breaking-change` (script + status flip; no `/al-refine`). A clean per-slice review writes transient `review: clean` as it opens verify `ready`; it survives refine to `ready-for-verification` and strips on `blocked`, `done`, or new same-slice technical work. The filesystem is the manifest; `/al-steer` renders the board. Task files are agent-facing.
 
 ## Cold-start: where do I begin from `main`?
 
-You have an AL repo, no `specs/<NNN>-<slug>/` yet, on the default branch. The chain starts at:
+From the default branch with no `specs/<NNN>-<slug>/`:
 
 - **User- or API-facing feature** → `/al-grill-adr` (grill the idea) → `/al-event-model` (settle the user-facing journey; creates the branch and spec folder) → `/al-design` → `/al-scope` → `/al-refine` on first task → `/al-implement`.
 - **Backend-only feature** (no user/API surface) → `/al-grill-adr` → `/al-design` (skips event-model; creates the branch and spec folder) → `/al-scope` → `/al-refine` on first task → `/al-implement`.
 
-The inline document-integrity check runs inside the document-writing skills after each canonical markdown write, not as a standalone cold-start step.
-
-If the idea is already crystallised, skip `/al-grill-adr`. Most features benefit from it.
+Document-writing skills run inline document-integrity after each canonical write; it is not a cold-start step. A crystallised idea may skip `/al-grill-adr`; most benefit from it.
 
 ## State-aware navigation
 
-This overview is static; it does not read your branch, the `tasks/` folder, or recent commits. For "where am I now?" / "what should I do next?" / "T-007 is blocked, walk me through it", invoke `/al-steer`. It reads state, names the next step, routes to the right skill.
+This static overview does not read your branch, `tasks/`, or commits. For "where am I?", "what's next?", or a blocked task → `/al-steer`; it reads state and routes the next skill.

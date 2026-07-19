@@ -7,7 +7,7 @@ description: "One `status: ready` task to a fresh Test Specification or Verifica
 
 # /al-refine, Task to Test Specification / Verification Plan
 
-Fill one named `status: ready` task in the `tasks/` folder. Existing proof content is untrusted; regenerate from current app/tests, ground symbols, sharpen intent, write the task body. One task per run.
+Refine one named `status: ready` task in `tasks/`. Existing proof is untrusted → regenerate it from the current app and tests, ground symbols, sharpen intent, and write the task body. One task per run.
 
 Branch by `kind:` in the task file's frontmatter:
 

@@ -1,6 +1,6 @@
 # Markdown spec discipline
 
-`event-model.md`, `architecture.md`, and the `tasks/` folder under `specs/<NNN>-<slug>/` are the reading surface. This file is what `/al-design`, `/al-event-model`, `/al-scope` consult before generating, and what every maintaining skill (`/al-refine`, `/al-implement`, `/al-mutate`, `/al-steer`) consults before editing its owned markdown surface.
+`event-model.md`, `architecture.md`, and `specs/<NNN>-<slug>/tasks/` form the planning reading surface. `/al-design`, `/al-event-model`, and `/al-scope` consult this file before generating; every maintaining skill (`/al-refine`, `/al-implement`, `/al-mutate`, `/al-steer`) consults it before editing its owned markdown surface.
 
 ## Source of truth: examples
 

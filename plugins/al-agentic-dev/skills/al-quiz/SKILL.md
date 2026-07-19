@@ -7,25 +7,25 @@ description: Quiz the developer on recently landed AL/Business Central changes �
 
 # /al-quiz, Stay in contact with the codebase
 
-Agentic work lands faster than a human absorbs it. Reading the diff gives a light pass; much of the behaviour rides on existing code paths the diff never shows. This skill closes that gap by quizzing the developer on what actually shipped — the developer proves the mental model, or discovers where it is wrong, before the wrongness costs anything. It verifies the *human*, not the code: `/al-code-review` judges the diff, `/al-user-verification` walks the behaviour; neither checks whether the developer could explain the change to a colleague tomorrow.
+Agentic work can land before the developer absorbs it. This skill tests the human model of what shipped; `/al-code-review` judges the diff and `/al-user-verification` walks behaviour.
 
-Read-only. No status writes, no durable artifact, no gate held. Never invoked by another skill — the user reaches for it.
+Read-only: no status write, durable artifact, or gate. The user invokes it; no skill does.
 
 ## Scope
 
-The user names it, or default to the work least likely absorbed: the diff since the user last engaged (recent branch commits), a completed slice, the whole feature before merge, or a named object area on legacy code. Read the diff and the relevant task files (`Test Specification`, `Contract notes`) — the questions come from what shipped, not from what was planned.
+Use the named scope. Otherwise quiz the work least likely absorbed: recent branch commits, a completed slice, the feature before merge, or a named legacy object area. Read the diff plus relevant `Test Specification` and `Contract notes`; ask from shipped behaviour, not plans.
 
 ## The quiz
 
-One question at a time, in chat, ask-before-reveal: pose the question, wait for the user's answer, then give the verdict — punchline first, and on a miss, the corrective explanation anchored in the actual code (object and procedure names are the citation).
+Ask one chat question, wait, then give the punchline. On a miss, correct it against named objects and procedures. Ask-before-reveal: options must not expose the answer.
 
-What makes a question worth asking: a wrong answer would cost something. Target the decisions — why a seam sits where it sits, what happens on the edge case the tests pin, which existing code path the change rides, what a shipped contract now promises. Skip trivia a grep answers (counts, names, line placement). Prefer "what happens when …" over "what is …" — behaviour questions expose a broken model; definition questions reward recall.
+Ask only questions whose wrong answer costs something: seam placement, test-pinned edge cases, existing paths, and shipped contracts. Skip grep trivia. Prefer "what happens when …" to "what is …".
 
-Calibrate depth to scope: a slice earns a handful of questions, a feature more; stop when the answers show the model is sound rather than grinding through a fixed count. The user can stop, skip, or dig deeper at any question.
+Scale depth to scope. Stop once answers show a sound model; do not chase a fixed count. The user may stop, skip, or go deeper at any question.
 
 ## Verdict
 
-End with the punchline: model sound, or where it is off — the specific decisions the user misheld, each with its one-line correction anchored in named objects (pre-send check 3, [voice-contract.md](../../references/voice-contract.md)). Quiz questions are witness elicitation, exempt from the lettered-options decision rule — options must never reveal the answer. A miss is information, not failure; a *cluster* of misses on one area is a signal the user may want `/al-code-review` on that area or a walk through its task files. Nothing is recorded; the contact was the point.
+Close with the model verdict: sound, or named decisions held incorrectly with one-line corrections anchored in objects ([voice-contract.md](../../references/voice-contract.md)). Questions are witness elicitation, not lettered decisions. A miss cluster can warrant `/al-code-review` or a task-file walk. Record nothing.
 
 ## Composition
 

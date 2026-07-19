@@ -7,9 +7,9 @@ description: Coach and navigator for AL/Business Central agentic dev. Reads the 
 
 # /al-steer, Coach / navigator
 
-Read the `tasks/` folder, `architecture.md`, `event-model.md` when present, the goal, codebase, recent commits, `.out-of-scope/`, `.not-yet-specified/`. Name what's next, blocked, drifting. Name next handoff; never force one. Canonical replan venue. Owner of `.out-of-scope/` and `.not-yet-specified/`.
+Read the live planning surface: `tasks/`, `architecture.md`, `event-model.md` when present, the goal, codebase, recent commits, `.out-of-scope/`, and `.not-yet-specified/`. Name the next move, blocks, drift, and handoff; never force it. This is the canonical replan venue and owner of `.out-of-scope/` and `.not-yet-specified/`.
 
-The status board is computed, not stored: `grep -r '^status:' specs/<branch>/tasks/` gives every task's state; the `NNN-` filename prefix is run order, `depends_on:` lists are the graph. No index file.
+Compute the status board; do not store it. `grep -r '^status:' specs/<branch>/tasks/` gives every task's state, the `NNN-` filename prefix gives run order, and `depends_on:` lists the graph. No index file.
 
 User invokes in natural language ("where are we?", "split T-009 into three tasks"). Interpret and act.
 

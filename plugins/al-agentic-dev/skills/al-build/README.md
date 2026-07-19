@@ -43,6 +43,9 @@ pwsh scripts/test.ps1
 | `commit-bc-container.ps1` | Commit container to snapshot image. |
 | `new-agent-container.ps1` | Create agent container from snapshot. |
 | `prune.ps1` | Remove orphaned containers. |
+| `download-symbols.ps1` | Download BC symbol packages from `app.json` deps into the shared cache (invoked by `provision.ps1`; standalone re-run when symbols drift). |
+| `publish-apps.ps1` | Clean republish of all configured apps to the branch's agent container (unpublish all, dependency-reversed, then publish). |
+| `report-gate-metrics.ps1` | Summarize gate timing from `.output/logs/build-timing.jsonl` (or the `~/.al-build` mirror with `-GlobalLog`). |
 | `pagescript-replay.ps1` | Run page script YAML replays. |
 | `download-baseline.ps1` | Cache the previous release + deps and point AppSourceCop at them (sole baseline fetcher; invoked by `provision.ps1`). |
 | `validate-breaking-changes.ps1` | Heavyweight AppSource-style validation (per-country, install/upgrade) against the cached baseline. Reads the cache; does not download. |

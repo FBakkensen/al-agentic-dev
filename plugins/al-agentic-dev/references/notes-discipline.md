@@ -1,8 +1,8 @@
 # Notes discipline
 
-Destination map for content the skills generate. Answers one question per kind of content: *does this survive past `done`, and if so, where does it live?*
+Route generated content by one question: *does it survive past `done`, and if so, where does it live?*
 
-Format-agnostic. Markdown mechanics (`task:`, `status:`, `slice:`, `kind:` in per-task-file frontmatter, surgical-edit) live in `markdown-spec-discipline.md`. Style (Drop articles + filler + hedging, BC vocabulary, declarative cadence) lives in `voice-contract.md` and per-SKILL.md inline declaration. This file is destination only.
+This is format-agnostic and covers destination only. Markdown mechanics (`task:`, `status:`, `slice:`, `kind:` in per-task-file frontmatter, surgical-edit) live in `markdown-spec-discipline.md`; style (drop articles, filler, and hedging; use BC vocabulary and declarative cadence) lives in `voice-contract.md` and each SKILL.md's inline declaration.
 
 ## Two destinations, picked by lifetime
 
