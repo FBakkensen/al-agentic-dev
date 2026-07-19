@@ -1,20 +1,22 @@
 # Content Guidelines
 
-Tone, phrasing, and entry shape for the rendered markdown. Apply alongside [output-format.md](output-format.md) when expanding each PR record into its bullet.
+Rendered-entry rules. Apply with [output-format.md](output-format.md).
 
 ## User-Facing entries — primary focus
 
-- **Plain language.** No AL or BC jargon when a user-facing word will do. _Avoid_: `subscriber on OnAfterValidateEvent`. Use: `the Posting Date validation`.
-- **Specific.** Name the page, the action, the field. _Avoid_: `the page`, `a setting`. Use: `the Configuration Card page`, `the "Apply Template" action`.
-- **Value-led.** Lead with what the user can now do or no longer hits. The implementation is for the Technical Summary.
-- **Self-contained.** No PR numbers, no issue numbers, no URLs. The reader never has to leave the document.
-- **One fact per line.** No semicolon-glued clauses, no nested subordinate clauses.
+| Rule | Required |
+|---|---|
+| Plain language | Prefer `the Posting Date validation` to `subscriber on OnAfterValidateEvent`. |
+| Specific surface | Name the `Configuration Card page`, `the "Apply Template" action`, or field; never `the page` or `a setting`. |
+| Value-led | Lead with what users can do or no longer hit. Put implementation in Technical Summary. |
+| Self-contained | No PR numbers, issue numbers, or URLs. |
+| One fact | One line; no semicolon chains or nested clauses. |
 
 ## Technical Summary entries
 
-- **Headlines only.** One line per item. The technical audience can read code if they need depth.
-- **What changed, not how.** `Replaced NoSeriesManagement with codeunit "No. Series" across posting.` — not `Refactored to use the new pattern by introducing a wrapper around...`.
-- **Group related changes.** Two refactors that move the same boundary land as one bullet, not two.
+- One line per item.
+- State what changed, not how: `Replaced NoSeriesManagement with codeunit "No. Series" across posting.`
+- Group refactors that move the same boundary.
 
 ## Drop list
 
@@ -65,10 +67,6 @@ Tone, phrasing, and entry shape for the rendered markdown. Apply alongside [outp
 - Various improvements to configuration logic
 ```
 
-These fail because they:
+They fail: PR numbers break self-containment; `code` and `logic` name no surface; readers cannot see their impact.
 
-- **Reference PR numbers** — breaks the self-contained rule.
-- **Name no surface** — `code`, `logic` instead of a page, codeunit, or field.
-- **Skip the user.** No reader can tell what changed for them.
-
-**Anti-pattern: generic descriptions like 'Updated logic'.** Symptom of rendering off a vague PR analysis line. Fix the JSONL line first via the Deep Dive Protocol in [pr-classification.md](pr-classification.md), then re-render — never paper over a vague line at render time.
+`Updated logic` means the JSONL line is vague. [Deep Dive](pr-classification.md), fix the line, then re-render; never paper over it while rendering.

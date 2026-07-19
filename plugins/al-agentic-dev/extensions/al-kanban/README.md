@@ -21,9 +21,11 @@ Without input the board auto-discovers: the `specs/*/tasks/` whose parent folder
 - **Rendering requires the GitHub Copilot desktop app.** The extension model is shared with the terminal Copilot CLI — the extension loads there too — but the CLI has no canvas render surface, so terminal-only users will not see the board even with the plugin installed.
 - **Dark theme only** (GitHub Primer dark palette). The canvas host exposes no theme signal (`CanvasHostContext` in `canvas.d.ts` carries none), and the webview's `prefers-color-scheme` reflects the OS setting rather than the app's theme — so a light variant could not follow the app anyway.
 - Freshness comes from `fs.watch` on the tasks folder + SSE push; card moves land within ~1 second of a file save.
-- No build step, no npm dependencies: `extension.mjs` (Node built-ins + `@github/copilot-sdk`) and one static `board.html`.
+- No build step, no npm dependencies: `extension.mjs` (SDK host wiring; Node built-ins + `@github/copilot-sdk`), `lib.mjs` (pure logic — parser, columns, advance mapping, discovery — SDK-free), and one static `board.html`.
 - A task file whose frontmatter fails to parse renders as a visible "unparseable" card; it never crashes the board.
 
 ## Development
 
-Fixture with full column coverage and expected counts: `tests/fixtures/al-kanban/` in the marketplace repo. Live-gate script: `SMOKE-TEST.md`.
+- Pure-logic tests: `node --test lib.test.mjs` (zero dependencies; CI runs every `plugins/**/*.test.mjs`). Server/SSE/watcher/canvas lifecycle are deliberately out of its scope — `SMOKE-TEST.md` owns those as the live gate.
+- Fixture with full column coverage and expected counts: `tests/fixtures/al-kanban/` in the marketplace repo.
+- Editing rules (PoC, no backwards compatibility): `AGENTS.md` in this folder.

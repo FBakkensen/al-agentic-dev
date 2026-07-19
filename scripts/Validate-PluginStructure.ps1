@@ -36,12 +36,12 @@ $script:AlAgenticDevFleet = [ordered]@{
     'al-review-cr-comments'        = 'gpt-5.6-terra'
     'al-review-cr-compliance'      = 'gpt-5.6-terra'
     'al-review-cr-perf'            = 'gpt-5.6-terra'
-    'al-review-judge'              = 'gpt-5.6-sol'
-    'al-review-refactor-bc'        = 'gpt-5.6-terra'
+    'al-review-judge'              = 'claude-fable-5'
+    'al-review-refactor-bc'        = 'claude-fable-5'
     'al-review-refactor-naming'    = 'gpt-5.6-terra'
     'al-review-refactor-perf'      = 'gpt-5.6-terra'
-    'al-review-refactor-simplify'  = 'gpt-5.6-terra'
-    'al-review-refactor-structural' = 'gpt-5.6-terra'
+    'al-review-refactor-simplify'  = 'claude-fable-5'
+    'al-review-refactor-structural' = 'claude-fable-5'
     'bc-standard-reference'        = 'gpt-5.6-terra'
 }
 

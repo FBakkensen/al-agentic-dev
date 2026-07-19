@@ -4,17 +4,19 @@ How a skill gets an independent read on a non-trivial artifact: consult the **ru
 agent**, spawned through the task tool as `agent_type: "rubber-duck"` (or the user runs
 `/rubber-duck`; the harness may also consult it on its own). The rubber duck runs on a
 different model family than the session by design — its pairing is gpt↔claude — so it
-catches what same-family self-review confirms.
+catches what same-family self-review would only wave through.
 
 **Fallback when the agent type is missing.** `rubber-duck` drops out of the task tool's
-`agent_type` enum on some session models (the pairing is gpt↔claude only). When it is
-missing: spawn `general-purpose` with a critic prompt on the *other* model family — a GPT-family
+`agent_type` enum on some session models (the pairing is gpt↔claude only). Spawn
+`general-purpose` with a critic prompt on the *other* model family instead — a GPT-family
 session → `claude-fable-5`; a Claude-family session, or any other family →
 `gpt-5.6-terra` — at medium reasoning. The family rule is the contract; look up current IDs
-in the task tool's model list when either pinned model rotates. There is no skip path: the consult happens at every checkpoint that
-calls for it, by one route or the other. Only if the task tool itself cannot spawn at all
-does the caller state `Rubber-duck review skipped: <reason>` in one line and continue —
-no halt, no retry loop, no invented findings.
+in the task tool's model list when either pinned model rotates.
+
+There is no skip path: the consult happens at every checkpoint that calls for it, by one
+route or the other. Only if the task tool itself cannot spawn at all does the caller state
+`Rubber-duck review skipped: <reason>` in one line and continue — no halt, no retry loop,
+no invented findings.
 
 The consult is one of the moves a skill may make **autonomously** mid-step, no user
 round-trip — load-bearing for the worker-model goal: a smaller model running a pipeline

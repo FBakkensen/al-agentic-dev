@@ -8,13 +8,13 @@ description: "Execute the `kind: provision` task in the `tasks/` folder for AL/B
 
 # /al-provision — run the provision task
 
-Execute one `kind: provision` task: refresh the build environment, flip its status. The `tasks/` folder ↔ script bridge — `/al-build` stays workflow-blind, so a workflow-aware skill owns running its `provision.ps1` and recording the outcome.
+Run one `kind: provision` task → refresh the build environment and flip its status. `/al-build` stays workflow-blind; this skill runs its `provision.ps1` and records the result.
 
-`kind: provision` is the feature's first task (`T-001`). Provision is a per-feature freshness refresh, not one-time machine setup: symbols and the breaking-change baseline advance per release, so each feature re-runs it before any `/al-refine` / `/al-implement` work compiles.
+Provision is the feature's first task, `T-001`. It is a per-feature freshness refresh, not machine setup: compiler, symbols, and the breaking-change baseline can advance between releases, so provision precedes `/al-refine` or `/al-implement`.
 
 ## Precondition
 
-A `kind: provision` task at `status: ready`. No `/al-refine` — this kind carries no `Test Specification` or `Verification Plan`; it runs a script and flips status. If invoked on any other kind, **Stop**.
+The selected task is `kind: provision` at `status: ready`. It carries no `Test Specification` or `Verification Plan`, so `/al-refine` does not apply. Any other kind → **Stop**.
 
 ## Run
 
@@ -22,37 +22,43 @@ A `kind: provision` task at `status: ready`. No `/al-refine` — this kind carri
 pwsh "<this-skill-dir>/../al-build/scripts/provision.ps1"
 ```
 
-Substitute `<this-skill-dir>` with this skill's base directory (announced at skill activation) — `al-build` is a sibling skill in the same plugin.
+Replace `<this-skill-dir>` with this skill's base directory announced at activation; `al-build` is its sibling skill in the plugin.
 
-Delegate to the named `al-gate-runner` custom agent — bounded executor role (see [delegation.md](../../references/delegation.md)) — provision output is verbose; keep it out of the main session. The worker runs exactly this one command, relays its exit code and bounded verbatim stdout/stderr excerpt (plus any supplied authoritative artifacts), and edits nothing; this skill maps the exit code.
+Delegate the command to the named `al-gate-runner` custom agent — the bounded executor in [delegation.md](../../references/delegation.md). The worker runs this command once, edits nothing, and relays its exit code, a bounded verbatim stdout/stderr excerpt, and any supplied authoritative artifacts; this skill maps the exit code.
 
-**Already inside an agent** mid-workflow → run `provision.ps1` directly inline instead; nested custom-agent spawning does not happen, and this is not model substitution since no new spawn occurs. **`al-gate-runner` unavailable** for a fresh spawn → report `BLOCKED`, name `al-gate-runner` as the missing agent, and stop; no generic-subagent substitution (see [delegation.md](../../references/delegation.md)).
+Already inside an agent mid-workflow → run `provision.ps1` inline. No nested custom-agent spawn occurs, so this is not model substitution.
 
-## Flip
+`al-gate-runner` unavailable for a fresh spawn → report `BLOCKED`, name `al-gate-runner` as missing, and stop. Do not substitute a generic subagent.
 
-Map the exit code, then surgical-Edit the `status:` frontmatter line of the provision task's file per [`markdown-spec-discipline.md`](../../references/markdown-spec-discipline.md) — `status:` is the only field that changes; leave `slice: provision`, `kind: provision`.
+## Write state
+
+Read the provision task, map its exit code, then surgical-Edit only its `status:` frontmatter line under [markdown-spec-discipline.md](../../references/markdown-spec-discipline.md). Keep `slice: provision` and `kind: provision`.
 
 | Exit | Status |
 |---|---|
 | `0` | `done` |
 | non-zero | `blocked` |
 
-**On `done`, open the first slice.** `T-001` is the dependency the first slice's technical tasks wait on. After flipping `T-001` `done`, surgical-Edit the `status:` line of every first-slice technical task (those carrying `depends_on: [T-001]`) `blocked` → `ready`. Provision is the named owner of this `blocked` → `ready`; without it the first slice strands.
+On `done`, open the first slice: surgical-Edit every first-slice technical task with `depends_on: [T-001]` from `blocked` to `ready`. Provision owns this open; without it, the first slice remains stranded.
 
-## Failure
+## Stop and handoff
 
-`blocked` → environment is not ready. Route to `/al-steer`. Never flip `done` without a clean exit — a green flip with a stale environment poisons every downstream compile.
+Non-zero → `blocked`: the environment is not ready. Never write `done` without a clean exit; a stale environment poisons downstream compilation. `Next: /al-steer`.
 
-## Next step
+| Result | Next |
+|---|---|
+| `done`, first slice opened | `/al-refine T-NNN` on the first slice's first technical task |
+| `done`, no slices yet | `/al-event-model` for user/API-facing work, or `/al-design` for backend-only work |
+| `blocked` | `/al-steer` |
 
-- **`done`, first slice opened.** The feature's first real slice is now buildable. `Next: /al-refine T-NNN` on the first slice's first technical task.
-- **`done`, no slices yet** (provision ran before any feature shape): `Next: /al-event-model` (user/API-facing) or `/al-design` (backend-only).
-- **`blocked`:** `Next: /al-steer`.
+## Chat close
+
+For a status flip, use the [Gate report](../../references/voice-contract.md#gate-report) skeleton: name what provision refreshed, the failed or cleared readiness condition, the feature-pipeline fit, and the handoff. A precondition failure uses the one-line **Stop** skeleton.
 
 ## Composition
 
 | | |
 |---|---|
 | **Runs after** | `/al-scope` emits `T-001 kind: provision`; this is the feature's first executed task |
-| **Routes to** | first slice's technical tasks (`depends_on: [T-001]` opens on `done`) |
+| **Routes to** | first-slice technical tasks with `depends_on: [T-001]` open on `done` |
 | **Failure venue** | `/al-steer` |

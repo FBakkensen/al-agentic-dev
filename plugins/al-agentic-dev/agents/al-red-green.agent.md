@@ -6,11 +6,19 @@ model: gpt-5.6-terra
 user-invocable: false
 ---
 
-**Style:** Concise — cut filler, keep grammar. Opinionated — pick a side. Arrows (→) for causality. Technical terms exact, code and errors quoted verbatim.
+**Style:** Concise — cut filler, keep grammar. Exact — the verdict follows only the build's evidence. Arrows (→) for causality. Technical terms exact, code and errors quoted verbatim.
 
 # al-red-green — one AAA case RED→GREEN
 
-Write the failing test (RED), confirm it fails, write the minimal production code (GREEN), confirm it passes, return an outcome note.
+The caller supplies one AAA case (Arrange/Act/Assert text), the task's `New and Modified Objects` block, and the task file path. Write the failing test (RED), confirm it fails, write the minimal production code (GREEN), confirm it passes, and return an outcome note. The caller owns case selection, task-file reconciliation, phase stamps, escalation routing, and workflow state.
+
+## Boundary
+
+- Write scope is this one case: the new test procedure and the production code it demands. Do not touch other tasks, specs, or workflow-state files.
+- Never alter git state. A dirty tree corrupts `/al-mutate`'s mutation classification.
+- Never invoke `/al-research` or any other skill or agent. A research need stops with `BLOCKED` and the precise question; the caller invokes `/al-research` (from `/al-implement`) or escalates through `/al-steer` (from `/al-code-review --fix`).
+- Absorb only what the task already decided: in-object drift (procedure rename, parameter change, visibility flip, helper procedure, field addition) is absorbed and noted. A new decision — schema change, new event publisher, new codeunit, new seam, public-surface rename — is never applied silently; flag it for the caller to route to `/al-steer`.
+- The object-ID allocator is the one hard stop: absent when a new test codeunit is needed → stop and return `BLOCKED`. An unallocated ID leaks from the pool and cannot be recovered inline.
 
 ## References — read before writing
 
@@ -84,11 +92,7 @@ Re-confirm the compile-error class before treating an ERROR as a runner-capabili
 
 ## Graceful degradation
 
-MCP servers may be absent in a consumer session. Fall back: `bc-code-intelligence` unavailable → read the diff directly for the same goal; `al-symbols-mcp` unavailable → use LSP and workspace grep; Microsoft Learn MCP unavailable → use `execute` (curl) to fetch the Learn URL directly — `skill` is reserved for invoking `/al-build`, never a generic web-fetch skill. Never block on a missing server for these — except the ID allocator: if it is absent and a new test codeunit is needed, stop and return `BLOCKED` — an unallocated object ID leaks from the pool and cannot be safely recovered inline. If the fact still can't be fetched (curl unreachable too), stop and return `BLOCKED` with the precise research question rather than invoking `/al-research` — this agent never spawns it; the caller routes.
-
-## No commits
-
-Do not alter git state. A dirty tree corrupts `/al-mutate`'s mutation classification.
+MCP servers may be absent in a consumer session. Fall back: `bc-code-intelligence` unavailable → read the diff directly for the same goal; `al-symbols-mcp` unavailable → use LSP and workspace grep; Microsoft Learn MCP unavailable → use `execute` (curl) to fetch the Learn URL directly — `skill` is reserved for invoking `/al-build`, never a generic web-fetch skill. Never block on a missing server for these — the object-ID allocator is the one exception, per Boundary above. If the fact still can't be fetched (curl unreachable too), stop and return `BLOCKED` with the precise research question rather than invoking `/al-research` — this agent never spawns it; the caller routes.
 
 ## Outcome note
 

@@ -7,16 +7,18 @@ description: Generate release notes from per-PR analysis of merged work since th
 
 # /release-notes — PR JSONL to release notes
 
-Turn `.output/releases/release-analysis.jsonl` into `.output/releases/RELEASE-NOTES-<VERSION>.md`. One PR at a time, classified into single-line JSON record stored in todo description, then folded into final markdown. Main context holds summary record and final output — never the per-PR diffs.
+Turn `.output/releases/release-analysis.jsonl` into `.output/releases/RELEASE-NOTES-<VERSION>.md`. Classify one PR at a time into a single-line JSON todo description, then render the final markdown. Main context holds only the summary and final output.
 
-Drop hedging. One fact per analysis line. BC vocabulary is the compression → name the page, codeunit, table, field, action.
+One fact per analysis line. Name the page, codeunit, table, field, or action.
 
-Output markdown uses canonical section emoji defined in [references/output-format.md](references/output-format.md) — explicit exception to the no-emoji prose rule.
+The section emoji in [references/output-format.md](references/output-format.md) are the explicit exception to the no-emoji prose rule.
 
 ## Resolve inputs
 
-- **Analysis file** `.output/releases/release-analysis.jsonl` must exist. Missing → `Stop.` Run `scripts\Get-ReleaseAnalysis.ps1` from skill folder.
-- **Output path** `.output/releases/RELEASE-NOTES-<VERSION>.md`. Version comes from `summary.appJsonDiff.version.new` or `summary.toVersion`. Downstream tooling reads this exact path → do not relocate.
+| Input | Contract |
+|---|---|
+| Analysis | `.output/releases/release-analysis.jsonl` must exist. Missing → `Stop.` Run `scripts\Get-ReleaseAnalysis.ps1` from this skill folder. |
+| Output | `.output/releases/RELEASE-NOTES-<VERSION>.md`; version is `summary.appJsonDiff.version.new`, else `summary.toVersion`. Downstream tooling reads this exact path. |
 
 ## Flow
 
@@ -26,31 +28,28 @@ Output markdown uses canonical section emoji defined in [references/output-forma
 scripts\Get-ReleaseAnalysis.ps1
 ```
 
-Produces one `type == "summary"` record (release boundaries, totals, files-by-category, `appJsonDiff`) and one `type == "pr"` record per merged PR (title, body, files, commits, key AL changes, breaking-change indicators).
+Produces one `type == "summary"` record (boundaries, totals, files-by-category, `appJsonDiff`) and one `type == "pr"` record per merged PR (title, body, files, commits, key AL changes, breaking-change indicators).
 
 ### 2. Initialise
 
-- Verify file: `Test-Path .output/releases/release-analysis.jsonl`.
-- Load `type == "summary"` record. Hold version + BC compatibility in main context.
-- Build PR list from `type == "pr"` records — number + title only.
-- Create todo list:
-  - **Phase todos** — Initialise, Analyse PRs, Generate Notes.
-  - **One todo per PR** — title in todo, single-line JSON result lands in description.
+1. Verify: `Test-Path .output/releases/release-analysis.jsonl`.
+2. Hold the `type == "summary"` version and BC compatibility in main context.
+3. List `type == "pr"` records by number and title only.
+4. Create Initialise, Analyse PRs, and Generate Notes todos plus one title-only todo per PR. Its description stores the JSON result.
 
 ### 3. Analyse each PR
 
 Mark "Analyse PRs" in progress.
 
-For each PR, apply **PR Classification Protocol** in [references/pr-classification.md](references/pr-classification.md). Produce one single-line JSON record. Store in that PR's todo description. Flip that todo's status to done.
+Apply [PR Classification Protocol](references/pr-classification.md). Store its single-line JSON in the PR todo description, then mark that todo done.
 
-**Per-PR analysis line — Yes/No.**
+| Avoid | Required |
+|---|---|
+| `"desc":"Updated logic"` | Name the user-visible change. |
+| `"area":"Configuration"` | Name the page, report, API, or workflow. |
+| Empty `details` on a user-facing PR | Name the field, action, or page. |
 
-- No: `{"pr":142,"type":"improvement","area":"Configuration","desc":"Updated logic","details":""}`
-- Yes: `{"pr":142,"type":"improvement","area":"Item Configurator List page","desc":"Bulk-copy configuration from one item to many in one action","details":"\"Copy Configuration\" action; target items selected via lookup"}`
-
-_Avoid_: `desc` is `Updated logic` → name user-visible change. _Avoid_: `area` is `Configuration` → name page, report, API, or workflow. _Avoid_: empty `details` on user-facing PR → name the field, action, or page.
-
-**Anti-pattern: generic descriptions like 'Updated logic'.** Symptom of skipping AL walk. Run Deep Dive Protocol in [references/pr-classification.md](references/pr-classification.md) before retrying.
+Generic `"Updated logic"` means the AL surface was skipped → run the [Deep Dive Protocol](references/pr-classification.md).
 
 ### 4. Quality check (gate)
 
@@ -63,14 +62,13 @@ Sweep todo descriptions. PR fails gate when any of these hold:
 | `details` empty on user-facing PR | Deep Dive |
 | User-facing PR marked `exclude` with no justification | Deep Dive |
 
-Re-run analysis on each failing PR via Deep Dive Protocol in [references/pr-classification.md](references/pr-classification.md). Overwrite todo description with sharper line.
+Deep Dive every failed PR and replace its todo description with the sharper line.
 
 ### 5. Generate the notes
 
 Mark "Generate Notes" in progress.
 
-- Collect all PR results from todo descriptions.
-- Group by `type`:
+Collect PR results from todo descriptions and group them:
 
 | `type` | Section |
 |---|---|
@@ -81,9 +79,7 @@ Mark "Generate Notes" in progress.
 | `technical` | Technical Summary |
 | `exclude` | Omitted from output |
 
-- Render markdown using [references/output-format.md](references/output-format.md).
-- Apply [references/content-guidelines.md](references/content-guidelines.md) for tone and phrasing.
-- Write file to `.output/releases/RELEASE-NOTES-<VERSION>.md`.
+Render with [output-format.md](references/output-format.md), apply [content-guidelines.md](references/content-guidelines.md), then write `.output/releases/RELEASE-NOTES-<VERSION>.md`.
 
 ## Edge cases
 
@@ -96,15 +92,7 @@ Mark "Generate Notes" in progress.
 
 ## Context management
 
-Each PR diff can be 500+ lines. Loading ten PRs into main context burns 50K+ tokens before a single note is written.
-
-**Strategy:**
-
-- **Main context** holds summary record, todo list, final markdown.
-- **Per-PR analysis** loads one `type == "pr"` record at a time and emits one single-line JSON record.
-- **Todo descriptions** are durable storage for every PR result across the run.
-
-**Anti-pattern: collapse all PR context into main agent.** Reading every PR record into the main loop pushes context past the point where final markdown stays coherent → descriptions degrade to `Updated logic` and sections collide. Per-PR todo description is the load-bearing buffer; never bypass it.
+PR diffs can be 500+ lines. Keep the summary, todo list, and final markdown in main context; load one `type == "pr"` record at a time; store every result in its todo description. Collapsing PRs into main context degrades descriptions into `Updated logic` and mixes sections.
 
 ## Per-PR cycle checklist
 
@@ -117,12 +105,14 @@ Each PR diff can be 500+ lines. Loading ten PRs into main context burns 50K+ tok
 [ ] Result lives in the todo description, not in main context
 ```
 
-## Composition
+## Inputs and references
 
-- `scripts\Get-ReleaseAnalysis.ps1` — precondition. Produces JSONL the skill consumes.
-- [references/pr-classification.md](references/pr-classification.md) — per-PR classification + Deep Dive Protocol.
-- [references/output-format.md](references/output-format.md) — final markdown template.
-- [references/content-guidelines.md](references/content-guidelines.md) — tone, phrasing, Good/Bad entries.
+| Item | Role |
+|---|---|
+| `scripts\Get-ReleaseAnalysis.ps1` | Produces the input JSONL. |
+| [pr-classification.md](references/pr-classification.md) | Per-PR classification and Deep Dive. |
+| [output-format.md](references/output-format.md) | Final markdown template. |
+| [content-guidelines.md](references/content-guidelines.md) | Tone, phrasing, Good/Bad entries. |
 
 ## Out of scope
 

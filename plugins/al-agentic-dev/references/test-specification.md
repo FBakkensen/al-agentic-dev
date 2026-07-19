@@ -1,6 +1,6 @@
 # Test specification grammar
 
-Shared grammar for the `Test Specification` and `Verification Plan` sections in a per-task file (`specs/<NNN>-<slug>/tasks/NNN-T-MMM-<slug>.md`). Cited by `/al-refine`, `/al-implement`, `/al-code-review`, `/al-page-script`, and `/al-user-verification`.
+Shared grammar for a per-task file's `Test Specification` and `Verification Plan` sections (`specs/<NNN>-<slug>/tasks/NNN-T-MMM-<slug>.md`). `/al-refine`, `/al-implement`, `/al-code-review`, `/al-page-script`, and `/al-user-verification` cite it.
 
 Read-only. Read in place from this plugin's `references/` directory.
 

@@ -1,20 +1,20 @@
 # PR Classification Protocol
 
-Classify one PR. Emit one single-line JSON record. Nothing else. Store the line in that PR's todo description.
+Classify one PR. Emit exactly one JSON line in that PR's todo description.
 
-Stay inside the PR you were given. Do not browse the rest of the JSONL or the wider codebase unless the Deep Dive Protocol says to.
+Stay inside that PR. Do not inspect other JSONL records or the wider codebase unless Deep Dive requires it.
 
 ## Inputs
 
 - PR number.
-- The matching `type == "pr"` record from `.output/releases/release-analysis.jsonl`.
+- Its matching `type == "pr"` record in `.output/releases/release-analysis.jsonl`.
 
 Common fields: `title`, `body` / `description`, `files`, `labels`, `breakingChangeIndicators`, `keyALChanges`, `commits`.
 
 ## Steps
 
-1. **Locate** the record matching the PR number.
-2. **Decide the type** by walking the rules in order — first match wins:
+1. Locate the matching record.
+2. Apply the first matching type rule:
 
 | Order | Type | Rule |
 |---|---|---|
@@ -25,12 +25,12 @@ Common fields: `title`, `body` / `description`, `files`, `labels`, `breakingChan
 | 5 | `technical` | `refactor:`, `chore:`, or `perf:` prefix, or change is internal only |
 | 6 | `improvement` | Enhances existing user-facing functionality |
 
-3. **Extract slots** for the type:
+3. Extract these slots:
    - **User-facing** (`feature`, `improvement`, `bugfix`): `area`, `desc`, `details`.
    - **Breaking**: `change`, `migration`.
    - **Technical**: `category`, `summary`.
    - **Exclude**: `reason`.
-4. **Emit** the matching template below as a single line. Store it in the PR's todo description.
+4. Emit the matching template as one line in the PR todo description.
 
 ## Slot rules
 
@@ -42,7 +42,7 @@ Common fields: `title`, `body` / `description`, `files`, `labels`, `breakingChan
 - **`change`** + **`migration`** — what broke + the exact steps a consumer takes. Migration is imperative, ordered, code-grounded.
 - **`reason`** — one of `test`, `docs`, `ci`, `al-go` (or another short tag if the file scope justifies it).
 
-**Anti-pattern: generic descriptions like 'Updated logic'.** Symptom of classifying off the title alone, without reading `keyALChanges` or `files`. Run the Deep Dive Protocol below before re-emitting.
+`Updated logic` means the title was classified without `keyALChanges` or `files` → Deep Dive before re-emitting.
 
 ## Output templates
 
@@ -75,16 +75,16 @@ Excluded:
 - No: `{"pr":142,"type":"improvement","area":"Configuration","desc":"Updated logic","details":""}`
 - Yes: `{"pr":142,"type":"improvement","area":"Item Configurator List page","desc":"Bulk-copy configuration from one item to many in one action","details":"\"Copy Configuration\" action; target items selected via lookup"}`
 
-The Yes line names the page, the action, and the user-visible behaviour. The No line names none.
+The Yes line names page, action, and behaviour. The No line names none.
 
 ## Deep Dive Protocol
 
-Run when initial classification is vague, ambiguous, or fails the SKILL.md quality-check gate.
+Run for a vague, ambiguous, or quality-gate failure.
 
-1. **Re-read** the PR record's `body`/`description`, `keyALChanges`, `files`, and `commits`.
-2. **Name the surface.** Identify the exact pages, actions, and fields the change touches. If `keyALChanges` does not name them, walk the file paths and look at the AL object headers (object name, page caption, action captions).
-3. **Inspect** the most relevant AL object only when names still aren't pinned down. One object, not the whole module.
-4. **Reclassify** if new evidence flips the type — e.g. a `chore:` PR that actually adds a user-visible action becomes `feature` or `improvement`.
-5. **Rewrite** `area`, `desc`, and `details` against the surface you just named. Overwrite the todo description with the sharper single-line JSON.
+1. Re-read `body`/`description`, `keyALChanges`, `files`, and `commits`.
+2. Name exact pages, actions, and fields. If `keyALChanges` omits them, inspect file paths and AL headers.
+3. Inspect one relevant AL object only if the surface remains unnamed.
+4. Reclassify when evidence changes the type: a `chore:` that adds a user action is `feature` or `improvement`.
+5. Rewrite `area`, `desc`, and `details`; overwrite the todo description with the sharper JSON line.
 
-One Deep Dive per PR. If the second pass still produces a vague line, flag it in the todo description with `"deepDive":"insufficient evidence"` and let the human resolve it before the final render.
+One Deep Dive per PR. If its second pass remains vague, add `"deepDive":"insufficient evidence"` to the todo description and leave it for human resolution before rendering.

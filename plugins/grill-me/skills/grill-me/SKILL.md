@@ -3,8 +3,8 @@ name: grill-me
 description: Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the decision tree. Use when user wants to stress-test a plan, get grilled on their design, or mentions "grill me".
 ---
 
-Interview me relentlessly about every aspect of this plan until we reach a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one. For each question, provide your recommended answer.
+**Style:** Concise — cut filler, keep grammar. Opinionated — recommend an answer. Arrows (→) for causality. Technical terms exact, code and errors quoted verbatim.
 
-Ask the questions one at a time, waiting for feedback on each question before continuing. Asking multiple questions at once is bewildering.
+Interview the plan until every design-tree branch and dependency is resolved. Give a recommended answer with each question.
 
-If a question can be answered by exploring the codebase, explore the codebase instead.
+Ask one question, then wait. If the codebase can answer it, inspect the codebase instead.

@@ -7,7 +7,7 @@ description: Decompose `architecture.md` into a slice-grouped task list in the `
 
 # /al-scope, architecture.md → task list
 
-Turn `architecture.md` into context-only per-task files in the `tasks/` folder so `/al-refine` can add fresh proof from current app/tests. One file per task plus a `000-feature.md` header; tasks group by slice; each user-facing slice closes with a verify task the user signs off. Shape of each file is yours per feature; the frontmatter floor exists only so maintaining skills can flip status surgically.
+Turn `architecture.md` into context-only per-task files in `tasks/`; `/al-refine` adds fresh proof from the current app and tests. Emit one file per task plus a `000-feature.md` header, group tasks by slice, and close each user-facing slice with a verify task for user sign-off. Shape each file for its feature; the frontmatter floor exists only for surgical status flips.
 
 ## Preconditions
 

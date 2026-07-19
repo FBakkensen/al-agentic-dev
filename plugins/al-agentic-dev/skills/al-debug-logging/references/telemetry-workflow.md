@@ -1,16 +1,16 @@
 # Temporary debug logging workflow
 
-Reference for `/al-debug-logging`. The skill body has the contract; this expands the same-publisher constraint, the capture path, and correlation discipline. A passing assertion does not prove which code ran — probes do.
+Reference for `/al-debug-logging`. The skill body is the contract; this expands the same-publisher constraint, capture path, and correlation discipline. A passing assertion does not prove the path ran; probes do.
 
 ## Correlate with `DEBUG-ENTRY`
 
-When several probes fire and runs need separating (multiple tests, multiple posted documents, repeated subscriber invocations), emit `DEBUG-ENTRY` (or `DEBUG-<Scope>-START`) at the start of the scope you control:
+Several probes across multiple tests, posted documents, or subscriber invocations need a boundary. Emit `DEBUG-ENTRY` (or `DEBUG-<Scope>-START`) at the start of the scope you control:
 
 ```al
 FeatureTelemetry.LogUsage('DEBUG-ENTRY', 'Investigation', 'PostScenario: invoice with item charge');
 ```
 
-Everything between two `DEBUG-ENTRY` entries belongs to the first scope. The single most useful correlation tool when probes inside shared code (subscribers, library codeunits, BaseApp events) fire from many callers.
+Everything between two `DEBUG-ENTRY` entries belongs to the first scope. Use this when probes in shared code — subscribers, library codeunits, BaseApp events — fire for many callers.
 
 ```
 DEBUG-ENTRY            -> PostScenario: invoice with item charge
@@ -22,7 +22,7 @@ DEBUG-POSTING-NOLINES  -> No lines path
 
 ## Capture path
 
-Probes work identically under any harness in the same publisher. A test via `/al-build` is convenient because the BC test runner reliably produces `telemetry.jsonl`.
+Probes work under any harness in the same publisher. `/al-build` is convenient because its BC test runner reliably produces `telemetry.jsonl`.
 
 The capture path depends on the harness:
 
@@ -43,11 +43,11 @@ Useful fields per entry: `eventId`, `message`, `customDimensions`, `callStack`. 
 
 ## Read the mismatch
 
-Most useful failure mode: probes contradict the result. Document posted "successfully" but probes show the no-lines branch ran. The mismatch is the bug. Without probes, the symptom alone (success) hides it.
+The useful failure is contradiction: a document posts `"successfully"` while probes show the no-lines branch. That mismatch is the bug; success alone hides it.
 
 ## Same-publisher constraint
 
-`FeatureTelemetry.LogUsage` is captured by a Telemetry Logger codeunit subscribing to the platform's telemetry events. Capture only happens when the emitting code and the Telemetry Logger live in extensions with the **same publisher** in `app.json`.
+`FeatureTelemetry.LogUsage` is captured by a Telemetry Logger codeunit subscribed to platform telemetry events. Capture requires the emitting code and Telemetry Logger to live in extensions with the **same publisher** in `app.json`.
 
 Probes silent:
 

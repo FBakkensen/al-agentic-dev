@@ -1,8 +1,8 @@
 # Document integrity check (inline, before the gate report)
 
-Read by the skills that write canonical planning markdown — `/al-grill-adr`, `/al-event-model`, `/al-design`, `/al-scope`, `/al-refine`, `/al-steer`. After you write or restructure such an artifact and **before** the gate report or downstream handoff, verify it against the checks below **yourself, inline** — no subagent. Fix every blocker before handoff; note warnings in the gate report.
+Used by the skills that write canonical planning markdown — `/al-grill-adr`, `/al-event-model`, `/al-design`, `/al-scope`, `/al-refine`, `/al-steer`. After writing or restructuring an artifact, verify it **yourself, inline** against these checks before the gate report or downstream handoff; no subagent. Fix blockers before handoff and report warnings in the gate report.
 
-Verify **document integrity only**: the artifact exists and matches its profile, headings and task-file frontmatter are structurally sound, sibling spec files agree on shared IDs / slice slug / handoff wiring, and linked `CONTEXT.md` / `docs/adr/` references exist. Do **not** judge domain truth, BC fact truth, design quality, or test sufficiency here — that stays with the writing step and downstream skills.
+Verify **document integrity only**: the artifact exists and matches its profile; headings and task-file frontmatter are structurally sound; sibling spec files agree on shared IDs / slice slug / handoff wiring; and linked `CONTEXT.md` / `docs/adr/` references exist. Do **not** judge domain truth, BC fact truth, design quality, or test sufficiency here — the writing step and downstream skills own those judgments.
 
 ## Scope of the check
 

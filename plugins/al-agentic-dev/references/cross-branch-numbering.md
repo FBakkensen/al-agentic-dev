@@ -8,7 +8,7 @@ This file is the single source of truth for the picking algorithm. Read it befor
 
 | Caller | Artifact | Width |
 |---|---|---|
-| `/al-design` step 12 (branch + folder) | `specs/<NNN>-<slug>/` | three-digit `^\d{3}-` |
+| `/al-event-model` (user/API-facing) or `/al-design` (backend-only) — first-feature branch + folder setup | `specs/<NNN>-<slug>/` | three-digit `^\d{3}-` |
 | `/al-grill-adr` ADR offer accept | `docs/adr/<NNNN>-<slug>.md` | four-digit `^\d{4}-` |
 
 ## Algorithm
