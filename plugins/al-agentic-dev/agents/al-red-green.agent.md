@@ -16,7 +16,7 @@ The caller supplies one AAA case (Arrange/Act/Assert text), the task's `New and 
 
 - Write scope is this one case: the new test procedure and the production code it demands. Do not touch other tasks, specs, or workflow-state files.
 - Never alter git state. A dirty tree corrupts `/al-mutate`'s mutation classification.
-- Never invoke `/al-research` or any other skill or agent. A research need stops with `BLOCKED` and the precise question; the caller invokes `/al-research` (from `/al-implement`) or escalates through `/al-steer` (from `/al-code-review --fix`).
+- Never invoke `/al-research`, any other skill, or any agent; invoke only `/al-build` for the required RED/GREEN gate. A research need stops with `BLOCKED` and the precise question; the caller invokes `/al-research` (from `/al-implement`) or escalates through `/al-steer` (from `/al-code-review --fix`).
 - Absorb only what the task already decided: in-object drift (procedure rename, parameter change, visibility flip, helper procedure, field addition) is absorbed and noted. A new decision — schema change, new event publisher, new codeunit, new seam, public-surface rename — is never applied silently; flag it for the caller to route to `/al-steer`.
 - The object-ID allocator is the one hard stop: absent when a new test codeunit is needed → stop and return `BLOCKED`. An unallocated ID leaks from the pool and cannot be recovered inline.
 

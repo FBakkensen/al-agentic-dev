@@ -7,7 +7,7 @@ description: Generate release notes from per-PR analysis of merged work since th
 
 # /release-notes — PR JSONL to release notes
 
-Turn `.output/releases/release-analysis.jsonl` into `.output/releases/RELEASE-NOTES-<VERSION>.md`. Classify one PR at a time into a single-line JSON todo description, then render the final markdown. Main context holds only the summary and final output.
+Turn `.output/releases/release-analysis.jsonl` into `.output/releases/RELEASE-NOTES-<VERSION>.md`. Classify one PR at a time into a single-line JSON todo description, then render the final markdown. Main context holds only the summary, todo list, and final output.
 
 One fact per analysis line. Name the page, codeunit, table, field, or action.
 

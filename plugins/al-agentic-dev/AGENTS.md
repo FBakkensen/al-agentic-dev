@@ -227,6 +227,6 @@ skills/
 └── al-validate-breaking-changes/SKILL.md  # Run kind: breaking-change task → validate-breaking-changes.ps1 → flip status
 ```
 
-Tests live at repo root (`tests/<target>/*.Tests.ps1` for Pester, plus fixtures under `tests/fixtures/`), not inside any plugin — with one exception: extension `*.test.mjs` node:test suites sit beside their extension source and are run by CI. `plugins/` otherwise carries only deliverables.
+Tests live at repo root — flat `tests/*.Tests.ps1` for repo-wide contracts and script audits, nested `tests/<target>/*.Tests.ps1` for per-target Pester suites (e.g. `tests/al-build/`), plus fixtures under `tests/fixtures/` — not inside any plugin — with one exception: extension `*.test.mjs` node:test suites sit beside their extension source and are run by CI. `plugins/` otherwise carries only deliverables.
 
 No build scripts. Skill bodies, reference templates, and PowerShell helpers under `skills/al-build/scripts/` are the entire product.

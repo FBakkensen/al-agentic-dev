@@ -75,7 +75,7 @@ No must-fix (after the single re-review under `--fix`) writes `review: clean`; t
 
 Keep lens churn and judge transcript out of chat. Open with one line and a three-row `**Scope**` / `**Baseline**` / `**Mode**` chip; name each failed lens. Close with `**Fix queue**`, `**Nits**`, `**Escalated**`, and `**Gate**`; under `--fix`, also list `**Fixed**` commits. On abort, give the partial summary and no resume.
 
-Use `Finding:` / `Where:` / `Action:` for relayed findings and verify each cause → effect in named objects before sending. The judge's return begins `REVIEW JUDGMENT`; each supplied finding remains represented with `Rank:`, `Classification:`, `Finding:`, `Where:`, `Evidence:`, `Lenses:`, and `Reason:`. This skill writes nothing except clean-gate state, and under `--fix` reconciled originating tasks and fix commits: never `architecture.md`, `event-model.md`, ADRs, `CONTEXT.md`, or `.out-of-scope/`.
+Use `Finding:` / `Where:` / `Action:` for relayed findings and verify each cause → effect in named objects before sending. The judge's return begins `REVIEW JUDGMENT`; each supplied finding remains represented with `Rank:`, `Classification:`, `Finding:`, `Where:`, `Evidence:`, `Lenses:`, and `Reason:`. This skill writes no durable planning artifacts except clean-gate state and, under `--fix`, reconciled originating tasks. Under `--fix`, it may make only the scoped code/test edits required by eligible fix-queue findings and their required fix commits; never `architecture.md`, `event-model.md`, ADRs, `CONTEXT.md`, or `.out-of-scope/`.
 
 | Condition | Next |
 |---|---|
