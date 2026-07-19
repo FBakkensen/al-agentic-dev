@@ -2,7 +2,7 @@
 name: al-review-refactor-bc
 description: Find BC-specific structural anti-patterns and platform reinvention for al-refactor by dispatching through bc-code-intelligence on a task diff.
 tools: ["read", "search", "bc-code-intelligence-mcp/*", "microsoft_learn/*"]
-model: gpt-5.6-terra
+model: claude-fable-5
 user-invocable: false
 ---
 

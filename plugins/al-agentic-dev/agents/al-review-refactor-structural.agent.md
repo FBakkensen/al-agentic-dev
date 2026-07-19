@@ -2,7 +2,7 @@
 name: al-review-refactor-structural
 description: Find R→P→W, depth, and seam-shape reshape opportunities for al-refactor on a task diff.
 tools: ["read", "search", "microsoft_learn/*"]
-model: gpt-5.6-terra
+model: claude-fable-5
 user-invocable: false
 ---
 
