@@ -42,11 +42,12 @@ Default order:
 2. `Integration` cases red/green, one per invocation.
 3. Full gate.
 
-For each case, **invoke the `al-red-green` custom agent** (fixed Terra worker role — no in-loop escalation; a case that can't reach green after retry falls back to you doing it inline or a `general-purpose` spawn), passing: the single AAA case (Arrange/Act/Assert text from the `Test Specification`), the task's `New and Modified Objects` block, and the task file path. Read the agent's outcome note before proceeding — and before relaying anything from it, run pre-send check 3 ([voice-contract.md](../../references/voice-contract.md) Relaying subagent findings): a note naming no object or observation goes back to the agent; relay through the Gate/Stop shape, never raw. Then route on the verdict:
+For each case, **invoke the `al-red-green` custom agent** (fixed Terra worker role — no in-loop escalation and no inline or `general-purpose` fallback; a case that can't reach green after retry, or an unavailable/retired pinned id, surfaces as `BLOCKED` and routes per the table below — see [delegation.md](../../references/delegation.md)), passing: the single AAA case (Arrange/Act/Assert text from the `Test Specification`), the task's `New and Modified Objects` block, and the task file path. Read the agent's outcome note before proceeding — and before relaying anything from it, run pre-send check 3 ([voice-contract.md](../../references/voice-contract.md) Relaying subagent findings): a note naming no object or observation goes back to the agent; relay through the Gate/Stop shape, never raw. Then route on the verdict:
 
 - `GREEN` → run the full suite gate (a red anywhere, including a sibling task's test, blocks the `phase: implemented` stamp), then proceed to the next case.
 - `PUSH-UP` → handle the push-up commitment gate (see below).
-- New decision flagged / `BLOCKED` → `Next: /al-steer`.
+- `BLOCKED` naming a research question/evidence gap → invoke `/al-research` with that exact question, then resume the case with the returned finding (this skill is one of the two `/al-research` may be called by directly).
+- New decision flagged / other `BLOCKED` → `Next: /al-steer`.
 
 **Survive compaction.** A multi-case task outlives the context window: track per-case progress in the session todo list (one todo per AAA case, status flipped as each lands) — todos and plans survive context compaction; this skill's injected body and the per-case chatter do not. After a compaction, re-read this skill and the task file, then resume from the todo state.
 

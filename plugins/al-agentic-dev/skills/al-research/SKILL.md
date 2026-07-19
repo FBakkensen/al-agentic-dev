@@ -7,7 +7,7 @@ description: Verify AL/Business Central specifics from authoritative sources, qu
 
 # /al-research, Verify BC specifics
 
-Treat your own AL/BC knowledge as untrusted. Verify the specific BC fact in question, quote the canonical source, return. Read-only advisory: never pick designs. This is one of the two skills (with `/al-build`) another skill may invoke directly — a calling skill that hits the escalation bar invokes it by name; a user can also run it standalone.
+Treat your own AL/BC knowledge as untrusted. Frame the question, invoke the named `al-researcher` custom agent to verify the specific BC fact and quote the canonical source, then relay the finding and route it. Read-only advisory: never pick designs. This is one of the two skills (with `/al-build`) another skill may invoke directly — a calling skill that hits the escalation bar invokes it by name; a user can also run it standalone.
 
 ## Escalation seat, not toll booth
 
@@ -18,6 +18,14 @@ Direct quoted fetch satisfies the implement-time evidence bar (see `voice-contra
 - Workspace already searched. Workspace symbols, source, tests are the cheapest and most current truth; verifying what AL symbols already answer wastes motion and risks contradicting truth on disk.
 - Claim is BC-specific. General programming questions do not earn a pass.
 - Question is framed. A fuzzy question researched ships a precisely-cited answer to the wrong thing — reframe before researching.
+
+## Delegation
+
+Once the question is framed and the preconditions hold, invoke the named `al-researcher` custom agent to do the verification: cross-family checking, quoting, conflict surfacing per the discipline below. Pass the framed question, why the escalation bar was earned, and any candidate sources or conflicting claims already in hand. This skill keeps everything else — framing, relaying the finding to the caller or user, landing citations into the calling artifact, and routing a surfaced conflict.
+
+**bc-standard-reference carve-out.** When the question is specifically "what does Microsoft's shipped BaseApp/System Application/APIV2 code do", invoke the `bc-standard-reference` custom agent directly instead of routing it through `al-researcher` — that lookup already has its own named agent, and one custom agent does not spawn another during this rollout. Do both in the same pass when a question needs cross-family verification *and* a shipped-code quote: invoke each directly, then reconcile.
+
+**`al-researcher` unavailable** → report `BLOCKED`, name `al-researcher` as the missing agent, and stop; no inline substitution (see [delegation.md](../../references/delegation.md)).
 
 ## Verify, do not recall
 
@@ -43,7 +51,7 @@ Reach for whichever answers the specific question.
 
 - **Microsoft Learn** via web fetch and search (or the Microsoft Learn MCP): canonical Microsoft docs for AL platform constructs (attributes, properties, triggers, page types, APIs, AppSourceCop rules, version-tagged behaviour).
 - **bc-code-intelligence MCP**: curated BC pattern topic recommender; cold on platform spec, pair with Microsoft Learn for anything spec-shaped. Governed by the topic-recommender discipline above.
-- **bc-standard-reference**: reach for it when the question is "what does Microsoft's shipped AL code actually do" — it isolates the BaseApp / System Application / APIV2 mirror search off your thread.
+- **bc-standard-reference**: reach for it when the question is "what does Microsoft's shipped AL code actually do" — it isolates the BaseApp / System Application / APIV2 mirror search off your thread. This skill invokes it directly (the carve-out above), not through `al-researcher`.
 - **AL symbols** via `al-symbols-mcp` and **LSP**: the workspace's compiled dependency graph — actual signatures, table relations, field types, extension graphs, callsites, definitions.
 - **Workspace grep**: comments, TODO markers, string literals (including handler name strings the compiler doesn't rename).
 - **Web search**: last resort for non-Learn content; rots fast, cross-check against an authoritative source before quoting.
@@ -52,13 +60,13 @@ Reach for whichever answers the specific question.
 
 ## Stop at actionable, surface conflicts
 
-Stop the moment the caller has what they need to act; one question per pass.
+`al-researcher` stops the moment the caller has what it needs to act; one question per pass.
 
-When two authoritative sources disagree (Microsoft Learn says one signature, workspace symbols show another), surface both with citations and name the conflict. Silently picking hides it from the caller, who has the architectural context to choose.
+When two authoritative sources disagree (Microsoft Learn says one signature, workspace symbols show another), it surfaces both with citations and names the conflict in its returned note rather than silently picking — this skill is the one with the architectural context to choose or route.
 
 ## Output
 
-A findings note: verbatim quotes, one-line citations, no editorialising. Citations live in the note, never inline into durable artifacts — the caller decides what survives and lands task-scoped citations as `Contract notes` bullets per the evidence bar. When two sources agree, name both (`Microsoft Learn <page> + al-symbols-mcp <object>.<procedure> agree on <signature>`); when they disagree, return both quotes and name the conflict. Any count of evidence ("both sources", "all three families") lists the items — pre-send check 4, [voice-contract.md](../../references/voice-contract.md).
+`al-researcher` returns a findings note: verbatim quotes, one-line citations, no editorialising. This skill relays that note to whoever needed the fact. Citations live in the note, never inline into durable artifacts — the caller decides what survives and lands task-scoped citations as `Contract notes` bullets per the evidence bar. When two sources agree, the note names both (`Microsoft Learn <page> + al-symbols-mcp <object>.<procedure> agree on <signature>`); when they disagree, it returns both quotes and names the conflict. Any count of evidence ("both sources", "all three families") lists the items — pre-send check 4, [voice-contract.md](../../references/voice-contract.md).
 
 ## Next step
 

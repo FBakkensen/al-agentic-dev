@@ -54,35 +54,37 @@ Compiles all apps — main, every `testApps` entry, and the unit-test app — th
 - `.output/TestResults/summary.json` → machine-readable summary: `gate` (`full`/`unit`), `totals` per runner, `runs[]` with one record per test run (`runner`, `appName`, `dir`, `passed`, `counts`, `resultFile`, `telemetryFile`).
 - `.output/logs/build-timing.jsonl` → one gate-metrics entry per run (every exit path: pass, fail, throw), mirrored to `~/.al-build/gate-metrics.jsonl`.
 
-Take `resultFile` paths from `summary.json` run records — don't glob; a stale file from an earlier gate may sit beside a fresh one.
+Take `resultFile` paths from `summary.json` run records — don't glob; a stale file from an earlier gate may sit beside a fresh one. `test.ps1` writes `summary.json` only once a run reaches a result-emission point (a unit-test failure, a unit-only pass, or the end of a full gate); a run that stops earlier — a bad `al-build.json`, a compile failure — leaves whatever `summary.json` was already on disk untouched. A relay reporting `summary.json` as `missing` means no file exists at that path; a relay reporting it present is not on its own proof this run wrote it — corroborate against the relayed exit code and bounded output excerpt before treating its content as this run's result.
 
 Test failure with an unclear cause → name `/al-debug-logging` as the next step; a clear assertion or compile failure needs no telemetry. Don't grep the build log for clues telemetry already answers.
 
 ## Delegation
 
-Always delegate `/al-build` to one general subagent. Build output is verbose; keep it out of the main session.
+Always delegate `/al-build` to the named `al-gate-runner` custom agent — bounded executor role, a mechanical gate run that relays authoritative result files (see [delegation.md](../../references/delegation.md)). Build output is verbose; keep it out of the main session.
 
-After the worker returns the gate report, close the completed subagent thread before interpreting or reporting the result. Report the outcome as the mid-task Gate one-liner per [voice-contract.md](../../references/voice-contract.md) — never paste the worker's block raw.
+**Already inside an agent** (a red-green case, a mutation cycle, or any other agent already mid-workflow) → run the gate script directly inline instead; nested custom-agent spawning does not happen, and this is not model substitution since no new spawn occurs. **`al-gate-runner` unavailable** for a fresh spawn → report `BLOCKED`, name `al-gate-runner` as the missing agent, and stop; no generic-subagent or inline substitution (see [delegation.md](../../references/delegation.md)).
 
-Spawn one general read-only subagent for the gate on the bounded executor role — a mechanical gate run that relays authoritative result files (see [delegation.md](../../references/delegation.md)). The spawn prompt includes verbatim: findings must name file, object, and the observed fact; no verdict words without the check that produced them.
+After the worker returns the gate report, close the completed thread before interpreting or reporting the result. Report the outcome as the mid-task Gate one-liner per [voice-contract.md](../../references/voice-contract.md) — never paste the worker's block raw.
+
+The spawn prompt includes verbatim: findings must name file, object, and the observed fact; no verdict words without the check that produced them.
 
 ### Worker rules
 
 ```
 Do not edit source, specs, tasks, config, or git state. Running `test.ps1` may write build/test artifacts under `.output`; that is allowed.
 
-Run exactly one requested gate. Do not rerun on failure. Do not run multiple `/al-build` gates in parallel. Do not shadow the worker with an inline build.
+Run exactly one requested gate, exactly once. Do not rerun on failure. Do not run multiple `/al-build` gates in parallel. Do not shadow the worker with an inline build.
 
-Return observed outcome only. Do not make routing decisions. Do not invoke follow-up skills. Do not inspect or summarize telemetry; return the telemetry path when present.
+Relay the observed exit code and the authoritative artifact paths and content verbatim — `.output/TestResults/summary.json (expand: resultFile, telemetryFile where passed=false)` — plus the runner's bounded verbatim stdout/stderr excerpt. The expand marker tells the runner to mechanically follow each failing run's `resultFile`/`telemetryFile` out of `summary.json` itself and relay them too, without opening any other file. A relayed `missing` means no file exists at the supplied path; the worker does not distinguish a stale prior-run `summary.json` from this run's own — the caller judges that from the relayed exit code and bounded output excerpt, never the worker. The runner selects the stdout/stderr excerpt mechanically: first matching error/diagnostic line with up to two preceding and six following lines (nine lines maximum), or the last nine lines when no match exists. Do not parse, interpret, classify, or summarize any relayed evidence — that is the caller's job. Do not make routing decisions. Do not invoke follow-up skills.
 ```
 
-### Worker return contract
+### Gate report
 
-Return YAML-like plain text in a fenced `text` block.
+The worker relays the exit code, raw artifacts, and one mechanically selected output excerpt only — never an interpreted verdict. After it returns, derive the gate report yourself as YAML-like plain text in a fenced `text` block.
 
-Take `gate`, `totals`, and all counts from `.output/TestResults/summary.json` — the source of truth; echo `appName`, `dir`, `resultFile`, `telemetryFile`, and every `counts` number verbatim. **Never derive counts from console lines: `Codeunit … Success` lines are test codeunits (containers of tests), not tests.** Report totals per runner; never sum across runners — the unit test app runs through both al-runner and the container, so a cross-runner sum counts the same tests twice. If `counts` is `null` for a run, report `counts: unavailable` — do not substitute zeros. Omit `totals` and `runs` if no summary exists.
+Take `gate`, `totals`, and all counts from the relayed `.output/TestResults/summary.json` content — the source of truth; echo `appName`, `dir`, `resultFile`, `telemetryFile`, and every `counts` number verbatim. **Never derive counts from console lines: `Codeunit … Success` lines are test codeunits (containers of tests), not tests.** Report totals per runner; never sum across runners — the unit test app runs through both al-runner and the container, so a cross-runner sum counts the same tests twice. If `counts` is `null` for a run, report `counts: unavailable` — do not substitute zeros. Omit `totals` and `runs` if no summary exists.
 
-On failure, parse the failing run's `resultFile` (JUnit XML, both runners) for failing test names and the `<failure message=…>` text. If XML is unavailable but console output has explicit failure lines, use those. If neither exists, omit `failing_tests`. Omit `first_error` and `log_excerpt` unless corresponding evidence exists. `log_excerpt` is capped at 20 relevant lines. `root_signal` is mandatory for `FAIL` and must compress observed output only; no cause speculation.
+On a non-zero exit, parse the failing run's relayed `resultFile` (JUnit XML, both runners) for failing test names and the `<failure message=…>` text. If XML is unavailable, use explicit failure lines from the relayed bounded output excerpt; if neither exists, omit `failing_tests`. A compilation failure stops before `summary.json` is (re)written this run — if the relayed artifact is `missing`, or present but not corroborated by the relayed exit code and excerpt as this run's own, treat its counts as unusable and derive the mandatory `root_signal` from the bounded excerpt instead, not from stale or missing test counts. If the excerpt is `missing`, use only `command exited <exit_code>; no command output captured`. Omit `first_error` and `log_excerpt` unless corresponding evidence exists. `log_excerpt` is capped at the relay's nine lines. `root_signal` is mandatory for `FAIL` and must compress observed evidence only; no cause speculation.
 
 PASS example:
 

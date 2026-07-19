@@ -6,8 +6,12 @@
     Checks that every plugin listed in .github/plugin/marketplace.json has a folder
     under plugins/ with a root plugin.json manifest whose name matches the marketplace
     entry, that all manifests are valid JSON, that agent files use the .agent.md
-    extension, and that any hooks config declares "version": 1 (Copilot CLI hook
-    format). This marketplace targets GitHub Copilot CLI.
+    extension, that any hooks config declares "version": 1 (Copilot CLI hook
+    format), and that every custom agent's frontmatter carries a name matching its
+    filename (unique across the marketplace), a JSON tools array of non-empty
+    strings, a model id, and user-invocable: false. The al-agentic-dev plugin
+    additionally declares its exact approved custom-agent fleet. This marketplace
+    targets GitHub Copilot CLI.
 .EXAMPLE
     pwsh scripts/Validate-PluginStructure.ps1
 #>
@@ -17,6 +21,33 @@ param(
 )
 
 $errors = @()
+
+# The al-agentic-dev fleet is intentionally model-pinned. Keep this map aligned
+# with its agent files when a role's model is changed.
+$script:AlAgenticDevFleet = [ordered]@{
+    'al-design-option'             = 'claude-fable-5'
+    'al-gate-runner'               = 'gpt-5.6-luna'
+    'al-mutant-cycle'              = 'gpt-5.6-terra'
+    'al-red-green'                 = 'gpt-5.6-terra'
+    'al-researcher'                = 'gpt-5.6-sol'
+    'al-review-cr-appsource'       = 'gpt-5.6-terra'
+    'al-review-cr-bc'              = 'gpt-5.6-terra'
+    'al-review-cr-bugscan'         = 'claude-fable-5'
+    'al-review-cr-comments'        = 'gpt-5.6-terra'
+    'al-review-cr-compliance'      = 'gpt-5.6-terra'
+    'al-review-cr-perf'            = 'gpt-5.6-terra'
+    'al-review-judge'              = 'gpt-5.6-sol'
+    'al-review-refactor-bc'        = 'gpt-5.6-terra'
+    'al-review-refactor-naming'    = 'gpt-5.6-terra'
+    'al-review-refactor-perf'      = 'gpt-5.6-terra'
+    'al-review-refactor-simplify'  = 'gpt-5.6-terra'
+    'al-review-refactor-structural' = 'gpt-5.6-terra'
+    'bc-standard-reference'        = 'gpt-5.6-terra'
+}
+
+# Agent names must be unique across the whole marketplace (invoked by name via the
+# task tool regardless of which plugin ships them) — tracked across all plugins.
+$script:agentNameSources = @{}
 
 function Get-MarketplacePluginNames {
     param(
@@ -80,6 +111,138 @@ function Get-SkillFrontmatterBlock {
     return ($lines[1..($closingIndex - 1)] -join "`n")
 }
 
+function Test-AgentFrontmatterBlock {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$AgentFile
+    )
+
+    $result = [PSCustomObject]@{
+        Errors = @()
+        Name   = $null
+        Model  = $null
+    }
+
+    $frontmatter = $null
+    try {
+        $frontmatter = Get-SkillFrontmatterBlock -SkillFile $AgentFile
+    } catch {
+        $result.Errors += "Invalid or missing frontmatter in agent file $($AgentFile): $($_.Exception.Message)"
+        return $result
+    }
+
+    $nameMatches = [regex]::Matches($frontmatter, '(?m)^\s*name\s*:')
+    if ($nameMatches.Count -gt 1) {
+        $result.Errors += "Duplicate name field in agent frontmatter: $AgentFile"
+    } else {
+        $nameMatch = [regex]::Match($frontmatter, '(?m)^\s*name:\s*(\S+)\s*$')
+        if (-not $nameMatch.Success) {
+            $result.Errors += "Missing name field in agent frontmatter: $AgentFile"
+        } else {
+            $result.Name = $nameMatch.Groups[1].Value.Trim()
+            $expectedName = [System.IO.Path]::GetFileName($AgentFile) -replace '\.agent\.md$', ''
+            if ($result.Name -ne $expectedName) {
+                $result.Errors += "Agent name '$($result.Name)' does not match filename stem '$expectedName': $AgentFile"
+            }
+        }
+    }
+
+    $toolsMatches = [regex]::Matches($frontmatter, '(?m)^\s*tools\s*:')
+    if ($toolsMatches.Count -gt 1) {
+        $result.Errors += "Duplicate tools field in agent frontmatter: $AgentFile"
+    } else {
+        $toolsMatch = [regex]::Match($frontmatter, '(?m)^\s*tools:\s*(.+?)\s*$')
+        if (-not $toolsMatch.Success) {
+            $result.Errors += "Missing or malformed tools declaration in agent frontmatter: $AgentFile"
+        } else {
+            $toolsJson = $null
+            try {
+                $toolsJson = [System.Text.Json.JsonDocument]::Parse($toolsMatch.Groups[1].Value)
+                $toolsRoot = $toolsJson.RootElement
+                if ($toolsRoot.ValueKind -ne [System.Text.Json.JsonValueKind]::Array) {
+                    $result.Errors += "Tools declaration must be a JSON array: $AgentFile"
+                } elseif ($toolsRoot.GetArrayLength() -eq 0) {
+                    $result.Errors += "Empty tools declaration in agent frontmatter: $AgentFile"
+                } else {
+                    foreach ($tool in $toolsRoot.EnumerateArray()) {
+                        if ($tool.ValueKind -ne [System.Text.Json.JsonValueKind]::String) {
+                            $result.Errors += "Tools declaration contains a non-string entry: $AgentFile"
+                            break
+                        }
+
+                        if ([string]::IsNullOrWhiteSpace($tool.GetString())) {
+                            $result.Errors += "Tools declaration contains an empty or whitespace-only entry: $AgentFile"
+                            break
+                        }
+                    }
+                }
+            } catch {
+                $result.Errors += "Invalid JSON in tools declaration: $AgentFile"
+            } finally {
+                if ($null -ne $toolsJson) {
+                    $toolsJson.Dispose()
+                }
+            }
+        }
+    }
+
+    $modelMatches = [regex]::Matches($frontmatter, '(?m)^\s*model\s*:')
+    if ($modelMatches.Count -gt 1) {
+        $result.Errors += "Duplicate model field in agent frontmatter: $AgentFile"
+    } else {
+        $modelMatch = [regex]::Match($frontmatter, '(?m)^\s*model:\s*(\S+)\s*$')
+        if (-not $modelMatch.Success) {
+            $result.Errors += "Missing model field in agent frontmatter: $AgentFile"
+        } else {
+            $result.Model = $modelMatch.Groups[1].Value.Trim()
+        }
+    }
+
+    $invocableMatches = [regex]::Matches($frontmatter, '(?m)^\s*user-invocable\s*:')
+    if ($invocableMatches.Count -gt 1) {
+        $result.Errors += "Duplicate user-invocable field in agent frontmatter: $AgentFile"
+    } else {
+        $invocableMatch = [regex]::Match($frontmatter, '(?m)^\s*user-invocable:\s*(\S+)\s*$')
+        if (-not $invocableMatch.Success) {
+            $result.Errors += "Missing user-invocable field in agent frontmatter: $AgentFile"
+        } elseif ($invocableMatch.Groups[1].Value.Trim() -ne 'false') {
+            $result.Errors += "Agent frontmatter user-invocable must be 'false' (found '$($invocableMatch.Groups[1].Value.Trim())'): $AgentFile"
+        }
+    }
+
+    return $result
+}
+
+function Test-AlAgenticDevFleet {
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$AgentResults
+    )
+
+    $fleetErrors = @()
+
+    foreach ($expectedAgent in $script:AlAgenticDevFleet.Keys) {
+        if (-not $AgentResults.ContainsKey($expectedAgent)) {
+            $fleetErrors += "Missing expected al-agentic-dev agent '$expectedAgent'"
+            continue
+        }
+
+        $actualModel = $AgentResults[$expectedAgent].Model
+        $expectedModel = $script:AlAgenticDevFleet[$expectedAgent]
+        if ($actualModel -ne $expectedModel) {
+            $fleetErrors += "al-agentic-dev agent '$expectedAgent' must use model '$expectedModel' (found '$actualModel')"
+        }
+    }
+
+    foreach ($actualAgent in $AgentResults.Keys) {
+        if (-not $script:AlAgenticDevFleet.Contains($actualAgent)) {
+            $fleetErrors += "Unexpected al-agentic-dev agent '$actualAgent'"
+        }
+    }
+
+    return $fleetErrors
+}
+
 function Test-IsQuotedScalar {
     param(
         [Parameter(Mandatory = $true)]
@@ -135,6 +298,7 @@ foreach ($pluginName in $pluginNames) {
     }
 
     $agentsDir = Join-Path $pluginPath "agents"
+    $agentResults = @{}
     if (Test-Path $agentsDir) {
         $strayAgents = @(Get-ChildItem -Path $agentsDir -Filter *.md -File |
             Where-Object { $_.Name -notlike '*.agent.md' })
@@ -144,6 +308,41 @@ foreach ($pluginName in $pluginNames) {
         }
         if ($strayAgents.Count -eq 0) {
             Write-Host "OK: $pluginName agents use the .agent.md extension" -ForegroundColor Green
+        }
+
+        $agentFiles = @(Get-ChildItem -Path $agentsDir -Filter *.agent.md -File)
+        foreach ($agentFile in $agentFiles) {
+            $agentResult = Test-AgentFrontmatterBlock -AgentFile $agentFile.FullName
+            $agentFileStem = $agentFile.Name -replace '\.agent\.md$', ''
+            $agentResults[$agentFileStem] = $agentResult
+            foreach ($agentErrorMessage in $agentResult.Errors) {
+                $errors += $agentErrorMessage
+                Write-Host "FAIL: $agentErrorMessage" -ForegroundColor Red
+            }
+            if ($agentResult.Errors.Count -eq 0) {
+                Write-Host "OK: $pluginName/agents/$($agentFile.Name) frontmatter valid" -ForegroundColor Green
+            }
+
+            if ($null -ne $agentResult.Name) {
+                if ($script:agentNameSources.ContainsKey($agentResult.Name)) {
+                    $errors += "Duplicate agent name '$($agentResult.Name)' in $($agentFile.FullName) (already used by $($script:agentNameSources[$agentResult.Name]))"
+                    Write-Host "FAIL: duplicate agent name '$($agentResult.Name)'" -ForegroundColor Red
+                } else {
+                    $script:agentNameSources[$agentResult.Name] = $agentFile.FullName
+                }
+            }
+        }
+
+    }
+
+    if ($pluginName -eq 'al-agentic-dev') {
+        $fleetErrors = @(Test-AlAgenticDevFleet -AgentResults $agentResults)
+        foreach ($fleetError in $fleetErrors) {
+            $errors += $fleetError
+            Write-Host "FAIL: $fleetError" -ForegroundColor Red
+        }
+        if ($fleetErrors.Count -eq 0) {
+            Write-Host "OK: al-agentic-dev agent fleet matches approved name-to-model map" -ForegroundColor Green
         }
     }
 

@@ -46,7 +46,7 @@ Meet the evidence bar for every BC name and construct in the case's Arrange / Ac
 - **Workspace.** `al-symbols-mcp` + LSP for signatures, table relations, field types. Compiled symbols are truth.
 - **BC construct class.** `find_bc_knowledge` → drop-noise → `get_bc_topic` per `references/bc-code-intelligence-dispatch.md`. Legacy code is precedent, not authority — a construct copied from the workspace still earns its fetch.
 - **Platform spec.** Microsoft Learn — search first, fetch the full page when the excerpt is insufficient.
-- **Escalate.** Invoke `/al-research` when two sources disagree, when a fact lands in a durable artifact, or when the question needs framing plus independent verification.
+- **Escalate.** This agent does not invoke `/al-research` — that would nest a spawn inside an already-spawned agent. When two sources disagree, when a fact lands in a durable artifact, or when the question needs framing plus independent verification, stop and return `BLOCKED` with the precise research question and the evidence gap; `/al-implement` invokes `/al-research` with that question and resumes this case, while `/al-code-review --fix` escalates the question through `/al-steer`.
 
 Declare each fetch as `Researched: <fact> → <source>` — surfaces in the outcome note for the caller to land as `Contract notes` bullets.
 
@@ -65,6 +65,7 @@ For every build — confirming RED, confirming GREEN — invoke `/al-build`:
 
 - `Unit` case → `/al-build -UnitTestOnly`
 - `Integration` case → `/al-build`
+- This agent is already spawned, so `/al-build` runs its already-inside-agent branch: the gate script runs inline and does not spawn `al-gate-runner`.
 
 RED confirmed: new test fails on an assertion, existing suite still passes.
 GREEN confirmed: target test passes, full suite passes.
@@ -83,7 +84,7 @@ Re-confirm the compile-error class before treating an ERROR as a runner-capabili
 
 ## Graceful degradation
 
-MCP servers may be absent in a consumer session. Fall back: `bc-code-intelligence` unavailable → read the diff directly for the same goal; `al-symbols-mcp` unavailable → use LSP and workspace grep; Microsoft Learn MCP unavailable → invoke `/al-research` to fetch the fact, or fetch Learn directly on the web. Never block on a missing server — except the ID allocator: if it is absent and a new test codeunit is needed, stop and return `BLOCKED` — an unallocated object ID leaks from the pool and cannot be safely recovered inline.
+MCP servers may be absent in a consumer session. Fall back: `bc-code-intelligence` unavailable → read the diff directly for the same goal; `al-symbols-mcp` unavailable → use LSP and workspace grep; Microsoft Learn MCP unavailable → use `execute` (curl) to fetch the Learn URL directly — `skill` is reserved for invoking `/al-build`, never a generic web-fetch skill. Never block on a missing server for these — except the ID allocator: if it is absent and a new test codeunit is needed, stop and return `BLOCKED` — an unallocated object ID leaks from the pool and cannot be safely recovered inline. If the fact still can't be fetched (curl unreachable too), stop and return `BLOCKED` with the precise research question rather than invoking `/al-research` — this agent never spawns it; the caller routes.
 
 ## No commits
 
@@ -98,4 +99,4 @@ Verdict on line 1 — one of `GREEN`, `PUSH-UP`, `BLOCKED` — then:
 - Test procedure name(s) and which test app/codeunit they landed in.
 - Production scope — objects, procedures, fields that moved versus the injected plan.
 - `Researched:` citations from this case.
-- New decisions requiring `/al-steer` (on `PUSH-UP` or `BLOCKED`).
+- Research question and evidence gap (on a research-need `BLOCKED`, verbatim — `/al-implement` passes it to `/al-research`; `/al-code-review --fix` escalates it through `/al-steer`), or new decisions requiring `/al-steer` (on `PUSH-UP` or any other `BLOCKED`).
