@@ -2,7 +2,7 @@
 name: al-mutant-cycle
 description: Execute one approved mutate→gate→revert cycle for al-mutate and return its observed evidence without classifying the mutant.
 tools: ["read", "edit", "execute", "search"]
-model: gpt-5.6-terra
+model: claude-sonnet-5
 user-invocable: false
 ---
 

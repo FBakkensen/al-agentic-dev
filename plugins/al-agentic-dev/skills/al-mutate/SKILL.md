@@ -64,7 +64,7 @@ After each invocation returns its evidence, classify the mutant yourself (see Cl
 
 The final full `test.ps1` closeout is the host's own gate run, never a mutant cycle, and routes exactly like `/al-build`'s: delegate to the named `al-gate-runner` custom agent — bounded executor role (see [delegation.md](../../references/delegation.md)) — so its verbose output stays out of the main session. **Already inside an agent** mid-workflow (this skill running as a spawned subagent itself) → run `test.ps1` directly inline instead; nested custom-agent spawning does not happen, and this is not model substitution since no new spawn occurs — the same rule the per-mutant `al-mutant-cycle` worker path already follows, unchanged. **`al-gate-runner` unavailable** for a fresh spawn → report `BLOCKED`, name `al-gate-runner` as the missing agent, and stop; no generic-subagent substitution.
 
-`al-mutant-cycle` is fixed to the Terra worker role — the cycle makes a transient source edit and relays the gate result for the host to classify (see [delegation.md](../../references/delegation.md)).
+`al-mutant-cycle` is fixed to the Sonnet worker role — the cycle makes a transient source edit and relays the gate result for the host to classify (see [delegation.md](../../references/delegation.md)).
 
 ### Worker rules
 

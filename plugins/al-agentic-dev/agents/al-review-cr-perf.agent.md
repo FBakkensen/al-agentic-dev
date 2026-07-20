@@ -2,7 +2,7 @@
 name: al-review-cr-perf
 description: Catch diff-scoped performance findings for al-code-review by dispatching the al-performance scanner per changed AL file.
 tools: ["read", "search", "al-performance/*", "microsoft_learn/*"]
-model: gpt-5.6-terra
+model: claude-sonnet-5
 user-invocable: false
 ---
 

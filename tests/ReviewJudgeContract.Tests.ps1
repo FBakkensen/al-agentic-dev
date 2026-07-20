@@ -12,18 +12,18 @@ Describe 'Review judge model-role canonical alignment' {
         $script:JudgeModel = ([regex]::Match($script:ReviewJudge, '(?m)^model:\s*(\S+)')).Groups[1].Value
     }
 
-    It 'pins al-review-judge to the Fable smart-role model in its own frontmatter' {
-        $script:JudgeModel | Should -Be 'claude-fable-5'
+    It 'pins al-review-judge to the Opus arbiter-role model in its own frontmatter' {
+        $script:JudgeModel | Should -Be 'claude-opus-4.8'
     }
 
-    It 'describes al-review-judge as smart (Fable) in the plugin AGENTS.md layout comment, never arbiter (Sol)' {
-        $script:PluginAgentsMd | Should -Match 'al-review-judge\.agent\.md[^\r\n]*smart \(Fable\)'
-        $script:PluginAgentsMd | Should -Not -Match 'al-review-judge\.agent\.md[^\r\n]*arbiter \(Sol\)'
+    It 'describes al-review-judge as arbiter (Opus) in the plugin AGENTS.md layout comment, never smart (Fable)' {
+        $script:PluginAgentsMd | Should -Match 'al-review-judge\.agent\.md[^\r\n]*arbiter \(Opus\)'
+        $script:PluginAgentsMd | Should -Not -Match 'al-review-judge\.agent\.md[^\r\n]*smart \(Fable\)'
     }
 
-    It 'lists al-review-judge as smart, fixed in delegation.md''s Where-each-worker-lands table, never arbiter' {
-        $script:Delegation | Should -Match '\| `al-review-judge` custom agent[^\r\n]*\|\s*smart, fixed'
-        $script:Delegation | Should -Not -Match '\| `al-review-judge` custom agent[^\r\n]*\|\s*arbiter, fixed'
+    It 'lists al-review-judge as arbiter, fixed in delegation.md''s Where-each-worker-lands table, never smart' {
+        $script:Delegation | Should -Match '\| `al-review-judge` custom agent[^\r\n]*\|\s*arbiter, fixed'
+        $script:Delegation | Should -Not -Match '\| `al-review-judge` custom agent[^\r\n]*\|\s*smart, fixed'
     }
 }
 

@@ -2,7 +2,7 @@
 name: al-review-refactor-naming
 description: Find BC-vocabulary and project-terminology rename opportunities for al-refactor on a task diff.
 tools: ["read", "search", "microsoft_learn/*"]
-model: gpt-5.6-terra
+model: claude-sonnet-5
 user-invocable: false
 ---
 

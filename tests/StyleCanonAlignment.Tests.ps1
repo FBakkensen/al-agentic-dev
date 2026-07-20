@@ -20,17 +20,17 @@ BeforeAll {
         'al-mutant-cycle' = @{
             File      = Get-Content -LiteralPath (Join-Path $agentsPath 'al-mutant-cycle.agent.md') -Raw
             StyleLine = 'Concise — cut filler, keep grammar. Exact — distinguish observation from judgment. Arrows (→) for the fixed cycle. Technical terms exact, code and errors quoted verbatim.'
-            Model     = 'gpt-5.6-terra'
+            Model     = 'claude-sonnet-5'
         }
         'al-researcher' = @{
             File      = Get-Content -LiteralPath (Join-Path $agentsPath 'al-researcher.agent.md') -Raw
             StyleLine = 'Concise — cut filler, keep grammar. Exact — conclusions follow quoted evidence. Arrows (→) for causality. Technical terms exact, code and errors quoted verbatim.'
-            Model     = 'gpt-5.6-sol'
+            Model     = 'claude-opus-4.8'
         }
         'al-review-judge' = @{
             File      = Get-Content -LiteralPath (Join-Path $agentsPath 'al-review-judge.agent.md') -Raw
             StyleLine = 'Concise — cut filler, keep grammar. Opinionated — classify each finding. Arrows (→) for cause and effect. Technical terms exact, code and errors quoted verbatim.'
-            Model     = 'claude-fable-5'
+            Model     = 'claude-opus-4.8'
         }
     }
 
@@ -38,10 +38,10 @@ BeforeAll {
     $script:ResearcherAgent = $script:CanonicalFive['al-researcher'].File
 }
 
-Describe 'No stale review-judge arbiter language anywhere in the plugin AGENTS.md' {
-    It 'never pairs review-judge with the arbiter role, in any table cell or paragraph' {
-        $script:PluginAgentsMd | Should -Not -Match '(?i)review-judge[^\r\n]{0,80}arbiter'
-        $script:PluginAgentsMd | Should -Not -Match '(?i)arbiter[^\r\n]{0,80}review-judge'
+Describe 'No stale review-judge smart-role language anywhere in the plugin AGENTS.md' {
+    It 'never pairs review-judge with the smart role, in any table cell or paragraph' {
+        $script:PluginAgentsMd | Should -Not -Match '(?i)review-judge[^\r\n]{0,80}smart \(Fable\)'
+        $script:PluginAgentsMd | Should -Not -Match '(?i)smart \(Fable\)[^\r\n]{0,80}review-judge'
     }
 }
 
@@ -90,7 +90,7 @@ Describe 'Voice-contract documents every frozen Style-line variant and accepts e
     }
 }
 
-Describe 'The corrected canon permits the frozen exemplars without touching any of the five canonical agents' {
+Describe 'The corrected canon permits the frozen exemplars without touching any of the five canonical agents'' rubric surface' {
     It "leaves every one of the five canonical agents' frozen Style line exactly as PR #17 shipped it" {
         foreach ($name in $script:CanonicalFive.Keys) {
             $expected = "**Style:** $($script:CanonicalFive[$name].StyleLine)"
@@ -98,7 +98,7 @@ Describe 'The corrected canon permits the frozen exemplars without touching any 
         }
     }
 
-    It "leaves every one of the five canonical agents' model frontmatter pin untouched" {
+    It "pins every one of the five canonical agents' model frontmatter to the current approved fleet assignment" {
         foreach ($name in $script:CanonicalFive.Keys) {
             $expectedModel = [regex]::Escape($script:CanonicalFive[$name].Model)
             $script:CanonicalFive[$name].File | Should -Match "(?m)^model:\s*$expectedModel\s*`$"

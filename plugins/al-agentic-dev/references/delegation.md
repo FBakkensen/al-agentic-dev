@@ -42,7 +42,7 @@ means better code shape, API design, and copy; the arbiter role sits between wor
 smart — deep enough for one hard, consequential technical question, narrower than
 whole-artifact authority over ambiguous, multi-part work. Model IDs evolve fast — the role
 is the contract, the ID is looked up. As of this writing the roles map to `gpt-5.6-luna`
-(bounded executor), `gpt-5.6-terra` (worker), `gpt-5.6-sol` (arbiter), and `claude-fable-5`
+(bounded executor), `claude-sonnet-5` (worker), `claude-opus-4.8` (arbiter), and `claude-fable-5`
 (smart); check the task tool's model list or `/subagents` for the live set. Rotation and
 retirement handling is owned by closed model control, above: corrected once in frontmatter,
 `BLOCKED` until then.
@@ -50,11 +50,11 @@ retirement handling is owned by closed model control, above: corrected once in f
 | role | model | use |
 |------|-------|-----|
 | bounded executor | `gpt-5.6-luna` | Read-only, bounded command execution that relays an authoritative artifact |
-| worker | `gpt-5.6-terra` | Default delegated implementation, retrieval, classification, and focused review |
-| arbiter | `gpt-5.6-sol` | One consequential technical question needing concentrated depth, cross-source arbitration, or an independent verdict on other agents' output — not multi-workstream authority |
+| worker | `claude-sonnet-5` | Default delegated implementation, retrieval, classification, and focused review |
+| arbiter | `claude-opus-4.8` | One consequential technical question needing concentrated depth, cross-source arbitration, or an independent verdict on other agents' output — not multi-workstream authority |
 | smart | `claude-fable-5` | Non-decomposable whole-artifact judgment or a proven worker knowledge limit |
 
-The fleet under `agents/` currently pins 10 worker, 6 smart, 1 arbiter, and 1 bounded
+The fleet under `agents/` currently pins 10 worker, 5 smart, 2 arbiter, and 1 bounded
 executor — 18 agents total. The worker role is the generic floor. The bounded executor is
 an exception, not a cheaper default. Those pins are fixed fleet assignments, not caller
 choices: fleet invocations omit both `model` and `reasoning_effort`.
@@ -100,11 +100,11 @@ A single smart reviewer is the usual way to review an implementation. This plugi
 one: `/al-code-review` and `/al-refactor` decompose the review into many **narrow single-goal
 lenses**, mostly on the worker role. `al-review-cr-bugscan`, `al-review-refactor-bc`,
 `al-review-refactor-simplify`, and `al-review-refactor-structural` are the named smart
-exceptions. The smart `al-review-judge` agent then dedups, substantiates, and
+exceptions. The arbiter `al-review-judge` agent then dedups, substantiates, and
 ranks the lens findings against the scoped diff, and an independent veto still runs through
 the **rubber-duck agent** — which runs on a different model family than the session, catching
 what same-family self-review misses (see [`rubber-duck-review.md`](rubber-duck-review.md)).
-The decomposition plus the smart judgment pass plus the veto retains worker roles for the focused
+The decomposition plus the arbiter judgment pass plus the veto retains worker roles for the focused
 lenses that do not earn the smart exception. This is not a downgrade of the
 review-→-smart-role rule; it is a different shape that meets its intent.
 
@@ -121,7 +121,7 @@ review-→-smart-role rule; it is a different shape that meets its intent.
 | `al-mutant-cycle` custom agent (`/al-mutate`) | worker, fixed — one supplied mutate→gate→revert cycle, returns observed evidence; the caller keeps mutant selection, equivalence judgment, and classification |
 | `al-design-option` custom agent (`/al-design`) | smart, fixed — one self-contained architecture candidate under a supplied divergent constraint; `/al-design` fans out three in parallel, then chooses among them itself |
 | `al-researcher` custom agent (`/al-research`) | arbiter, fixed — one framed consequential BC fact across source families, reconciling disagreement instead of concealing it |
-| `al-review-judge` custom agent (`/al-code-review`, `/al-refactor`) | smart, fixed — dedups, substantiates, and ranks one supplied batch of review/refactor lens findings against its scoped diff; the caller keeps fixes, application order, and routing |
+| `al-review-judge` custom agent (`/al-code-review`, `/al-refactor`) | arbiter, fixed — an independent verdict on other agents' output: dedups, substantiates, and ranks one supplied batch of review/refactor lens findings against its scoped diff, on a different model than the smart lenses feeding it; the caller keeps fixes, application order, and routing |
 
 The rubber-duck consult is orthogonal to this table: spawned as `agent_type:
 "rubber-duck"`, the harness pairs it to a different model family than the session by

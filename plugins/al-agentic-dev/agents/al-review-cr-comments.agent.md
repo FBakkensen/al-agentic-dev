@@ -2,7 +2,7 @@
 name: al-review-cr-comments
 description: Catch comment-guidance violations and recent-history regressions for al-code-review on a diff or scope.
 tools: ["read", "search", "execute", "microsoft_learn/*"]
-model: gpt-5.6-terra
+model: claude-sonnet-5
 user-invocable: false
 ---
 

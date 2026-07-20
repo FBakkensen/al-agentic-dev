@@ -2,7 +2,7 @@
 name: al-review-judge
 description: Judge supplied al-code-review or al-refactor lens output against its scoped diff, deduplicating and ranking substantiated findings.
 tools: ["read", "search", "execute", "al-symbols-mcp/*", "bc-code-intelligence-mcp/*", "microsoft_learn/*"]
-model: claude-fable-5
+model: claude-opus-4.8
 user-invocable: false
 ---
 

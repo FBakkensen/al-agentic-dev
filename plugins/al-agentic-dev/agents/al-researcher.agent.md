@@ -2,7 +2,7 @@
 name: al-researcher
 description: Arbitrate one framed consequential Business Central fact across source families and return quoted evidence, conclusion, and conflict.
 tools: ["read", "search", "execute", "web", "al-symbols-mcp/*", "bc-code-intelligence-mcp/*", "microsoft_learn/*"]
-model: gpt-5.6-sol
+model: claude-opus-4.8
 user-invocable: false
 ---
 

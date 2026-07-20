@@ -54,7 +54,7 @@ State lives in `specs/` and task frontmatter, never memory; every skill can star
 
 ## Custom agents
 
-Skills invoke fixed `.agent.md` workers under `agents/`; they are not slash commands and you never call them directly. Each agent fixes `tools:`, `model:`, and `user-invocable: false` in frontmatter — no invocation override or substitution. The fleet is **18**: **10** workers (`gpt-5.6-terra` default), **6** smart agents (`claude-fable-5`: `al-design-option`, `al-review-cr-bugscan`, `al-review-judge`, `al-review-refactor-bc`, `al-review-refactor-simplify`, `al-review-refactor-structural`), **1** arbiter (`gpt-5.6-sol`: `al-researcher`), and **1** bounded executor (`gpt-5.6-luna`: `al-gate-runner`). [`delegation.md`](delegation.md) owns the map.
+Skills invoke fixed `.agent.md` workers under `agents/`; they are not slash commands and you never call them directly. Each agent fixes `tools:`, `model:`, and `user-invocable: false` in frontmatter — no invocation override or substitution. The fleet is **18**: **10** workers (`claude-sonnet-5` default), **5** smart agents (`claude-fable-5`: `al-design-option`, `al-review-cr-bugscan`, `al-review-refactor-bc`, `al-review-refactor-simplify`, `al-review-refactor-structural`), **2** arbiters (`claude-opus-4.8`: `al-researcher`, `al-review-judge`), and **1** bounded executor (`gpt-5.6-luna`: `al-gate-runner`). [`delegation.md`](delegation.md) owns the map.
 
 | Agent | Role | Invoked by |
 |---|---|---|
@@ -70,7 +70,7 @@ Skills invoke fixed `.agent.md` workers under `agents/`; they are not slash comm
 | `al-review-refactor-structural` | `/al-refactor` lens 3: R→P→W boundary, depth over indirection, seam introduction. | `/al-refactor` |
 | `al-review-refactor-naming` | `/al-refactor` lens 4: BC vocabulary + project terminology naming. | `/al-refactor` |
 | `al-review-refactor-perf` | `/al-refactor` lens 5: performance via al-performance MCP, structural reshapes only. | `/al-refactor` |
-| `al-review-judge` | Dedups, substantiates, and ranks one supplied batch of `/al-code-review` or `/al-refactor` lens findings against its scoped diff. Smart role. | `/al-code-review`, `/al-refactor` |
+| `al-review-judge` | Dedups, substantiates, and ranks one supplied batch of `/al-code-review` or `/al-refactor` lens findings against its scoped diff. Arbiter role. | `/al-code-review`, `/al-refactor` |
 | `bc-standard-reference` | Canonical BaseApp / System Application / APIV2 lookup, quoting Microsoft's shipped AL from `microsoft/BCApps` version-matched to your app. | `/al-research` names it as its BaseApp source |
 | `al-researcher` | Arbitrates one framed consequential BC fact across source families, quoting evidence and reconciling disagreement. Arbiter role. | `/al-research` |
 | `al-design-option` | Develops one self-contained architecture candidate under a supplied divergent constraint. Smart role — `/al-design` fans out three in parallel and chooses among them itself. | `/al-design` |

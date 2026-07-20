@@ -113,22 +113,22 @@ description: "Fixture skill."
     $script:ExpectedAlAgenticDevFleet = [ordered]@{
         'al-design-option'              = 'claude-fable-5'
         'al-gate-runner'                = 'gpt-5.6-luna'
-        'al-mutant-cycle'               = 'gpt-5.6-terra'
-        'al-red-green'                  = 'gpt-5.6-terra'
-        'al-researcher'                 = 'gpt-5.6-sol'
-        'al-review-cr-appsource'        = 'gpt-5.6-terra'
-        'al-review-cr-bc'               = 'gpt-5.6-terra'
+        'al-mutant-cycle'               = 'claude-sonnet-5'
+        'al-red-green'                  = 'claude-sonnet-5'
+        'al-researcher'                 = 'claude-opus-4.8'
+        'al-review-cr-appsource'        = 'claude-sonnet-5'
+        'al-review-cr-bc'               = 'claude-sonnet-5'
         'al-review-cr-bugscan'          = 'claude-fable-5'
-        'al-review-cr-comments'         = 'gpt-5.6-terra'
-        'al-review-cr-compliance'       = 'gpt-5.6-terra'
-        'al-review-cr-perf'             = 'gpt-5.6-terra'
-        'al-review-judge'               = 'claude-fable-5'
+        'al-review-cr-comments'         = 'claude-sonnet-5'
+        'al-review-cr-compliance'       = 'claude-sonnet-5'
+        'al-review-cr-perf'             = 'claude-sonnet-5'
+        'al-review-judge'               = 'claude-opus-4.8'
         'al-review-refactor-bc'         = 'claude-fable-5'
-        'al-review-refactor-naming'     = 'gpt-5.6-terra'
-        'al-review-refactor-perf'       = 'gpt-5.6-terra'
+        'al-review-refactor-naming'     = 'claude-sonnet-5'
+        'al-review-refactor-perf'       = 'claude-sonnet-5'
         'al-review-refactor-simplify'   = 'claude-fable-5'
         'al-review-refactor-structural' = 'claude-fable-5'
-        'bc-standard-reference'         = 'gpt-5.6-terra'
+        'bc-standard-reference'         = 'claude-sonnet-5'
     }
 
     function New-AlAgenticDevFleetAgentFiles {
@@ -372,6 +372,6 @@ user-invocable: false
         $output = & pwsh -NoProfile -File $script:ValidatorPath -RepoRoot $repoRoot 2>&1
 
         $LASTEXITCODE | Should -Be 1
-        ($output -join [Environment]::NewLine) | Should -Match "al-agentic-dev agent 'al-red-green' must use model 'gpt-5.6-terra' \(found 'gpt-5.6-sol'\)"
+        ($output -join [Environment]::NewLine) | Should -Match "al-agentic-dev agent 'al-red-green' must use model 'claude-sonnet-5' \(found 'gpt-5.6-sol'\)"
     }
 }
