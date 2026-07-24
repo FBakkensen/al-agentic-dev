@@ -1,27 +1,24 @@
 # {App / Project name}
 
-{One or two sentences: what this AL extension is and why it exists. Plain prose, this is the only narrative section.}
+{One or two sentences: what this AL extension is and why it exists. Plain prose — the only narrative section.}
 
 ## Language
 
-Project-specific BC vocabulary that goes beyond Microsoft's standard terminology. Standard BC terms (Sales Header, Customer, Posting Date, Ledger Entry, etc.) are the canonical baseline, only record terms here when this project narrows, extends, renames, or names something Microsoft doesn't.
+**Record a term only when this project narrows, extends, renames, or names something Microsoft doesn't.** Standard BC terms (Sales Header, Customer, Posting Date, Ledger Entry) are the canonical baseline and stay out; so do general programming concepts (timeouts, error types, utility patterns) even when the project uses them.
 
-For each term: what it IS, then the aliases to avoid. **Be opinionated.** When multiple words exist for the same concept, pick the best one and list the others under `_Avoid_:`.
+The terms here record the project-specific portion of its ubiquitous language: each states what it IS, not what it does. Behaviour belongs in code. Definitions stay independent of AL object and procedure shape. Be opinionated: when plausible synonyms exist in BC English or developer English, pick the best word and list the rest under `_Avoid_:`. The alias line stops the next contributor drifting into "transaction" when the project says **Ledger Entry**. Group terms under `###` subheadings (`### Settlement`, `### Reconciliation`) when natural clusters emerge. A single cohesive area keeps a flat list.
 
 **{Term}**:
 {One sentence. What it is, not what it does.}
 _Avoid_: {alias 1}, {alias 2}
 
 **{Term}**:
-{One sentence.}
+{One sentence. Define against the BC baseline when the term narrows or extends a Microsoft concept, e.g. *"A **Settlement Batch** is a `Cust. Ledger Entry` selection finalised for export; not the same as a posting batch."*}
 _Avoid_: {alias}
-
-**{Term}**:
-{One sentence. Define against the BC baseline if this term narrows or extends a Microsoft concept, e.g. *"A **Settlement Batch** is a `Cust. Ledger Entry` selection finalised for export; not the same as a posting batch."*}
 
 ## Relationships
 
-Cardinality between project terms. Use bold names. Standard BC relationships (Customer → Sales Header → Sales Line) need not be restated.
+**State each relationship between bold project-term names, with cardinality where obvious.** Standard BC relationships (Customer → Sales Header → Sales Line) stay out.
 
 - A **{Term A}** produces one or more **{Term B}**.
 - A **{Term B}** belongs to exactly one **{Term C}**.
@@ -29,7 +26,7 @@ Cardinality between project terms. Use bold names. Standard BC relationships (Cu
 
 ## Example dialogue
 
-A short conversation between a developer and a domain expert that demonstrates how the terms interact and clarifies boundaries between related concepts. The dialogue earns its place when it disambiguates two terms a reader could conflate. Keep it to a handful of turns.
+**Include a dialogue only when it disambiguates two terms a reader could conflate.** A short exchange between developer and domain expert — a handful of turns — shows how the terms interact.
 
 > **Dev:** "When a **{Term A}** is closed, do we automatically create the **{Term B}**?"
 > **Domain expert:** "No, a **{Term B}** is only created once a **{Term C}** is confirmed, even if the **{Term A}** is already closed."
@@ -38,7 +35,7 @@ A short conversation between a developer and a domain expert that demonstrates h
 
 ## Flagged ambiguities
 
-Terms used to mean two things, with a stated resolution. Each entry is a one-line *was-conflated → resolved* record.
+**Record every term caught meaning two things, with its resolution — a one-line *was-conflated → resolved* record.**
 
 - *"account"* was used to mean both **Customer** and **G/L Account**: resolved: **Customer** in the sales context, **G/L Account** in the posting context; never bare *"account"*.
 - *"batch"* was used to mean both **Settlement Batch** and **Journal Batch**: resolved: distinct concepts; always qualify.
@@ -49,20 +46,11 @@ Terms used to mean two things, with a stated resolution. Each entry is a one-lin
 - Object ID range: `{50100}–{50199}` (or whichever AppSource range is registered).
 - Target BC version: {25.0+}.
 
-## Rules
-
-- **Define what it IS, not what it does.** Behaviour belongs in code; the term defines a name.
-- **Only project-specific terms.** General programming concepts (timeouts, error types, utility patterns) don't belong even if the project uses them. Standard BC terms (Sales Header, Posting Date) don't belong unless this project narrows or extends them. Before adding a term, ask: is this a concept unique to this project's BC overlay, or a general programming / standard-BC concept? Only the former belongs.
-- **Group under subheadings** when natural clusters emerge (`### Settlement`, `### Reconciliation`). If all terms belong to a single cohesive area, a flat list is fine.
-- **`_Avoid_:` is structural, not optional.** Every term that has plausible synonyms in BC English (or in developer English) gets an `_Avoid_:` line. The aliases are the point, they stop the next contributor from drifting into "transaction" when the project says **Ledger Entry**.
-- **Flag conflicts explicitly.** If a term gets used ambiguously in conversation or in the codebase, call it out under `## Flagged ambiguities` with a stated resolution.
-- **Show relationships.** Use bold term names and cardinality where obvious.
-
 ## Single vs multi-context repos
 
-**Single context (most AL repos):** one `CONTEXT.md` at the repo root.
+**Most AL repos are a single context: one `CONTEXT.md` at the repo root, created lazily when the first term resolves.**
 
-**Multiple contexts** (e.g. an extension that ships independent features with disjoint vocabulary): a `CONTEXT-MAP.md` at the repo root lists the contexts, where they live, and how they relate.
+An extension shipping independent features with disjoint vocabularies spans multiple bounded contexts: its context map is `CONTEXT-MAP.md` at the repo root, listing the contexts, where they live, and how they relate:
 
 ```md
 # Context Map
@@ -78,4 +66,4 @@ Terms used to mean two things, with a stated resolution. Each entry is a one-lin
 - **Settlement ↔ Reconciliation**: shared **Settlement No.** identity
 ```
 
-If `CONTEXT-MAP.md` exists, the skill reads it to find contexts. If only a root `CONTEXT.md` exists, single context. If neither exists, create a root `CONTEXT.md` lazily when the first term is resolved. When multiple contexts exist, infer which one the current topic belongs to; if unclear, ask.
+Reading order: `CONTEXT-MAP.md` when present, else the root `CONTEXT.md`, else create a root `CONTEXT.md` lazily on the first resolved term. When multiple contexts exist, infer which one the current topic belongs to; if unclear, ask.

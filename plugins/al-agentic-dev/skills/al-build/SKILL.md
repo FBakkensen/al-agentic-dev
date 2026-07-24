@@ -4,23 +4,40 @@ description: Build and test AL/Business Central projects. Use after modifying AL
 allowed-tools: ["execute", "read"]
 ---
 
-**Style:** Concise — cut filler, keep grammar. Opinionated — pick a side. Arrows (→) for causality. Technical terms exact, code and errors quoted verbatim.
-
 # /al-build — build and test gate
 
-Run after every AL change and before committing. Zero warnings and zero errors → green; anything else → red.
+**Run after every AL change and before committing. Zero warnings and zero errors → green; anything else → red.** The script itself exits 0 on warnings by default (`WARN_AS_ERROR=false`) — the zero-warning bar is this skill's: treat any warning in the gate output as red, or set `WARN_AS_ERROR=true` to bind the bar to the exit code.
 
-**Layers.** Runs **Unit** (AL-Runner) and **Integration** (container + TestPage). See [`test-strategy.md`](../../references/test-strategy.md).
+The gate runs two test layers: Unit (AL Runner) and Integration (container + TestPage). See [`test-strategy.md`](../../references/testing/test-strategy.md).
+
+## Prerequisites
+
+PowerShell 7.2+ (`pwsh`), Docker Desktop, .NET SDK, Node.js ≥ 22 with `npx` on PATH (ALCops analyzers install through the official `@alcops/core` CLI), and the BcContainerHelper PowerShell module.
 
 ## Setup
 
 1. `pwsh "<skill-folder>/scripts/init.ps1"` → drops `al-build.json` in repo root.
 2. Set `testApps` to list your test app directories.
-3. `pwsh "<skill-folder>/scripts/provision.ps1"` → one-time symbol + container setup.
+3. `pwsh "<skill-folder>/scripts/provision.ps1"` → compiler, symbols, and analyzers.
+
+Provision keeps two private compiler channels side by side — latest stable at `<ToolCacheRoot>/al/stable`, latest prerelease at `<ToolCacheRoot>/al/prerelease` — refreshed every run, the user's global `al` dotnet tool untouched. The build picks the channel repo-wide from the highest app.json `runtime` major across all apps; prerelease only when that major exceeds the installed stable. `-UpdateCompiler` forces a clean reinstall.
 
 Compiler or symbols missing → **Stop.** Run `pwsh "<skill-folder>/scripts/provision.ps1"` first.
 
+### Container lifecycle
+
+One golden container per BC version, snapshotted once, then cheap branch-scoped copies:
+
+1. `new-bc-container.ps1` → golden BC container, fully configured.
+2. Restart the PC — the stopped container still holds locked files the snapshot commit needs released.
+3. `commit-bc-container.ps1` → snapshot image.
+4. `new-agent-container.ps1` → agent container from the snapshot, named from the current git branch.
+
+`prune.ps1` removes agent containers whose branch is gone or that sat unused past seven days (`-Preview` for a dry run). `publish-apps.ps1` clean-republishes every configured app: unpublish all dependency-reversed, then publish in dependency order — no build, no tests.
+
 ## Canonical gate
+
+**Always run the full gate — never filter by codeunit or run bare `alc.exe`: `test.ps1` owns symbol resolution, container publish, and telemetry capture.**
 
 Set location to consumer repo root, then:
 
@@ -28,17 +45,15 @@ Set location to consumer repo root, then:
 pwsh "<skill-folder>/scripts/test.ps1"
 ```
 
-Always run the full gate. Do not filter by codeunit or use bare `alc.exe`: `test.ps1` owns symbol resolution, container publish, and telemetry capture.
-
 Force republish: `pwsh "<skill-folder>/scripts/test.ps1" -Force`
 
 ### Gate metrics (automatic)
 
-Each `test.ps1` run records one entry in `.output/logs/build-timing.jsonl` and mirrors it to `~/.al-build/gate-metrics.jsonl` (override: `ALBT_GATE_METRICS_GLOBAL_PATH`). Phase attribution derives from recorded evidence; callers pass no flags. Report repo-local metrics with `pwsh "<skill-folder>/scripts/report-gate-metrics.ps1"` or cross-repo metrics with `-GlobalLog`.
+Each `test.ps1` run records one entry in `.output/logs/build-timing.jsonl` — on every exit path: pass, fail, throw — and mirrors it to `~/.al-build/gate-metrics.jsonl` (override: `ALBT_GATE_METRICS_GLOBAL_PATH`). Phase attribution derives from recorded evidence; callers pass no flags. Report repo-local metrics with `pwsh "<skill-folder>/scripts/report-gate-metrics.ps1"` or cross-repo metrics with `-GlobalLog`.
 
 ### Fast unit test (inner loop)
 
-When `unitTestApp` configured in `al-build.json`, run only AL Runner unit tests:
+When `unitTestApp` is configured in `al-build.json`, run only AL Runner unit tests:
 
 ```powershell
 pwsh "<skill-folder>/scripts/test.ps1" -UnitTestOnly
@@ -46,68 +61,50 @@ pwsh "<skill-folder>/scripts/test.ps1" -UnitTestOnly
 
 Compiles the main app, every `testApps` entry, and the unit-test app through the analyzer gate; then runs AL Runner and exits without a container. `testApps` must resolve in this mode: unit-only projects set `"testApps": []`; the default `["test"]` fails loudly without `test/`. Use this fast feedback loop during `/al-implement` RED→GREEN.
 
-**Outputs (per test run):**
+### Outputs (per test run)
 
 - `.output/TestResults/<dirName>/last.xml` → JUnit XML from the container run.
 - `.output/TestResults/<dirName>/al-runner.xml` → JUnit XML from the AL Runner run. Separate file — a full gate must never overwrite the unit result.
 - `.output/TestResults/<dirName>/telemetry.jsonl` → feature telemetry per container run. `/al-debug-logging` reads this.
 - `.output/TestResults/summary.json` → machine-readable summary: `gate` (`full`/`unit`), `totals` per runner, `runs[]` with one record per test run (`runner`, `appName`, `dir`, `passed`, `counts`, `resultFile`, `telemetryFile`).
-- `.output/logs/build-timing.jsonl` → one gate-metrics entry per run (every exit path: pass, fail, throw), mirrored to `~/.al-build/gate-metrics.jsonl`.
+- `.output/logs/build-timing.jsonl` → one gate-metrics entry per run, mirrored to `~/.al-build/gate-metrics.jsonl`.
 
-Take `resultFile` paths from `summary.json` run records; never glob because stale files can sit beside fresh output. `test.ps1` writes `summary.json` only after a unit-test failure, unit-only pass, or full-gate completion; bad `al-build.json` or a compile failure leaves a prior file untouched. `missing` means no file exists; a present file is current-run evidence only when the relayed exit code and bounded excerpt corroborate it.
+Take `resultFile` paths from `summary.json` run records; never glob because stale files can sit beside fresh output. `test.ps1` writes `summary.json` only after a unit-test failure, unit-only pass, or full-gate completion; bad `al-build.json` or a compile failure leaves a prior file untouched.
 
 Test failure with an unclear cause → name `/al-debug-logging` as the next step; a clear assertion or compile failure needs no telemetry. Don't grep the build log for clues telemetry already answers.
 
 ## Delegation
 
-Fresh `/al-build` runs delegate to the named `al-gate-runner` custom agent — the bounded executor that relays authoritative result files (see [delegation.md](../../references/delegation.md)). Keep verbose build output out of the main session.
+**Fresh `/al-build` runs delegate to the named `al-gate-runner` custom agent**, which runs one gate command once and relays the exit code, artifacts, and one bounded output excerpt — its own body carries the worker rules. Keep verbose build output out of the main session.
 
-Already inside an agent mid-workflow → run the gate script inline; nested custom-agent spawning does not occur. `al-gate-runner` unavailable for a fresh spawn → report `BLOCKED`, name it as missing, and stop. No generic-subagent or inline substitution (see [delegation.md](../../references/delegation.md)).
+Already inside an agent mid-workflow → run the gate script inline; nested custom-agent spawning does not occur. `al-gate-runner` unavailable for a fresh spawn → report `BLOCKED`, name it as missing, and stop. No generic-subagent or inline substitution.
 
-After the worker returns the gate report, close the completed thread before interpreting or reporting the result. Report the outcome as the mid-task Gate one-liner per [voice-contract.md](../../references/voice-contract.md) — never paste the worker's block raw.
+Run one gate at a time — never multiple gates in parallel, and never an inline build alongside the worker. The spawn prompt carries exactly what the caller alone knows:
 
-The spawn prompt includes verbatim: findings must name file, object, and the observed fact; no verdict words without the check that produced them.
+- the one gate command — full, or `-UnitTestOnly`;
+- the authoritative artifact paths, marking the summary for mechanical expansion: `.output/TestResults/summary.json (expand: resultFile, telemetryFile where passed=false)`;
+- this line verbatim: **findings must name file, object, and the observed fact; no verdict words without the check that produced them.**
 
-### Worker rules
+The caller — never the worker — judges whether a relayed `summary.json` is this run's own: `missing` means no file exists; a present file is current-run evidence only when the relayed exit code and bounded excerpt corroborate it.
 
-```
-Do not edit source, specs, tasks, config, or git state. Running `test.ps1` may write build/test artifacts under `.output`; that is allowed.
-
-Run exactly one requested gate, exactly once. Do not rerun on failure. Do not run multiple `/al-build` gates in parallel. Do not shadow the worker with an inline build.
-
-Relay the observed exit code and the authoritative artifact paths and content verbatim — `.output/TestResults/summary.json (expand: resultFile, telemetryFile where passed=false)` — plus the runner's bounded verbatim stdout/stderr excerpt. The expand marker tells the runner to mechanically follow each failing run's `resultFile`/`telemetryFile` out of `summary.json` itself and relay them too, without opening any other file. A relayed `missing` means no file exists at the supplied path; the worker does not distinguish a stale prior-run `summary.json` from this run's own — the caller judges that from the relayed exit code and bounded output excerpt, never the worker. The runner selects the stdout/stderr excerpt mechanically: first matching error/diagnostic line with up to two preceding and six following lines (nine lines maximum), or the last nine lines when no match exists. Do not parse, interpret, classify, or summarize any relayed evidence — that is the caller's job. Do not make routing decisions. Do not invoke follow-up skills.
-```
+After the worker returns, close the completed thread before interpreting or reporting the result. Report the outcome as the mid-task Gate one-liner per [GROUND-RULES.md](../../references/GROUND-RULES.md) — never paste the worker's block raw.
 
 ### Gate report
 
-The worker relays only the exit code, raw artifacts, and one mechanically selected output excerpt — never a verdict. Then derive the gate report as YAML-like plain text in a fenced `text` block.
+Derive the gate report from the evidence — the worker's relay when delegated, the directly captured exit code, artifacts, and output when inline; the same rules apply to both. Format: YAML-like plain text in a fenced `text` block, `VERDICT: PASS|FAIL` on line 1. `gate:` names the executed variant — `full`, or `unit` for `-UnitTestOnly`.
 
-Take `gate`, `totals`, and all counts from the relayed `.output/TestResults/summary.json` content — the source of truth; echo `appName`, `dir`, `resultFile`, `telemetryFile`, and every `counts` number verbatim. **Never derive counts from console lines: `Codeunit … Success` lines are test codeunits (containers of tests), not tests.** Report totals per runner; never sum across runners — the unit test app runs through both al-runner and the container, so a cross-runner sum counts the same tests twice. If `counts` is `null` for a run, report `counts: unavailable` — do not substitute zeros. Omit `totals` and `runs` if no summary exists.
+- Take `totals` and all counts from the relayed `.output/TestResults/summary.json` content — the source of truth. Echo `appName`, `dir`, `resultFile`, `telemetryFile`, and every `counts` number verbatim.
+- **Never derive counts from console lines: `Codeunit … Success` lines are test codeunits (containers of tests), not tests.**
+- Report totals per runner; never sum across runners — the unit test app runs through both AL Runner and the container, so a cross-runner sum counts the same tests twice.
+- `counts` of `null` for a run → report `counts: unavailable`, never zeros.
+- No summary → omit `totals` and `runs`.
+- For a non-zero exit, parse the failing relayed `resultFile` (JUnit XML from either runner) for test names and `<failure message=…>`. XML unavailable → use explicit failure lines from the bounded excerpt. Neither → omit `failing_tests`.
+- A compilation failure can leave `summary.json` stale: `missing`, or present but uncorroborated by this exit code and excerpt, makes its counts unusable. Derive `root_signal` from the excerpt instead.
+- Missing excerpt → use only `command exited <exit_code>; no command output captured`.
+- Omit `first_error` and `log_excerpt` without evidence. Cap `log_excerpt` at the relayed nine lines.
+- `root_signal` is mandatory for `FAIL` and compresses observed evidence only — never cause speculation.
 
-For a non-zero exit, parse the failing relayed `resultFile` (JUnit XML from either runner) for test names and `<failure message=…>`. If XML is unavailable, use explicit failure lines from the bounded excerpt; if neither exists, omit `failing_tests`. A compilation failure can leave `summary.json` stale: `missing`, or present but uncorroborated by this exit code and excerpt, makes its counts unusable; derive required `root_signal` from the excerpt instead. With a missing excerpt, use only `command exited <exit_code>; no command output captured`. Omit `first_error` and `log_excerpt` without evidence; cap `log_excerpt` at the relayed nine lines. `root_signal` is mandatory for `FAIL` and compresses observed evidence only — never cause speculation.
-
-PASS example:
-
-```text
-VERDICT: PASS
-cmd: pwsh "<skill-folder>/scripts/test.ps1"
-gate: full
-exit_code: 0
-
-totals:
-  al-runner: 1 run - 563 tests in 54 test codeunits - 563 passed, 0 failed, 0 skipped
-  container: 2 runs - 601 tests in 58 test codeunits - 601 passed, 0 failed, 0 skipped
-
-runs:
-- runner: al-runner | app: unit-tests | passed: true | tests: 563 (54 test codeunits)
-  resultFile: .output/TestResults/unit-tests/al-runner.xml
-- runner: container | app: unit-tests | passed: true | tests: 563 (54 test codeunits)
-  resultFile: .output/TestResults/unit-tests/last.xml
-  telemetryFile: .output/TestResults/unit-tests/telemetry.jsonl
-- runner: container | app: integration-tests | passed: true | tests: 38 (4 test codeunits)
-  resultFile: .output/TestResults/integration-tests/last.xml
-  telemetryFile: .output/TestResults/integration-tests/telemetry.jsonl
-```
+A PASS report has the same head plus `totals` and `runs`: totals per runner, with the unit-test app legitimately listed under both `al-runner` and `container`.
 
 FAIL example:
 
@@ -131,36 +128,17 @@ failing_tests:
 - DefaultWarningNestedMintPersistsRevisedDescriptionAndPreservesPriorHeader: Assert.AreEqual failed. Expected: OR. Actual: AND.
 ```
 
-### Full gate delegation
-
-Run:
-
-```powershell
-pwsh "<skill-folder>/scripts/test.ps1"
-```
-
-Report `gate: full`.
-
-### Fast unit test delegation (inner loop)
-
-Run:
-
-```powershell
-pwsh "<skill-folder>/scripts/test.ps1" -UnitTestOnly
-```
-
-Report `gate: unit`.
-
 ## Configuration
 
-Resolution order, highest wins:
+**`al-build.json` in the repo root is required — the gate throws `Config file required` without it.** Fields may default; the file may not. Resolution order, highest wins:
 
 1. **CLI flag** — script switches such as `-Force`; app/test paths come from env/config.
-2. **Env var** — `ALBT_APP_DIR`, `ALBT_BC_CONTAINER_NAME`, `WARN_AS_ERROR`.
+2. **Env var** — `ALBT_*`, plus `WARN_AS_ERROR` and `RULESET_PATH`.
 3. **`al-build.json`** in repo root.
 4. **Built-in defaults.**
 
 Key config fields:
+
 - `appDir` — path to main app folder (default: `"app"`)
 - `testApps` — array of test app directory paths (default: `["test"]`)
 - `unitTestApp` — path to AL Runner unit test app (default: `""`, disabled). When set, `test.ps1` runs AL Runner unit tests as fast gate before container tests. App may also appear in `testApps` → container tests run all `testApps` regardless.
@@ -168,20 +146,46 @@ Key config fields:
 - `breakingChange.enabled` — enable breaking-change detection (default: `false`). See below.
 - `breakingChange.baselinePackageCachePath` — baseline package cache dir (default: `.output/baseline-cache`, gitignored).
 
-_Avoid_: editing plugin's template `config/al-build.json`. It's a template, not the live config. Repo-root copy is the live one.
+Env overrides, with their built-in defaults:
+
+| Env var | Default |
+|---|---|
+| `ALBT_APP_DIR` | `app` |
+| `WARN_AS_ERROR` | `false` |
+| `RULESET_PATH` | `al.ruleset.json` |
+| `ALBT_BC_ARTIFACT_COUNTRY` | `w1` |
+| `ALBT_BC_ARTIFACT_SELECT` | `Latest` |
+| `ALBT_BC_MEMORY_LIMIT` | `8g` |
+| `ALBT_BC_SERVER_INSTANCE` | `BC` |
+| `ALBT_BREAKING_CHANGE_ENABLED` | `false` |
+| `ALBT_BASELINE_CACHE_PATH` | `.output/baseline-cache` |
+| `ALBT_BC_CONTAINER_USERNAME` / `ALBT_BC_CONTAINER_PASSWORD` | `admin` / `P@ssw0rd` |
+| `ALBT_BC_GOLDEN_CONTAINER_NAME` | `bctest` |
+| `ALBT_BC_IMAGE_NAME` | `bctest:snapshot` |
+| `ALBT_TOOL_CACHE_ROOT` | `~/.bc-tool-cache` |
+
+The agent container name has no override: `test.ps1` always derives it from the current git branch.
+
+_Avoid_: editing the plugin's template `config/al-build.json` — the live config is the copy in the consumer repo root, never the template.
+
+## Analyzers
+
+Microsoft's four cops (CodeCop, UICop, AppSourceCop, PerTenantExtensionCop) ship with the compiler. `provision.ps1` adds the community ALCops analyzers — six cops plus `ALCops.Common.dll` — into each compiler channel's `Analyzers` folder, latest release on every run, no pinning. ALCops replaces the discontinued BusinessCentral.LinterCop: the two share diagnostic IDs and must never load together; provision deletes a leftover LinterCop DLL.
+
+Selection is `al.codeAnalyzers` in `.vscode/settings.json`, official AL notation (`${CodeCop}`, `${analyzerFolder}ALCops.LinterCop.dll`, …) — the same file drives the AL extension in VS Code. Resolution is per app: `<appDir>/.vscode/settings.json` wins, repo-root `.vscode/settings.json` is the shared fallback. Every app — main, test apps, and the unit-test app — compiles through the analyzer gate in every mode (`-UnitTestOnly` included). No `settings.json` → no analyzers. A requested analyzer that cannot be resolved fails fast — the build stops rather than silently compiling with less lint coverage than the settings ask for. `ALCops.Common.dll` is appended automatically when missing from the list.
+
+Diagnostic prefixes: `AA` CodeCop, `AW` UICop, `AS` AppSourceCop, `PTE` PerTenantExtensionCop, `AC` ApplicationCop, `DC` DocumentationCop, `FC` FormattingCop, `LC` LinterCop, `PC` PlatformCop, `TA` TestAutomationCop.
 
 ## Breaking-change detection
 
-Off by default (`breakingChange.enabled`). When on, two mechanisms, split by cost:
+**Off by default (`breakingChange.enabled`); when on, compile-time detection runs in every gate while heavyweight validation runs standalone at feature end or pre-release.**
 
-- **Compile-time, in every gate.** `provision.ps1` caches the latest release + deps and points `AppSourceCop.json` at them. A break then surfaces as a normal `AS00xx` diagnostic inside `test.ps1`'s compile (`-UnitTestOnly` included). `AS0001`–`AS0018` default to Error → red gate, like any cop. Not a special verdict — the rule ID is the signal; tune severity in `al.ruleset.json`. No `summary.json` change.
-- **Standalone heavyweight.** `validate-breaking-changes.ps1` runs the broader AppSource sim (per-country, install/upgrade) against the same cache. Reads the cache, never downloads; empty cache → stops with *"run provision.ps1"*. Not wired into `test.ps1` — a feature-end / pre-release check, never the inner loop.
+- **Compile-time, in every gate.** `provision.ps1` caches the latest release + deps and points `AppSourceCop.json` at them. `${AppSourceCop}` must be listed in the applicable `.vscode/settings.json` — without it the compile-time path never runs. A break then surfaces as a normal `AS00xx` diagnostic inside `test.ps1`'s compile (`-UnitTestOnly` included). `AS0001`–`AS0018` default to Error → red gate, like any cop. Not a special verdict — the rule ID is the signal; tune severity in `al.ruleset.json`. No `summary.json` change.
+- **Standalone heavyweight.** `validate-breaking-changes.ps1` runs the broader AppSource-style validation (per-country, install/upgrade) against the same cache. Reads the cache, never downloads; empty cache → stops with *"run provision.ps1"*. Not wired into `test.ps1` — a feature-end / pre-release check, never the inner loop.
 
-`provision.ps1` is the sole baseline fetcher and now refreshes per feature (re-run when a new release is cut). No release yet → detection stays cleanly off, never a false green.
+`provision.ps1` is the sole baseline fetcher and refreshes per feature (re-run when a new release is cut). No release yet → detection stays cleanly off, never a false green.
 
 ## Container recovery
-
-Situation → action:
 
 | Symptom | Action |
 |---|---|
@@ -189,7 +193,7 @@ Situation → action:
 | Restart didn't fix it | `docker rm -f <container>`, re-run `test.ps1`. Script recreates it. |
 | Recreate didn't fix it | Re-run `provision.ps1`, then `test.ps1`. |
 
-**Anti-pattern: edit container manually.** No `docker exec`, no `Invoke-ScriptInBcContainer` to patch state, no hand-installing apps. Container is disposable; reproducibility lives in scripts.
+Never patch the container by hand — no `docker exec`, no `Invoke-ScriptInBcContainer` to patch state, no hand-installing apps. The container is disposable; reproducibility lives in scripts.
 
 ## Next step
 
@@ -199,11 +203,7 @@ Situation → action:
 ## Composition
 
 - `/al-implement` — calls this after every RED, GREEN, `/al-refactor`, before stamping the task `phase: implemented`.
-- `/al-debug-logging` — consumes `telemetry.jsonl` produced here (in per-app subfolders).
-- `init.ps1`, `provision.ps1` — one-time setup before this skill is usable.
 
 ## Out of scope
 
-- Provisioning symbols or installing compiler → `pwsh "<skill-folder>/scripts/provision.ps1"`.
-- Debugging test failures → `/al-debug-logging`.
 - Editing AL code → caller's job.

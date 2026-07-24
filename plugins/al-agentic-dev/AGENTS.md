@@ -2,231 +2,144 @@
 
 Composable skills for AL/Business Central agentic development.
 
-*Dev-time only — this file never ships. The shipped surface is the plugin's `SKILL.md`s, `agents/`, `hooks/`, `references/`, `scripts/`, and `extensions/al-kanban/`; see the root `AGENTS.md` "Shipped artefacts vs dev-time files".*
+*Dev-time only — this file never ships. The shipped surface is the plugin's `SKILL.md`s, `agents/`, `hooks/`, `references/`, and `scripts/`. See the root `AGENTS.md`, "Shipped vs dev-time files".*
 
 ## Persistence layers
 
-Two layers, on purpose.
+Two layers. Repo-root artifacts (`CONTEXT.md`, `docs/adr/`, `.out-of-scope/`, `.not-yet-specified/`) outlive features. Branch-scoped `specs/<NNN>-<slug>/` (`event-model.md` for user/API-facing features, `architecture.md`, `tasks/`) lives with one branch, its slug matching the git branch. Owners, the deferred-question ledger, and which writes run the document-integrity check are homed in [`references/overview.md`](references/overview.md) (Persistence layers) and [`references/task-lifecycle.md`](references/task-lifecycle.md) (Routing by lifetime).
 
-- **Repo-root, durable across features**, markdown: `CONTEXT.md`, `docs/adr/`, `.out-of-scope/`, `.not-yet-specified/`. Owners: `/al-grill-adr` (CONTEXT + domain ADRs), `/al-steer` (out-of-scope, and grooming `.not-yet-specified/` — the deferred-question ledger, one file per question, that `/al-grill-adr` and `/al-design` write into, `/al-refine` scans before speccing; a question graduates to a decision (file deleted, answer lands in its owning artifact) or moves to `.out-of-scope/`, never silently absorbed). The writing skills run the inline document-integrity check (`references/doc-integrity.md`) on `CONTEXT.md` and domain ADR writes before handoff; `.out-of-scope/` and `.not-yet-specified/` are outside the document gate.
-- **Branch-scoped, per in-flight feature**, markdown: `specs/<NNN>-<slug>/event-model.md` (user-facing journey, present for user/API-facing features) + `architecture.md` + a `tasks/` folder. Slug matches the current git branch.
+The `tasks/` folder is the per-feature task bus. Its entire runtime contract is homed in [`references/task-lifecycle.md`](references/task-lifecycle.md): file naming, frontmatter fields, the `status:`/`phase:` lifecycle, ops kinds, gated `blocked` → `ready` opens (including the same-slice technical dependents a `done` flip opens), `review: clean` strip rules, and the surgical-edit floor. Point at it. A field or lifecycle rule restated here would fork it.
 
-The `tasks/` folder is the per-feature task bus: one file per task plus a `000-feature.md` header (Goal + slice intent, no status, no rows). Each per-task file is `NNN-T-MMM-<slug>.md` — the `NNN` filename prefix is the run order (gapped by 10; `ls tasks/` = run order; the sole order owner), `T-MMM` is a monotonic, never-reused locator id. State and graph live in YAML frontmatter at the top of each file, single source of truth: `task:`, `status:`, `slice:`, `kind:`, `depends_on:`, `refactors:`, `fixes:`, plus two runtime fields — `blocked-on:` (one-line block headline, present iff `blocked`, written/removed in the same Edit as the flip) and `deviations:` (append-only one-line entries for unknowns a skill absorbed inline without asking). Task files are agent-facing; the developer's standing view is `/al-steer`'s chat-rendered board, grepped from frontmatter on demand. `status:` values are `ready`, `ready-for-implementation`, `ready-for-verification`, `blocked`, `done`. `ready` means the task is ready for `/al-refine` only. `ready-for-implementation` means a technical task has a fresh `Test Specification`. `ready-for-verification` means a verify task has a fresh `Verification Plan`. `blocked` means dependency or context is missing. `done` is terminal and means the same for every kind: finished, nothing further intended. A technical task stays `ready-for-implementation` through the hardening window (implement, refactor, mutate) while a `phase:` field (`refined`/`implemented`/`refactored`/`mutated`) records the last finished step; `/al-mutate` flips it `done` on a clean verdict, or the developer ends hardening early and the active skill flips `done` at the current phase — `phase:` short of `mutated` on a `done` task is a legitimate early close. `task:` ids are monotonic and never reused. `slice: <slug>` groups tasks by one `event-model.md` timeline step (user-facing) or `architecture.md` slice (backend-only); `kind: verify` marks the per-slice verification task, `kind: technical` marks technical tasks. Two **ops kinds** bracket the feature: `kind: provision` (first, `slice: provision`) and `kind: breaking-change` (last, `slice: breaking-change`) on reserved non-feature slugs; they carry no proof artifact, bypass `/al-refine`, and run `ready` → `done` (or `blocked`) via `/al-provision` / `/al-validate-breaking-changes`. Each `blocked` → `ready` flip has a named owner like the cross-slice gate: `/al-provision` opens the first slice on its `done`; the skill landing the feature's final terminal task `done` (`/al-user-verification` last verify, or `/al-code-review` last backend slice) opens the breaking-change task. More generally, the skill that flips a task `done` opens any task it thereby unblocks whose open does not cross a gate: whichever skill stamps a technical task `done` (`/al-mutate` on the normal path) opens same-slice **technical** dependents — but **not** the slice's verify task, whose open sits behind the per-slice code-review gate. The gated opens, by slice type: `/al-code-review` opens a user/API-facing slice's verify task on a clean review (`blocked` → `ready`) and opens a backend-only next slice; `/al-user-verification` on its verify pass opens a user-facing next slice; the next slice (and the verify task) never opens on a bare `done` flip. The open is provable from frontmatter and reversible, so the closing skill owns it inline; a `blocked` task with deps unsatisfied or a replan flag set stays `/al-steer`'s. `review: clean` is an optional transient frontmatter field on verify tasks: written only by `/al-code-review` on a clean per-slice review at slice-done — when it opens the verify task to `ready` (the durable evidence `/al-refine`, `/al-page-script`, `/al-user-verification`, and `/al-steer` read; the status byte alone reads identically before and after review). It rides untouched through the `/al-refine` flip `ready` → `ready-for-verification`, and strips in the same Edit on any flip to `blocked`/`done` or when any skill opens a technical task in the slice. There is no index file: the filesystem is the manifest, the board is grepped on demand and rendered by `/al-steer`. The writing skills run the inline document-integrity check (`references/doc-integrity.md`) on the written markdown artifacts before handoff.
-
-**Feature branch setup is shared between `/al-event-model` and `/al-design`.** `references/worktree-feature-branching.md` owns default-branch creation and safe linked-worktree conversion into `<NNN>-<slug>` plus `specs/<NNN>-<slug>/`. For user/API-facing features `/al-event-model` runs first; backend-only features skip it and `/al-design` runs the setup.
+[`references/worktree-feature-branching.md`](references/worktree-feature-branching.md) owns feature branch setup. The `/al-event-model` and `/al-design` SKILL.mds own who runs it when. Both skills read the reference, so an edit to its routes or Stop conditions scans both SKILL.mds in the same change.
 
 ## Pipeline
 
-User-facing pipeline diagram, skills catalogue, and cold-start guidance live in [`references/overview.md`](references/overview.md). That file is the single source of truth, emitted verbatim by `/al-agentic-dev-overview`. The slice-cycle prose below carries dev-time editing depth (gate flip mechanics, suppression rules) not duplicated in the tour.
+[`references/overview.md`](references/overview.md) is the single source of truth for the pipeline: diagram, 20-skill catalogue, custom-agent table, slice cycle, and cold-start guidance. `/al-agentic-dev-overview` emits it verbatim. Edit it in lockstep with any skill or agent addition, removal, rename, or repurpose.
 
-**User drives the pipeline.** No skill auto-invokes the next; each ends by naming the next step and the user takes it. A skill calls another skill only for `/al-research` (BC fact escalation) and `/al-build` (compile/test) — the two blessed exceptions; the third within-step tool is a consult of the **rubber-duck agent** (`references/rubber-duck-review.md` — autonomous so a worker model can lean on an independent read mid-step; a task-tool spawn with a fixed cross-family fallback, not a skill). Everything else is a handoff. Skills still invoke custom agents (review lenses, the red-green worker, under `agents/`) and still write task `status:` frontmatter inline (a state write, not a cross-skill call), so the board mechanics keep working without chaining.
-
-Slice cycle: `/al-refine` selects one named `ready` technical task, writes its `Test Specification` from the current app/tests, and flips it to `ready-for-implementation`. `/al-implement` works through `ready-for-implementation` technical tasks in Unit-first order, invoking the `al-red-green` custom agent (`agents/al-red-green.agent.md`) per AAA case, and stamps each `phase: implemented` at full green + reconcile (`status:` stays `ready-for-implementation`). It **stops at green** and names `/al-refactor` (reshape) then `/al-mutate` (rigor — its clean verdict flips the task `done`) as the next steps — reshape strongly directed for non-trivial work, mutation for whatever arrived without a red (a red is a killed mutant; a fully red-driven task leaves a near-empty plan), but the user invokes them; the inner orchestration that used to run them is gone.
-
-When the last technical task in a slice lands `done` (slice-done — normally `/al-mutate`'s clean verdict, or an early mark-done), the flipping skill announces `/al-code-review` per-slice — it reviews the code, not the user walk, so it runs before the verify task is opened. `/al-code-review` runs per-slice, **report-only by default**: it invokes the 6 review-lens custom agents (`agents/al-review-cr-*.agent.md`), dedups, adversarially judges, rubber-duck-vets (`references/rubber-duck-review.md`), then reports the must-fix queue (each routed to `/al-implement T-NNN`), the nits, and the gate decision — the user drives fixes. `--fix` additionally lands the must-fix findings in-loop by invoking the `al-red-green` custom agent per finding, commits under the originating `T-NNN`, and **re-reviews once** (not an unbounded loop). A clean review stamps `review: clean`; for a user/API-facing slice it also opens the verify task `blocked` → `ready`, then `/al-refine` writes the `Verification Plan` → `ready-for-verification` before page-script/user-verification. Escalation classes (replan-class finding, a fix that won't go green, a recurrence, a `needs-a-decision` finding) route to `/al-steer`, writing nothing durable.
-
-**Page-script (user-facing slices).** `/al-page-script` is **not an authoring skill** — it guides the user to *record* the slice's framework-limited E2E Journey Examples (those `/al-refine` marked `Record: yes`) in BC's Page Scripting recorder, one scenario at a time, punchline first; the user records and downloads each `.yml` to `pagescripts/recordings/<NNN>-<slug>__<slice>__NN.yml`, the agent replays each on a **fresh** container (the re-runnability gate) and commits on batch-green. The recorder is the generator because the bc-replay YAML format is reverse-engineered and undocumented — blind authoring is a token-and-error sink; the agent's one write is a surgical, approval-gated edit to an existing recorder file. `Record: yes` is reserved for behaviour no AL test layer can automate (generation-time push-down — most examples are `Record: no` and walked, not recorded). A replay red classifies three ways: bad recording → guided re-record (the default in-loop fix), real production bug → push down, status unchanged, route `/al-steer`, or oracle-blind/unscriptable → escalate `/al-steer`. On the production-bug route `/al-steer` opens the integration fix task and strips `review: clean`; `/al-implement` drives the fix red-first before the recording re-greens. Recorder-gesture coaching lives in `skills/al-page-script/references/recorder-gestures.md`; the YAML grammar (now read-only, for classifying a red or scoping a surgical edit) in `skills/al-page-script/references/bc-replay-yaml-format.md`.
-
-**User verification (user-facing slices).** `/al-user-verification` runs three spawns:
-
-- **Spawn #1.** Fresh container → publish → regression batch (`pagescript-replay.ps1`, every `pagescripts/recordings/*.yml`). Green → spawn #2. Red → verify task `blocked`, route `/al-steer` (trigger #4 prior-slice red, trigger #8 current-slice red); spawn #3 exits.
-- **Spawn #2.** Fresh container → publish → Contract Examples (agent-run) → guided user walk, one scenario at a time, punchline first. Agent instructs, asks observed value before naming expected (ask-before-reveal). User walks the **`Record: no`** Journey Examples and Exploration Charters; the **`Record: yes`** examples were eyeballed live during `/al-page-script` recording and are re-confirmed by the spawn #1 replay batch, not re-walked (sign-off accounts for them explicitly). Functional outcomes gate, subjective usability → findings/tasks. A rubber-duck review checks verdict coverage. Red → verify task `blocked`, route `/al-steer` (trigger #8).
-- **Spawn #3.** Always runs at exit regardless of outcome — leaves a fresh container for the next consumer.
-
-Verify pass → verify task `done`, next slice tasks `ready`, loop continues. Feature-done → `/al-code-review` per-feature before merge.
-
-**Backend-only.** No `event-model.md`, no page-script, no user verification. Chain: refine → implement → code-review → next slice.
-
-## Skills
-
-User-facing catalogue (20 skills, role + when-to-invoke) lives in [`references/overview.md`](references/overview.md). Edit it in lockstep when adding, removing, renaming, or repurposing a skill. `al-research` is a skill (one of the two another skill may call); the read-only workers that were once skills/agents are now custom agents under `agents/` (red-green, 6 code-review lenses, 5 refactor lenses, plus `al-gate-runner`, `al-mutant-cycle`, `al-design-option`, `al-researcher`, and `al-review-judge` — the model-control fleet is 18 agents total), and `al-doc-verify` is folded into the inline document-integrity check (`references/doc-integrity.md`). None of these are listed in the skill catalogue except `/al-research`.
-
-Skills compose by name. When you change a skill, scan the others for cross-references and update in lockstep. Cross-skill orchestration depth (gate flip mechanics, replan triggers, slice-cycle suppression rules) lives in the owning skill's `SKILL.md` and in the dev-time slice-cycle paragraph above; the user-facing overview stays tour-shape.
-
-## Replan
-
-`/al-steer` is the canonical replan venue — for changes that make a *new decision*: re-scope, reorder, a new architectural seam, decompose, or clear a block whose cause is a missing edge or an unsettled rule. Mutations that only *apply a decision already made* — open a task whose `depends_on:` is now `done`, flip the active task `done` on a green gate, fix a non-semantic review finding inline, reuse a seam pattern a sibling task already established — are provable from current state and reversible; the active skill acts on them inline and announces them, never routing through the venue. The test is *new decision or not*, not *touches the task ledger or not*; routing the provable case through the venue is the friction this floor removes.
-
-The eight triggers as named patterns to learn: task too big, hidden pre-req, wrong order, sibling now wrong, new behaviour emerges, architecture decomposition wrong, goal drift, verification failed. Replan checks in `/al-refine`, `/al-implement`, `/al-refactor`, `/al-user-verification` map the trigger to response per situation: when the trigger means the plan is invalid as planned, flip `status:` to `blocked` and route to `/al-steer`; when the trigger means new info that doesn't invalidate, note it inside the task and continue. A trigger resting on a tool *diagnosis* (compile-error class, AL Runner gap, heuristic) is re-confirmed once before it flips `status: blocked` — a first-pass diagnosis is often a cascade artifact (an AL0305 missing-dependency reads as an AL0327 runner gap); a trigger resting on a recorded fact (`depends_on:`, Goal text, observed verification mismatch) is trusted as-is. Trigger #8 is binary: a failed user verification always flips the verify task to `blocked` and routes; there is no absorb-and-continue variant. `/al-code-review` findings are not replan signals by default: report-only routes each fixable finding to `/al-implement T-NNN`, and `--fix` lands it inline via the red-green subagent (folding into the originating task) without routing through `/al-steer`. Only a finding `--fix` *cannot* resolve — replan-class (new decision, decomposition wrong, new behaviour), a fix that won't go green, a finding recurring after its own fix, or a `needs-a-decision` — escalates to `/al-steer`.
+Per-skill mechanics live in the owning `SKILL.md`. Page-script recording, replay, and red classification live in `/al-page-script`. The verification spawns live in `/al-user-verification`. Report-only and `--fix` semantics live in `/al-code-review`. Replan trigger semantics live in [`references/task-lifecycle.md`](references/task-lifecycle.md). Status-flip and gate-open mechanics live in [`references/task-lifecycle.md`](references/task-lifecycle.md). Skills compose by name, so a change to one skill scans the others for cross-references and updates them in the same change.
 
 ## Editing rules
 
-- **Skills call only `/al-research` and `/al-build`; everything else is a handoff.** A skill never invokes a sibling skill to chain the pipeline — it ends by naming the next step and the user takes it. Two skills are exempt because each is a within-step tool, not a pipeline stage: `/al-research` (BC fact escalation) and `/al-build` (compile/publish/test). The third within-step tool is the **rubber-duck consult** (`references/rubber-duck-review.md`) — a task-tool spawn with a fixed cross-family fallback, not a skill, and load-bearing for the cheap-model goal: a smaller model running a skill leans on an autonomous independent read to stay honest, so it must consult without a user round-trip. This rule keeps the user in control. Writing task `status:` frontmatter inline is a state *write*, not a call — it stays. Invoking a custom agent under `agents/` is not a cross-skill call either.
-- **Naming, BC vocabulary, and the evidence bar live in `references/voice-contract.md`.** One runtime home; writing skills read it before writing. The review lenses invoked by `/al-refactor` and `/al-code-review` carry the BC vocabulary in their own agent bodies (`agents/al-review-cr-*.agent.md`, `agents/al-review-refactor-*.agent.md`), which ship to consumer repos — so the spawning skill's invocation carries only the diff/scope, not the vocabulary line. Skills and custom agents run in consumer projects without this dev-time AGENTS.md present, so each agent body must be self-contained. Do not lean on it.
-- **No inline citations in durable artifacts.** `(see: file.al:120)` is forbidden in `architecture.md`, the per-task files under `tasks/`, `CONTEXT.md`, ADRs, `.out-of-scope/`. Names are the citation; `NALICFCopyDocSubscribers.OnAfterInsertToSalesLine` is the address. Future readers grep; the IDE gives line numbers for free. One carve-out: `Researched: <fact> → <source>` provenance bullets in a task's `Contract notes`, written at `/al-implement` reconcile, read by `/al-code-review` — without them, skipped research is indistinguishable from research that ran. Location pointers stay forbidden.
-- **Spec artifacts are text-only.** Name relationships in prose; gates in the `depends_on:` frontmatter list on each task file. No mermaid fences; many markdown viewers lack mermaid support, and a second encoding alongside text just drifts.
-- **Spec artifacts are pure markdown.** Visual polish is a separate dev-server concern; the spec is text.
-- **`architecture.md` is reshape-only.** Written by `/al-design`, read by everyone downstream. Never edit in place; re-run `/al-design`. No surgical-edit contract.
-- **Each per-task file carries one surgical-edit contract.** Maintaining skills find a task by its `T-MMM` filename (or `task:` in frontmatter) and flip its `status:` frontmatter field, stripping `review: clean` in the same Edit on a flip to `blocked`/`done` (the `ready` → `ready-for-verification` refine flip preserves it). `/al-scope` writes `slice: <slug>` and `kind:` (`technical` / `verify` / `provision` / `breaking-change`) on every task; downstream skills read these but do not change them (a slice or kind change is replan work, routes through `/al-steer`). `/al-code-review` is the sole writer of `review: clean`. There is no `[ ]`/`[x]` heading marker; the `status:` frontmatter field is the only state, and the `status:` line is the byte the Edit anchors on. See `references/markdown-spec-discipline.md`.
-- **New skills need a stated gap.** _Avoid_: spinning up a skill that an existing one can absorb, or that fits as a brief note inside an existing task file, an `/al-research` finding, or a side-band reference. Propose only when no existing skill fits, and say so in one line.
-- **Express intent and rationale, not enumerated rules with skip conditions.** SKILLs and references state *why a discipline exists and what problem it solves*; the agent maps rationale to situation. Slot prescriptions, `_When earned:_` / `_Skip when:_` enumerations, and templates the agent must fill are rejected by name. The agent is capable of shaping output per feature.
-- **`telemetry.jsonl` is a producer/consumer contract between `/al-build` and `/al-debug-logging`.** `/al-build`'s `test.ps1` produces `.output/TestResults/<dirName>/telemetry.jsonl`; `/al-debug-logging`'s Inspect step reads it. Path, per-app subfolder layout, and `FeatureTelemetry.LogUsage` JSON shape are coupled. Change one side, scan the other in the same edit. The coupling lives here because it crosses skill boundaries; per-skill AGENTS.md cannot enforce it alone.
-- **`bc-standard-reference` agent: canonical source is `microsoft/BCApps`.** Any path or branch-model change requires updating `agents/bc-standard-reference.agent.md` and all three files under `references/bc-standard-reference/` in lockstep. The *heuristic* (what to find, how to reason) stays tool-agnostic; the repo mechanism is the `gh` CLI (`gh search code`, `gh repo read-file --ref`, `gh repo read-dir --ref` — preview commands as of gh 2.95.0), never web fetch/scrape of repo content — web tools serve only the Microsoft Learn cross-check and the `gh`-unavailable fallback. Don't re-genericize the mechanism back to "any browse method". Version matching is part of the contract: search indexes `main` only, quotes come from the consumer's `releases/NN.x`. Keep the three-way reference split (`repo-structure.md` paths / `search-patterns.md` heuristics / `scenarios.md` walkthroughs) — don't merge. `/al-research` names this agent as its BaseApp source; on rename, update `/al-research`'s Sources list in lockstep.
+- **Preserve the skill-call boundary.** Which calls a skill may make — the two direct skill-to-skill calls, the rubber-duck consult, custom-agent spawns, inline state writes — is homed in [`references/overview.md`](references/overview.md). A skill edit that adds a new cross-skill call or auto-chain contradicts that canon. Change the canon first.
+- **Custom agent bodies are self-contained.** Skills and agents run in consumer projects where this AGENTS.md does not exist. The review lenses carry their BC vocabulary in their own bodies. The spawning skill's invocation carries only the diff or scope.
+- **Naming, BC vocabulary, and grounding are homed in [`references/GROUND-RULES.md`](references/GROUND-RULES.md).** That includes names-as-citation (no inline `file:line` citations in durable artifacts) and the `Researched:` carve-out. Writing skills read it before writing.
+- **Three Return shapes deviate from the fixed line-1 label, each coupled to the callers that parse it.** Changing any of these shapes updates every parsing caller in the same change; never restyle one side alone.
 
-## Style rubric — frozen surfaces
+  | Agent | Shape | Parsing callers |
+  |---|---|---|
+  | `al-red-green` | `## Outcome note` leads with a dynamic verdict chosen from `GREEN` / `PUSH-UP` / `BLOCKED` | `/al-implement`, `/al-code-review --fix` |
+  | the six `al-review-cr-*` lenses | zero or more labeled finding blocks under a fixed per-lens line-1 sentinel (`COMPLIANCE FINDINGS`, `CORRECTNESS FINDINGS`, `BC REVIEW FINDINGS`, `COMMENT AND HISTORY FINDINGS`, `PUBLIC-SURFACE FINDINGS`, `PERFORMANCE SCAN FINDINGS`) — the finding-block shape, not one fixed payload, is the contract | `/al-code-review`, `al-review-judge` |
+  | `al-review-refactor-perf` | when the `al-performance` MCP is missing, exactly the one line `perf scan skipped: al-performance MCP not available` — no sentinel, no other line | `/al-refactor`, `al-review-judge` |
 
-Root `AGENTS.md` "Canonical style rubric (rewrite program)" owns the method (protection tiers, constraint ledgers, contradiction scans); this section names this plugin's own frozen surfaces and couplings.
-
-- **The canonical five, Tier A.** `agents/al-design-option.agent.md`, `al-gate-runner.agent.md`, `al-mutant-cycle.agent.md`, `al-researcher.agent.md`, and `al-review-judge.agent.md` are the rubric's source exemplars — prose and Style lines byte-frozen for the program's duration, per root `AGENTS.md`. The freeze covers the rubric surface, not the `model:` frontmatter pin: a deliberate fleet re-pin (a content change with its own review, like this one and `81a811d` before it) may move the pin while every other byte stays frozen. The rubric they encode is written up once in `references/voice-contract.md`'s "Custom agent return contract"; do not re-derive or restate it here or in any other agent body.
-- **Style class tracks payload job, not `model:` role — check both.** The `**Style:**` line's descriptor ("Exact —" vs "Opinionated —", per `voice-contract.md`) is chosen by what an agent's `## Boundary` authorizes it to do, not by its `references/delegation.md` role tier. Bounded executor (`al-gate-runner`, Luna) and worker (`al-mutant-cycle`, most `al-review-cr-*`/`al-review-refactor-*`, Sonnet) are all evidence-only "Exact —" surfaces; the Fable tier (`al-design-option`, `al-review-cr-bugscan`, `al-review-refactor-bc`, `al-review-refactor-simplify`, `al-review-refactor-structural`) is all judgment-making "Opinionated —" surfaces. The arbiter tier (Opus) breaks a naive role→Style inference by carrying both classes: `al-researcher`'s job is quoted-evidence fact arbitration, not a pick or a classification, so its Style stays "Exact — conclusions follow quoted evidence"; `al-review-judge`'s job is classifying a findings batch, so its Style stays "Opinionated — classify each finding" on the same tier. Re-rolling an agent's `model:` frontmatter to a different role does not by itself change its Style class — re-derive Style from the *job* the Boundary still authorizes, then re-check it against the current fleet; a role change paired with an unexamined Style flip (or the reverse) is exactly the canonical-owner contradiction the root rubric's scan looks for. (Resolved history: `al-review-judge` and the three `al-review-refactor-bc`/`-simplify`/`-structural` agents were re-pinned to `claude-fable-5` in commit `81a811d`; the fleet later re-pinned its workers to `claude-sonnet-5` and moved `al-researcher` and `al-review-judge` to the `claude-opus-4.8` arbiter tier on real-usage evidence — `delegation.md`'s role table and this paragraph moved in that same change; see `references/delegation.md`'s "Where each worker lands" table for the current, reconciled assignment.)
+- **Spec artifacts are pure markdown, text-only.** The no-mermaid rule is homed in the `/al-design` and `/al-scope` skill bodies. Visual polish is a separate dev-server concern, never the spec's.
+- **`architecture.md` is reshape-only. Per-task files carry the surgical-edit contract.** Both are homed in [`references/task-lifecycle.md`](references/task-lifecycle.md).
+- **New skills need a stated gap.** Propose one only when no existing skill, task-file note, `/al-research` finding, or cross-cutting reference can absorb the need. Say so in one line.
+- **Express intent and rationale, not enumerated skip conditions.** SKILLs and references state why a discipline exists and what problem it solves. The agent maps rationale to situation. Slot prescriptions, `_When earned:_` / `_Skip when:_` enumerations, and fill-in templates are rejected by name.
+- **`telemetry.jsonl` is a producer/consumer contract between `/al-build` and `/al-debug-logging`.** `/al-build`'s `test.ps1` produces `.output/TestResults/<dirName>/telemetry.jsonl`. `/al-debug-logging`'s Inspect step reads it. Path, per-app subfolder layout, and the `FeatureTelemetry.LogUsage` JSON shape are coupled. Change one side, scan the other in the same edit. The coupling lives here because it crosses skill boundaries.
+- **`bc-standard-reference`'s canonical source is `microsoft/BCApps`.** Any path or branch-model change updates `agents/bc-standard-reference.agent.md` and `references/bc-standard-reference/bcapps-navigation.md` in lockstep. The repo mechanism is the `gh` CLI; the agent body homes the commands. Web tools serve only the Microsoft Learn cross-check and the `gh`-unavailable fallback. Ownership splits by kind: `bcapps-navigation.md` homes the facts — paths, branch model, and search rules; the agent body homes the actions — consumer-version selection, fallback, and the `gh` command block. A change to either scans the other in the same edit. `/al-research` names this agent as its BaseApp source. On rename, update `/al-research`'s Sources list in lockstep.
 
 ## Reference layout
 
-Two tiers, on purpose.
+References sit in two tiers:
 
-- **Plugin-level shared**, `plugins/al-agentic-dev/references/`. Cross-skill resources read by more than one skill. Path from any SKILL.md: `../../references/<file>` relative to the skill's base directory.
-- **Skill-local**, `plugins/al-agentic-dev/skills/<skill>/references/`. Resources only one skill reads. Path from that SKILL.md: `references/<file>` in the skill's base directory.
+- Plugin-level shared, `references/` — read by two or more skills. Path from any SKILL.md: `../../references/<file>`. The five testing references live in the `references/testing/` subfolder; path from any SKILL.md: `../../references/testing/<file>`.
+- Skill-local, `skills/<skill>/references/` — read by one skill only. Path from that SKILL.md: `references/<file>`.
 
-**Rule**: a resource read by two or more skills lives in plugin-level `references/`. Skill-local references stay inside the skill that owns them. DO NOT put a shared resource inside one skill's folder; owner ambiguity invites drift.
+A resource read by two or more skills lives at plugin level. A shared resource inside one skill's folder makes ownership unclear. Cross-skill paths (`../<skill>/references/<file>`) are a smell to be migrated.
 
-| File | Tier | Notes |
+| File | Tier | Purpose / readers / lockstep |
 |---|---|---|
-| `overview.md` | plugin-level | user-facing tour: pipeline diagram, 20-skill catalogue (role + when-to-invoke), custom-agent table, persistence layers paragraph, cold-start guidance, pointer to `/al-steer` for state-aware nav; emitted verbatim by `/al-agentic-dev-overview`; edit in lockstep with any skill or agent addition / removal / rename |
-| `voice-contract.md` | plugin-level | non-voice rules: BC vocab, names-as-citation, tasks-appear-by-name-in-chat (title/slug accompanies `T-NNN` at first mention; bare ids stay agent-channel), evidence bar (citation chain: names → workspace, constructs → fetched topic, `/al-research` escalation, `Contract notes` trace), boxes-first (verdict box as the rendering rule for substantive replies, prose cap, visual over verbal), one-decision-per-question (lettered options; ask-before-reveal carve-out), pre-send checks (no exam-speak, six checks), relaying-subagent-findings (spawn-prompt line, check-3 relay bar, never raw), custom-agent return contract (bounded lede/purpose, explicit ownership, evidence-vs-judgment separation, class-scoped Style declarations, artifact-native Return structure — read by every `agents/*.agent.md`), lists-of-findings, tables-of-facts, chat carve-out, no-workflow-chatter, 5 chat shape skeletons (Opener / Gate report / Answer / Stop / Push-up report — substantive ones render box-first); style itself lives at top of each SKILL.md and each agent as a one-line Style declaration; read by every skill and agent that writes prose or AL names |
-| `doc-integrity.md` | plugin-level | the inline document-integrity check (was the `al-doc-verify` agent): artifact profiles + `tasks/`-folder structural checks; run inline by the writing skills (`/al-grill-adr`, `/al-event-model`, `/al-design`, `/al-scope`, `/al-refine`, `/al-steer`) before the gate report |
-| `bc-standard-reference/` (folder) | plugin-level | detail references for the `bc-standard-reference` custom agent: `repo-structure.md` (BCApps layout + branch model), `search-patterns.md` (heuristics by object kind), `scenarios.md` (walkthroughs); read by the agent from the plugin root, not by any skill |
-| `thrift-rules.md` | plugin-level | token-thrift canon: chat lede-first default + payload-preserving cuts (one decisive error line, no log dumps, no tool-call narration, keep grammar) and production-AL "build the least that works" (platform-first, no abstraction for one caller, production-only carve-outs); the **single home** — voice-contract.md and al-implement point here, the review lenses carry their own self-contained over-build block; re-emitted verbatim by the `SessionStart` hook (`hooks/`); read by `/al-implement` at generation and by every prose-writing skill |
-| `delegation.md` | plugin-level | whether to delegate and how the worker is dialed in: the five delegation triggers (distributive phrase, third repetition, spec-written-down, nameable checking command, disjoint file sets) + stay-inline conditions, the two independent spawn dials (`model` = role by problem hardness, `reasoning_effort` = effort by ground to cover, default effort unless the workload names a reason), the four roles (bounded executor / worker / arbiter / smart, mapped to current Copilot model IDs — 10 worker / 5 smart / 2 arbiter / 1 bounded executor across the 18-agent fleet), the closed model-control rule (frontmatter `model:` is the only pin — no invocation-time override, no silent substitution), intelligence > taste > cost, effort-never-buys-capability (judge by total task cost), sharp-spec-lowers-the-role, bounded execution, the never-rerun-blind diagnostic (wasn't told → fix prompt / didn't know → one role up / didn't try → effort up), and the review carve-out (decomposed lenses across a mixed smart/worker fleet + the review-judge arbiter dedup pass + rubber-duck veto); the **single home** the custom agents and invoking skills (`/al-implement`, `/al-build`, `/al-provision`, `/al-validate-breaking-changes`, `/al-mutate`, `/al-design`, `/al-research`, `/al-refactor`, `/al-code-review`) point at instead of restating the role |
-| `rubber-duck-review.md` | plugin-level | the cross-check discipline for the rubber-duck agent: task-tool spawn (`agent_type: "rubber-duck"`) with the fixed cross-family fallback (`general-purpose` critic on the other model family when the agent type is missing — no skip path), pass-the-artifact-not-the-question, verbatim in/out, don't-fold-to-pushback reconciliation, veto semantics for `/al-code-review`; read by every skill that consults the duck |
-| `testability.md` | plugin-level | three-phase decoupling, three default seams (IEnvironment / IApiRequest / IFinance), five-kind test-double taxonomy with AL code shapes; read by `/al-design`, `/al-implement`, `/al-refactor` |
-| `test-specification.md` | plugin-level | `Test Specification` / `Verification Plan` grammar: New and Modified Objects, Expected Behaviors, Decision Matrix, AAA cases, Contract notes, Out of automated reach, scopes, the E2E `Record:` flag (generation-time push-down — recorded vs walked), traceability, closeout summaries with mutation verdict table; read by `/al-refine`, `/al-implement`, `/al-code-review`, `/al-page-script`, `/al-user-verification` |
-| `tdd.md` | plugin-level | three layers of trust, three laws, five phases, Unit-first execution, mutation operators + revert cycle, no-touch invariants; read by `/al-implement`, `/al-mutate` |
-| `test-strategy.md` | plugin-level | test-execution pyramid mapped to the BC tech stack (Unit=AL-Runner, Integration=container+TestPage, E2E=page-script, Contract=client/harness, Exploration=guided user walk); push-down / oracle-problem / checking-vs-testing feedback rules; frames the verification skills (the *execution* axis, distinct from `tdd.md`'s *cycle* axis); read by `/al-build`, `/al-implement`, `/al-mutate`, `/al-refine`, `/al-code-review`, `/al-page-script`, `/al-user-verification` |
-| `test-layout.md` | plugin-level | two-peer-test-app layout (`unit-tests/` + `integration-tests/`, no dependency edge, doubles per app), placement rule ("AL Runner-runnable iff" — reclassify, never relax), AL Runner capability map (runs / auto-stubs / throws, provenance-dated), container `TestIsolation = Codeunit` semantics, `TransactionModel::AutoCommit` false-pass rule, authoring contract (mandatory attributes, `Initialize()` guard, handlers on the test codeunit, integration-library discipline incl. duplicate-before-share); the *placement* axis, distinct from `test-strategy.md`'s *execution* axis and `tdd.md`'s *cycle* axis; read by `/al-scope`, `/al-refine`, `/al-implement`, `/al-refactor` (carried into lens spawn prompts when the diff touches tests) |
-| `notes-discipline.md` | plugin-level | what lives in the per-task file vs commit / ADR / `.out-of-scope/`; the eight replan triggers as named patterns; read by skills that write the `tasks/` folder |
-| `markdown-spec-discipline.md` | plugin-level | pointer to `examples/`, the `tasks/` folder shape, surgical-edit floor (`status:` frontmatter field per task file; `task:` + `slice:` + `kind:` + edge lists alongside it), status-flip Edit shape; read by `/al-design`, `/al-event-model`, `/al-scope`, `/al-refine`, `/al-implement`, `/al-code-review`, `/al-user-verification`, `/al-mutate`, `/al-steer` |
-| `examples/` (folder) | plugin-level | populated example artifacts (`event-model.example.md`, `architecture.example.md`, and a `tasks/` folder of frontmatter task files); pattern-match source for writing skills |
-| `cross-branch-numbering.md` | plugin-level | algorithm for picking `NNN` (spec folders) and `NNNN` (ADRs) across parallel branches; read by `/al-design`, `/al-event-model`, `/al-grill-adr` |
-| `worktree-feature-branching.md` | plugin-level | first-feature branch setup: default-branch creation and safe conversion of a disposable linked-worktree branch; read by `/al-event-model`, `/al-design` |
+| `overview.md` | plugin-level | user-facing tour, emitted verbatim by `/al-agentic-dev-overview`; edit in lockstep with any skill or agent change |
+| `GROUND-RULES.md` | plugin-level | the one always-on contract: output shape via the `i-have-adhd` skill, one-decision-per-question, grounding mechanics, BC vocabulary, house shapes, production-AL thrift; injected by the `sessionStart` hook, re-read by skills on invocation |
+| `doc-integrity.md` | plugin-level | inline document-integrity check; run by the writing skills (`/al-grill-adr`, `/al-event-model`, `/al-design`, `/al-scope`, `/al-refine`, `/al-steer`) before the gate report |
+| `bc-standard-reference/` (folder) | plugin-level | detail references for the `bc-standard-reference` agent; edited in lockstep with the agent body |
+| `rubber-duck-review.md` | plugin-level | rubber-duck consult discipline; read by every skill that consults the duck |
+| `testing/testability.md` | plugin-level | seams and test-double taxonomy; read by `/al-design`, `/al-implement`, `/al-refactor` |
+| `testing/test-specification.md` | plugin-level | Test Specification / Verification Plan grammar; read by `/al-refine`, `/al-implement`, `/al-code-review`, `/al-page-script`, `/al-user-verification` |
+| `testing/tdd.md` | plugin-level | TDD cycle axis incl. mutation operators; read by `/al-implement`, `/al-mutate` |
+| `testing/test-strategy.md` | plugin-level | test-execution pyramid on the BC stack (the execution axis); read by `/al-build`, `/al-implement`, `/al-mutate`, `/al-refine`, `/al-code-review`, `/al-page-script`, `/al-user-verification` |
+| `testing/test-layout.md` | plugin-level | two-peer-test-app layout and AL Runner capability map (the placement axis); read by `/al-scope`, `/al-refine`, `/al-implement`, `/al-refactor` |
+| `task-lifecycle.md` | plugin-level | `tasks/` folder shape, surgical-edit floor, content routing by lifetime, and the eight replan triggers; read by `/al-design`, `/al-event-model`, `/al-scope`, `/al-refine`, `/al-implement`, `/al-code-review`, `/al-user-verification`, `/al-mutate`, `/al-steer` |
+| `examples/` (folder) | plugin-level | populated example artifacts; pattern-match source for writing skills |
+| `cross-branch-numbering.md` | plugin-level | `NNN`/`NNNN` picking across parallel branches; read by `/al-design`, `/al-event-model`, `/al-grill-adr` |
+| `worktree-feature-branching.md` | plugin-level | feature branch setup; read by `/al-event-model`, `/al-design` |
 | `bc-patterns.md` | plugin-level | BC pattern catalogue; read by `/al-design` |
-| `bc-code-intelligence-dispatch.md` | plugin-level | bc-code-intelligence MCP call pattern (`find_bc_knowledge` → drop-noise → `get_bc_topic`), noise drop-list, relevance scales; read by `/al-implement` (write-time construct lookup), `/al-refactor`, `/al-code-review`, `/al-research`, and the BC review-lens / red-green custom agents |
-| `LANGUAGE.md` | plugin-level | architectural vocabulary (incl. Connascence, CQS), testability pillars; read by `/al-design`, `/al-grill-adr`, `/al-event-model`, `/al-refactor`, `/al-code-review` |
-| `CONTEXT.template.md` | plugin-level | template materialised into the target repo's `CONTEXT.md` |
-| `adr.template.md` | plugin-level | template materialised into the target repo's `docs/adr/NNNN-<slug>.md` |
-| `out-of-scope.template.md` | `/al-steer`-local | template materialised into `.out-of-scope/<concept>.md` |
+| `bc-code-intelligence-dispatch.md` | plugin-level | bc-code-intelligence MCP call pattern; read by `/al-implement`, `/al-refactor`, `/al-code-review`, and the BC review-lens / red-green / `al-researcher` custom agents |
+| `LANGUAGE.md` | plugin-level | architectural vocabulary; read by `/al-design`, `/al-grill-adr`, `/al-event-model`, `/al-refactor`, `/al-code-review` |
+| `CONTEXT.template.md` | plugin-level | materialised into the target repo's `CONTEXT.md` |
+| `adr.template.md` | plugin-level | materialised into the target repo's `docs/adr/NNNN-<slug>.md` |
+| `out-of-scope.template.md` | `/al-steer`-local | materialised into `.out-of-scope/<concept>.md` |
 | `legacy-refactor-plan.md` | `/al-refactor`-local | reference plan for legacy code without tests |
 
-Templates are materialised lazily on first need by the owning flow. `markdown-spec-discipline.md` is read but never materialised; it is a discipline reference, not a template.
-
-Cross-skill paths within this plugin (when reaching into another skill's local references): `../<skill>/references/<file>` relative to the skill's base directory. Reach for plugin-level first; cross-skill paths are a smell to be migrated.
+Templates are materialised lazily on first need by the owning flow.
 
 ## Runtime surface
 
-This plugin is **distributed via the marketplace manifest at `.github/plugin/marketplace.json`** and targets GitHub Copilot CLI. It ships custom-agent definitions under `agents/` — `bc-standard-reference.agent.md`, the canonical BaseApp / System Application / APIV2 lookup worker (see its editing rules below), the read-only *pipeline* workers: `al-red-green.agent.md` and the 11 review-lens agents (`al-review-cr-*.agent.md`, `al-review-refactor-*.agent.md`), and the five model-control workers `al-gate-runner.agent.md`, `al-mutant-cycle.agent.md`, `al-design-option.agent.md`, `al-researcher.agent.md`, and `al-review-judge.agent.md` — 18 agents total, invoked via the task tool by name. Each fixes its model role in frontmatter per [`references/delegation.md`](references/delegation.md): 10 on the Sonnet worker role, 5 on the Fable smart role (`al-design-option`, `al-review-cr-bugscan`, `al-review-refactor-bc`, `al-review-refactor-simplify`, `al-review-refactor-structural`), 2 on the Opus arbiter role (`al-researcher`, `al-review-judge`), and 1 on the Luna bounded-executor role (`al-gate-runner`), plus a rubber-duck veto; that single reference owns the role ordering, forbids invocation-time overrides and silent model substitution, and owns the never-rerun-blind diagnostic so the role notes don't drift. Skills cross-invoke nothing except `/al-research` and `/al-build`, plus the autonomous rubber-duck consult (task-tool spawn with a fixed cross-family fallback, per `references/rubber-duck-review.md` — so a worker model gets an independent read without a user round-trip); every other transition is a user-taken handoff. Inline MCP calls stay (degrade gracefully when a server is absent). No auto-chaining in skill bodies: a skill names the next step in prose and the user takes it. Prefer skills for runtime behavior by default; reach for a custom agent only when fan-out or context isolation earns it. SKILL.md bodies are injected verbatim and unexpanded — no template variables; skills locate their own files relative to the base directory announced at activation.
+The plugin is distributed via `.github/plugin/marketplace.json` and targets GitHub Copilot CLI. It ships 18 custom agents under `agents/`, invoked via the task tool by name. Each agent's `.agent.md` frontmatter pins its model — the single home; the repo-root `scripts/Validate-PluginStructure.ps1` checks every pin against its fleet map. [`references/overview.md`](references/overview.md) carries the user-facing agent table.
 
-**Keep skills project-agnostic across consumer repos.** A skill must run in any AL/BC project without hardcoding this marketplace's paths or a specific repo's layout. This is *consumer-repo* portability (orthogonal to any runtime concern) — soft guidance, not a CI gate.
+SKILL.md bodies are injected verbatim and unexpanded, with no template variables. A skill locates its own files relative to the base directory announced at activation.
 
-**One plugin hook.** `hooks/hooks.json` (Copilot native format, `"version": 1`) registers a single `sessionStart` hook that reads `references/thrift-rules.md` via `$env:COPILOT_PLUGIN_ROOT` (PowerShell) / `$COPILOT_PLUGIN_ROOT` (bash, jq-or-node encoded) and emits it as `{"additionalContext": ...}` — injected into the session at start, verified empirically in this harness. The PowerShell command's `[Console]::OutputEncoding = UTF8` prefix is load-bearing: `pwsh -c` on Windows otherwise writes stdout in the legacy codepage, mangling the file's `→`/`—` characters and silently breaking the CLI's JSON parse of the hook output (empirically reproduced — the hook then injects nothing). Compaction gap, accepted: Copilot's `sessionStart` fires on new/resumed sessions only, never on compaction, and `preCompact` cannot inject — so mid-session compaction drops the canon and the recovery path is skills re-reading the file on invocation. The hook **only injects, never verifies** — enforcement stays prompt-resident, matching the plugin's all-advisory model. Fail-open by design: a missing file or missing jq/node on bash emits nothing and the session proceeds (skills re-read the file on invocation — the same graceful degradation). The hook never restates the rules — it reads the one file, so there is no second copy to drift. This is the plugin's sole hook; adding more is a deliberate decision, not a default.
+When authoring new plugin capability, default to a skill. Add a custom agent only when fan-out or context isolation earns it.
 
-**One canvas extension.** `extensions/al-kanban/` ships a read-only live kanban board over the `specs/<NNN>-<slug>/tasks/` folder — `extension.mjs` (SDK host wiring), `lib.mjs` (pure logic, `node --test`-able via `lib.test.mjs`, run by CI), `board.html`. Auto-discovered by the desktop app; the terminal CLI loads it but has no render surface. Usage doc: its `README.md`; live gate: its `SMOKE-TEST.md`; PoC editing rules (no backwards compatibility): its `AGENTS.md`. Fixture with expected column counts: `tests/fixtures/al-kanban/`. The board never writes task files — skills remain the only writers; keep it that way.
+MCP-absence behavior is per-consumer, not uniform. The default is degrading to an alternate source. Each owning skill, agent, or [`references/bc-code-intelligence-dispatch.md`](references/bc-code-intelligence-dispatch.md) states its own fallback. Two exceptions:
 
-Notable script-backed skills:
+- `al-red-green` blocks on a missing object-ID allocator.
+- `al-review-refactor-perf` returns its skip line.
 
-- **`skills/al-mutate/SKILL.md`**, mutate-build-revert cycle, mutation kinds, survivor classification, BC safety.
+A blanket claim here would fork them.
+
+Skills stay project-agnostic across consumer repos. A skill runs in any AL/BC project without hardcoding this marketplace's paths or a specific repo's layout. Soft guidance, not a CI gate.
+
+### The one hook
+
+`hooks/hooks.json` (Copilot native format, `"version": 1`) registers a single `sessionStart` hook. It reads `references/GROUND-RULES.md` via `$env:COPILOT_PLUGIN_ROOT` (PowerShell) or `$COPILOT_PLUGIN_ROOT` (bash, jq-or-node encoded) and emits it as `{"additionalContext": ...}`. Four couplings, all empirically verified:
+
+- The PowerShell command keeps its `[Console]::OutputEncoding = UTF8` prefix. Without it, `pwsh -c` on Windows writes stdout in the legacy codepage. That mangles `→`/`—` and silently breaks the CLI's JSON parse, and the hook injects nothing.
+- The compaction gap is accepted. `sessionStart` fires on new and resumed sessions only, never on compaction, and `preCompact` cannot inject. The recovery path is skills re-reading the file on invocation.
+- The hook only injects, never verifies. Enforcement stays prompt-resident, matching the plugin's all-advisory model. It fails open: a missing file or missing jq/node emits nothing and the session proceeds.
+- The hook never restates the rules. It reads the one file, so there is no second copy to drift.
+
+Adding a second hook is a deliberate decision, not a default.
 
 ## Layout
 
 ```
-agents/                          # Shipped custom agents (18 total, model-control fleet — see references/delegation.md)
-├── bc-standard-reference.agent.md   # Canonical BaseApp / System Application / APIV2 lookup against microsoft/BCApps; reads references/bc-standard-reference/
-├── al-red-green.agent.md            # One AAA case RED→GREEN; invoked per case by /al-implement and per finding by /al-code-review --fix
-├── al-gate-runner.agent.md          # One authoritative build/provision/breaking-change gate run; bounded executor (Luna)
-├── al-mutant-cycle.agent.md         # One mutate→gate→revert cycle for /al-mutate; worker (Sonnet)
-├── al-design-option.agent.md        # One architecture candidate under a divergent constraint; /al-design fans out three; smart (Fable)
-├── al-researcher.agent.md           # One consequential BC fact arbitrated across source families for /al-research; arbiter (Opus)
-├── al-review-cr-compliance.agent.md    # /al-code-review lens 1: project compliance + naming + scope + evidence bar + surface reconciliation
-├── al-review-cr-bugscan.agent.md       # /al-code-review lens 2: shallow scan for large correctness bugs
-├── al-review-cr-bc.agent.md            # /al-code-review lens 3: BC-specific anti-patterns via bc-code-intelligence MCP
-├── al-review-cr-comments.agent.md      # /al-code-review lens 4: code-comment invariants + git history context
-├── al-review-cr-appsource.agent.md     # /al-code-review lens 5: AppSource public-surface addition lock-in (per-feature only)
-├── al-review-cr-perf.agent.md          # /al-code-review lens 6: performance via al-performance MCP scan_al_code
-├── al-review-judge.agent.md            # Dedups/substantiates/ranks one review-lens finding batch for /al-code-review and /al-refactor; arbiter (Opus)
-├── al-review-refactor-simplify.agent.md    # /al-refactor lens 1: dedup, dead code, over-build (primary)
-├── al-review-refactor-bc.agent.md          # /al-refactor lens 2: BC best-practice + platform reinvention via bc-code-intelligence MCP
-├── al-review-refactor-structural.agent.md  # /al-refactor lens 3: R→P→W boundary, depth over indirection, seam introduction
-├── al-review-refactor-naming.agent.md      # /al-refactor lens 4: BC vocabulary + project terminology naming
-└── al-review-refactor-perf.agent.md        # /al-refactor lens 5: performance via al-performance MCP, structural reshapes only
-hooks/                           # Plugin's sole hook: sessionStart injection of the thrift canon
-└── hooks.json                   # Copilot native format (version 1): sessionStart reads references/thrift-rules.md via COPILOT_PLUGIN_ROOT, emits {"additionalContext": ...}; fail-open
-extensions/
-└── al-kanban/                   # Canvas extension: live kanban over specs/<NNN>-<slug>/tasks/ (read-only)
-    ├── AGENTS.md                # Dev-time PoC rules: no backwards compatibility
-    ├── README.md                # Usage: loading, discovery, requirements/limitations
-    ├── SMOKE-TEST.md            # Live gate script (desktop-app session)
-    ├── extension.mjs            # SDK host wiring (server, watcher, canvas lifecycle)
-    ├── lib.mjs                  # Pure logic: parser, columns, advance mapping, discovery
-    ├── lib.test.mjs             # node:test suite (run by CI)
-    └── board.html               # Static board UI (Primer dark)
-references/                      # Plugin-level shared, read by ≥2 skills, or cited by shared templates
-├── overview.md                  # User-facing tour: pipeline + 20-skill catalogue + subagent table + persistence + cold-start; emitted by /al-agentic-dev-overview
-├── voice-contract.md            # Non-voice rules + evidence bar + boxes-first/pre-send-checks/relay rules + 5 chat shape skeletons; voice declared inline at top of each SKILL.md
-├── doc-integrity.md             # Inline document-integrity check (was the al-doc-verify agent); run by the writing skills before the gate report
-├── thrift-rules.md              # Token-thrift canon (chat lede-first + production-AL build-the-least); single home, injected by the sessionStart hook
-├── delegation.md                # When to delegate (five triggers + stay-inline) and the two spawn dials: model role by problem hardness + reasoning_effort by ground to cover, four roles mapped to Copilot model IDs (10 worker / 5 smart / 2 arbiter / 1 bounded executor across 18 agents), closed model control (no invocation-time override, no silent substitution) + never-rerun-blind diagnostic + review carve-out; single home the custom agents and invoking skills point at
-├── rubber-duck-review.md        # Cross-check discipline for the rubber-duck agent: task-tool spawn + cross-family fallback (no skip path), artifact-not-question, verbatim in/out, don't-fold reconciliation, code-review veto semantics
-├── testability.md               # Three-phase decoupling, three default seams, five-kind test-double taxonomy
-├── test-specification.md        # Test Specification + Verification Plan grammar (incl. New and Modified Objects, Contract notes, Out of automated reach, mutation verdict table)
-├── tdd.md                       # Three layers, three laws, five phases, Unit-first execution, mutation operators, no-touch invariants
-├── test-strategy.md             # Test-execution pyramid (Unit/Integration/E2E/Contract/Exploration → tech stack) + push-down/oracle/checking-vs-testing; frames verification skills
-├── test-layout.md               # Two-peer-test-app layout, placement rule, AL Runner capability map, isolation/AutoCommit semantics, authoring contract (the placement axis)
-├── LANGUAGE.md                  # Architectural vocabulary (incl. Connascence, CQS), testability pillars
-├── bc-patterns.md               # BC pattern catalogue (read by /al-design)
-├── bc-code-intelligence-dispatch.md     # bc-code-intelligence MCP call pattern (find→drop-noise→get_bc_topic), noise drop-list, relevance scales
-├── notes-discipline.md          # What lives in the per-task file vs commit / ADR / .out-of-scope/, eight replan triggers
-├── markdown-spec-discipline.md  # Pointer to examples/, tasks/ folder shape, surgical-edit floor (status: frontmatter field per task file)
-├── cross-branch-numbering.md    # NNN / NNNN picking algorithm across parallel branches
-├── worktree-feature-branching.md # Default-branch create / linked-worktree conversion
-├── CONTEXT.template.md
-├── adr.template.md
-├── bc-standard-reference/       # Detail references for the bc-standard-reference agent (repo-structure, search-patterns, scenarios)
-└── examples/                    # Populated example artifacts
-    ├── README.md                # Index
-    ├── event-model.example.md
-    ├── architecture.example.md
-    └── tasks/                   # 000-feature.md header + one NNN-T-MMM-<slug>.md frontmatter file per task
+agents/                          # Shipped custom agents (18; each pins its model in frontmatter)
+├── bc-standard-reference.agent.md   # BaseApp/System Application/APIV2 lookup against microsoft/BCApps
+├── al-red-green.agent.md            # One AAA case RED→GREEN
+├── al-gate-runner.agent.md          # One authoritative gate run
+├── al-mutant-cycle.agent.md         # One mutate→gate→revert cycle
+├── al-design-option.agent.md        # One architecture candidate under a divergent constraint
+├── al-researcher.agent.md           # One BC fact arbitrated across source families
+├── al-review-cr-*.agent.md          # 6 /al-code-review lenses (compliance, bugscan, bc, comments, appsource, perf)
+├── al-review-judge.agent.md         # Dedups/ranks one lens finding batch
+└── al-review-refactor-*.agent.md    # 5 /al-refactor lenses (simplify, bc, structural, naming, perf)
+hooks/
+└── hooks.json                   # Sole hook: sessionStart injects references/GROUND-RULES.md; fail-open
+references/                      # Plugin-level shared — see the Reference layout table
 skills/
-├── al-agentic-dev-overview/SKILL.md  # Reads ../../references/overview.md, emits verbatim
-├── al-build/
-│   ├── AGENTS.md                # Skill-local dev-time rules (smoke tests, container recovery, config priority)
-│   ├── SKILL.md
-│   ├── README.md                # Human-facing prerequisites + quick start
-│   ├── config/                  # al-build.json template (the live copy lives in the consumer repo root)
-│   └── scripts/                 # PowerShell 7.2+: init.ps1, provision.ps1, test.ps1, new-bc-container.ps1, ...
+├── al-agentic-dev-overview/SKILL.md  # Emits ../../references/overview.md verbatim
+├── al-build/                    # Build/test gate; own AGENTS.md, config/, scripts/
 ├── al-code-review/SKILL.md
-├── al-debug-logging/
-│   ├── AGENTS.md                # Skill-local dev-time rules (same-publisher constraint, DEBUG- prefix, transient-only)
-│   ├── SKILL.md
-│   └── references/
-│       ├── telemetry-workflow.md
-│       └── bc-event-subscriber-pattern.md
+├── al-debug-logging/            # Transient telemetry probes; own AGENTS.md, references/
 ├── al-design/SKILL.md
 ├── al-event-model/SKILL.md
 ├── al-grill-adr/SKILL.md
 ├── al-implement/SKILL.md
 ├── al-mutate/SKILL.md
-├── al-page-script/
-│   ├── SKILL.md
-│   └── references/
-│       ├── recorder-gestures.md         # Recording-coaching canon: re-runnability rules as recorder UI gestures
-│       └── bc-replay-yaml-format.md     # bc-replay YAML format — read-only, for classifying a red or scoping a surgical edit
-├── al-provision/SKILL.md        # Run kind: provision task → al-build provision.ps1 → flip status
-├── al-quiz/SKILL.md             # Quiz the developer on landed changes; read-only, no gate
-├── al-refactor/
-│   ├── SKILL.md
-│   └── references/
-│       └── legacy-refactor-plan.md
+├── al-page-script/              # SKILL.md + references/ (recorder-gestures, bc-replay YAML format)
+├── al-provision/SKILL.md
+├── al-quiz/SKILL.md
+├── al-refactor/                 # SKILL.md + references/legacy-refactor-plan.md
 ├── al-refine/SKILL.md
-├── al-research/SKILL.md         # BC fact verification, evidence-bar escalation seat (was an agent); callable from a session and by another skill
+├── al-research/SKILL.md
 ├── al-scope/SKILL.md
-├── al-steer/
-│   ├── SKILL.md
-│   └── references/
-│       └── out-of-scope.template.md
-├── al-sync-main/SKILL.md         # Rebase branch onto main (never merges), mechanically renumber object/field collisions, full /al-build gate before + after
+├── al-steer/                    # SKILL.md + references/out-of-scope.template.md
+├── al-sync-main/SKILL.md
 ├── al-user-verification/SKILL.md
-└── al-validate-breaking-changes/SKILL.md  # Run kind: breaking-change task → validate-breaking-changes.ps1 → flip status
+└── al-validate-breaking-changes/SKILL.md
 ```
 
-Tests live at repo root — flat `tests/*.Tests.ps1` for repo-wide contracts and script audits, nested `tests/<target>/*.Tests.ps1` for per-target Pester suites (e.g. `tests/al-build/`), plus fixtures under `tests/fixtures/` — not inside any plugin — with one exception: extension `*.test.mjs` node:test suites sit beside their extension source and are run by CI. `plugins/` otherwise carries only deliverables.
+Tests live at repo root, never inside a plugin: flat `tests/*.Tests.ps1` for repo-wide contracts, nested `tests/<target>/*.Tests.ps1` for per-target Pester suites (e.g. `tests/al-build/`), fixtures under `tests/fixtures/`. `plugins/` carries only deliverables.
 
-No build scripts. Skill bodies, reference templates, and PowerShell helpers under `skills/al-build/scripts/` are the entire product.
+There are no build scripts. Skill bodies, reference templates, and the PowerShell helpers under `skills/al-build/scripts/` are the entire product.

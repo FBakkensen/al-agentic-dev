@@ -1,6 +1,6 @@
 # Sales Document Posting: Item Charge Allocation Validation
 
-User-facing journey for catching item charge allocation mismatches at posting time. Two Roles cooperate across one four-step chain. Posting Engine takes the document the moment Order Processor hands over.
+The user-facing journey catches item charge allocation mismatches at posting time. Two Roles cooperate across one five-step chain.
 
 | | |
 |---|---|
@@ -11,7 +11,7 @@ User-facing journey for catching item charge allocation mismatches at posting ti
 
 ## Roles
 
-Two Roles. **Order Processor** is human; releases document and triggers posting. **Posting Engine** is BC service; once posting starts, owns the document.
+The **Order Processor**, a human, releases the document and triggers posting. The **Posting Engine**, a BC system actor, owns the document once posting starts.
 
 ## Chain
 
@@ -19,16 +19,17 @@ Two Roles. **Order Processor** is human; releases document and triggers posting.
 
 | Action | Business Event | View | Status |
 |---|---|---|---|
-| Releases Sales Order | Sales Order Released | Released Sales Order Card | Released |
-| Initiates Posting | Posting Started | Posting Progress | Posting |
+| Release Sales Order | Sales Order Released | Sales Order page | Status → Released |
+| Post Sales Order | Posting Started | Posting Progress | — |
 
 ### Posting Engine (System)
 
 | Action | Business Event | View | Status |
 |---|---|---|---|
-| Validates Item Charges | Item Charge Allocation Validated | Posting Progress | Validating |
-| Posts Sales Invoice | Sales Invoice Posted | Posted Sales Invoice | Posted |
+| Validate Item Charge Allocation | Item Charge Allocation Validated | Posting Progress | — |
+| Post Sales Invoice | Sales Invoice Posted | Posted Sales Invoice | — |
+| Record Allocation Audit Trail | Allocation Ledger Entry Recorded | Allocation Ledger Entries, drill-down from the Posted Sales Invoice | — |
 
 ## Branch on validation failure
 
-If *Item Charge Allocation Validated* reports mismatch, chain loops back to `Released Sales Order Card` with allocation breakdown surfaced inline. Posting Engine releases the document; no partial state written.
+A mismatch raises *Item Charge Allocation Mismatch Found* instead of *Item Charge Allocation Validated*. The chain returns to the Sales Order page, with the allocation breakdown surfaced inline. Ownership of the document returns to the Order Processor. The Sales Order stays Released, and no Posted Sales Invoice exists.

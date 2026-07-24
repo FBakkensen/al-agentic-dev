@@ -8,14 +8,14 @@ depends_on: []
 ---
 # T-001 — Read released sales order item charge assignments
 
-Resolve `Item Charge Assignment (Sales)` rows for released `Sales Header`, grouped by source `Sales Line`. Reads only; no `Insert` or `Modify`.
+Resolve `Item Charge Assignment (Sales)` rows for a released `Sales Header`, grouped by source `Sales Line`, without `Insert` or `Modify`.
 
 Test Specification:
 
 ## New and Modified Objects
 
 - New: codeunit `Charge Validation`
-  - `internal procedure FindItemChargeAssignments(SalesHeader: Record "Sales Header"; var TempItemChargeAssignmentSales: Record "Item Charge Assignment (Sales)" temporary)` — R
+  - `internal procedure FindItemChargeAssignments(SalesHeader: Record "Sales Header"; var TempItemChargeAssignmentSales: Record "Item Charge Assignment (Sales)" temporary)` — S
 
 ## Expected Behaviors
 
@@ -49,9 +49,19 @@ Act:
 - Read item charge assignments for the Sales Order.
 Assert:
 - Empty result is returned.
-- Allocation validation can short-circuit as balanced.
 
 Closeout:
 - Unit: `ReadsSingleItemChargeAssignment`, `ReadsNoItemChargeAssignmentsAsEmpty`
 - Integration: none
 - Build: full gate green
+
+Mutation verdict:
+
+| | |
+|---|---|
+| Baseline | `6e94b3a7` |
+| Report | `.output/mutation-report/20260110-154421.md` |
+| Mutants | 2 — assignment filter scope, empty-buffer early exit |
+| Killed | 2 by named tests |
+| Survivors | 0 |
+| Final gate | full green |

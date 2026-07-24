@@ -4,8 +4,8 @@
     "sessionStart": [
       {
         "type": "command",
-        "bash": "f=\"$COPILOT_PLUGIN_ROOT/references/thrift-rules.md\"; if [ -r \"$f\" ]; then if command -v jq >/dev/null 2>&1; then jq -Rs '{additionalContext: .}' \"$f\"; elif command -v node >/dev/null 2>&1; then node -e 'const fs=require(\"fs\");console.log(JSON.stringify({additionalContext:fs.readFileSync(process.argv[1],\"utf8\")}))' \"$f\"; fi; fi",
-        "powershell": "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $f = Join-Path $env:COPILOT_PLUGIN_ROOT 'references/thrift-rules.md'; if (Test-Path $f) { @{ additionalContext = (Get-Content -Raw $f) } | ConvertTo-Json -Compress }",
+        "bash": "f=\"$COPILOT_PLUGIN_ROOT/references/GROUND-RULES.md\"; if [ -r \"$f\" ]; then if command -v jq >/dev/null 2>&1; then jq -Rs '{additionalContext: .}' \"$f\"; elif command -v node >/dev/null 2>&1; then node -e 'const fs=require(\"fs\");console.log(JSON.stringify({additionalContext:fs.readFileSync(process.argv[1],\"utf8\")}))' \"$f\"; fi; fi",
+        "powershell": "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $f = Join-Path $env:COPILOT_PLUGIN_ROOT 'references/GROUND-RULES.md'; if (Test-Path $f) { @{ additionalContext = (Get-Content -Raw $f) } | ConvertTo-Json -Compress }",
         "timeoutSec": 15
       }
     ]

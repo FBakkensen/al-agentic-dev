@@ -1,29 +1,18 @@
 # bc-replay recording YAML — format reference (read / surgical-edit)
 
-Reference for the `.yml` recordings consumed by `@microsoft/bc-replay` and produced by the BC web
-client **Settings ⚙ → Page scripting (Preview)** recorder. **The recorder is the generator and the
-user records — the agent does not author `.yml` from this file.** Read it for two jobs only: to
-**classify a replay red** (§9 *Reading a failure*, plus the step/locator/operator vocabulary to
-understand what a failing step targets) and to **scope a surgical, approval-gated edit** to an
-existing recorder-produced file (bump a `wait`, fix one `operation:`, add one missed Validate). For
-the recorder gestures the agent coaches, see [`recorder-gestures.md`](recorder-gestures.md).
+The recorder generates these files; the agent reads them. The generator rule and the surgical-edit carve-out are homed in the `/al-page-script` SKILL.
 
-> **No official schema exists.** Microsoft's `devenv-page-scripting` Learn article is prerelease,
-> workflow-first, and shows only fragmentary YAML. The npm package ships the player as a closed
-> DLL for `-UseServerReplay`, and the client-side interpreter (`window.DN.playRecording`) lives in
-> the BC web-client JS bundle. This reference was **reverse-engineered from the platform** (mining
-> `client.js` + cross-checking recorder output) and validated by replay.
+This reference documents the `.yml` recordings consumed by `@microsoft/bc-replay` and produced by the BC web client **Settings ⚙ → Page scripting (Preview)** recorder. It serves two jobs. First: **classify a replay red** — *Reading a failure*, plus the step/locator/operator vocabulary to understand what a failing step targets.
+
+Second: **scope a surgical, approval-gated edit** to an existing recorder-produced file. For the recorder gestures the agent coaches, see [`recorder-gestures.md`](recorder-gestures.md).
+
+> **No official schema exists.** Microsoft's `devenv-page-scripting` Learn article is prerelease, workflow-first, and shows only fragmentary YAML. The client-side interpreter (`window.DN.playRecording`) lives in the BC web-client JS bundle. This reference was **reverse-engineered from the platform** (mining `client.js` + cross-checking recorder output) and validated by replay.
 >
-> **Reverse-engineered on BC v28** (first mined on `28.0.49873.0`; verified stable across minor
-> bumps — recordings replay green on later `28.1.x` builds with no change; §4 grid-lifecycle and
-> column-filter findings captured on `28.1` w1, bc-replay 0.1.139). Treat the grammar as
-> "true for v28." A platform version number alone is **not** a reason to re-derive or to stop;
-> re-derive only when a replay red is a grammar-**shape** mismatch (a nesting or step type the
-> player rejects), not a missing control or a dialog. To re-derive: mine the web-client bundle's
-> recorder serializer + `playRecording` dispatch, then confirm by recording the gesture and reading
-> the emitted `.yml`.
+> **Reverse-engineered on BC v28**, first mined on `28.0.49873.0` and verified stable across minor bumps — recordings replay green on later `28.1.x` builds with no change. Grid-lifecycle and column-filter findings were captured on `28.1` w1, bc-replay 0.1.139. Treat the grammar as "true for v28."
+>
+> A platform version number alone is not a reason to re-derive or to stop. Re-derive only when a replay red is a grammar-**shape** mismatch — a nesting or step type the player rejects — never a missing control or a dialog. To re-derive: mine the web-client bundle's recorder serializer + `playRecording` dispatch, then confirm by recording the gesture and reading the emitted `.yml`.
 
-How to read the validation tags used below:
+Validation tags used below:
 
 | Tag | Meaning |
 |---|---|
@@ -33,7 +22,7 @@ How to read the validation tags used below:
 
 ---
 
-## 1. Recording envelope
+## Recording envelope
 
 ```yaml
 name: Smoke - new item validates No.   # display name; defaults to "Recording" if unnamed
@@ -41,7 +30,7 @@ description: ...                        # REQUIRED — a recording without it is
 telemetryId: e8f45a3f-...              # GUID, recorder-generated; optional for hand-authored
 start:
   profile: ORDER PROCESSOR             # ONLY `profile` is read; set as the ?profile= start param
-parameters: { ... }                    # see §7
+parameters: { ... }                    # see the `parameters:` block section
 timeout: 120                           # optional, SECONDS (player does setTimeout(timeout*1000))
 test: { skip: "flaky on CI" }          # optional Playwright passthrough: fail | fixme | skip
 steps:                                 # REQUIRED — the step array
@@ -49,20 +38,17 @@ steps:                                 # REQUIRED — the step array
     ...
 ```
 
-`description` + `steps` are the only hard requirements (`Recording.js` `validateRecording`). `log:`
-is **engine-appended** on replay (`start`, `duration`, `video`, and per-step `error`) — never author it.
-[source: `Recording.js`, `Commands.js` · recorded: every example]
+`description` + `steps` are the only hard requirements (`Recording.js` `validateRecording`). `log:` is **engine-appended** on replay (`start`, `duration`, `video`, and per-step `error`) — never author it. [source: `Recording.js`, `Commands.js` · recorded: every example]
 
 ---
 
-## 2. The `target:` locator
+## The `target:` locator
 
-A `target:` (and the `source:` on `page-shown`/`page-closed`/`copy-*`) is an **ordered list** that
-walks from a page down to a control:
+A `target:` (and the `source:` on `page-shown`/`page-closed`/`copy-*`) is an **ordered list** that walks from a page down to a control:
 
 ```yaml
 target:
-  - page: Sales Order        # a page; the FIRST element. Carries runtimeRef (see §3).
+  - page: Sales Order        # a page; the FIRST element. Carries runtimeRef.
     runtimeRef: b1s6
   - part: SalesLines         # (optional) a page part / subpage…
   - page: Sales Order Subform   # …whose own page name
@@ -81,27 +67,20 @@ Leaf kinds: **`field:`** (a control), **`action:`** (an action). Special page fo
 
 ---
 
-## 3. `runtimeId` / `runtimeRef` — page-instance correlation
+## `runtimeId` / `runtimeRef` — page-instance correlation
 
-`runtimeId`/`runtimeRef` are **file-local correlation tokens, not server control IDs.** A
-`page-shown` step mints `runtimeId: <tok>`; every later step acting on that open page carries
-`runtimeRef: <tok>`. The tokens only need to be internally consistent — recorded values are base-36
-(`b71`). When reading a red, a `runtimeRef` with no matching `page-shown` `runtimeId` is a
-correlation break; in a surgical edit, never renumber a token without updating every reference.
-[replayed: synthetic-token swap]
+`runtimeId`/`runtimeRef` are **file-local correlation tokens, not server control IDs.** A `page-shown` step mints `runtimeId: <tok>`; every later step acting on that open page carries `runtimeRef: <tok>`. The tokens only need to be internally consistent — recorded values are base-36 (`b71`). When reading a red, a `runtimeRef` with no matching `page-shown` `runtimeId` is a correlation break; in a surgical edit, never renumber a token without updating every reference. [replayed: synthetic-token swap]
 
 ---
 
-## 4. Step types
+## Step types
 
-19 top-level `type:` values. Three are **containers** (carry nested `steps:`): `scope`, `for-each`,
-`include`. The rest are leaf steps. (`navigate`/`invoke`/`input`/`focus`/`validate`/`close-page` are
-*actions*; `page-shown`/`page-closed` are *observed results* the recorder emits in pairs with them.)
+19 top-level `type:` values. Three are **containers** (carry nested `steps:`): `scope`, `for-each`, `include`. The rest are leaf steps. (`navigate`/`invoke`/`input`/`focus`/`validate`/`close-page` are *actions*; `page-shown`/`page-closed` are *observed results* the recorder emits in pairs with them.)
 
 ### Core navigation & interaction
 
 ```yaml
-- type: navigate          # open a page (by name, or via role-center action — see §2)
+- type: navigate          # open a page (by name, or via role-center action — see the locator section)
   target: [ { page: ... } ]
 - type: page-shown        # observed: a page surfaced. mints runtimeId.
   source: { page: Item List }
@@ -111,7 +90,7 @@ correlation break; in a surgical edit, never renumber a token without updating e
   target: [ {page,runtimeRef}, {field: No.} ]
 - type: input             # set a control value
   target: [ {page,runtimeRef}, {field: Template} ]
-  value: false            # literal, or =PowerFx (see §6). `=""` = empty string.
+  value: false            # literal, or =PowerFx. `=""` = empty string.
 - type: invoke            # run an action / lookup / drilldown / row-select
   target: [ {page,runtimeRef}, {action: Control_New} ]
   invokeType: New         # SystemAction enum NAME: New | DrillDown | Lookup | Refresh | …
@@ -126,12 +105,7 @@ correlation break; in a surgical edit, never renumber a token without updating e
   time: 1000              # milliseconds; may be =Parameters.'Wait time'
 ```
 
-`invokeType` is the *name* of the platform `SystemAction` enum member. Common values: `New`,
-`Edit`, `DrillDown`, `Lookup`, `Refresh`, `RunReport`, `CloseOk`, `Cancel`, `Yes`, `No`,
-`SortColumn` (column-header sort; carries `parameters: { sortOrder: 1|2 }` — see *Anchoring a
-just-created row*, §4), `FilterByColumn` (column filter — see *Column filter*, §4). A repeater
-**row** invoke omits `invokeType` and instead carries `parameters: { AlwaysCommit: true }`.
-[recorded · replayed: navigate/page-shown/input/focus/invoke/close-page/page-closed]
+`invokeType` is the *name* of the platform `SystemAction` enum member. Common values: `New`, `Edit`, `DrillDown`, `Lookup`, `Refresh`, `RunReport`, `CloseOk`, `Cancel`, `Yes`, `No`, `SortColumn`, `FilterByColumn`. `SortColumn` is the column-header sort and carries `parameters: { sortOrder: 1|2 }` (*Anchoring a just-created row*). `FilterByColumn` opens the filter dialog (*Column filter*). A repeater **row** invoke omits `invokeType` and instead carries `parameters: { AlwaysCommit: true }`. [recorded · replayed: navigate/page-shown/input/focus/invoke/close-page/page-closed]
 
 ### Column filter — `FilterByColumn` + the Apply Filter dialog  [recorded · replayed]
 
@@ -171,30 +145,23 @@ Setting a column filter on a list is one composition (recorder-verbatim):
   runtimeId: flt1
 ```
 
-Third anonymous-dialog id alongside Error (`00000000-…836bd2d2`) and Confirm (`8da61efd-…`). Like
-those, the automationId is platform-generated — stable within a platform version, re-harvest on a
-BC bump if it reds as a reference mismatch. Do **not** author a filter via `part: null` /
-`page: null` / `{scope: filter}` spacer chains — that shape reds
-`error: { type: reference, message: "Part 'null' was not found." }`.
+Third anonymous-dialog id alongside Error (`00000000-…836bd2d2`) and Confirm (`8da61efd-…`). Like those, the automationId is platform-generated: stable within a platform version, re-harvest on a BC bump if it reds as a reference mismatch. Never author a filter via `part: null` / `page: null` / `{scope: filter}` spacer chains. That shape reds `error: { type: reference, message: "Part 'null' was not found." }`.
 
 ### Editable-grid new-row lifecycle  [replayed — both directions]
 
 - A new row with a typed value commits on **row-leave** — click another row, or `close-page`.
-- Leaving the pending row via a second `invoke action: Control_New` **discards** the row buffer:
-  no error, the row silently never inserts, downstream `validate`s read fewer rows than authored.
-- A grid `input` advances the cursor onto the trailing blank new-row placeholder — an immediate
-  `validate` reads the placeholder (`Was expecting '37.5' but got '0'`), not the written row.
-  Read row values after a fresh re-open of the page, or re-anchor first.
+- Leaving the pending row via a second `invoke action: Control_New` **discards** the row buffer: no error, the row silently never inserts, downstream `validate`s read fewer rows than authored.
+- A grid `input` advances the cursor onto the trailing blank new-row placeholder — an immediate `validate` reads the placeholder (`Was expecting '37.5' but got '0'`), not the written row. Read row values after a fresh re-open of the page, or re-anchor first.
 - A new row inserts **above** the current row (AutoSplitKey midpoint), not at the bottom.
 
-These are why a multi-row grid recording reds when a scenario writes several rows in one visit; the recording-side rule (one written row per page visit) lives in [`recorder-gestures.md`](recorder-gestures.md).
+These are why a multi-row grid recording reds when a scenario writes several rows in one visit; the recording-side gesture (one written row per page visit) lives in [`recorder-gestures.md`](recorder-gestures.md).
 
 ### `validate` — assert a control value  [replayed: `=`,`<>` · source: rest]
 
 ```yaml
 - type: validate
   target: [ {page,runtimeRef}, {field: No.} ]
-  operation: "<>"          # operator — see §5
+  operation: "<>"          # operator — see Operators and conditions
   value: ""               # literal or =PowerFx; compared against the control's current value
 ```
 
@@ -202,12 +169,12 @@ These are why a multi-row grid recording reds when a scenario writes several row
 
 ```yaml
 - type: scope             # conditional / optional-page — nested steps run only if condition holds
-  condition: { ... }      # see §5; OMIT condition for an always-run grouping scope
+  condition: { ... }      # see Operators and conditions; OMIT condition for an always-run grouping scope
   steps: [ ... ]
 - type: for-each          # iterate rows of a repeater (a loop)
   target: [ {page,runtimeRef}, {repeater: Control1} ]
   steps: [ ... ]          # run once per row; "For each selected row…" variant iterates selection
-- type: include           # run another recording inline — see §8
+- type: include           # run another recording inline — see the `include` section
   name: setup
   file: ./includes/setup.yml
 ```
@@ -219,7 +186,7 @@ These are why a multi-row grid recording reds when a scenario writes several row
 - type: set-current-row   # position a repeater's current row — RELATIVE-ONLY, no absolute/bookmark
   target: [ {page,runtimeRef}, {repeater: Control1} ]
   targetRecord: { relative: 1 }   # can silently fail to move — see Anchoring a just-created row
-- type: filter            # recorder filter-pane artifact — author filters via the FilterByColumn composition (§4 Column filter), not this
+- type: filter            # recorder filter-pane artifact — author filters via the Column filter composition, not this
   target: [ {page,runtimeRef} ]
   operation: add
   column: { field: No., scope: filter }
@@ -242,14 +209,13 @@ These are why a multi-row grid recording reds when a scenario writes several row
   action: invoke          # invoke | accept | reject | change
   target: [ {page,runtimeRef}, {field: ...} ]
 ```
-[recorded: `set-current-row`, `copy-value`, `filter` · replayed: `message` (automationId-only) ·
-source: `copy-rows`, `run-prompt`, `autofill`]
+[recorded: `set-current-row`, `copy-value`, `filter` · replayed: `message` (automationId-only) · source: `copy-rows`, `run-prompt`, `autofill`]
 
-`Message()` is fire-and-forget: assert, move on. Converting `message` to the Confirm pattern
-(`page-shown` + `invoke Ok`) reds `No page found … but no form was found` — a Confirm blocks for
-`Yes`/`No`; a Message is never answered. [replayed: mis-conversion red → revert green]
+`Message()` is fire-and-forget: assert, move on. Converting `message` to the Confirm pattern (`page-shown` + `invoke Ok`) reds `No page found … but no form was found` — a Confirm blocks for `Yes`/`No`; a Message is never answered. [replayed: mis-conversion red → revert green]
 
-**`Error()` dialog** [recorded · replayed] — not a step type, a composition (recorder-verbatim):
+### `Error()` dialog — a composition, not a step type  [recorded · replayed]
+
+Recorder-verbatim:
 
 ```yaml
 - type: page-shown            # catch — MUST immediately follow the triggering step
@@ -271,36 +237,26 @@ source: `copy-rows`, `run-prompt`, `autofill`]
   runtimeId: b4e
 ```
 
-Mechanics (client.js module 90531): an uncaught dialog reds `Invalid state: Unexpected error
-dialog. <value>{error text}</value>` on the first later step carrying a foreign `runtimeRef` —
-`page-shown` is the only exempt step type → the only catcher; `invoke Ok` is safe (targets the
-dialog's own ref). Anonymous-dialog matching: `automationId` or `runtimeRef` only, `caption:`
-ignored, neither → `No page found`; Confirm/Message's `8da61efd-…` id does NOT match Error. Error
-text not assertable (caption is literal `Error`, no `contains` — §5) → wording checks stay
-Exploration-Charter territory (the guided user walk). The automationId is platform-generated — stable within a platform version, re-harvest
-on a BC bump if it reds as a reference mismatch.
+Mechanics (client.js module 90531): an uncaught dialog reds `Invalid state: Unexpected error dialog. <value>{error text}</value>` on the first later step carrying a foreign `runtimeRef`. `page-shown` is the only exempt step type → the only catcher. `invoke Ok` is safe — it targets the dialog's own ref.
 
-Message = assert via `message`, never invoked · Confirm = `invoke Yes`\|`No` · Error = catch
-`page-shown`, dismiss `invoke Ok`.
+Anonymous-dialog matching reads `automationId` or `runtimeRef` only and ignores `caption:`; neither present → `No page found`. Confirm/Message's `8da61efd-…` id does NOT match Error.
 
-**Anchoring a just-created row.** Row selection is never serialized — the recorder emits **no**
-step for clicking a row (selection and commit are implicit). Under replay `set-current-row` is
-relative-only AND can silently fail to move: `targetRecord.relative: 1` left the cursor on the
-prior row, the `validate` read the wrong record, no error [replayed-red]. A new row also inserts
-*above* the current row (AutoSplitKey midpoint), never at the bottom. Positional walks are safe
-only when every row asserts the SAME expected value (the `for-each` pattern). For a distinguishing
-read, anchor by value:
+Error text is not assertable — the caption is the literal `Error`, and there is no `contains` (*Operators and conditions*) — so wording checks stay Exploration-Charter territory (the guided user walk). The automationId is platform-generated: stable within a platform version, re-harvest on a BC bump if it reds as a reference mismatch.
 
-- **SortColumn toggle** [replayed; re-confirmed on 28.1] — `invoke invokeType: SortColumn` on the
-  No. column, `parameters: { sortOrder: 1 }` then `sortOrder: 2` → forced re-sort, cursor on top
-  row = highest No. Load-bearing: works only because No. Series sorts monotonic-ascending and the
-  toggle ends descending — any other sort key silently anchors the wrong row.
-- **Column-filter pin** [recorded · replayed] — the *Column filter* composition (above) with the
-  `copy-value`-captured No. as the filter value → exact row, sort-independent.
+Message = assert via `message`, never invoked · Confirm = `invoke Yes`\|`No` · Error = catch `page-shown`, dismiss `invoke Ok`.
+
+### Anchoring a just-created row
+
+Row selection is never serialized — the recorder emits **no** step for clicking a row (selection and commit are implicit). Under replay `set-current-row` is relative-only AND can silently fail to move: `targetRecord.relative: 1` left the cursor on the prior row, the `validate` read the wrong record, no error [replayed-red].
+
+A new row also inserts *above* the current row (AutoSplitKey midpoint), never at the bottom. Positional walks are safe only when every row asserts the SAME expected value (the `for-each` pattern). For a distinguishing read, anchor by value:
+
+- **SortColumn toggle** [replayed; re-confirmed on 28.1] — `invoke invokeType: SortColumn` on the No. column, `parameters: { sortOrder: 1 }` then `sortOrder: 2` → forced re-sort, cursor on top row = highest No. Works only because No. Series sorts monotonic-ascending and the toggle ends descending — any other sort key silently anchors the wrong row.
+- **Column-filter pin** [recorded · replayed] — the *Column filter* composition with the `copy-value`-captured No. as the filter value → exact row, sort-independent.
 
 ---
 
-## 5. Operators (`operation:`) and conditions
+## Operators and conditions
 
 The validate/condition operator enum is **complete** (client.js module 58223):
 
@@ -313,8 +269,7 @@ The validate/condition operator enum is **complete** (client.js module 58223):
 
 There is **no** `contains`/`startsWith`. [replayed: `=`,`<>` · source: rest]
 
-A `scope.condition` is one of three shapes (recorder menu: *Add conditional steps when →
-Current value / Row count / Expression is true*):
+A `scope.condition` is one of three shapes (recorder menu: *Add conditional steps when → Current value / Row count / Expression is true*):
 
 ```yaml
 # value — "When <field> <op> <value>"   [recorded]
@@ -329,26 +284,22 @@ condition: { type: powerFx, expression: <expr> }
 
 ---
 
-## 6. Power Fx expressions
+## Power Fx expressions
 
-Any `value:` / `time:` / condition is a **literal** unless prefixed with `=`, which makes it a
-Microsoft Power Fx expression. Available namespaces:
+Any `value:` / `time:` / condition is a **literal** unless prefixed with `=`, which makes it a Microsoft Power Fx expression. Available namespaces:
 
 | Namespace | Source | Example |
 |---|---|---|
-| `Parameters.` | the `parameters:` block (§7) | `=Parameters.'Sales Order.Document Date'` |
+| `Parameters.` | the `parameters:` block | `=Parameters.'Sales Order.Document Date'` |
 | `Session.` | session info | `=Session.'User ID'` |
 | `Clipboard.` | `copy-value` / `copy-rows` `name` keys | `=Clipboard.'Item List - Description'` |
 | `Variables.` | `run-prompt` outputs | `=Variables.myOutput` |
 
-Single-quote any name containing spaces or dots. Demonstrated functions/operators: `Today()`, `&`
-(concat), `+`, and the comparison set. Internally an expression is an AST of nodes
-(`literal {type,text}`, `reference`, `object`, `filter`, `value`) — you rarely author these by hand;
-the recorder emits them, and `=`-strings cover normal use. [source · MS Learn]
+Single-quote any name containing spaces or dots. Demonstrated functions/operators: `Today()`, `&` (concat), `+`, and the comparison set. [source · MS Learn]
 
 ---
 
-## 7. `parameters:` block
+## `parameters:` block
 
 ```yaml
 parameters:
@@ -358,13 +309,11 @@ parameters:
     description: Posting date       # prompt text shown when unset
 ```
 
-Reference with `=Parameters.'<name>'`. An unset parameter prompts the user at replay. To pass a
-value into an `include`d script, define the parameter in **both** the host and the included file.
-[source · MS Learn]
+Reference with `=Parameters.'<name>'`. An unset parameter prompts the user at replay. To pass a value into an `include`d script, define the parameter in **both** the host and the included file. [source · MS Learn]
 
 ---
 
-## 8. `include` — sub-recordings
+## `include` — sub-recordings
 
 ```yaml
 steps:
@@ -374,89 +323,42 @@ steps:
     description: Run <file>create-customer</file>
 ```
 
-`file` is resolved relative to the containing file's directory; backslashes are normalized to `/`.
-Each included file is validated independently (`description`+`steps`) and its own includes load
-recursively. Failures surface as `fileError`: `fileNotFound`, `fileInvalid`, or `fileCircularInclude`
-(circular includes are detected and rejected). Included steps are read-only from the host.
-[source: `Recording.js`]
+`file` is resolved relative to the containing file's directory; backslashes are normalized to `/`. Each included file is validated independently (`description`+`steps`) and its own includes load recursively. Failures surface as `fileError`: `fileNotFound`, `fileInvalid`, or `fileCircularInclude` (circular includes are detected and rejected). Included steps are read-only from the host. [source: `Recording.js`]
 
 ---
 
-## 9. Running recordings
+## Reading a failure
 
-From a folder with `@microsoft/bc-replay` installed (the Node 22–25 requirement lives in `SKILL.md` › *Running a recording*):
+Replays run through `pagescript-replay.ps1`, the `al-build` sibling skill's script. The `/al-page-script` SKILL owns the container choreography around it. A failing replay exits non-zero — the green/red gate. Classify from the artifacts, never the exit code or console alone. They split across two locations:
 
-```powershell
-npx replay .\recordings\*.yml -StartAddress http://<host>/<instance>/ -ResultDir .\results
-```
-
-**Option surface** (`Replay.ps1`, bc-replay 0.1.139):
-
-| Option | Meaning |
-|---|---|
-| `-Tests` (mandatory) | file-glob of recordings to run |
-| `-StartAddress` (mandatory) | BC web-client URL |
-| `-Authentication` | `Windows` (default) \| `AAD` \| `UserPassword` |
-| `-UserNameKey` / `-PasswordKey` | names of the env vars holding the credentials (never hard-code) |
-| `-MultiFactorType` / `-MultiFactorSecretKey` | `None` (default) \| `TOTP` \| `Certificate`; AAD only |
-| `-ResultDir` | where `results.xml` + `playwright-report/` are written (defaults to cwd) |
-| `-Headed` | show the browser |
-| `-UseServerReplay` | swap the browser for the bundled .NET client-service engine |
-
-**`-UseServerReplay`** runs against `Microsoft.BusinessCentral.Replay.dll` over the UI-client protocol — headless, faster, no browser. It **cannot render control add-ins / canvas**: a feature whose deliverable paints inside a canvas is unverifiable this way (use browser mode, or the exploratory guided user walk). `npx replay` runs `npx playwright install` **unconditionally**, even under `-UseServerReplay` — so the Chromium download (and the Node-26 install hang) still applies regardless of the flag. *(Minor upstream bug: the script's `-Headed` guard and doc comment reference `$UseClientService`, but the parameter is `$UseServerReplay`.)*
-
-`replay` exits **non-zero** if any recording fails — that is the green/red gate.
-
-### Reading a failure
-
-Don't trust the exit code alone — read the artifacts. They split across two locations:
-
-- **`-ResultDir`** gets only `results.xml` (JUnit) + `playwright-report/` (the HTML report; `npx playwright show-report` to open).
-- **`<cwd>/test-results/dist-player--<hash>-<recording>-yml--chromium/`** gets the **diagnosis** artifacts (failure-only):
-  - **`error-context.md`** — a Playwright ARIA snapshot of the *frozen surface* at failure (a YAML accessibility tree). This is where an **unexpected dialog is visible** — a hang (timeout with no error string) almost always means a BC platform Confirm (`RecordChangeDialog`: "Your change might update related records…", default focus No) is sitting open, and the snapshot shows it.
+- **The result dir** (`pagescripts/results/`, cleaned per run) gets only `results.xml` (JUnit) + `playwright-report/` (the HTML report; `npx playwright show-report` to open).
+- **`pagescripts/test-results/dist-player--<hash>-<recording>-yml--chromium/`** gets the **diagnosis** artifacts (failure-only):
+  - **`error-context.md`** — a Playwright ARIA snapshot of the *frozen surface* at failure (a YAML accessibility tree). An **unexpected dialog is visible here**. A hang — timeout with no error string — almost always means a BC platform Confirm is sitting open (`RecordChangeDialog`: "Your change might update related records…", default focus No), and the snapshot shows it.
   - **`replay-log.yml`** + **`attachments/Replay-log-<hash>.yml`** — the full step list with engine-appended `log:` blocks; the failing step carries an inline `error:` node, e.g. `error: { type: reference, message: "Field 'X' was not found.", target: [...] }`.
   - **`video.webm`** — the run.
 
-A red is classified from these, not from the console: an `error:` node on a step is a locator/shape or missing-control problem; a timeout with an open dialog in `error-context.md` is the unexpected-dialog case. (Routing: `SKILL.md` › *Failure classification*.)
+An `error:` node on a step is a locator/shape or missing-control problem. A timeout with an open dialog in `error-context.md` is the unexpected-dialog case. Routing: the `/al-page-script` SKILL, *Failure classification*.
 
-With Playwright retries enabled, `error-context.md` freezes the **last** attempt's surface while
-`replay-log.yml` carries the failing step — the two can describe different attempts. The
-replay-log `error:` node is authoritative for *which step* failed.
+With Playwright retries enabled, `error-context.md` freezes the **last** attempt's surface while `replay-log.yml` carries the failing step — the two can describe different attempts. The replay-log `error:` node is authoritative for *which step* failed.
 
 ---
 
-## 10. Reading a red / scoping a surgical edit
+## Reading a red / scoping a surgical edit
 
-The agent does not author recordings (the recorder does), but it reads them to classify a red and
-occasionally makes a one-line approval-gated edit. The facts that matter for both:
+The facts that matter for both jobs:
 
-1. **Targets bind to the AL control/field NAME, not the display caption.** [replayed: `field: Profit %`
-   bound a column captioned 'Margin %'] The recorder writes captions only into `description:`. A
-   `Field '<name>' was not found.` red means the named control isn't rendered at replay — often a
-   removed/obsoleted field, i.e. the surface legitimately moved (a *bad recording* or a *production
-   bug*, per SKILL *Failure classification*), never a reason to rename the target by guessing.
-2. **A `runtimeRef` must match a minted `runtimeId`.** A `page-shown` mints the token; later steps
-   reuse it. An orphaned `runtimeRef` is a correlation break. Never renumber a token in a surgical
-   edit without updating every reference.
-3. **`copy-*` use `source:`; everything else uses `target:`.** Containers (`scope`/`for-each`/`include`)
-   nest via `steps:`. Default operator is `=`; `isTrue` for boolean/expression assertions.
-4. **Validate a change by replay**, not by inspection — the interpreter is server-side and
-   version-bound. A surgical edit is not done until it replays green on a fresh container.
-5. **`Unexpected page. Was expecting '<X>' but got '<role center>'`** means the recording isn't
-   self-contained (it assumed a page was already open). That is a re-record (start from the role
-   center / a deep link), not an edit.
-6. **A `timeout: 600`-only green is a smell, not a tuning need.** The default per-test cap is 120s
-   (`playwright.config.js`); a scenario needing more usually has an unanswered platform dialog eating
-   the clock (see §9 *Reading a failure*), or is too long and should be split — re-record, don't
-   inflate the timeout.
+1. **Targets bind to the AL control/field NAME, not the display caption.** [replayed: `field: Profit %` bound a column captioned 'Margin %'] The recorder writes captions only into `description:`. A `Field '<name>' was not found.` red means the named control isn't rendered at replay — often a removed or obsoleted field, i.e. the surface legitimately moved. That is a *bad recording* or a *production bug* per the SKILL's *Failure classification*, never a reason to rename the target by guessing.
+2. **The token invariant holds under editing** — see *`runtimeId` / `runtimeRef` — page-instance correlation*. Never renumber a token in a surgical edit without updating every reference.
+3. **`copy-*` use `source:`; everything else uses `target:`.** Containers (`scope`/`for-each`/`include`) nest via `steps:`. The default operator is `=`. `isTrue` covers boolean/expression assertions.
+4. **Validate a change by replay, not by inspection.** The interpreter is server-side and version-bound. A surgical edit is not done until it replays green on a fresh container.
+5. **`Unexpected page. Was expecting '<X>' but got '<role center>'`** means the recording isn't self-contained — it assumed a page was already open. That is a re-record (start from the role center or a deep link), not an edit.
+6. **A `timeout: 600`-only green is a smell, not a tuning need.** The default per-test cap is 120s (`playwright.config.js`). A scenario needing more usually has an unanswered platform dialog eating the clock (*Reading a failure*), or is too long and should be split. Re-record; don't inflate the timeout.
 
 ---
 
-## 11. Locator patterns by page kind
+## Locator patterns by page kind
 
-The `target:`/`source:` vocabulary (§2) is **page-type-agnostic**: every BC page kind composes the
-same elements (`page` / `part` / `repeater` / `field` / `action`). Page "type" changes *which*
-elements appear, not the grammar. Empirically captured shapes (BC 28.0.49873.0):
+The `target:`/`source:` vocabulary (*The `target:` locator*) is **page-type-agnostic**: every BC page kind composes the same elements (`page` / `part` / `repeater` / `field` / `action`). Page "type" changes *which* elements appear, not the grammar. Empirically captured shapes (BC 28.0.49873.0):
 
 | Page kind | Locator shape (leaf in **bold**) | Evidence |
 |---|---|---|
@@ -470,8 +372,8 @@ elements appear, not the grammar. Empirically captured shapes (BC 28.0.49873.0):
 | **Request page** (report) | run it: `invoke invokeType: RunReport` on `action: <Report>` (from a list's Report menu) → `page-shown source.page: <Report>` (`modal: true`) → `invoke invokeType: Cancel`. Reports are NOT `page:`-navigable. | recorded |
 | **Analysis / Query page** | open via a list/role-center action → `page-shown`; close = `invoke invokeType: CloseOk`. Navigate may carry `props: {navigationTreeContext, replaceForm}`. | recorded |
 | **Confirm / dialog** | `page: null` + `automationId` + `caption` (`modal: true`); answer = `invoke invokeType: Yes`\|`No`; its `8da61efd-…` id does NOT match Error dialogs | recorded |
-| **Error dialog** (`Error()`) | `page: null` + `automationId: 00000000-0000-0000-0800-0000836bd2d2` (`modal: true`); catch = `page-shown` (only exempt step), dismiss = `invoke invokeType: Ok` → `page-closed` — §4 | recorded + replayed |
-| **Apply Filter dialog** (column filter) | open = `invoke invokeType: FilterByColumn` + `parameters: {UseAdvancedFiltering: true}` on `repeater`→`field`; dialog = `page: null` + `automationId: f51cf5e3-31d1-4644-8a26-043efefc68d7` (`modal: true`); OK = `invoke` with leaf `action: null`, no invokeType — §4 | recorded + replayed |
+| **Error dialog** (`Error()`) | `page: null` + `automationId: 00000000-0000-0000-0800-0000836bd2d2` (`modal: true`); catch = `page-shown` (only exempt step), dismiss = `invoke invokeType: Ok` → `page-closed` — see *`Error()` dialog* | recorded + replayed |
+| **Apply Filter dialog** (column filter) | open = `invoke invokeType: FilterByColumn` + `parameters: {UseAdvancedFiltering: true}` on `repeater`→`field`; dialog = `page: null` + `automationId: f51cf5e3-31d1-4644-8a26-043efefc68d7` (`modal: true`); OK = `invoke` with leaf `action: null`, no invokeType — see *Column filter* | recorded + replayed |
 | **Modal vs content** | `page-shown.modal: true` (drilldown/RunModal/dialog) vs `false` (navigate/content) | recorded |
 
 Behaviours beyond a locator variant:
@@ -481,7 +383,6 @@ Behaviours beyond a locator variant:
 - **Closing a page** = `invoke` with `invokeType: Cancel` (request page) or `CloseOk` (modal).
 - **Wizard / assisted-setup** (NavigatePage) — `page-shown` (`modal: true`) opens the wizard; Back/Next/Finish are `invoke action: ActionBack`/`ActionNext`/`ActionFinish` that **swap content in place** (no per-step `page-shown`); exit X = `invoke CloseOk` → Confirm. Open an assisted-setup entry via `invoke invokeType: OpenTargetSettingsPage`.
 - **Role Center** — navigate via a role-center action = `page: <X> Role Center` + `action: <name>`; cue-tile drilldown = a part-nested `action` invoke (`page: <X> Role Center → part: <CuePart> → page: <ActivitiesPage> → action: <Cue caption>`).
-- **Message dialog** (`Message()`) — asserted by the `message` step (§4), same `automationId` model as the confirm dialog. *[message step replayed (automationId-only); confirm dialog recorded]*
-- **Column filter** — the §4 *Column filter* composition (`FilterByColumn` → Apply Filter dialog → `input` → `invoke action: null`). Never a `part: null`/`page: null`/`{scope: filter}` spacer chain — that reds `Part 'null' was not found.`
+- **Message dialog** (`Message()`) — asserted by the `message` step (*Rich steps*), same `automationId` model as the confirm dialog. *[message step replayed (automationId-only); confirm dialog recorded]*
+- **Column filter** — the *Column filter* composition (`FilterByColumn` → Apply Filter dialog → `input` → `invoke action: null`). Never a `part: null`/`page: null`/`{scope: filter}` spacer chain — that reds `Part 'null' was not found.`
 - **Show more / Show less / FastTab expand-collapse are NOT recorded** — they're client-side rendering/density toggles; a session doing all three produces zero steps. And they don't need to be: a field hidden by Show-less (or a collapsed FastTab) is still **reachable on replay** — the player resolves controls via the logical page model, not the rendered DOM. Proven: a `copy-value` on a Show-less-hidden field replayed green. Target hidden fields by name directly; never try to author a Show-more step.
-

@@ -8,7 +8,7 @@ depends_on: [T-001, T-002]
 ---
 # T-003 — Subscribe to OnAfterCheckSalesDoc, route through validator
 
-Add event subscriber on `Sales-Post` codeunit 80 delegating to `Charge Validation`. Mismatch raises `Error` before any `Insert` or `Modify` on posting tables.
+Add an event subscriber on `Sales-Post` codeunit 80 delegating to `Charge Validation`. A mismatch raises `Error` before any `Insert` or `Modify` on posting tables.
 
 Test Specification:
 
@@ -18,11 +18,12 @@ Posting validation prevents Sales Orders with unbalanced item charge allocations
 ## New and Modified Objects
 
 - New: codeunit `Charge Post Subscribers`
-  - `local procedure OnAfterCheckSalesDoc(var SalesHeader: Record "Sales Header")` subscribes `Sales-Post` `OnAfterCheckSalesDoc` — W
+  - `local procedure OnAfterCheckSalesDoc(var SalesHeader: Record "Sales Header")` subscribes `Sales-Post` `OnAfterCheckSalesDoc` — S
 
 Contract notes:
 - Oracle: posted-document absence — `BlocksPostingWithMismatchedAllocation` asserts no Posted Sales Invoice exists, not the error text alone.
 - Zero Unit cases — structural: the subscriber delegates to `Charge Validation` and adds no decision logic of its own.
+- Push-up both Integration cases — wall: `Sales-Post` is `.app` package code AL Runner auto-stubs to a no-op; posted-document outcomes exist only under the container gate.
 - Decision surface proved: T-002.
 - Transaction: validation raises `Error` before any posting-table write — blocked posting leaves no partial state to assert away.
 

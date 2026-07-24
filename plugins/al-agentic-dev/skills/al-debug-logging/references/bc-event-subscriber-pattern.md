@@ -1,49 +1,40 @@
 # Probing standard BC and production flows via event subscribers
 
-Reference for `/al-debug-logging` when the observed code is in BaseApp, the System Application, a third-party app, or another extension you cannot edit. In-place `DEBUG-*` probes need source access; subscribe to events the inaccessible code publishes and emit `DEBUG-*` `FeatureTelemetry.LogUsage` from the subscriber. The subscriber is a probe attached to a real published extension point.
-
-Any BC subsystem that publishes events can be observed this way. When you control the source, prefer an in-place probe: closer to the decision and easier to remove.
+**No source access → subscribe to a published event and emit the probe from the subscriber.** Reference for `/al-debug-logging` when the observed code is in BaseApp, the System Application, a third-party app, or an extension you cannot edit. With source access, probe in place instead — closer to the decision, easier to remove.
 
 ## Find the event
 
-Use `bc-standard-reference` to locate published events near the suspected behaviour. Find events on both sides of the branch (`OnBefore*` and `OnAfter*` for one operation) so `telemetry.jsonl` order reveals the path.
+Use the `bc-standard-reference` agent to locate published events around the suspected path. Take events on both sides of the operation (`OnBefore*` and `OnAfter*`) so `telemetry.jsonl` order reveals the path.
 
 ## Pattern
 
-Place the subscriber codeunit in a non-shipping extension of your project (so it does not reach production). Prefix every emitted event ID with `DEBUG-BC-` so cleanup is one `rg`:
+The subscriber lives in a non-shipping extension of your project, so it never reaches production. Event IDs carry the `DEBUG-BC-` prefix, keeping subscriber probes distinct from in-place `DEBUG-*` probes. A subscriber may omit the publisher's trailing parameters. Declare the leading parameters up to the last one it uses. Probing `Sales-Post`'s `OnAfterPostSalesDoc`:
 
 ```al
-codeunit 50XXX "Debug [Subsystem] Subsc"
+codeunit 50190 "Debug SalesPost Subscriber"
 {
     Access = Internal;
 
-    [EventSubscriber(ObjectType::Codeunit, Codeunit::"[BC Codeunit]", '[EventName]', '', false, false)]
-    local procedure OnAfter[Event](var [Params])
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Sales-Post", 'OnAfterPostSalesDoc', '', false, false)]
+    local procedure OnAfterPostSalesDoc(var SalesHeader: Record "Sales Header"; var GenJnlPostLine: Codeunit "Gen. Jnl.-Post Line"; SalesShptHdrNo: Code[20]; RetRcpHdrNo: Code[20]; SalesInvHdrNo: Code[20])
     var
         FeatureTelemetry: Codeunit "Feature Telemetry";
     begin
-        FeatureTelemetry.LogUsage(
-            'DEBUG-BC-[SUBSYSTEM]-[EVENT]',
-            '[Investigation]',
-            StrSubstNo('[Shape, not contents]: %1', [RelevantValue]));
+        FeatureTelemetry.LogUsage('DEBUG-BC-SALESPOST-DONE', 'Investigation', StrSubstNo('SalesInvHdrNo=%1', SalesInvHdrNo));
     end;
 }
 ```
 
-Run the harness that exercises the BaseApp flow — post a document, run a workflow, or open a page action — then read `.output/TestResults/*/telemetry.jsonl`:
+Run the harness that exercises the flow — post a document, run a workflow, open a page action. Capture follows the harness ([telemetry-workflow.md](telemetry-workflow.md)); a test via `/al-build` lands in `.output/TestResults/*/telemetry.jsonl`:
 
 ```text
 rg "DEBUG-BC-" .output/TestResults/*/telemetry.jsonl
 ```
 
-```powershell
-Select-String -Path .output/TestResults/*/telemetry.jsonl -Pattern "DEBUG-BC-"
-```
+Once capture is verified working, a probe that never fires is evidence, not failure: the silence proves the path never ran — read it before adding probes.
 
 Investigation complete → delete the subscriber codeunit. It is scaffolding, never production code.
 
-A negative result answers the question. A subscriber to the `Price Calculation - V16` event `OnAfterFindLines` once never fired in `telemetry.jsonl`: V16 was not enabled, so the fix belonged in test setup, not the calculator. A probe need not catch an event to provide evidence.
-
 ## Hygiene
 
-The `DEBUG-BC-*` prefix distinguishes subscriber probes from in-place `DEBUG-*` probes and from production telemetry. The same-publisher constraint applies — the subscriber's extension publisher must match the Telemetry Logger's, see [telemetry-workflow.md](telemetry-workflow.md). A `DEBUG-ENTRY` probe in your harness paired with `DEBUG-BC-*` probes in the subscriber gives per-scenario timelines.
+The same-publisher constraint ([telemetry-workflow.md](telemetry-workflow.md)) applies unchanged. A `DEBUG-ENTRY` probe in your harness paired with `DEBUG-BC-*` probes in the subscriber gives per-scenario timelines.

@@ -9,7 +9,7 @@
     pagescripts/recordings/*.yml.
     Single-file mode (-File <path>): replays one specific .yml file. Used by
     /al-page-script to replay one user-recorded scenario at a time, on a
-    freshly spawned container (re-runnability gate).
+    freshly spawned container (repeatability gate).
     Requires published main app in the BC container.
 
 .PARAMETER Force

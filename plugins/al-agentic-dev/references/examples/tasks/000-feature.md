@@ -11,15 +11,15 @@
 
 ## Goal
 
-Catch item charge allocation mismatches at posting before invoice posts, surface cause inline on document, produce deterministic audit trail tying each allocation back to source line.
+Catch item charge allocation mismatches at posting before the invoice posts, surface the cause inline on the document, and record one `Allocation Ledger Entry` per resolved allocation, tied to its source line.
 
-> A fresh `/al-scope` run brackets the feature tasks with two ops tasks, omitted from the per-task files here to keep the focus on slice and proof shapes: a `T-001` `kind: provision` `slice: provision` task first (`/al-provision` refreshes the build environment) and a `kind: breaking-change` `slice: breaking-change` task last, `depends_on:` the final terminal task (`/al-validate-breaking-changes`). Both carry no proof section and run `ready` → `done`/`blocked`, bypassing `/al-refine`. The feature tasks shown here would shift to `T-002…` after provision.
+> A fresh `/al-scope` run also brackets the feature with two ops tasks: `kind: provision` as `T-001` first, `kind: breaking-change` last. This example omits them to keep the focus on slice, `Test Specification`, and `Verification Plan` shapes. With them present, the feature tasks would start at `T-002`. See Ops kinds under [Status lifecycle](../../task-lifecycle.md#status-lifecycle).
 
 ## Slices
 
-- **post-validates-allocation** — Order Processor releases and posts a `Sales Header` with `Item Charge Assignment (Sales)`. Balanced allocations post cleanly; mismatched allocations halt posting with an inline breakdown on `Sales Order Card`.
-- **audit-trail** — after a successful `Post` on balanced allocation, the audit trail surfaces one `Allocation Ledger Entry` row per resolved allocation, queryable from `Posted Sales Invoice`.
+- **post-validates-allocation** — the Order Processor releases and posts a `Sales Header` with `Item Charge Assignment (Sales)` rows. A balanced allocation posts to a Posted Sales Invoice; a mismatched allocation halts posting with an inline breakdown on the `Sales Order Card`.
+- **audit-trail** — after a successful `Post` on a balanced allocation, the audit trail surfaces one `Allocation Ledger Entry` row per resolved allocation, queryable from the `Posted Sales Invoice`.
 
 ## Execution order
 
-The `NNN-` filename prefix is the run order; `ls tasks/` lists tasks as they execute. The `T-MMM` id is a stable locator, not an order key — note `050-T-006` (slice-one verify) runs before `060-T-005` (slice-two first technical), so id order and run order diverge on purpose.
+The `NNN-` prefix carries the run order. The `T-MMM` id stays a stable locator. Here they diverge: `050-T-006` (slice-one verify) runs before `060-T-005` (slice-two first technical).

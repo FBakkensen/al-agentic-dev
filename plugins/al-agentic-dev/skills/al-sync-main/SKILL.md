@@ -4,60 +4,60 @@ description: Catch up the current AL/Business Central branch with main via rebas
 allowed-tools: ["execute", "read", "edit", "search"]
 ---
 
-**Style:** Concise — cut filler, keep grammar. Opinionated — pick a side. Arrows (→) for causality. Technical terms exact, code and errors quoted verbatim.
-
 # /al-sync-main — rebase onto main, renumber collisions
 
-Bring the current branch current with `main`. Always rebase; never merge. Mechanically move a branch-new object or field number collision to the next free slot in its `idRanges` bucket; stop when a decision is required.
+Bring the current branch current with `main`: always rebase, never merge. A branch-new object or field number colliding with `main` moves mechanically to the next free slot in its `idRanges` bucket. Everything requiring a decision stops and asks.
 
 ## Preconditions
 
-- Working tree clean (`git status --porcelain` empty). Dirty tree → **Stop**, ask the user to commit or stash first; a sync must never mix with uncommitted work.
-- On a feature branch, not `main`. On `main` → **Stop**, nothing to sync.
-- `al-build.json` exists in repo root (this skill delegates gate runs to `/al-build`, which requires it).
+| Check | Failure |
+|---|---|
+| Working tree clean (`git status --porcelain` empty) | Ask the user to commit or stash first |
+| On a feature branch, not `main` | Stop; nothing to sync |
 
 ## Procedure
 
-1. **Full gate, pre-sync baseline.** Delegate the full `/al-build` gate on the current tip before touching git. Red is pre-existing → report and stop; do not blame a later red on the rebase. Green → continue.
+**Gate before, gate after — the rebase never gets blamed for a pre-existing red.**
 
-2. **Fetch and rebase.** `git fetch origin main`, then `git rebase origin/main`. Always rebase; this skill has no merge path.
+1. **Full gate, pre-sync baseline.** Delegate the full `/al-build` gate on the current tip before touching git. Red is pre-existing → report and stop. Green → continue.
 
-3. **Resolve each conflict as it surfaces:**
-   - **Pure number collision** (same object type + number, or same field number in the same object, introduced on this branch vs. already used on `main`; no overlapping logic) → mechanical, handle per step 4.
-   - **Real content conflict** (same object/field, actually conflicting logic) → **Stop**, ask the user. Do not guess intent.
-   - **Same object name, different number** (a naming collision, not a numeric one) → **Stop**, ask the user — this usually means the same concept was modelled twice and needs a decision, not a renumber.
-   - Anything else `git rebase` flags that isn't one of the above → **Stop**, ask the user.
-   - On any stop condition: `git rebase --abort` first, so the tree is back at the pre-sync branch tip before you report. Never leave a rebase paused mid-conflict for the user to untangle by hand.
+2. **Fetch and rebase.** `git fetch origin main`, then `git rebase origin/main`.
 
-4. **Mechanical renumbering — one pass after the rebase completes** (or all conflicts resolve), never per commit:
-   - Find every remaining object/field number collision via `al-symbols-mcp` (object/field listings across the workspace) or workspace `grep` when the MCP is unavailable — same evidence bar as the rest of this plugin (`voice-contract.md`: names backed by a symbol hit or grep this session, never recall).
+3. **Classify each conflict as it surfaces:**
+
+   | Conflict | Route |
+   |---|---|
+   | Pure number collision — same object type + number, or same field number in the same object, branch-new vs. already used on `main`, no overlapping logic | Mechanical → step 4 |
+   | Real content conflict — same object/field, actually conflicting logic | **Stop**, ask the user; never guess intent |
+   | Same object name, different number — a naming collision, not a numeric one | **Stop**, ask the user; the same concept was likely modelled twice and needs a decision, not a renumber |
+   | Anything else `git rebase` flags | **Stop**, ask the user |
+
+   On any stop while a rebase is active: `git rebase --abort` first, so the tree is back at the pre-sync branch tip before you report. Never leave a rebase paused mid-conflict for the user to untangle by hand. Every stop reports the named object type, number, file, and reason, never a category.
+
+4. **Mechanical renumbering — one pass after the rebase completes**, never per commit:
+   - Find every remaining object/field number collision via `al-symbols-mcp` (object/field listings across the workspace). When the MCP is unavailable, use workspace `grep` instead. Every name is backed by a symbol hit or grep this session, never recall, per the grounding rules in GROUND-RULES.md.
    - Scope: renumber only objects/fields **introduced on this branch since it diverged from main** (`git log main..HEAD` on the pre-rebase tip tells you which). Never touch a number that already existed on `main` — the branch's new number moves, not main's.
-   - Allocate the replacement number via the available object-ID allocator (e.g. `al-objid-mcp-server`'s `ninja_assignObjectId`/equivalent), scoped to the same `idRanges` bucket (from the owning app's `app.json`) the colliding number already used. Allocator absent → fall back to reading the app's `idRanges` from `app.json` and picking the lowest number in that bucket not already reported by `al-symbols-mcp`/grep.
-   - If the bucket is exhausted (allocator returns none free, or manual scan finds no gap) → **Stop**, ask the user (widen the range, or pick a different bucket). This is not mechanical.
-   - Apply the renumber: change the object/field declaration, and grep-and-replace every same-file reference that's safe to rewrite with confidence (e.g. the object's own extension target, an internal field reference within the same object). If a renumbered object was a scaffolded-then-abandoned allocation, unassign the old ID via the allocator so it doesn't leak from the pool (per `tdd.md`'s object-ID-allocation discipline).
+   - Allocate the replacement via the available object-ID allocator (e.g. `al-objid-mcp-server`'s `ninja_assignObjectId`/equivalent), scoped to the same `idRanges` bucket (from the owning app's `app.json`) the colliding number already used. Allocator absent → read the app's `idRanges` from `app.json` and pick the lowest number in that bucket not already reported by `al-symbols-mcp`/grep.
+   - Bucket exhausted (allocator returns none free, or manual scan finds no gap) → **Stop**, ask the user to widen the range or pick a different bucket. This is not mechanical.
+   - Apply the renumber: change the object/field declaration, and grep-and-replace every same-file reference that is safe to rewrite with confidence (e.g. the object's own extension target, an internal field reference within the same object). A renumbered object that was a scaffolded-then-abandoned allocation gets its old ID unassigned via the allocator so it doesn't leak from the pool, per **Object ID allocation** in [tdd.md](../../references/testing/tdd.md).
    - **References by literal number outside the object itself** (e.g. `Record 50100`, a permission set entry, a page extension's `extends` target elsewhere in the tree) that this skill can't safely rewrite with confidence → **Stop**, ask the user rather than guess and silently break a reference.
    - Re-check via `al-symbols-mcp`/grep to confirm the collision is gone before moving on.
 
-5. **Full gate, post-sync.** Delegate the full `/al-build` gate on the rebased and renumbered tree. Green → report done. Red is new → name the broken object, field, or test and stop; never auto-retry.
-
-## Abort semantics
-
-Any stop — unresolved content or naming conflict, unsafe reference rewrite, exhausted `idRanges` bucket, or untriaged post-sync red — runs `git rebase --abort` when a rebase is active, restoring the pre-sync branch tip. Report named object type, number, file, and reason; never a category. Resolve by hand, then re-run `/al-sync-main` or ask for help first.
+5. **Full gate, post-sync.** Delegate the full `/al-build` gate on the rebased and renumbered tree. Green → report done. Red is new → name the broken object, field, or test and stop; never auto-retry. The rebase has completed, so there is nothing to abort: the rebased, renumbered tree stays in place and the red is reported for the user to fix.
 
 ## Next step
 
-- **Clean sync (gate green both ends):** `Next:` continue whatever you were doing on the branch — `/al-implement`, `/al-refactor`, or opening a PR.
-- **Stopped on a real conflict, naming collision, unsafe reference, or exhausted bucket:** resolve by hand (or ask for help), then re-run `/al-sync-main`.
-- **Post-sync gate red:** fix the failing test or production code (`/al-build` again to confirm), then continue.
+| Outcome | Next |
+|---|---|
+| Clean sync — gate green both ends | Continue the branch's work: `/al-implement`, `/al-refactor`, or opening a PR |
+| Stopped — real conflict, naming collision, unsafe reference, or exhausted bucket | Resolve by hand (or ask for help), then re-run `/al-sync-main` |
+| Post-sync gate red | Fix the failing test or production code (`/al-build` again to confirm), then continue |
 
 ## Composition
 
-- `/al-build` — the full gate, run before and after the sync. One of the two skills this skill is allowed to call directly.
-- `/al-steer` — if the sync surfaces a genuine replan need (e.g. the collision reveals the same concept was built twice on both branches), that's a new decision, not a mechanical fix — hand off to `/al-steer` rather than absorb it here.
+| | |
+|---|---|
+| `/al-build` | The full gate, run before and after the sync |
+| `/al-steer` | A sync surfacing a genuine replan need (e.g. the collision reveals the same concept was built twice on both branches) is a new decision, not a mechanical fix. Hand off, never absorb it here |
 
-## Out of scope
-
-- Merging `main` into the branch → not supported; this skill only rebases.
-- Resolving real content conflicts → the user's call, this skill only flags them.
-- Renumbering anything that existed on `main` before this branch diverged → never touched.
-- Renumbering non-colliding branch-new numbers "for tidiness" → out of scope; only collisions get moved.
+Close with the task-close gate report per [GROUND-RULES.md](../../references/GROUND-RULES.md); a precondition failure or a stop closes with the one-line **Stop**.

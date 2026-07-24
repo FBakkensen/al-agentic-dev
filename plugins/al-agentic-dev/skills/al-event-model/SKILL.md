@@ -3,74 +3,53 @@ name: al-event-model
 description: Settle the user-facing journey for AL/Business Central as `event-model.md` in BC vocabulary (Role / Action / Business Event / View / Status). Use after `/al-grill-adr` for user/API-facing features before `/al-design`; backend-only features skip.
 ---
 
-**Style:** Concise — cut filler, keep grammar. Opinionated — pick a side. Arrows (→) for causality. Technical terms exact, code and errors quoted verbatim.
-
 # /al-event-model, User-facing journey → event-model.md
 
-Settle the journey at altitude of what an external observer sees, before `/al-design` commits architecture. Event Modeling (Dymitruk) is the lineage; this skill settles user-facing slots (Role, Action, Business Event, View, Status) so `/al-design` consumes them without re-litigating user-side picks.
+Settle the journey at the altitude of what an external observer sees. The user-side picks land here so `/al-design` commits architecture without re-litigating them.
 
 ## Artifact boundary
 
-Writes only `event-model.md`; never `architecture.md` or the `tasks/` folder.
-
-No implementation structure (modules, codeunits, table fields, event subscribers, AL responsibilities, test surfaces) and no task proof (AAA cases, `Test Specification`, `Verification Plan`, Journey/Contract Examples, Exploration Charters) — those belong to `/al-design` and the task skills.
+Writes only `event-model.md` — never `architecture.md` or the `tasks/` folder. Implementation structure and task proof belong to `/al-design` and the task skills.
 
 ## Preconditions
 
-- `/al-grill-adr` ran for this idea; without sharpened `CONTEXT.md` and domain ADRs, fuzzy terms compound into wrong Role names or fictitious Business Events. **Stop**, run it first.
-- Feature has user or API surface. Backend-only features (no human, no API consumer, internal batch only) skip this skill; `/al-design` runs its missing-storm checkpoint.
-- First per-feature skill: branch + spec folder setup follows [worktree-feature-branching.md](../../references/worktree-feature-branching.md). On an in-flight feature branch, reshape `event-model.md` in place, with user's awareness.
+- `/al-grill-adr` ran for this idea. Without sharpened `CONTEXT.md` and domain ADRs, fuzzy terms compound into wrong Role names or fictitious Business Events. **Stop**, run it first.
+- The feature has a user or API surface. Backend-only features (no human, no API consumer) skip this skill; `/al-design` asks whether the missing journey means backend-only.
+- Branch and spec folder setup follows [worktree-feature-branching.md](../../references/worktree-feature-branching.md) — read it in full before touching the branch; it owns the checkout classification, the Stop conditions, and `specs/<NNN>-<slug>/` creation. On an in-flight feature branch, reshape `event-model.md` in place, with the user's awareness.
 
-## What goes into event-model.md
+## The five slots
 
-- **Role**: BC Role Center name (Order Processor, Accountant, Warehouse Worker, Sales Manager) or external API consumer / publisher. Verify standard names via `/al-research`; renamed Role Centers ship fiction downstream.
-- **Action**: user-meaningful verb + object (*Release Sales Order*, *Approve Override*). Match BC's standard verb set where it overlaps BaseApp (Insert / Modify / Delete / Post / Validate / Release / Reopen / Apply / Reverse).
-- **Business Event**: past-tense fact in business language (*Sales Order Released*, *Credit Limit Breached*, *Override Approved*). Verify against BaseApp via `/al-research` before naming.
-- **View**: surface + its location (*Sales Order page → Status flips to Released*, *Pending Overrides cue increments*, *API response carries the Override decision*). Surface type settles here, AL control name settles in `/al-design`.
-- **Status**: when Business Event flips a field on aggregate's record, name field + new value (*Sales Header Status → Override Pending*).
-- **BaseApp portions**: if journey starts or passes through BaseApp, include those steps under canonical BaseApp names. Seam between BaseApp and our extension is named by canonical names themselves.
+Every slot `/al-design` consumes settles here. Every BC-specific name is grounded per [GROUND-RULES.md](../../references/GROUND-RULES.md) before it lands in a slot. A slot whose meaning won't settle blocks the write. A BC name grounds via `/al-research`. Domain intent still fuzzy after `CONTEXT.md` and the ADRs is a stop — `Next: /al-grill-adr`. A missing standard persona name never blocks — the Role slot settles on a plain business role name.
 
-Unanswerable → not ready for `/al-design`. Resolve via `/al-research`, `/al-grill-adr`, or `/grill-me`.
+- **Role** — the acting persona in BC vocabulary: a human business role (a standard BC persona name — Order Processor, Accountant — anchors where one exists, never gates), an external API consumer or publisher, or a BC system actor such as the Posting Engine when the journey passes through one. Verify standard persona names the workspace cannot answer via `/al-research`.
+- **Action** — user-meaningful verb + object (*Release Sales Order*, *Approve Override*). Where it overlaps BaseApp, match BC's standard verb set: Insert / Modify / Delete / Post / Validate / Release / Reopen / Apply / Reverse.
+- **Business Event** — past-tense fact in business language (*Sales Order Released*, *Credit Limit Breached*). Verify BaseApp event names via `/al-research` before naming.
+- **View** — surface plus its location (*Sales Order page → Status flips to Released*, *API response carries the Override decision*). The surface type settles here; the AL control name settles in `/al-design`.
+- **Status** — when the Business Event flips a field on the aggregate's record, name field and new value (*Sales Header Status → Override Pending*).
 
-## User-facing voice only
+## User-facing voice
 
-No AL pub/sub vocabulary (`OnAfter*`, `IntegrationEvent`, *Subscribes to*, *Publisher*), no page-extension idioms, no codeunit references; AL-shape belongs to `/al-design`. A reader who cannot tell what the user experiences without consulting AL source → artifact has failed.
+A reader who cannot tell what the user experiences without consulting AL source means the artifact has failed. No AL pub/sub vocabulary (`OnAfter*`, `IntegrationEvent`, *Subscribes to*), no page-extension idioms, no codeunit references. AL realisation settles in `architecture.md` via `/al-design` — the *Slice* entry in [LANGUAGE.md](../../references/LANGUAGE.md) homes the two-artifact settlement.
 
-## One timeline, swimlanes by Role
+## One timeline
 
-Whole feature gets one timeline in temporal order, Role swimlanes when more than one Role participates; the temporal sequence *is* the artifact. A feature that genuinely spans two disjoint journeys is two features.
+The whole feature gets one timeline in temporal order. Role swimlanes appear when more than one Role participates. A feature that genuinely spans two disjoint journeys is two features. BaseApp steps join the chain under their canonical names, with no `(existing)` / `(new)` tags — a reader who knows BC tells *Sales Order Released* (BaseApp) from *Credit Limit Breached* (yours) by the names alone.
 
-## BaseApp portions are normal chain steps
+## Settlement
 
-Include BaseApp steps in canonical names, no `(existing)` / `(new)` tags; a reader who knows BC recognises *Sales Order Released* as BaseApp and *Credit Limit Breached* as your contribution by the names themselves.
+Draft two candidate timelines diverging on one structural decision and present both with a recommendation. After the user picks, name every leaf the agent invented and confirm each. The pick and each confirm follow **One decision per question** ([GROUND-RULES.md](../../references/GROUND-RULES.md)) — lettered options.
 
-## Hybrid settlement, parallel-twice plus confess-your-guesses
+## Before the write
 
-Draft two timelines diverging on one structural decision, present both with recommendation; after user picks, name every leaf the agent invented (*"I picked Role Center notification for the View, email is an alternative, which?"*) and confirm each. One decision per question, lettered options, recommendation first ([voice-contract.md](../../references/voice-contract.md)) — for the timeline pick and each leaf confirm alike. Pure interrogation burns user time; pure candidate-comparison lets leaf guesses survive — hybrid keeps each posture in its lane.
-
-## Citation chain in chat, before write
-
-Evidence bar per [voice-contract.md](../../references/voice-contract.md). `event-model.md` is a durable design artifact: workspace evidence covers what the dependency graph resolves; Role Centers, BaseApp BusinessEvents, and Status enums the workspace cannot answer route through `/al-research`, mandatory.
-
-## Branch + folder + write
-
-Read [worktree-feature-branching.md](../../references/worktree-feature-branching.md) before this step. It classifies the checkout, resolves `<NNN>`, derives the 2-4-word kebab-case slug (do not ask), announces destructive remote cleanup, and creates or safely converts the branch + `specs/<NNN>-<slug>/`. An unsafe checkout or existing target → **Stop**.
-
-Then write `event-model.md`, telegraphic (drop articles, padding, hedges; fragments fine). Markdown-only constraints in [markdown-spec-discipline.md](../../references/markdown-spec-discipline.md), voice in [voice-contract.md](../../references/voice-contract.md) — both mandatory reads before writing. No surgical-edit contract; reshape via re-running. Vocabulary in [LANGUAGE.md](../../references/LANGUAGE.md) (*Slice* entry).
+[task-lifecycle.md](../../references/task-lifecycle.md) is a mandatory read before writing — it carries the markdown-only constraints and the examples table whose `event-model.example.md` owns the artifact shape. A non-trivial timeline — multi-Role, branching, brownfield, integration — takes a rubber-duck consult ([rubber-duck-review.md](../../references/rubber-duck-review.md)) as a final shape check before the first write.
 
 ## Document verification
 
-After writing `event-model.md`, run the document-integrity check yourself, inline (no subagent), before the Gate report — verify the artifact against [`doc-integrity.md`](../../references/doc-integrity.md): the `event-model.md` profile (Role / Action / Business Event / View / Status structure) and sibling consistency in the spec folder.
-
-A **fail** (structural or boundary blocker) blocks the Gate report and `/al-design` handoff; fix it or route to `/al-steer`. A **warn** does not block; include it in the Gate report. This gate checks document integrity only, not whether the journey is the best product decision.
-
-## Gate event
-
-Once when `event-model.md` lands. Gate report — rendered box-first, passed through the pre-send checks ([voice-contract.md](../../references/voice-contract.md)) — describes the journey in BC vocabulary (Role, Action, Business Event, View, Status), names the application problem it addresses, names the user's call to greenlight `/al-design`.
+Between writing `event-model.md` and the close, run the document-integrity check yourself, inline (no subagent), against [doc-integrity.md](../../references/doc-integrity.md): the `event-model.md` profile and sibling consistency in the spec folder. A **fail** blocks the close and the `/al-design` handoff — fix it or route to `/al-steer`. A **warn** rides in the close. The check judges structure only, never whether the journey is the right product decision.
 
 ## Next step
 
-`event-model.md` landed clean and the branch + spec folder exist. `Next: /al-design` — it consumes the journey into `architecture.md`. A downstream fact invalidated the timeline, or a name won't ground → `Next: /al-research` (BC fact) or `/al-steer` (replan).
+Close with the task-close gate report ([GROUND-RULES.md](../../references/GROUND-RULES.md) House shapes) — it gives the user the evidence for the greenlight call on `/al-design`. `event-model.md` landed with no integrity fail → `Next: /al-design`. A BC name won't ground → `Next: /al-research`. A downstream fact invalidated the timeline → `Next: /al-steer`.
 
 ## Composition
 
@@ -78,8 +57,6 @@ Once when `event-model.md` lands. Gate report — rendered box-first, passed thr
 |---|---|
 | **Runs after**     | `/al-grill-adr` (CONTEXT + domain ADRs settled) |
 | **Hands off to**   | `/al-design` (consumes `event-model.md`) |
-| **Calls directly** | `/al-research` (BaseApp Role / Action / Event / View / Status names) — the only skill it invokes; rubber-duck consult on non-trivial timelines (multi-Role, branching, brownfield, integration) per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
+| **Calls directly** | `/al-research` (BC names the workspace cannot answer) — the only skill it invokes; rubber-duck consult on non-trivial timelines |
 | **Replan venue**   | `/al-steer` (downstream fact invalidates timeline) |
-| **Sidebands**      | `bc-standard-reference` (pure BaseApp behaviour), `/grill-me` (confess-your-guesses pass) |
-
-**Advisor checkpoint.** Before the first write of `event-model.md`, do a final shape check (a rubber-duck consult for non-trivial timelines: multi-Role, branching, brownfield, integration). Drift caught here costs minutes; caught at `/al-design`, a feature.
+| **Sidebands**      | `bc-standard-reference` (pure BaseApp behaviour), `/grill-me` (stress-test invented leaves before confirming) |

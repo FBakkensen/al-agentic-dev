@@ -6,11 +6,9 @@ model: claude-fable-5
 user-invocable: false
 ---
 
-**Style:** Concise — cut filler, keep grammar. Opinionated — pick a side. Arrows (→) for causality. Technical terms exact, code and errors quoted verbatim.
-
 # al-review-refactor-bc — BC best-practice reshape pass
 
-The caller supplies a task diff. Identify BC-specific reshape opportunities at this lens's goal altitude, using the `bc-code-intelligence` MCP topic store; another lens covers the rest. The caller owns judgment across lenses, application, and workflow state.
+The caller supplies a task diff. Identify BC-specific reshape opportunities confirmed against the `bc-code-intelligence` MCP topic store. Generic structural shape, dedup, renames, and scanner-based performance findings belong to the other four lenses. The caller owns judgment across lenses, application, and workflow state.
 
 ## Boundary
 
@@ -18,39 +16,17 @@ The caller supplies a task diff. Identify BC-specific reshape opportunities at t
 - Match each surviving topic's `anti_pattern_indicators` against the diff yourself; an indicator the code does not exhibit is not a finding. The MCP recommends leads, not bugs.
 - `bc-code-intelligence` absent → fall back to a vanilla read of the diff for the same goal and say the topic store was unavailable. Never block on the missing server.
 
-## Focused goal
+## Speculative generality and platform reinvention
 
-Per `references/bc-code-intelligence-dispatch.md`: `find_bc_knowledge` → drop noise → `get_bc_topic`, cache within run, fetch fewer — only structural anti-patterns worth fixing this pass. Match each topic's `anti_pattern_indicators` against the diff. **Platform reinvention** is in scope here — hand-rolled code where a shipped BC feature delivers (a setup table + management codeunit for what a field + flowfield does, validation code for a table relation or permission-set entry, a status pattern an enum covers); use the topic store to confirm the platform alternative exists before flagging.
+Judge production code against **Production-AL thrift** in `references/GROUND-RULES.md`. Platform reinvention — hand-rolled code where a shipped BC feature delivers — is this lens's finding: confirm via the topic store that the shipped alternative exists before flagging. The simplify and structural lenses flag the obvious hand-roll and leave that confirmation here.
 
-## BC vocabulary (judge names against this)
+## BC vocabulary (describe findings in it)
 
-Names that lie are findings even when the code is otherwise correct. Use BC verbs, not generic CRUD:
-
-| Use | Not |
-|---|---|
-| Insert / Modify / Delete | Create / Update / Remove |
-| Post | Submit |
-| Validate | Check |
-| Get / Find | Fetch |
-| Ledger Entry | Transaction |
-| No. | ID |
-| Procedure | Method |
-| Codeunit | Class |
-
-Fuller naming discipline lives in `references/voice-contract.md`; structural/coupling vocabulary (Connascence, CQS, Depth, Seam) in `references/LANGUAGE.md`.
-
-## Over-build / platform reinvention (judge production code against this)
-
-When this lens's goal names BC best-practice or simplicity, hunt hand-rolled code where a shipped BC feature delivers — and reach for the topic store to confirm the alternative exists before flagging. Each is a reshape opportunity:
-
-- Platform reinvention: a setup table + management codeunit for what a field + flowfield does, validation code for what a table relation or permission-set entry enforces, a status pattern an enum covers.
-- An abstraction with one caller: an interface with one implementation, a parameterised helper used once, config for a value that never changes, scaffolding "for later" with no current caller.
-
-Two carve-outs keep this from over-firing. **Production only** — never flag test thoroughness; Unit-first TDD and the `/al-mutate` gate are not over-build. **Not negligence** — never flag trust-boundary validation, posting/ledger correctness, or permission checks as "extra." A deliberate shortcut that names its ceiling and upgrade path in a one-line comment is a kept decision, not a reshape target.
+Findings speak BC vocabulary: the verb pairs follow **BC vocabulary** (`references/GROUND-RULES.md`); structural/coupling vocabulary (Connascence, CQS, Depth, Seam) in `references/LANGUAGE.md`. Renames are the naming lens's findings, never this lens's.
 
 ## Dispatch
 
-Run the `find_bc_knowledge` → drop-noise → `get_bc_topic` dispatch per `references/bc-code-intelligence-dispatch.md` in full — including the noise drop-list and the AL false-positive guards.
+Run the `find_bc_knowledge` → drop-noise → `get_bc_topic` dispatch per `references/bc-code-intelligence-dispatch.md` in full — including the noise drop-list and the AL false-positive guards. Selection breadth follows **Topic selection per reader** there, `/al-refactor` row.
 
 ## Return
 

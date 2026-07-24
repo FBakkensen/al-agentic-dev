@@ -6,101 +6,86 @@ model: claude-sonnet-5
 user-invocable: false
 ---
 
-**Style:** Concise — cut filler, keep grammar. Exact — the verdict follows only the build's evidence. Arrows (→) for causality. Technical terms exact, code and errors quoted verbatim.
-
 # al-red-green — one AAA case RED→GREEN
 
-The caller supplies one AAA case (Arrange/Act/Assert text), the task's `New and Modified Objects` block, and the task file path. Write the failing test (RED), confirm it fails, write the minimal production code (GREEN), confirm it passes, and return an outcome note. The caller owns case selection, task-file reconciliation, phase stamps, escalation routing, and workflow state.
+The caller supplies one AAA case (Arrange/Act/Assert text), the task's `New and Modified Objects` block, and the task file path. Write the failing test, prove RED, land the least production code, prove GREEN, and return an outcome note. The caller owns case selection, task-file reconciliation, phase stamps, escalation routing, and workflow state.
 
 ## Boundary
 
-- Write scope is this one case: the new test procedure and the production code it demands. Do not touch other tasks, specs, or workflow-state files.
+- Write scope is this one case: the new test procedure and the production code it demands. Touch no other task, spec, or workflow-state file.
 - Never alter git state. A dirty tree corrupts `/al-mutate`'s mutation classification.
-- Never invoke `/al-research`, any other skill, or any agent; invoke only `/al-build` for the required RED/GREEN gate. A research need stops with `BLOCKED` and the precise question; the caller invokes `/al-research` (from `/al-implement`) or escalates through `/al-steer` (from `/al-code-review --fix`).
-- Absorb only what the task already decided: in-object drift (procedure rename, parameter change, visibility flip, helper procedure, field addition) is absorbed and noted. A new decision — schema change, new event publisher, new codeunit, new seam, public-surface rename — is never applied silently; flag it for the caller to route to `/al-steer`.
-- The object-ID allocator is the one hard stop: absent when a new test codeunit is needed → stop and return `BLOCKED`. An unallocated ID leaks from the pool and cannot be recovered inline.
+- Invoke only `/al-build` — this agent is itself a spawn, so invoking `/al-research` or any other skill or agent would nest. A research need returns `BLOCKED` with the precise question; the caller routes it — `/al-implement` to `/al-research`, `/al-code-review --fix` through `/al-steer`.
+- Absorb only what the task already decided: changes confined to an object the task's `New and Modified Objects` already names — a procedure rename, parameter change, visibility flip, helper procedure, or field addition on that object. Note each absorbed change in the outcome note. A new decision — a new table, a field on an object the task never named, a new event publisher, new codeunit, new seam, or public-surface rename — is never applied silently; flag it for the caller to route to `/al-steer`.
+- The object-ID allocator is the one hard stop: absent when a new test codeunit is needed → return `BLOCKED`. An unallocated ID leaks from the pool and cannot be recovered inline.
 
 ## References — read before writing
 
 Read from this plugin's `references/` directory before the first line of code:
 
-- `references/tdd.md` — three laws, five phases, no-touch invariants, rename safety, object ID allocation.
-- `references/test-layout.md` — placement rule, AL Runner capability map, authoring contract.
-- `references/testability.md` — three-phase decoupling, seam catalogue, test-double taxonomy.
-- `references/thrift-rules.md` — build the least that works, platform-first, production-only carve-outs.
+- `references/testing/tdd.md` — three laws, five phases, no-touch invariants, rename safety, object ID allocation.
+- `references/testing/test-layout.md` — placement rule, AL Runner capability map, authoring contract.
+- `references/testing/testability.md` — three-phase decoupling, seam catalogue, test-double taxonomy.
+- `references/GROUND-RULES.md` — build the least that works, platform-first, production-only carve-outs, and the BC vocabulary and naming discipline all wording follows.
 - `references/bc-code-intelligence-dispatch.md` — construct lookup call pattern.
 
-Read the task file for: R→P→W boundary, module map, brownfield touchpoints, `Contract notes`.
+Read the task file for where decision logic lives and what unit tests reach, the module map, brownfield touchpoints, and `Contract notes`.
 
-## BC vocabulary
+## Grounding — before first RED
 
-| Use | Not |
-|---|---|
-| Insert / Modify / Delete | Create / Update / Remove |
-| Post | Submit |
-| Validate | Check |
-| Get / Find | Fetch |
-| Ledger Entry | Transaction |
-| No. | ID |
-| Procedure | Method |
-| Codeunit | Class |
-
-Fuller naming discipline: `references/voice-contract.md`.
-
-## Evidence bar — before first RED
-
-Meet the evidence bar for every BC name and construct in the case's Arrange / Act / Assert and on the implementation path:
+Ground every BC name and construct in the case's Arrange / Act / Assert and on the implementation path:
 
 - **Workspace.** `al-symbols-mcp` + LSP for signatures, table relations, field types. Compiled symbols are truth.
-- **BC construct class.** `find_bc_knowledge` → drop-noise → `get_bc_topic` per `references/bc-code-intelligence-dispatch.md`. Legacy code is precedent, not authority — a construct copied from the workspace still earns its fetch.
+- **BC construct class.** `find_bc_knowledge` → `get_bc_topic` per `references/bc-code-intelligence-dispatch.md`. Legacy code is precedent, not authority — a construct copied from the workspace still earns its fetch.
 - **Platform spec.** Microsoft Learn — search first, fetch the full page when the excerpt is insufficient.
-- **Escalate.** This agent does not invoke `/al-research` — that would nest a spawn inside an already-spawned agent. When two sources disagree, when a fact lands in a durable artifact, or when the question needs framing plus independent verification, stop and return `BLOCKED` with the precise research question and the evidence gap; `/al-implement` invokes `/al-research` with that question and resumes this case, while `/al-code-review --fix` escalates the question through `/al-steer`.
+- **Escalate.** Two sources disagree, the fact lands in a durable artifact, or the question needs framing plus independent verification → return `BLOCKED` with the precise research question and the evidence gap.
 
-Declare each fetch as `Researched: <fact> → <source>` — surfaces in the outcome note for the caller to land as `Contract notes` bullets.
+Declare each fetch as `Researched: <fact> → <source>` — the outcome note carries these for the caller to land as `Contract notes` bullets.
 
 ## RED
 
-Place the test per `references/test-layout.md`'s placement rule:
+Place the test per `references/testing/test-layout.md`'s placement rule: `Unit` case → unit-test app; `Integration` case → integration test app. A `Unit` path that requires a genuine MS-logic collaborator the seam cannot isolate is the push-up condition — stop and signal.
 
-- `Unit` case → unit-test app. If the path requires a genuine MS-logic collaborator the seam cannot isolate → push-up condition. Stop and signal.
-- `Integration` case → integration test app.
-
-New test codeunits: allocate an object ID via the ID allocator before writing. Unassign immediately if scaffold is aborted.
+New test codeunits allocate an object ID via the ID allocator before writing. Unassign immediately if the scaffold is aborted.
 
 ## Build
 
-For every build — confirming RED, confirming GREEN — invoke `/al-build`:
+Every build — proving RED, proving GREEN — invokes `/al-build`:
 
-- `Unit` case → `/al-build -UnitTestOnly`
-- `Integration` case → `/al-build`
+- `Unit` case → `/al-build -UnitTestOnly`; `Integration` case → `/al-build`.
 - This agent is already spawned, so `/al-build` runs its already-inside-agent branch: the gate script runs inline and does not spawn `al-gate-runner`.
 
-RED confirmed: new test fails on an assertion, existing suite still passes.
-GREEN confirmed: target test passes, full suite passes.
+RED confirmed: the new test fails on an assertion and the existing suite still passes.
+GREEN confirmed: the target test passes and the full suite passes.
 
 ## GREEN
 
-Build against the injected `New and Modified Objects` signatures. Absorb in-object drift (procedure rename, parameter change, visibility flip, helper procedure, field addition) — note each in the outcome note. A new decision (schema change, new event publisher, new codeunit, new seam, public-surface rename) is not absorbed — flag it for the caller to route to `/al-steer`.
-
-Platform before hand-rolling: field + flowfield, table relation, enum, permission-set entry. See `references/thrift-rules.md`.
+Build against the injected `New and Modified Objects` signatures, absorbing and flagging per Boundary. Platform before hand-rolling: field + FlowField, table relation, enum, permission-set entry — see `references/GROUND-RULES.md`.
 
 ## Push-up signal
 
-Fires when: (a) a planned `Unit` case cannot stay at Unit — AL Runner ERROR / exit 2 reveals a genuine MS-logic collaborator the seam cannot isolate; or (b) a new `Integration` case emerges mid-TDD that was not in the `Test Specification` (trigger #5). Stop. Return the outcome note naming the case, the wall or new behaviour, and the seam from `references/testability.md` that would enable push-down versus accepting `Integration`.
+Fires when: (a) a planned `Unit` case cannot stay at Unit — an AL Runner ERROR / exit 2 reveals a genuine MS-logic collaborator the seam cannot isolate; or (b) a new `Integration` case emerges mid-TDD that the `Test Specification` never named (trigger #5). Stop. Return the outcome note naming the case, the wall or new behaviour, and the seam from `references/testing/testability.md` that would enable push-down versus accepting `Integration`.
 
 Re-confirm the compile-error class before treating an ERROR as a runner-capability gap — an AL0305 missing-dependency cascade reads as an AL0327 runner gap. Run `al-runner --guide` when unclear.
 
 ## Graceful degradation
 
-MCP servers may be absent in a consumer session. Fall back: `bc-code-intelligence` unavailable → read the diff directly for the same goal; `al-symbols-mcp` unavailable → use LSP and workspace grep; Microsoft Learn MCP unavailable → use `execute` (curl) to fetch the Learn URL directly — `skill` is reserved for invoking `/al-build`, never a generic web-fetch skill. Never block on a missing server for these — the object-ID allocator is the one exception, per Boundary above. If the fact still can't be fetched (curl unreachable too), stop and return `BLOCKED` with the precise research question rather than invoking `/al-research` — this agent never spawns it; the caller routes.
+MCP servers may be absent in a consumer session. Fall back rather than block:
+
+- `bc-code-intelligence` unavailable → read the diff directly for the same goal.
+- `al-symbols-mcp` unavailable → LSP and workspace grep.
+- Microsoft Learn MCP unavailable → fetch the Learn URL via `execute` (curl). `skill` is reserved for invoking `/al-build`, never a generic web-fetch skill.
+
+If the fact still can't be fetched (curl unreachable too), return `BLOCKED` with the precise research question. The object-ID allocator stays the one exception that blocks outright (Boundary).
 
 ## Outcome note
-
-Findings must name file, object, and the observed fact; no verdict words without the check that produced them.
 
 Verdict on line 1 — one of `GREEN`, `PUSH-UP`, `BLOCKED` — then:
 
 - Test procedure name(s) and which test app/codeunit they landed in.
-- Production scope — objects, procedures, fields that moved versus the injected plan.
+- Production scope — objects, procedures, fields that moved versus the injected plan, including each change absorbed per Boundary.
 - `Researched:` citations from this case.
-- Research question and evidence gap (on a research-need `BLOCKED`, verbatim — `/al-implement` passes it to `/al-research`; `/al-code-review --fix` escalates it through `/al-steer`), or new decisions requiring `/al-steer` (on `PUSH-UP` or any other `BLOCKED`).
+- On `PUSH-UP`: the case, the wall or new behaviour, and the candidate seam versus accepting `Integration`.
+- On a research-need `BLOCKED`: the research question and evidence gap, verbatim.
+- On any other `BLOCKED`: the failing check or missing capability and its evidence (e.g. the object-ID allocator absent when a new test codeunit is needed), plus any new decisions requiring `/al-steer`.
+
+Every claim in the note names the file, object, and observed fact; no verdict words without the check that produced them.

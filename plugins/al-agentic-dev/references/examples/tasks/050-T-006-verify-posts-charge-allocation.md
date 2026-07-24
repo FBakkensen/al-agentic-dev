@@ -7,7 +7,7 @@ depends_on: [T-001, T-002, T-003, T-004]
 ---
 # T-006 — Verify: Order Processor posts a sales document with charge allocation
 
-User-facing slice `post-validates-allocation`: Order Processor releases and posts `Sales Header` with `Item Charge Assignment (Sales)`. Balanced allocations post cleanly; mismatched allocations halt posting with inline breakdown on `Sales Order Card`.
+User-facing slice `post-validates-allocation`: the Order Processor releases and posts a `Sales Header` with `Item Charge Assignment (Sales)` rows. A balanced allocation posts to a Posted Sales Invoice; a mismatched allocation halts posting with an inline breakdown on the `Sales Order Card`.
 
 Verification Plan:
 
@@ -48,6 +48,6 @@ Prompts:
 - Does the flow return the user to a useful correction point?
 
 Closeout:
-- E2E walked (`Record: no`): `V1` posted invoice + `Released` status, and `V2` mismatch blocked with the inline breakdown, confirmed live by the user
-- Regression pinned below E2E (generation-time push-down, no recording minted): `V2`'s checks are held by sibling Integration tests — `BlocksPostingWithMismatchedAllocation` (error raised, no posted invoice) and `ShowsAllocationMismatchBreakdown` (both Sales Lines listed, overflow marked)
-- Exploration: `X1` recorded no blocking usability findings
+- E2E: `V1` user walk green
+- E2E: `V2` user walk green
+- Exploration: `X1` produced no follow-up tasks, no functional failures

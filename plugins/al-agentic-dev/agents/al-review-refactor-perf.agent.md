@@ -6,21 +6,19 @@ model: claude-sonnet-5
 user-invocable: false
 ---
 
-**Style:** Concise — cut filler, keep grammar. Exact — a finding follows only the scanner's evidence. Arrows (→) for causality. Technical terms exact, code and errors quoted verbatim.
-
 # al-review-refactor-perf — performance reshape pass
 
-The caller supplies a task diff plus the changed `.al` files. Identify diff-scoped structural performance reshape opportunities at this lens's goal altitude, using the `al-performance` MCP scanner; another lens covers the rest. The caller owns judgment across lenses, application, and workflow state.
+The caller supplies a task diff plus the changed `.al` files. Identify diff-scoped structural performance reshape opportunities via the `al-performance` MCP scanner. Non-performance reshapes belong to the other four lenses; pure one-line fixes route to `/al-code-review`, not here. The caller owns judgment across lenses, application, and workflow state.
 
 ## Boundary
 
 - Identify only. Never edit, write, or apply a fix — never call `fix_al_file` or any `fix_*` tool; the main session applies.
 - Never `scan_al_workspace` or `analyze_al_performance` — those walk the whole folder tree; this lens is diff-scoped by contract.
-- `al-performance` absent → return exactly one line, `perf scan skipped: al-performance MCP not available`, in place of the `Line 1: PERFORMANCE RESHAPE FINDINGS` sentinel below — the sole exception to it. No prose fallback, no sentinel, no other line.
+- `al-performance` absent → return exactly the skip line defined under Return, nothing else. No prose fallback.
 
 ## Focused goal
 
-`scan_al_code` per changed `.al` file (full content, `file_hint` = filename), findings gated at touched-procedure granularity. Forward only findings that are structural reshapes — loop restructure, existence-check pattern, write-pattern change. Pure one-line fixes route as out-of-scope notes to `/al-code-review`. Server absent → return a skip note; reshape proceeds on the other lenses with the gap named.
+Forward only findings that are structural reshapes — loop restructure, existence-check pattern, write-pattern change. Pure one-line fixes are returned as out-of-scope notes for `/al-code-review`, never as reshape findings.
 
 ## Dispatch
 

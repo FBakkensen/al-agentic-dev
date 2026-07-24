@@ -8,7 +8,7 @@ depends_on: [T-002, T-006]
 ---
 # T-005 — Persist allocation audit entries via Allocation Ledger Entry table
 
-On every successful posting, `Insert` one ledger entry per resolved allocation: source `Sales Line`, receiving `Sales Line`, allocated quantity, `Posting Date`. Audit trail referenced by ADR-0007.
+On every successful posting, `Insert` one ledger entry per resolved allocation: source `Sales Line`, receiving `Sales Line`, allocated quantity, `Posting Date`.
 
 Test Specification:
 
@@ -25,12 +25,18 @@ Allocation audit entries preserve posting traceability by recording the source a
   - Field: `Allocated Quantity` (Decimal)
   - Field: `Posting Date` (Date)
 - New: page `Allocation Ledger Entries` (List)
+- New: pageextension `Posted Sales Invoice Ext` extends `Posted Sales Invoice`
+  - Action: opens `Allocation Ledger Entries` filtered to the invoice's `Document No.`
 - Modified: codeunit `Charge Post Subscribers`
-  - `local procedure InsertAllocationLedgerEntries(SalesHeader: Record "Sales Header")` — W
+  - `local procedure InsertAllocationLedgerEntries(SalesHeader: Record "Sales Header")` — S
 
 Contract notes:
 - Zero Unit cases — structural: insert wiring only.
+- Push-up both Integration cases — wall: the entries insert inside the `Sales-Post` posting flow, `.app` package code AL Runner auto-stubs to a no-op.
 - Decision surface proved: T-002.
+
+Out of automated reach:
+- Drill from `Posted Sales Invoice` to `Allocation Ledger Entries` — verify-layer outcome; T-008 journey.
 
 ## Expected Behaviors
 

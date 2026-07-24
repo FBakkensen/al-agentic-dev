@@ -1,25 +1,25 @@
 # ADR template
 
-ADRs live in `docs/adr/` and use sequential numbering: `0001-slug.md`, `0002-slug.md`, and so on. Create the `docs/adr/` directory lazily, only when the first ADR is needed.
+ADRs live in `docs/adr/` under sequential numbering — `0001-slug.md`, `0002-slug.md`. The directory materialises lazily, when the first ADR is accepted.
 
 ## Short ADR (default)
 
-Title plus one paragraph. Most ADRs land here.
+**Title plus one paragraph is the whole file.**
 
 ```md
-# {Short title, the decision, not the topic}
+# {Short title — the decision, not the topic}
 
 {The decision and the hinge of why. One paragraph. Linkify inline ADR references as `[ADR-NNNN](NNNN-slug.md)`.}
 ```
 
-DO NOT add a Status / Date / Supersedes / Superseded-by metadata block. DO NOT add a `docs/adr/README.md` index page. Both omissions are intentional.
+No Status / Date / Supersedes / Superseded-by metadata block, no frontmatter, and no `docs/adr/README.md` index: the filename carries the number, git carries the date, and the callout under *Supersession* carries the lifecycle.
 
-## Longer ADR (Considered Options + Consequences)
+## Longer ADR
 
-When the decision earns more structure, lay it out in this order:
+**The longer form is earned by genuinely weighed alternatives — Considered Options and Consequences enter only when the rejected options explain the decision.**
 
 ```md
-# {Short title, the decision, not the topic}
+# {Short title — the decision, not the topic}
 
 {Decision paragraph(s). Linkify inline ADR references.}
 
@@ -34,7 +34,7 @@ When the decision earns more structure, lay it out in this order:
 
 ## Consequences
 
-{Paragraph or bullets covering the downstream effect downstream skills must surface. Linkify inline ADR references.}
+{Paragraph or bullets covering the downstream effects that later skills must surface. Linkify inline ADR references.}
 
 ## Related
 
@@ -43,7 +43,7 @@ When the decision earns more structure, lay it out in this order:
 
 ## Supersession
 
-When an ADR is superseded, the new ADR carries normally. The superseded ADR gains a `> [!CAUTION]` callout at the very top:
+**The superseded ADR gains a `> [!CAUTION]` callout at the very top; the new ADR carries normally.** The callout is the supersession marker.
 
 ```md
 # {Original short title}
@@ -53,5 +53,3 @@ When an ADR is superseded, the new ADR carries normally. The superseded ADR gain
 
 {The original decision paragraph stays unchanged below.}
 ```
-
-The callout is the supersession marker. No Status block, no Date, no frontmatter.

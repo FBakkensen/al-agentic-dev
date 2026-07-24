@@ -8,7 +8,7 @@ depends_on: [T-003]
 ---
 # T-004 — Surface validation failure inline on Sales Order Card with breakdown
 
-When validation reports mismatch, render allocation breakdown inline on `Sales Order Card`: one row per receiving `Sales Line`, allocated and required quantities side by side, imbalance highlighted.
+When validation reports a mismatch, render the allocation breakdown inline on the `Sales Order Card`: one row per receiving `Sales Line`, allocated and required quantities side by side, with the imbalance highlighted.
 
 Test Specification:
 
@@ -20,6 +20,10 @@ The Sales Order Card explains allocation mismatch at the point of correction so 
 - New: page `Allocation Mismatch Breakdown` (ListPart)
 - New: pageextension `Sales Order Ext` extends `Sales Order`
   - Part: `Allocation Mismatch Breakdown`, visible on mismatch
+
+Contract notes:
+- Zero Unit cases — wall: AL Runner does not evaluate page rendering or part visibility; both cases assert the Sales Order Card surface through a TestPage.
+- Decision surface proved: T-002.
 
 ## Expected Behaviors
 

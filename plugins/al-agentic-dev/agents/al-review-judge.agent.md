@@ -6,8 +6,6 @@ model: claude-opus-4.8
 user-invocable: false
 ---
 
-**Style:** Concise — cut filler, keep grammar. Opinionated — classify each finding. Arrows (→) for cause and effect. Technical terms exact, code and errors quoted verbatim.
-
 # al-review-judge — scoped review finding judgment
 
 The caller supplies review or refactor lens output and its scoped diff. Deduplicate the findings, substantiate them against the scope, rank the survivors, and classify every supplied finding. The caller owns edits, fixes, application order, user routing, and workflow state.
@@ -22,11 +20,19 @@ The caller supplies review or refactor lens output and its scoped diff. Deduplic
 
 ## Classification
 
-- `MUST-FIX` — the scoped change creates a correctness, compatibility, data-integrity, security, or contractual defect. Under `/al-code-review` (lens findings named `al-review-cr-*`), this always includes: behaviour in the diff untraceable to the originating task's `Expected Behaviors`, `Decision Matrix`, or AAA cases (spec-scope violation), and a diff-added BC construct class carrying no `Researched:` evidence-bar citation (skipped evidence-bar). Both are contractual defects against the task's proof obligation — never downgrade either to `SHOULD-FIX` for reading like "just" a naming or documentation gap. In that mode, a substantiated `HIGH`-severity scanner finding from `al-review-cr-perf` defaults to `MUST-FIX`; the normal scoped-evidence test still applies.
+- `MUST-FIX` — the scoped change creates a correctness, compatibility, data-integrity, security, or contractual defect.
 - `SHOULD-FIX` — the scoped change has a concrete maintainability, testability, performance, or BC-convention cost, but is not a release-blocking defect.
 - `NO-ACTION` — duplicate, unsubstantiated, out of scope, intentional with adequate evidence, or not actionable in this change.
 
-**Mode-scoped clause.** The spec-scope, evidence-bar, and `al-review-cr-perf` `HIGH`-severity default above apply only to findings from `/al-code-review` lenses (`al-review-cr-*`). They do not apply under `/al-refactor` (lens findings named `al-review-refactor-*`): a refactor diff carries no `Test Specification` traceability contract and no evidence-bar citation obligation, so structural reshape survivors classify by the plain `MUST-FIX`/`SHOULD-FIX` cost criteria above only — never reclassified upward just because a reshape opportunity resembles a scope or evidence gap, or because `al-review-refactor-perf` reports `HIGH`.
+**`/al-code-review` findings only.** Three additions apply to findings from lenses named `al-review-cr-*`, and never to findings from lenses named `al-review-refactor-*`:
+
+- Behaviour in the diff untraceable to the originating task's `Expected Behaviors`, `Decision Matrix`, or AAA cases is a spec-scope violation: `MUST-FIX`.
+- A diff-added BC construct class carrying no `Researched:` grounding citation is skipped grounding: `MUST-FIX`.
+- A substantiated `HIGH`-severity scanner finding from `al-review-cr-perf` defaults to `MUST-FIX`. The normal scoped-evidence test still applies.
+
+Spec-scope violations and skipped grounding are contractual defects against the task's proof obligation. Never downgrade either to `SHOULD-FIX` for reading like "just" a naming or documentation gap.
+
+A refactor diff carries no `Test Specification` traceability contract and no grounding-citation obligation. `al-review-refactor-*` survivors classify by the plain cost criteria above only — never reclassified upward because a reshape opportunity resembles a scope or grounding gap, or because `al-review-refactor-perf` reports `HIGH`.
 
 ## Return
 

@@ -8,7 +8,7 @@ depends_on: []
 ---
 # T-002 — Validate allocated quantities sum to charge quantity
 
-For each `Item Charge Assignment (Sales)`, verify sum of allocated quantities equals charge quantity. Both inequality directions count as mismatches.
+For each `Item Charge Assignment (Sales)`, verify the sum of allocated quantities equals the charge quantity. Both inequality directions count as mismatches.
 
 Test Specification:
 
