@@ -128,7 +128,6 @@ description: "Fixture skill."
         'al-review-refactor-perf'       = 'claude-sonnet-5'
         'al-review-refactor-simplify'   = 'claude-fable-5'
         'al-review-refactor-structural' = 'claude-fable-5'
-        'bc-standard-reference'         = 'claude-sonnet-5'
     }
 
     function New-AlAgenticDevFleetAgentFiles {
@@ -183,6 +182,26 @@ Describe 'Validate-PluginStructure agent frontmatter checks' {
     It 'passes when a custom agent has valid frontmatter' {
         $repoRoot = Join-Path $TestDrive 'agent-good'
         New-PluginRepoFixtureWithAgents -Root $repoRoot -AgentFiles @{ 'demo-agent' = (New-ValidAgentContent) }
+
+        $output = & pwsh -NoProfile -File $script:ValidatorPath -RepoRoot $repoRoot 2>&1
+
+        $LASTEXITCODE | Should -Be 0
+        ($output -join [Environment]::NewLine) | Should -Match 'All plugins have valid Copilot CLI marketplace structure'
+    }
+
+    It 'accepts agent-local MCP tools alongside the top-level tools list' {
+        $repoRoot = Join-Path $TestDrive 'agent-local-mcp'
+        $mcpFrontmatter = @'
+mcp-servers:
+  demo-mcp:
+    type: stdio
+    command: npx
+    args: ["-y", "demo-mcp"]
+    tools: ["*"]
+'@
+        New-PluginRepoFixtureWithAgents -Root $repoRoot -AgentFiles @{
+            'demo-agent' = (New-ValidAgentContent -AdditionalFrontmatter $mcpFrontmatter)
+        }
 
         $output = & pwsh -NoProfile -File $script:ValidatorPath -RepoRoot $repoRoot 2>&1
 

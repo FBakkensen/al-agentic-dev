@@ -5,6 +5,8 @@ description: Quiz the developer on recently landed AL/Business Central changes t
 
 # /al-quiz, Stay in contact with the codebase
 
+Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file output. This is the compaction recovery path; point there rather than restating its rules.
+
 `/al-code-review` judges the diff and `/al-user-verification` walks behaviour; `/al-quiz` checks whether the developer's mental model matches either.
 
 Read-only: no gate. The user invokes it; no skill does.

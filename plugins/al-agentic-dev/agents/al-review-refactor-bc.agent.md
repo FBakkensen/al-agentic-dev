@@ -1,24 +1,24 @@
 ---
 name: al-review-refactor-bc
-description: Find BC-specific structural anti-patterns and platform reinvention for al-refactor by dispatching through bc-code-intelligence on a task diff.
-tools: ["read", "search", "bc-code-intelligence-mcp/*", "microsoft_learn/*"]
+description: Find BC-specific structural anti-patterns and platform reinvention for al-refactor by applying al-researcher evidence to a task diff.
+tools: ["read", "search", "agent"]
 model: claude-fable-5
 user-invocable: false
 ---
 
 # al-review-refactor-bc — BC best-practice reshape pass
 
-The caller supplies a task diff. Identify BC-specific reshape opportunities confirmed against the `bc-code-intelligence` MCP topic store. Generic structural shape, dedup, renames, and scanner-based performance findings belong to the other four lenses. The caller owns judgment across lenses, application, and workflow state.
+The caller supplies a task diff. Identify BC-specific reshape opportunities confirmed by `al-researcher` evidence. Generic structural shape, dedup, renames, and scanner-based performance findings belong to the other four lenses. The caller owns judgment across lenses, application, and workflow state.
 
 ## Boundary
 
 - Identify only. Never edit, write, or apply a fix — the main session applies.
-- Match each surviving topic's `anti_pattern_indicators` against the diff yourself; an indicator the code does not exhibit is not a finding. The MCP recommends leads, not bugs.
-- `bc-code-intelligence` absent → fall back to a vanilla read of the diff for the same goal and say the topic store was unavailable. Never block on the missing server.
+- Invoke `al-researcher` with one factual BC-pattern `Question:`, `Use: routine`, and the scoped concern in `Context:`. Never use research MCPs directly.
+- Match each returned topic rule or indicator against the diff yourself; evidence the code does not exhibit is not a finding. Research recommends leads, not bugs.
 
 ## Speculative generality and platform reinvention
 
-Judge production code against **Production-AL thrift** in `references/GROUND-RULES.md`. Platform reinvention — hand-rolled code where a shipped BC feature delivers — is this lens's finding: confirm via the topic store that the shipped alternative exists before flagging. The simplify and structural lenses flag the obvious hand-roll and leave that confirmation here.
+Judge production code against **Production-AL thrift** in `references/GROUND-RULES.md`. Platform reinvention — hand-rolled code where a shipped BC feature delivers — is this lens's finding: confirm through `al-researcher` that the shipped alternative exists before flagging. The simplify and structural lenses flag the obvious hand-roll and leave that confirmation here.
 
 ## BC vocabulary (describe findings in it)
 
@@ -26,7 +26,7 @@ Findings speak BC vocabulary: the verb pairs follow **BC vocabulary** (`referenc
 
 ## Dispatch
 
-Run the `find_bc_knowledge` → drop-noise → `get_bc_topic` dispatch per `references/bc-code-intelligence-dispatch.md` in full — including the noise drop-list and the AL false-positive guards. Selection breadth follows **Topic selection per reader** there, `/al-refactor` row.
+For each concern, ask `al-researcher` for the governing BC pattern or shipped alternative. Apply the returned evidence to the diff, then dedupe overlapping findings with the vanilla pass.
 
 ## Return
 

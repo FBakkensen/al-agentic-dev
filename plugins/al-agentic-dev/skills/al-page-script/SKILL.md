@@ -6,6 +6,8 @@ description: Guide the user to record the slice's framework-limited E2E Journey 
 
 # /al-page-script — Guide the user to record a slice's bc-replay recordings
 
+Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file output. This is the compaction recovery path; point there rather than restating its rules.
+
 Reads the verify task's `Verification Plan` Journey Examples marked `Record: yes` from its file under `tasks/`. Guides the user — one scenario at a time, in chat, punchline first — to record each in BC's built-in **Page Scripting (Preview)** recorder.
 
 The user performs the gestures, validates the outcomes, downloads the `.yml`, and hands back the path. The agent replays it on a fresh container and classifies any red. Green opens the next scenario.
@@ -141,4 +143,5 @@ If state can't be read, fall back to `/al-user-verification T-NNN`.
 | **Hands off to**   | `/al-user-verification` on green — every `Record: yes` scenario recorded, batch pre-flight green. `/al-steer` on a production-bug or oracle-blind/unscriptable red (*Failure classification*). |
 | **Uses**           | `new-agent-container.ps1`, `publish-apps.ps1`, `pagescript-replay.ps1` (*Container choreography*), BC's Page Scripting recorder driven by the user, Web Client deep links + `al-build.json` credentials, [`references/recorder-gestures.md`](references/recorder-gestures.md), [`references/bc-replay-yaml-format.md`](references/bc-replay-yaml-format.md), [`../../references/testing/test-specification.md`](../../references/testing/test-specification.md), [`../../references/testing/test-strategy.md`](../../references/testing/test-strategy.md) |
 | **Replan venue**   | `/al-steer` — both red routes land here, status unchanged; mechanics in *Failure classification* |
-| **Sidebands**      | `/al-research` (BC surface behaviour an example asserts), `/grill-me` (intent on an example step the user must adjudicate) |
+| **Spawns**         | `al-researcher` for BC surface behaviour an example asserts |
+| **Sidebands**      | `/grill-me` (intent on an example step the user must adjudicate) |

@@ -5,6 +5,8 @@ description: Decompose `architecture.md` into a slice-grouped task list in the `
 
 # /al-scope, architecture.md → task list
 
+Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file output. This is the compaction recovery path; point there rather than restating its rules.
+
 Decompose `architecture.md` into `specs/<NNN>-<slug>/tasks/`: a `000-feature.md` header plus one file per task, grouped by slice.
 
 ## Preconditions
@@ -63,4 +65,4 @@ Close with the task-close gate report ([GROUND-RULES.md](../../references/GROUND
 | **Runs after**     | `/al-design` (architecture.md), `/al-event-model` for user/API-facing (event-model.md source for slice slugs and Goal) |
 | **Hands off to**   | `/al-provision` (`T-001`), then `/al-refine` once the first slice opens (one task at a time, technical or verify) |
 | **Replan venue**   | `/al-steer` (gap surfaced during decomposition) |
-| **Sidebands**      | `/al-research` (non-trivial BC areas), `bc-standard-reference` (BaseApp grounding) |
+| **Spawns**         | `al-researcher` for non-trivial BC areas and BaseApp grounding beyond direct workspace reading |

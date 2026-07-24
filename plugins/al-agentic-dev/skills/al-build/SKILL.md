@@ -6,6 +6,8 @@ allowed-tools: ["execute", "read"]
 
 # /al-build — build and test gate
 
+Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file output. This is the compaction recovery path; point there rather than restating its rules.
+
 **Run after every AL change and before committing. Zero warnings and zero errors → green; anything else → red.** The script itself exits 0 on warnings by default (`WARN_AS_ERROR=false`) — the zero-warning bar is this skill's: treat any warning in the gate output as red, or set `WARN_AS_ERROR=true` to bind the bar to the exit code.
 
 The gate runs two test layers: Unit (AL Runner) and Integration (container + TestPage). See [`test-strategy.md`](../../references/testing/test-strategy.md).

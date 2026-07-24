@@ -6,6 +6,8 @@ allowed-tools: ["execute", "read", "edit"]
 
 # /al-mutate — test-rigor gate
 
+Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file output. This is the compaction recovery path; point there rather than restating its rules.
+
 Mutate production code one site at a time. Build. Classify. Revert.
 
 This skill guards **oracle sensitivity** at the unit/integration driver layers ([test-strategy.md](../../references/testing/test-strategy.md)).
@@ -113,7 +115,7 @@ If state can't be read, fall back to `/al-code-review`.
 |---|---|
 | **Runs after**     | `/al-refactor` (the rigor step the user runs after reshape), OR standalone on legacy code before `/al-refactor` |
 | **Hands off to**   | `/al-code-review` on a clean verdict (slice/feature gate); `/al-implement` for a reached survivor exposing a test gap (resume TDD for the killer test) or for the next `ready-for-implementation` task; `/al-refine` only for unreached-line or missing-coverage cases |
-| **Spawns**         | `al-mutant-cycle` custom agent — one supplied mutate→gate→revert cycle per approved mutant; `al-gate-runner` custom agent — the final full `test.ps1` closeout, same routing as `/al-build` |
+| **Spawns**         | `al-researcher` for BaseApp behaviour needed to classify a survivor; `al-mutant-cycle` custom agent — one supplied mutate→gate→revert cycle per approved mutant; `al-gate-runner` custom agent — the final full `test.ps1` closeout, same routing as `/al-build` |
 | **Calls directly** | none — the rubber-duck consult cross-checks non-trivial mutation plans before execution ([rubber-duck-review.md](../../references/rubber-duck-review.md)) |
 | **Replan venue**   | `/al-steer` |
-| **Sidebands**      | `/al-research` (BaseApp behaviour for survivor classification), `/grill-me` (classification call needs the user) |
+| **Sidebands**      | `/grill-me` (classification call needs the user) |

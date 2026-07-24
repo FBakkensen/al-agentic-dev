@@ -6,6 +6,8 @@ description: "Execute the `kind: breaking-change` task in the `tasks/` folder fo
 
 # /al-validate-breaking-changes — run the breaking-change gate
 
+Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file output. This is the compaction recovery path; point there rather than restating its rules.
+
 The gate answers whether the feature broke a released public API — the AppSource-style, per-country validation against the baseline release `/al-provision` cached, broader than the compile-time AppSourceCop pass.
 
 ## Precondition

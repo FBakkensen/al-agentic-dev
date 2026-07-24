@@ -10,14 +10,23 @@ Schema outranks style: machine-read shapes (YAML frontmatter, task-file fields, 
 
 **One decision per question.** A reply that needs the user's input asks one question per message, with lettered options. Carve-out: the ask-before-reveal questions in `/al-user-verification` and `/al-quiz` are witness elicitation, not decisions — options that reveal the expected value would lead the witness.
 
+## Chat thrift
+
+Lead with the verdict on line 1, then the reason. The first line of each landing point carries its outcome. House shapes keep their schema; thrift governs the wording inside them.
+
+Keep articles and connectives. Cut raw logs to the decisive line. Emit tool results, never tool-call narration. Drop decorative tables, emoji, the restated question, and "why it matters" preambles.
+
+Compress framing, never code, AL object names, commands, or error strings.
+
 ## Grounding
 
 BC training data is stale fiction. Every exact BC name — object, procedure, event, table, field, enum value, caption — written this session is grounded in a session-fresh lookup: an `al-symbols-mcp` / `grep` hit or a quoted fetch. Recall is not evidence.
 
 - **Upstream names.** A name cited from an upstream artifact counts only when `grep` against that file returns it this session.
 - **Minted names.** A name that does not exist yet needs a zero-hit collision lookup this session (`al-symbols-mcp` / `grep` — genuinely new, not shadowing) plus BC-vocabulary compliance. Collision scope: object names against workspace object declarations; fields against the target table and its extensions; procedures against the target object only; enum values against the target enum and its extensions. For a base object in a dependency, grep covers workspace extensions only — the `/al-build` compiler is the backstop for base-field collisions. `New and Modified Objects` is proposal, not carried evidence; the skill that lands the object re-runs the collision lookup in its own session.
-- **Constructs.** BC construct classes — record loop plus `Modify`, `SetLoadFields`, temp record lifecycle, page/report surface, `Commit` — carry execution-order and platform-cost semantics workspace names cannot vouch for. First write of a construct class in a task needs a fetched topic per [bc-code-intelligence-dispatch.md](bc-code-intelligence-dispatch.md) or a Microsoft Learn passage.
-- **Satisfiers.** Any verbatim-quoted fetch with a one-line citation counts. Names: `bc-code-intelligence` topic, Microsoft Learn, or the `bc-standard-reference` agent. Constructs: topic or Learn passage only — BaseApp source shows an instance, not the rule. `/al-research` is mandatory when sources disagree or a fetched fact lands in a durable design artifact (`event-model.md`, `architecture.md`, `CONTEXT.md`, ADRs).
+- **Research gateway.** BC knowledge beyond direct workspace reading invokes `al-researcher` with `Question:` one framed fact, `Use:` `routine`, `durable artifact <path>`, or `resolve conflict`, and optional `Context:`. Skills and the main session spawn it directly. Custom agents need `agent` tool access and carry the same instruction in their own body. Relay its tagged result; `CONFLICT` or `UNRESOLVED` stops the lookup. Never continue through another agent, MCP, web, or shell source.
+- **Constructs.** BC construct classes — record loop plus `Modify`, `SetLoadFields`, temp record lifecycle, page/report surface, `Commit` — carry execution-order and platform-cost semantics workspace names cannot vouch for. First write of a construct class in a task needs an `al-researcher` result.
+- **Satisfiers.** `SINGLE-SOURCE` with a verbatim quote satisfies routine grounding. Facts landing in `event-model.md`, `architecture.md`, `CONTEXT.md`, or an ADR require `VERIFIED`. Source disagreement requires `Use: resolve conflict`; `CONFLICT` or `UNRESOLVED` blocks the fact from landing.
 - **Trace.** Declare the citation in chat as `Researched: <fact> → <source path / URL / topic id>`. Task-scoped citations also land as `Contract notes` bullets at task reconcile — the one inline-citation carve-out. Everything else in artifacts stays names-only.
 
 ## BC vocabulary

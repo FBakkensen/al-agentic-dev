@@ -42,7 +42,6 @@ $script:AlAgenticDevFleet = [ordered]@{
     'al-review-refactor-perf'      = 'claude-sonnet-5'
     'al-review-refactor-simplify'  = 'claude-fable-5'
     'al-review-refactor-structural' = 'claude-fable-5'
-    'bc-standard-reference'        = 'claude-sonnet-5'
 }
 
 # Agent names must be unique across the whole marketplace (invoked by name via the
@@ -147,11 +146,11 @@ function Test-AgentFrontmatterBlock {
         }
     }
 
-    $toolsMatches = [regex]::Matches($frontmatter, '(?m)^\s*tools\s*:')
+    $toolsMatches = [regex]::Matches($frontmatter, '(?m)^tools\s*:')
     if ($toolsMatches.Count -gt 1) {
         $result.Errors += "Duplicate tools field in agent frontmatter: $AgentFile"
     } else {
-        $toolsMatch = [regex]::Match($frontmatter, '(?m)^\s*tools:\s*(.+?)\s*$')
+        $toolsMatch = [regex]::Match($frontmatter, '(?m)^tools:\s*(.+?)\s*$')
         if (-not $toolsMatch.Success) {
             $result.Errors += "Missing or malformed tools declaration in agent frontmatter: $AgentFile"
         } else {

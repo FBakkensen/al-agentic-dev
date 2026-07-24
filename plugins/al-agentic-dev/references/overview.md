@@ -1,6 +1,6 @@
 # al-agentic-dev plugin overview
 
-**You drive.** Composable AL/Business Central skills carry a feature idea to merge. Each skill ends by naming its handoff, and you invoke the next `/<skill-name>` yourself. Nothing auto-chains. Only two skills may be called directly by another skill: `/al-research` (verify a BC fact from authoritative sources) and `/al-build` (compile/publish/test). Skills also consult the harness-provided **rubber-duck agent** on non-trivial artifacts ([`rubber-duck-review.md`](rubber-duck-review.md)). Custom agents in `agents/` are `.agent.md` files spawned by skills — never slash commands, never invoked by you.
+**You drive.** Composable AL/Business Central skills carry a feature idea to merge. Each skill ends by naming its handoff, and you invoke the next `/<skill-name>` yourself. Nothing auto-chains. `/al-build` is the only skill called directly by another skill. BC knowledge beyond direct workspace reading goes through the internal `al-researcher` custom agent, keeping research tools in a separate context. Skills also consult the harness-provided **rubber-duck agent** on non-trivial artifacts ([`rubber-duck-review.md`](rubber-duck-review.md)). Custom agents in `agents/` are spawned programmatically — never slash commands, never invoked by you.
 
 ## Pipeline
 
@@ -16,7 +16,7 @@ Technical-task hardening: `/al-implement` (red→green, stop) → `/al-refactor`
 
 | Lane | Skills |
 |---|---|
-| **Cross-cutting** (invoked from any main-pipeline skill or standalone) | `/al-research` (verify a BC fact from authoritative sources), the rubber-duck consult ([`rubber-duck-review.md`](rubber-duck-review.md)), `/al-steer`, `/al-sync-main` (rebase the branch onto main, mechanically renumber object/field collisions) |
+| **Cross-cutting** (invoked from any main-pipeline skill or standalone) | the internal `al-researcher` gateway, the rubber-duck consult ([`rubber-duck-review.md`](rubber-duck-review.md)), `/al-steer`, `/al-sync-main` (rebase the branch onto main, mechanically renumber object/field collisions) |
 | **Infrastructure** | `/al-build` (compile, publish, run tests), `/al-debug-logging` (transient `FeatureTelemetry.LogUsage` probes) |
 | **Ops** (bracket the feature; run an `/al-build` script + flip task status) | `/al-provision` (`T-001`, refresh the build environment), `/al-validate-breaking-changes` (last, validate against the provisioned baseline) |
 | **Shaping** (after `/al-implement` on a task, or standalone on legacy) | `/al-refactor`, `/al-mutate` |
@@ -34,7 +34,7 @@ State lives in `specs/` and task frontmatter, never memory; every skill can star
 
 ## Skills
 
-The plugin ships 20 skills.
+The plugin ships 19 skills.
 
 | Skill | Role | When to invoke |
 |---|---|---|
@@ -43,7 +43,6 @@ The plugin ships 20 skills.
 | `/al-event-model` | User-facing journey: `event-model.md` in BC vocabulary (Role / Action / Business Event / View / Status). | User- or API-facing feature, after `/al-grill-adr`. Backend-only features skip this. |
 | `/al-design` | Feature architecture: `architecture.md`, from the idea or `event-model.md`. | After `/al-event-model` for user/API features, or after `/al-grill-adr` for backend-only. |
 | `/al-scope` | Decomposes `architecture.md` into a slice-grouped `tasks/` folder, one verification task per slice when `event-model.md` is present, bracketed by the two ops tasks. | After `/al-design`, before `/al-provision` on the bracketed `T-001` task. |
-| `/al-research` | Verify BC specifics from authoritative sources, quote them, return. Callable from a session and by another skill. | Two sources disagree, a fact lands in a durable design artifact, or a fuzzy BC question needs framing + cross-family verification. Single-fact lookups go direct. |
 | `/al-provision` | Runs the `kind: provision` task: refresh the build environment (compiler, symbols, analyzers, and — when enabled — the breaking-change baseline) via `/al-build`'s `provision.ps1`, flip the task `done`/`blocked`. | Any `kind: provision` task at `ready`, or a re-run after you clear the named blocker. |
 | `/al-validate-breaking-changes` | Runs the `kind: breaking-change` task: validate against the provisioned baseline via `validate-breaking-changes.ps1`, flip the task `done`/`blocked`; a detected break stops for a human. | The feature's last task, or a re-run after you clear the blocker from a failed run. |
 | `/al-refine` | One `ready` task → fresh `Test Specification` (technical → `ready-for-implementation`) or `Verification Plan` (verify → `ready-for-verification`). | Before working a specific task. |
@@ -61,25 +60,24 @@ The plugin ships 20 skills.
 
 ## Custom agents
 
-The plugin ships 18 custom agents. The rubber-duck is not one of them — it is the harness-provided agent type reached through the task tool ([`rubber-duck-review.md`](rubber-duck-review.md)).
+The plugin ships 17 custom agents. The rubber-duck is not one of them — it is the harness-provided agent type reached through the task tool ([`rubber-duck-review.md`](rubber-duck-review.md)).
 
 | Agent | Job | Invoked by |
 |---|---|---|
 | `al-red-green` | One AAA case RED→GREEN: write the failing test, confirm RED, write minimal production code, confirm GREEN, return an outcome note. No in-loop escalation. | `/al-implement` (per case), `/al-code-review --fix` (per must-fix finding) |
 | `al-review-cr-compliance` | `/al-code-review` lens 1: project compliance, naming, scope, grounding, surface reconciliation. | `/al-code-review` |
 | `al-review-cr-bugscan` | `/al-code-review` lens 2: correctness and obvious logic faults. | `/al-code-review` |
-| `al-review-cr-bc` | `/al-code-review` lens 3: BC-specific anti-patterns via bc-code-intelligence MCP. | `/al-code-review` |
+| `al-review-cr-bc` | `/al-code-review` lens 3: BC-specific anti-patterns using `al-researcher` evidence. | `/al-code-review` |
 | `al-review-cr-comments` | `/al-code-review` lens 4: code-comment invariants + git history context. | `/al-code-review` |
 | `al-review-cr-appsource` | `/al-code-review` lens 5: AppSource public-surface addition lock-in (per-feature only). | `/al-code-review` |
 | `al-review-cr-perf` | `/al-code-review` lens 6: performance via al-performance MCP `scan_al_code`. | `/al-code-review` |
 | `al-review-refactor-simplify` | `/al-refactor` lens 1: dedup, dead code, speculative generality. | `/al-refactor` |
-| `al-review-refactor-bc` | `/al-refactor` lens 2: BC best-practice + platform-reinvention via bc-code-intelligence MCP. | `/al-refactor` |
+| `al-review-refactor-bc` | `/al-refactor` lens 2: BC best-practice + platform-reinvention using `al-researcher` evidence. | `/al-refactor` |
 | `al-review-refactor-structural` | `/al-refactor` lens 3: decision-logic boundary, depth over indirection, seam introduction. | `/al-refactor` |
 | `al-review-refactor-naming` | `/al-refactor` lens 4: BC vocabulary + project terminology naming. | `/al-refactor` |
 | `al-review-refactor-perf` | `/al-refactor` lens 5: performance via al-performance MCP, structural reshapes only. | `/al-refactor` |
 | `al-review-judge` | Dedups, substantiates, and ranks one supplied batch of `/al-code-review` or `/al-refactor` lens findings against its scoped diff. | `/al-code-review`, `/al-refactor` |
-| `bc-standard-reference` | Canonical BaseApp / System Application / Business Foundation / APIV2 lookup, quoting Microsoft's shipped AL from `microsoft/BCApps` version-matched to your app. | `/al-research` (its BaseApp source), `/al-debug-logging` (BaseApp events for probes); also consulted from `/al-event-model`, `/al-design`, `/al-scope`, `/al-refactor` |
-| `al-researcher` | Arbitrates one framed consequential BC fact across source families, quoting evidence and reconciling disagreement. | `/al-research` |
+| `al-researcher` | Resolves one framed AL/BC fact through isolated BC patterns, Learn, symbols, or canonical BCApps source and returns a tagged verdict with quoted evidence. | Any skill, main session, or research-capable custom agent needing BC knowledge beyond direct workspace reading |
 | `al-design-option` | Develops one self-contained architecture candidate under a supplied divergent constraint — `/al-design` fans out three in parallel and chooses among them itself. | `/al-design` |
 | `al-gate-runner` | Runs one supplied build, provision, or breaking-change gate command and relays its authoritative artifacts, no interpretation. | `/al-build`, `/al-provision`, `/al-validate-breaking-changes`, `/al-mutate` final closeout |
 | `al-mutant-cycle` | Runs one supplied mutate→gate→revert cycle and returns observed evidence; the caller classifies the mutant. | `/al-mutate` |

@@ -1,7 +1,7 @@
 ---
 name: al-review-cr-compliance
 description: Catch project-compliance, naming, grounding, push-up, scope, and reconcile drift findings for al-code-review on a diff or scope.
-tools: ["read", "search", "microsoft_learn/*"]
+tools: ["read", "search", "agent"]
 model: claude-sonnet-5
 user-invocable: false
 ---
@@ -13,6 +13,7 @@ AL/Business Central reviewer. The caller supplies a diff or scope; pursue only t
 ## Boundary
 
 - Identify only. Never classify, dedupe, edit, or write — `al-review-judge` classifies and the main session applies.
+- A BC platform or vocabulary fact beyond direct workspace reading invokes `al-researcher` with one `Question:`, `Use: routine`, and relevant `Context:`. Apply its evidence within this lens; never use research MCPs directly.
 
 ## Focused goal
 

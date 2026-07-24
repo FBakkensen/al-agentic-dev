@@ -6,6 +6,8 @@ allowed-tools: ["execute", "read", "edit", "search"]
 
 # /al-sync-main — rebase onto main, renumber collisions
 
+Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file output. This is the compaction recovery path; point there rather than restating its rules.
+
 Bring the current branch current with `main`: always rebase, never merge. A branch-new object or field number colliding with `main` moves mechanically to the next free slot in its `idRanges` bucket. Everything requiring a decision stops and asks.
 
 ## Preconditions

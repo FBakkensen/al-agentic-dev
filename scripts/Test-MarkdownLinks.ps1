@@ -444,7 +444,9 @@ function Get-TrackedMarkdownFiles {
         throw "Could not list tracked Markdown files in '$Root'."
     }
 
-    return @($files -split "`0" | Where-Object { $_ })
+    return @($files -split "`0" | Where-Object {
+            $_ -and (Test-Path -LiteralPath (Join-Path $Root $_) -PathType Leaf)
+        })
 }
 
 function Test-LocalMarkdownTarget {

@@ -5,9 +5,11 @@ description: Pick a `ready-for-implementation` technical task from the `tasks/` 
 
 # /al-implement — pick a task, drive it red→green
 
+Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file output. This is the compaction recovery path; point there rather than restating its rules.
+
 One `ready-for-implementation` technical task from the `tasks/` folder goes red→green. Consume its fresh `Test Specification`, drive AAA cases one at a time — `Unit` first, then `Integration`, in coverage-ID order — reconcile the task file to actuals, and stamp `phase: implemented` at full green. `status:` stays `ready-for-implementation` through the hardening window; `/al-mutate`'s clean verdict flips it `done` ([task-lifecycle.md](../../references/task-lifecycle.md)). Stop at green: `/al-refactor` (reshape) and `/al-mutate` (rigor) are the user's next invocations, never chained from here. One task per session.
 
-The Composition table at the end carries this skill's full call boundary: `/al-research` and `/al-build` are the only skills it calls directly. Everything else hands off by naming the next step.
+The Composition table at the end carries this skill's full call boundary: `/al-build` is the only skill it calls directly; BC facts go through the `al-researcher` custom agent. Everything else hands off by naming the next step.
 
 Red-first lives at the Unit and Integration layers ([test-strategy.md](../../references/testing/test-strategy.md)); a production bug a higher layer surfaces is pushed down here so the proof lands where an oracle sees it.
 
@@ -23,11 +25,11 @@ Any disagreement between the branch, feature artifacts, task kind, status, and `
 - Exactly two named follow-ups re-enter such a task, including at `status: done`: an `/al-mutate` survivor's killer test, and an `/al-code-review` must-fix finding routed as `T-NNN`. Either lands red-first under the originating task and commits under its `T-NNN` prefix. Stamp mechanics follow the repair exception in [task-lifecycle.md](../../references/task-lifecycle.md).
 - One flip only: a survivor killer-test round that closes the last open gap on a still-`ready-for-implementation` task flips `status: done` — the clean verdict is now proved.
 - Any other reason to touch a `done` task → **Stop**, `Next: /al-steer`.
-- Read [test-specification.md](../../references/testing/test-specification.md) and [GROUND-RULES.md](../../references/GROUND-RULES.md) before code. Production names and signatures arrive minted in the task's `New and Modified Objects`. Test codeunits and procedures are the per-case subagent's to mint. `al-red-green` reads its own implementation references on each invocation.
+- Read [test-specification.md](../../references/testing/test-specification.md) before code. Production names and signatures arrive minted in the task's `New and Modified Objects`. Test codeunits and procedures are the per-case subagent's to mint. `al-red-green` reads its own implementation references on each invocation.
 
 ## Name the seam
 
-Read `architecture.md` — the module map, decision logic and test surfaces, brownfield touchpoints — and name the seam in BC vocabulary: procedure to extract, event to subscribe, interface to implement, or page/action to wire. Unanswerable → the task is not ready; resolve via `/al-research`, `/al-refine`, or `/al-steer`.
+Read `architecture.md` — the module map, decision logic and test surfaces, brownfield touchpoints — and name the seam in BC vocabulary: procedure to extract, event to subscribe, interface to implement, or page/action to wire. A BC fact beyond direct workspace reading invokes `al-researcher`; a stale specification routes through `/al-refine`, and a design gap through `/al-steer`.
 
 ## One AAA case at a time
 
@@ -43,7 +45,7 @@ Route on the line-1 verdict:
 
 - `GREEN` → run the full-suite gate — a red anywhere, including a sibling task's test, blocks the `phase: implemented` stamp — then the next case.
 - `PUSH-UP` → the commitment gate below.
-- `BLOCKED` naming a research question → invoke `/al-research` with that exact question, then resume the case with the returned finding.
+- `BLOCKED` naming a research question → invoke `al-researcher` with that exact `Question:`, `Use: routine`, and the case in `Context:`, then resume with its result. `UNRESOLVED` routes to `/al-steer`.
 - New decision flagged, or any other `BLOCKED` → `Next: /al-steer`.
 
 A multi-case task outlives the context window. Track per-case progress in the session todo list, one todo per AAA case — todos survive compaction; this skill's injected body and per-case chatter do not. After a compaction, re-read this skill and the task file, then resume from the todo state.
@@ -115,6 +117,6 @@ Current task state chooses the handoff; a known exit outranks the fallback pipel
 |---|---|
 | **Runs after**     | `/al-refine` (filled `Test Specification` in the task file and flipped task to `ready-for-implementation`) |
 | **Hands off to**   | `/al-refactor` on non-trivial green, then `/al-mutate` (its clean verdict flips the task `done`); next `ready-for-implementation` technical task; `/al-code-review` per-slice at slice-done (both slice types); `/al-code-review` per-feature at feature-done |
-| **Calls directly** | `/al-research` (BC fact escalation), `/al-build` (compile/test) — the only skills it invokes; rubber-duck consult on non-trivial work per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
-| **Spawns**         | `al-red-green` custom agent (RED→GREEN per AAA case) |
+| **Calls directly** | `/al-build` (compile/test) — the only skill it invokes; rubber-duck consult on non-trivial work per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
+| **Spawns**         | `al-researcher` for BC facts; `al-red-green` custom agent (RED→GREEN per AAA case) |
 | **Replan venue**   | `/al-steer` |

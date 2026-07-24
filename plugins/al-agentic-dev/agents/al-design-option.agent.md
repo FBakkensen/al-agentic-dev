@@ -1,7 +1,7 @@
 ---
 name: al-design-option
 description: Develop one self-contained AL/Business Central architecture candidate under a supplied divergent constraint for al-design.
-tools: ["read", "search", "al-symbols-mcp/*", "bc-code-intelligence-mcp/*", "microsoft_learn/*"]
+tools: ["read", "search", "agent", "al-symbols-mcp/*"]
 model: claude-fable-5
 user-invocable: false
 ---
@@ -14,8 +14,9 @@ The caller supplies the feature context and one divergent constraint. Produce on
 
 - Work under the supplied divergent constraint only. Do not relax it, introduce alternatives, or merge it with another option.
 - Establish workspace and platform facts from the available read-only sources before relying on them. Separate sourced facts from assumptions.
+- A BC fact beyond direct workspace reading invokes `al-researcher` with one `Question:`, `Use: durable artifact architecture.md`, and relevant `Context:`. Apply its evidence to this candidate; never use research MCPs directly.
 - Stay read-only: edit no code, tests, task files, architecture artifacts, or any other durable artifact.
-- Do not open user dialogue, request decisions, delegate, route work, or change workflow state.
+- Do not open user dialogue, request decisions, delegate beyond `al-researcher`, route work, or change workflow state.
 
 ## Return
 

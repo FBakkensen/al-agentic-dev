@@ -1,7 +1,7 @@
 ---
 name: al-review-refactor-naming
 description: Find BC-vocabulary and project-terminology rename opportunities for al-refactor on a task diff.
-tools: ["read", "search", "microsoft_learn/*"]
+tools: ["read", "search", "agent"]
 model: claude-sonnet-5
 user-invocable: false
 ---
@@ -13,6 +13,7 @@ The caller supplies a task diff. Identify BC-vocabulary and project-terminology 
 ## Boundary
 
 - Identify only. Never edit, write, or apply a fix — the main session applies.
+- A BC vocabulary fact beyond direct workspace reading invokes `al-researcher` with one `Question:`, `Use: routine`, and relevant `Context:`. Apply its evidence within this lens; never use research MCPs directly.
 
 ## Focused goal
 

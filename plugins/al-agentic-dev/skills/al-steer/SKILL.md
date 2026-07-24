@@ -5,6 +5,8 @@ description: Coach and navigator for AL/Business Central agentic dev. Reads the 
 
 # /al-steer, Coach / navigator
 
+Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file output. This is the compaction recovery path; point there rather than restating its rules.
+
 **Read the live planning surface, name the next move — never force it.** The surface: `tasks/`, `architecture.md`, `event-model.md` when present, the goal, codebase, recent commits, `.out-of-scope/`, and `.not-yet-specified/`. Name blocks, drift, and handoff. This is the canonical replan venue and owner of `.out-of-scope/` and `.not-yet-specified/`.
 
 Compute the status board fresh from the `tasks/` folder each invocation — folder shape, frontmatter fields, and the status lifecycle in [`task-lifecycle.md`](../../references/task-lifecycle.md).
@@ -89,7 +91,7 @@ After a structural write, before naming the downstream handoff, verify the `task
 
 The ledger lives at repo root, one file per question, never an answer. A question earns a file when `/al-grill-adr` or `/al-design` named it, the user said it matters, and nobody can phrase it as a decision yet.
 
-Scan the folder during replan and grilling. A landed decision makes a question answerable → route it: `/al-grill-adr` for a domain rule, `/al-research` for a BC fact, or decide it here. The answer lands in the artifact that owns it; delete the question file in the same pass. The user rules a question out of scope → move its file to `.out-of-scope/<concept>.md`, rewritten from question to substantive rejection.
+Scan the folder during replan and grilling. A landed decision makes a question answerable → route a domain rule through `/al-grill-adr`, invoke `al-researcher` for one BC fact, or decide it here. The answer lands in the artifact that owns it; delete the question file in the same pass. The user rules a question out of scope → move its file to `.out-of-scope/<concept>.md`, rewritten from question to substantive rejection.
 
 ## Next step
 

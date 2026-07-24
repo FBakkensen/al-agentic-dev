@@ -5,6 +5,8 @@ description: Settle the user-facing journey for AL/Business Central as `event-mo
 
 # /al-event-model, User-facing journey → event-model.md
 
+Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file output. This is the compaction recovery path; point there rather than restating its rules.
+
 Settle the journey at the altitude of what an external observer sees. The user-side picks land here so `/al-design` commits architecture without re-litigating them.
 
 ## Artifact boundary
@@ -19,11 +21,11 @@ Writes only `event-model.md` — never `architecture.md` or the `tasks/` folder.
 
 ## The five slots
 
-Every slot `/al-design` consumes settles here. Every BC-specific name is grounded per [GROUND-RULES.md](../../references/GROUND-RULES.md) before it lands in a slot. A slot whose meaning won't settle blocks the write. A BC name grounds via `/al-research`. Domain intent still fuzzy after `CONTEXT.md` and the ADRs is a stop — `Next: /al-grill-adr`. A missing standard persona name never blocks — the Role slot settles on a plain business role name.
+Every slot `/al-design` consumes settles here. Every BC-specific name is grounded per [GROUND-RULES.md](../../references/GROUND-RULES.md) before it lands in a slot. A slot whose meaning won't settle blocks the write. A BC name grounds through `al-researcher` with `Use: durable artifact event-model.md`. Domain intent still fuzzy after `CONTEXT.md` and the ADRs is a stop — `Next: /al-grill-adr`. A missing standard persona name never blocks — the Role slot settles on a plain business role name.
 
-- **Role** — the acting persona in BC vocabulary: a human business role (a standard BC persona name — Order Processor, Accountant — anchors where one exists, never gates), an external API consumer or publisher, or a BC system actor such as the Posting Engine when the journey passes through one. Verify standard persona names the workspace cannot answer via `/al-research`.
+- **Role** — the acting persona in BC vocabulary: a human business role (a standard BC persona name — Order Processor, Accountant — anchors where one exists, never gates), an external API consumer or publisher, or a BC system actor such as the Posting Engine when the journey passes through one. Verify standard persona names the workspace cannot answer through `al-researcher`.
 - **Action** — user-meaningful verb + object (*Release Sales Order*, *Approve Override*). Where it overlaps BaseApp, match BC's standard verb set: Insert / Modify / Delete / Post / Validate / Release / Reopen / Apply / Reverse.
-- **Business Event** — past-tense fact in business language (*Sales Order Released*, *Credit Limit Breached*). Verify BaseApp event names via `/al-research` before naming.
+- **Business Event** — past-tense fact in business language (*Sales Order Released*, *Credit Limit Breached*). Verify BaseApp event names through `al-researcher` before naming.
 - **View** — surface plus its location (*Sales Order page → Status flips to Released*, *API response carries the Override decision*). The surface type settles here; the AL control name settles in `/al-design`.
 - **Status** — when the Business Event flips a field on the aggregate's record, name field and new value (*Sales Header Status → Override Pending*).
 
@@ -49,7 +51,7 @@ Between writing `event-model.md` and the close, run the document-integrity check
 
 ## Next step
 
-Close with the task-close gate report ([GROUND-RULES.md](../../references/GROUND-RULES.md) House shapes) — it gives the user the evidence for the greenlight call on `/al-design`. `event-model.md` landed with no integrity fail → `Next: /al-design`. A BC name won't ground → `Next: /al-research`. A downstream fact invalidated the timeline → `Next: /al-steer`.
+Close with the task-close gate report ([GROUND-RULES.md](../../references/GROUND-RULES.md) House shapes) — it gives the user the evidence for the greenlight call on `/al-design`. `event-model.md` landed with no integrity fail → `Next: /al-design`. `al-researcher` returned `CONFLICT` or `UNRESOLVED` → `Next: /al-steer`. A downstream fact invalidated the timeline → `Next: /al-steer`.
 
 ## Composition
 
@@ -57,6 +59,7 @@ Close with the task-close gate report ([GROUND-RULES.md](../../references/GROUND
 |---|---|
 | **Runs after**     | `/al-grill-adr` (CONTEXT + domain ADRs settled) |
 | **Hands off to**   | `/al-design` (consumes `event-model.md`) |
-| **Calls directly** | `/al-research` (BC names the workspace cannot answer) — the only skill it invokes; rubber-duck consult on non-trivial timelines |
+| **Calls directly** | no skills; rubber-duck consult on non-trivial timelines |
+| **Spawns**         | `al-researcher` for BC names and behaviour beyond direct workspace reading |
 | **Replan venue**   | `/al-steer` (downstream fact invalidates timeline) |
-| **Sidebands**      | `bc-standard-reference` (pure BaseApp behaviour), `/grill-me` (stress-test invented leaves before confirming) |
+| **Sidebands**      | `/grill-me` (stress-test invented leaves before confirming) |

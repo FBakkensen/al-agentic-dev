@@ -1,10 +1,12 @@
 ---
 name: al-debug-logging
 description: Temporarily add `DEBUG-*` `FeatureTelemetry.LogUsage` probes to AL code to inspect runtime state via `.output/TestResults/*/telemetry.jsonl`. Use when runtime behaviour diverges from source and tests alone can't reveal which path ran. Probes are temporary; remove before delivery.
-allowed-tools: ["execute", "read", "edit", "search"]
+allowed-tools: ["execute", "read", "edit", "search", "agent"]
 ---
 
 # /al-debug-logging — temporary runtime probe loop
+
+Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file output. This is the compaction recovery path; point there rather than restating its rules.
 
 Hypothesis-driven debugging with probes as scaffolding. One question per iteration.
 
@@ -54,4 +56,4 @@ Answered → `Next:` return to the skill that needed the insight — usually `/a
 ## Composition
 
 - `/al-build` — runs the test harness, produces `.output/TestResults/*/telemetry.jsonl`.
-- `bc-standard-reference` agent — finds BaseApp events for subscriber probes.
+- `al-researcher` custom agent — with `Question:` one event-location fact, `Use: routine`, and the suspected path in `Context:`; it privately uses canonical BCApps source when needed.

@@ -4,7 +4,7 @@
 
 ## Find the event
 
-Use the `bc-standard-reference` agent to locate published events around the suspected path. Take events on both sides of the operation (`OnBefore*` and `OnAfter*`) so `telemetry.jsonl` order reveals the path.
+Invoke `al-researcher` to locate published events around the suspected path: one `Question:`, `Use: routine`, and the path in `Context:`. Take events on both sides of the operation (`OnBefore*` and `OnAfter*`) so `telemetry.jsonl` order reveals the path.
 
 ## Pattern
 

@@ -5,6 +5,8 @@ description: "One `status: ready` task to a fresh Test Specification or Verifica
 
 # /al-refine, task to Test Specification / Verification Plan
 
+Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file output. This is the compaction recovery path; point there rather than restating its rules.
+
 One named `status: ready` task in `tasks/` gets its `Test Specification` or `Verification Plan` regenerated from the current app and tests, in the grammar of [test-specification.md](../../references/testing/test-specification.md). One task per run.
 
 Branch by `kind:` in the task file's frontmatter:
@@ -20,7 +22,7 @@ Branch by `kind:` in the task file's frontmatter:
 - User/API-facing features carry `event-model.md` alongside. A `kind: verify` task without it is a contract violation: **Stop**, route `/al-steer`.
 - The target task is named and has `status: ready`.
 - A `ready` verify task carries `review: clean` — `/al-code-review` stamped it when it opened the task. Absent → torn state: **Stop**, `Next: /al-steer`.
-- Read [test-specification.md](../../references/testing/test-specification.md), [test-strategy.md](../../references/testing/test-strategy.md), [test-layout.md](../../references/testing/test-layout.md) (the Unit-vs-Integration placement rule lives there — a codepath needing real BaseApp behaviour cannot be scoped `Unit`), [GROUND-RULES.md](../../references/GROUND-RULES.md), and [task-lifecycle.md](../../references/task-lifecycle.md) before writing.
+- Read [test-specification.md](../../references/testing/test-specification.md), [test-strategy.md](../../references/testing/test-strategy.md), [test-layout.md](../../references/testing/test-layout.md) (the Unit-vs-Integration placement rule lives there — a codepath needing real BaseApp behaviour cannot be scoped `Unit`), and [task-lifecycle.md](../../references/task-lifecycle.md) before writing.
 - Scan `.not-yet-specified/*.md` at repo root when present. A question the task's behaviour touches → **Stop**, name the question file, route `/al-steer` (or `/al-grill-adr` for a domain rule).
 
 ### A `blocked` or `done` task routes by why
@@ -48,7 +50,7 @@ Answer before writing:
 - **What does the codebase actually expose?** Real codeunits, tables, fields, pages, procedures, events, and APIs on the boundary.
 - **Which objects and signatures does the task land?** Write `New and Modified Objects` per the grammar. Seed `New:` vs `Modified:` from `architecture.md`'s `new` / `extends` markers. Override the seed by workspace state at refine time. Architecture silent on a needed object → mint it when it serves a listed slice slot. A missing slot is a replan trigger ([task-lifecycle.md](../../references/task-lifecycle.md)), route `/al-steer`.
 
-Unanswerable → keep or flip `status: blocked`; resolve via `/al-research` (BC behaviour), `/al-grill-adr` (domain rule), `/grill-me` (intent the user must adjudicate), or `/al-steer` (replan).
+Unanswerable → keep or flip `status: blocked`; invoke `al-researcher` for BC behaviour, `/al-grill-adr` for a domain rule, `/grill-me` for intent the user must adjudicate, or `/al-steer` for replan.
 
 ## Verify task: Verification Plan
 
@@ -59,7 +61,7 @@ Every check derives from the slice's observable user/API surface, never internal
 - **Which E2E journeys are `Record: yes`?** Per the `Record:` flag semantics in the grammar: only when no AL test layer can automate the behaviour. Behaviour a lower test should pin is pushed down via `/al-steer`, never recorded.
 - **Which `event-model.md` slots are cited?** Every Role / Action / Business Event / View / Status name is backed by `grep` against `event-model.md` or a workspace lookup on the underlying BC surface.
 
-Unanswerable → keep or flip `status: blocked`; resolve via `/al-research` (BC surface), `/grill-me` (intent), or `/al-steer` (wrong slice boundary or missing prerequisite).
+Unanswerable → keep or flip `status: blocked`; invoke `al-researcher` for a BC surface fact, `/grill-me` for intent, or `/al-steer` for a wrong slice boundary or missing prerequisite.
 
 ## Surface push-ups, commit nothing
 
@@ -107,7 +109,7 @@ Close with the task-close gate report per [GROUND-RULES.md](../../references/GRO
 
 - Technical → `Next: /al-implement T-NNN`.
 - Verify → state-conditional: `/al-page-script T-NNN` when a `Record: yes` Journey Example's recording is missing, else `/al-user-verification T-NNN`. The review already ran — never route back through `/al-code-review`.
-- Stayed or flipped `blocked` → `/al-research`, `/al-grill-adr`, or `/al-steer` per cause.
+- Stayed or flipped `blocked` → invoke `al-researcher`, or hand off to `/al-grill-adr` or `/al-steer`, per cause.
 
 ## Composition
 
@@ -115,6 +117,7 @@ Close with the task-close gate report per [GROUND-RULES.md](../../references/GRO
 |---|---|
 | **Runs after**     | `/al-scope`, or a gate-opened task at `status: ready` |
 | **Hands off to**   | as Next step above |
-| **Calls directly** | `/al-research`; rubber-duck consult per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
+| **Calls directly** | no skills; rubber-duck consult per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
+| **Spawns**         | `al-researcher` for BC facts beyond direct workspace reading |
 | **Replan venue**   | `/al-steer` |
 | **Sidebands**      | `/al-grill-adr`, `/grill-me` |

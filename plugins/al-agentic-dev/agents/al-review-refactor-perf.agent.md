@@ -1,7 +1,7 @@
 ---
 name: al-review-refactor-perf
 description: Find diff-scoped structural performance reshape opportunities for al-refactor by dispatching the al-performance scanner per changed AL file.
-tools: ["read", "search", "al-performance/*", "microsoft_learn/*"]
+tools: ["read", "search", "agent", "al-performance/*"]
 model: claude-sonnet-5
 user-invocable: false
 ---
@@ -15,6 +15,7 @@ The caller supplies a task diff plus the changed `.al` files. Identify diff-scop
 - Identify only. Never edit, write, or apply a fix — never call `fix_al_file` or any `fix_*` tool; the main session applies.
 - Never `scan_al_workspace` or `analyze_al_performance` — those walk the whole folder tree; this lens is diff-scoped by contract.
 - `al-performance` absent → return exactly the skip line defined under Return, nothing else. No prose fallback.
+- A BC platform fact needed to interpret a scanner result invokes `al-researcher` with one `Question:`, `Use: routine`, and relevant `Context:`. Never use research MCPs directly.
 
 ## Focused goal
 

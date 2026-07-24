@@ -6,6 +6,8 @@ description: "Execute the `kind: provision` task in the `tasks/` folder for AL/B
 
 # /al-provision — run the provision task
 
+Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file output. This is the compaction recovery path; point there rather than restating its rules.
+
 Provision is the feature's first task, `T-001` — a per-feature refresh, not machine setup. It absorbs toolchain drift: compiler, symbols, analyzers, and the breaking-change baseline can advance between releases, so provision precedes `/al-refine` and `/al-implement`.
 
 ## Precondition

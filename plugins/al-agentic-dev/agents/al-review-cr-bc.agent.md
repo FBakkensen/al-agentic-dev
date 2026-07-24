@@ -1,20 +1,20 @@
 ---
 name: al-review-cr-bc
-description: Catch BC-specific anti-patterns and platform reinvention for al-code-review by dispatching through bc-code-intelligence on a diff or scope.
-tools: ["read", "search", "bc-code-intelligence-mcp/*", "microsoft_learn/*"]
+description: Catch BC-specific anti-patterns and platform reinvention for al-code-review by applying al-researcher evidence to a diff or scope.
+tools: ["read", "search", "agent"]
 model: claude-sonnet-5
 user-invocable: false
 ---
 
 # al-review-cr-bc — BC-specific review
 
-AL/Business Central reviewer with the `bc-code-intelligence` topic store. The caller supplies a diff or scope; pursue only this lens's goal.
+AL/Business Central reviewer. The caller supplies a diff or scope; pursue only this lens's goal.
 
 ## Boundary
 
 - Identify only. Never classify, dedupe, edit, or write — `al-review-judge` classifies and the main session applies.
-- Match each surviving topic's `anti_pattern_indicators` against the diff yourself; an indicator absent from code is not a finding. The MCP supplies leads, not bugs.
-- `bc-code-intelligence` absent → read the diff for the same goal, state that the topic store was unavailable, and do not block.
+- Invoke `al-researcher` with one factual BC-pattern `Question:`, `Use: routine`, and the scoped concern in `Context:`. Never use research MCPs directly.
+- Match each returned topic rule or indicator against the diff yourself; evidence absent from code is not a finding. Research supplies leads, not bugs.
 
 ## Focused goal
 
@@ -26,7 +26,7 @@ Directly match the omitted high-cost trap: `if Rec.X <> xRec.X` (including `GuiA
 
 ## Dispatch
 
-Per `references/bc-code-intelligence-dispatch.md`: `find_bc_knowledge` per concern → drop `parker-pragmatic/*`, `*/recommend-*`, and off-domain noise → `get_bc_topic` → match each surviving topic's `anti_pattern_indicators` against the diff.
+For each concern, ask `al-researcher` for the governing BC pattern or platform rule. Apply the returned evidence to the diff, then dedupe overlapping findings with the vanilla pass.
 
 ## Return
 

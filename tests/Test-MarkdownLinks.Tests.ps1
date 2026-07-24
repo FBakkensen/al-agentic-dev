@@ -99,6 +99,19 @@ Describe 'Test-MarkdownLinks' {
         $result.Pairs | Should -Be @("README.md`tmissing.md")
     }
 
+    It 'ignores tracked Markdown files deleted from the working tree' {
+        $root = Join-Path $TestDrive 'deleted-source'
+        New-MarkdownRepoFixture -Root $root -Files @{
+            'README.md' = '[Missing](missing.md)'
+        }
+        Remove-Item -LiteralPath (Join-Path $root 'README.md')
+
+        $result = Invoke-MarkdownLinkAudit -Root $root
+
+        $result.ExitCode | Should -Be 0
+        $result.Pairs | Should -BeNullOrEmpty
+    }
+
     It 'writes sorted unique literal source-target pairs' {
         $root = Join-Path $TestDrive 'unresolved-pairs'
         New-MarkdownRepoFixture -Root $root -Files @{

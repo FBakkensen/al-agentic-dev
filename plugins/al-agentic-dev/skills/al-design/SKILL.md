@@ -5,6 +5,8 @@ description: Settle the AL/Business Central feature architecture from idea or `e
 
 # /al-design, Idea → feature architecture
 
+Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file output. This is the compaction recovery path; point there rather than restating its rules.
+
 Turn the sharpened idea into feature-level architecture and write `architecture.md`. `/al-scope` reads it next and decomposes it into tasks.
 
 ## Artifact boundary
@@ -24,13 +26,13 @@ Every element that `/al-scope` decomposes into tasks settles here — a gap in t
 
 - **Slices**: when `event-model.md` is present, its user-facing slots are settled; read, do not re-decide. Qualify each slice by AL pattern from its trigger source; backend-only slices name trigger source only. The *Slice* entry in [LANGUAGE.md](../../references/LANGUAGE.md) homes the pattern table, both slot sets, and the two-artifact settlement.
 - **Module map**: modules under `src/<module>/`, named in the project's ubiquitous language, applying the project-specific delta recorded in `CONTEXT.md` ("the Settlement intake module", never "the FooBarHandler").
-- **BC patterns**: match from [bc-patterns.md](../../references/bc-patterns.md) where one fits a module. Verify adopted patterns against current BaseApp via `/al-research` before committing.
+- **BC patterns**: match from [bc-patterns.md](../../references/bc-patterns.md) where one fits a module. Verify adopted patterns through `al-researcher` with `Use: durable artifact architecture.md` before committing.
 - **Decision logic and test surfaces**: per module, where decisions live and what unit tests reach. Name the pure decisions apart from the reads that feed them and the writes that follow. The split is homed in [LANGUAGE.md](../../references/LANGUAGE.md) *Functional core, imperative shell*.
-- **Brownfield touchpoints**: objects, procedures, events, table fields the feature touches. Verify every name + signature against workspace evidence (`al-symbols-mcp` / `grep`); behaviour and contracts the workspace cannot answer route through `/al-research`.
+- **Brownfield touchpoints**: objects, procedures, events, table fields the feature touches. Verify every name + signature against workspace evidence (`al-symbols-mcp` / `grep`); behaviour and contracts the workspace cannot answer route through `al-researcher`.
 - **Testability constraints**: name where the architecture exposes isolated decision logic and where behaviour necessarily crosses BC runtime, database, page/TestPage, event wiring, table triggers, telemetry shape, install / upgrade, permissions, or public surface. Seams and their earning bar live in [testability.md](../../references/testing/testability.md). No task-level proof, AAA cases, or assertions.
-- **Evidence before write**: every BC-specific name is grounded per [GROUND-RULES.md](../../references/GROUND-RULES.md). `architecture.md` is a durable design artifact: facts beyond names already in the dependency graph — pattern fitness, BaseApp behaviour, event contracts — route through `/al-research`. That route is mandatory — a single-source fetch does not satisfy it. Names from `/al-event-model` count only when `grep` against `event-model.md` returns them this session.
+- **Evidence before write**: every BC-specific name is grounded per [GROUND-RULES.md](../../references/GROUND-RULES.md). `architecture.md` is a durable design artifact: facts beyond names already in the dependency graph — pattern fitness, BaseApp behaviour, event contracts — route through `al-researcher` with `Use: durable artifact architecture.md`. `SINGLE-SOURCE` does not satisfy this artifact. Names from `/al-event-model` count only when `grep` against `event-model.md` returns them this session.
 
-An unanswerable question means the architecture is not ready for `/al-scope`. Resolve via `/al-research` (BC behaviour), `/al-grill-adr` (domain rule), or `/al-steer` (replan). Some in-scope questions are not sharp enough to block on: named, they matter, and there is no way to phrase them as a decision yet. Write each as `.not-yet-specified/<question>.md` at repo root — the deferred-question ledger `/al-steer` grooms. There it graduates into a decision later instead of resurfacing as an implementation guess.
+An unanswerable question means the architecture is not ready for `/al-scope`. Invoke `al-researcher` for BC behaviour; route a domain rule through `/al-grill-adr` and a replan through `/al-steer`. Some in-scope questions are not sharp enough to block on: named, they matter, and there is no way to phrase them as a decision yet. Write each as `.not-yet-specified/<question>.md` at repo root — the deferred-question ledger `/al-steer` grooms. There it graduates into a decision later instead of resurfacing as an implementation guess.
 
 ## AL realisation per slice
 
@@ -79,7 +81,7 @@ Between writing `architecture.md` and the close, run the document-integrity chec
 
 ## Next step
 
-Close with the task-close gate report ([GROUND-RULES.md](../../references/GROUND-RULES.md) House shapes). It gives the user the evidence for the greenlight call on `/al-scope`, naming the chosen BC pattern and the core boundary as how the feature fits. `architecture.md` landed with no integrity fail → `Next: /al-scope`. A BaseApp behaviour or pattern fitness won't ground → `Next: /al-research`. A domain rule is unsettled → `Next: /al-grill-adr`. The decomposition needs a new decision → `Next: /al-steer`.
+Close with the task-close gate report ([GROUND-RULES.md](../../references/GROUND-RULES.md) House shapes). It gives the user the evidence for the greenlight call on `/al-scope`, naming the chosen BC pattern and the core boundary as how the feature fits. `architecture.md` landed with no integrity fail → `Next: /al-scope`. `al-researcher` returned `CONFLICT` or `UNRESOLVED` → `Next: /al-steer`. A domain rule is unsettled → `Next: /al-grill-adr`. The decomposition needs a new decision → `Next: /al-steer`.
 
 ## Composition
 
@@ -87,7 +89,7 @@ Close with the task-close gate report ([GROUND-RULES.md](../../references/GROUND
 |---|---|
 | **Runs after**     | `/al-event-model` (user/API-facing features) or `/al-grill-adr` (backend-only) |
 | **Hands off to**   | `/al-scope` (decomposes `architecture.md` into the slice-grouped `tasks/` folder) |
-| **Calls directly** | `/al-research` (BC facts) — the only skill it invokes; rubber-duck consult on the candidate pick |
-| **Spawns**         | `al-design-option` custom agent, three parallel calls (non-trivial designs only) |
+| **Calls directly** | no skills; rubber-duck consult on the candidate pick |
+| **Spawns**         | `al-researcher` for BC facts; `al-design-option` custom agent, three parallel calls (non-trivial designs only) |
 | **Replan venue**   | `/al-steer` |
-| **Sidebands**      | `bc-standard-reference` (pure BaseApp questions), `/grill-me` (candidate picks that are the user's call) |
+| **Sidebands**      | `/grill-me` (candidate picks that are the user's call) |

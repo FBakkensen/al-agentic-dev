@@ -14,29 +14,30 @@ The `tasks/` folder is the per-feature task bus. Its entire runtime contract is 
 
 ## Pipeline
 
-[`references/overview.md`](references/overview.md) is the single source of truth for the pipeline: diagram, 20-skill catalogue, custom-agent table, slice cycle, and cold-start guidance. `/al-agentic-dev-overview` emits it verbatim. Edit it in lockstep with any skill or agent addition, removal, rename, or repurpose.
+[`references/overview.md`](references/overview.md) is the single source of truth for the pipeline: diagram, 19-skill catalogue, custom-agent table, slice cycle, and cold-start guidance. `/al-agentic-dev-overview` emits it verbatim. Edit it in lockstep with any skill or agent addition, removal, rename, or repurpose.
 
 Per-skill mechanics live in the owning `SKILL.md`. Page-script recording, replay, and red classification live in `/al-page-script`. The verification spawns live in `/al-user-verification`. Report-only and `--fix` semantics live in `/al-code-review`. Replan trigger semantics live in [`references/task-lifecycle.md`](references/task-lifecycle.md). Status-flip and gate-open mechanics live in [`references/task-lifecycle.md`](references/task-lifecycle.md). Skills compose by name, so a change to one skill scans the others for cross-references and updates them in the same change.
 
 ## Editing rules
 
-- **Preserve the skill-call boundary.** Which calls a skill may make — the two direct skill-to-skill calls, the rubber-duck consult, custom-agent spawns, inline state writes — is homed in [`references/overview.md`](references/overview.md). A skill edit that adds a new cross-skill call or auto-chain contradicts that canon. Change the canon first.
+- **Preserve the call boundary.** `/al-build` is the only direct skill-to-skill call. BC research spawns `al-researcher`; the rubber-duck consult, other custom-agent spawns, and inline state writes are homed in [`references/overview.md`](references/overview.md). A skill edit that adds a cross-skill call or auto-chain contradicts that canon. Change the canon first.
 - **Custom agent bodies are self-contained.** Skills and agents run in consumer projects where this AGENTS.md does not exist. The review lenses carry their BC vocabulary in their own bodies. The spawning skill's invocation carries only the diff or scope.
 - **Naming, BC vocabulary, and grounding are homed in [`references/GROUND-RULES.md`](references/GROUND-RULES.md).** That includes names-as-citation (no inline `file:line` citations in durable artifacts) and the `Researched:` carve-out. Writing skills read it before writing.
-- **Three Return shapes deviate from the fixed line-1 label, each coupled to the callers that parse it.** Changing any of these shapes updates every parsing caller in the same change; never restyle one side alone.
+- **Four Return shapes deviate from the fixed line-1 label, each coupled to the callers that parse it.** Changing any of these shapes updates every parsing caller in the same change; never restyle one side alone.
 
   | Agent | Shape | Parsing callers |
   |---|---|---|
+  | `al-researcher` | dynamic evidence verdict: `SINGLE-SOURCE` / `VERIFIED` / `CONFLICT` / `UNRESOLVED` on line 1, then quoted evidence and conditional Conflict/Limit fields | every skill or custom agent that needs BC knowledge beyond direct workspace reading |
   | `al-red-green` | `## Outcome note` leads with a dynamic verdict chosen from `GREEN` / `PUSH-UP` / `BLOCKED` | `/al-implement`, `/al-code-review --fix` |
   | the six `al-review-cr-*` lenses | zero or more labeled finding blocks under a fixed per-lens line-1 sentinel (`COMPLIANCE FINDINGS`, `CORRECTNESS FINDINGS`, `BC REVIEW FINDINGS`, `COMMENT AND HISTORY FINDINGS`, `PUBLIC-SURFACE FINDINGS`, `PERFORMANCE SCAN FINDINGS`) — the finding-block shape, not one fixed payload, is the contract | `/al-code-review`, `al-review-judge` |
   | `al-review-refactor-perf` | when the `al-performance` MCP is missing, exactly the one line `perf scan skipped: al-performance MCP not available` — no sentinel, no other line | `/al-refactor`, `al-review-judge` |
 
 - **Spec artifacts are pure markdown, text-only.** The no-mermaid rule is homed in the `/al-design` and `/al-scope` skill bodies. Visual polish is a separate dev-server concern, never the spec's.
 - **`architecture.md` is reshape-only. Per-task files carry the surgical-edit contract.** Both are homed in [`references/task-lifecycle.md`](references/task-lifecycle.md).
-- **New skills need a stated gap.** Propose one only when no existing skill, task-file note, `/al-research` finding, or cross-cutting reference can absorb the need. Say so in one line.
+- **New skills need a stated gap.** Propose one only when no existing skill, task-file note, `al-researcher` result, or cross-cutting reference can absorb the need. Say so in one line.
 - **Express intent and rationale, not enumerated skip conditions.** SKILLs and references state why a discipline exists and what problem it solves. The agent maps rationale to situation. Slot prescriptions, `_When earned:_` / `_Skip when:_` enumerations, and fill-in templates are rejected by name.
 - **`telemetry.jsonl` is a producer/consumer contract between `/al-build` and `/al-debug-logging`.** `/al-build`'s `test.ps1` produces `.output/TestResults/<dirName>/telemetry.jsonl`. `/al-debug-logging`'s Inspect step reads it. Path, per-app subfolder layout, and the `FeatureTelemetry.LogUsage` JSON shape are coupled. Change one side, scan the other in the same edit. The coupling lives here because it crosses skill boundaries.
-- **`bc-standard-reference`'s canonical source is `microsoft/BCApps`.** Any path or branch-model change updates `agents/bc-standard-reference.agent.md` and `references/bc-standard-reference/bcapps-navigation.md` in lockstep. The repo mechanism is the `gh` CLI; the agent body homes the commands. Web tools serve only the Microsoft Learn cross-check and the `gh`-unavailable fallback. Ownership splits by kind: `bcapps-navigation.md` homes the facts — paths, branch model, and search rules; the agent body homes the actions — consumer-version selection, fallback, and the `gh` command block. A change to either scans the other in the same edit. `/al-research` names this agent as its BaseApp source. On rename, update `/al-research`'s Sources list in lockstep.
+- **`al-researcher` owns canonical source lookup.** `microsoft/BCApps` paths, branch selection, search rules, `gh` commands, and fallback stay in `agents/al-researcher.agent.md`. Web access is only the raw-file fallback. No separately discoverable source agent may bypass the gateway.
 
 ## Reference layout
 
@@ -52,7 +53,6 @@ A resource read by two or more skills lives at plugin level. A shared resource i
 | `overview.md` | plugin-level | user-facing tour, emitted verbatim by `/al-agentic-dev-overview`; edit in lockstep with any skill or agent change |
 | `GROUND-RULES.md` | plugin-level | the one always-on contract: output shape via the `i-have-adhd` skill, one-decision-per-question, grounding mechanics, BC vocabulary, house shapes, production-AL thrift; injected by the `sessionStart` hook, re-read by skills on invocation |
 | `doc-integrity.md` | plugin-level | inline document-integrity check; run by the writing skills (`/al-grill-adr`, `/al-event-model`, `/al-design`, `/al-scope`, `/al-refine`, `/al-steer`) before the gate report |
-| `bc-standard-reference/` (folder) | plugin-level | detail references for the `bc-standard-reference` agent; edited in lockstep with the agent body |
 | `rubber-duck-review.md` | plugin-level | rubber-duck consult discipline; read by every skill that consults the duck |
 | `testing/testability.md` | plugin-level | seams and test-double taxonomy; read by `/al-design`, `/al-implement`, `/al-refactor` |
 | `testing/test-specification.md` | plugin-level | Test Specification / Verification Plan grammar; read by `/al-refine`, `/al-implement`, `/al-code-review`, `/al-page-script`, `/al-user-verification` |
@@ -64,7 +64,6 @@ A resource read by two or more skills lives at plugin level. A shared resource i
 | `cross-branch-numbering.md` | plugin-level | `NNN`/`NNNN` picking across parallel branches; read by `/al-design`, `/al-event-model`, `/al-grill-adr` |
 | `worktree-feature-branching.md` | plugin-level | feature branch setup; read by `/al-event-model`, `/al-design` |
 | `bc-patterns.md` | plugin-level | BC pattern catalogue; read by `/al-design` |
-| `bc-code-intelligence-dispatch.md` | plugin-level | bc-code-intelligence MCP call pattern; read by `/al-implement`, `/al-refactor`, `/al-code-review`, and the BC review-lens / red-green / `al-researcher` custom agents |
 | `LANGUAGE.md` | plugin-level | architectural vocabulary; read by `/al-design`, `/al-grill-adr`, `/al-event-model`, `/al-refactor`, `/al-code-review` |
 | `CONTEXT.template.md` | plugin-level | materialised into the target repo's `CONTEXT.md` |
 | `adr.template.md` | plugin-level | materialised into the target repo's `docs/adr/NNNN-<slug>.md` |
@@ -75,13 +74,13 @@ Templates are materialised lazily on first need by the owning flow.
 
 ## Runtime surface
 
-The plugin is distributed via `.github/plugin/marketplace.json` and targets GitHub Copilot CLI. It ships 18 custom agents under `agents/`, invoked via the task tool by name. Each agent's `.agent.md` frontmatter pins its model — the single home; the repo-root `scripts/Validate-PluginStructure.ps1` checks every pin against its fleet map. [`references/overview.md`](references/overview.md) carries the user-facing agent table.
+The plugin is distributed via `.github/plugin/marketplace.json` and targets GitHub Copilot CLI. It ships 17 custom agents under `agents/`, invoked via the task tool by name. Each agent's `.agent.md` frontmatter pins its model — the single home; the repo-root `scripts/Validate-PluginStructure.ps1` checks every pin against its fleet map. [`references/overview.md`](references/overview.md) carries the user-facing agent table. `al-researcher` alone owns the research MCPs and canonical BCApps lookup. The 14 other research-capable agents carry `agent` tool access and route facts through the gateway.
 
 SKILL.md bodies are injected verbatim and unexpanded, with no template variables. A skill locates its own files relative to the base directory announced at activation.
 
 When authoring new plugin capability, default to a skill. Add a custom agent only when fan-out or context isolation earns it.
 
-MCP-absence behavior is per-consumer, not uniform. The default is degrading to an alternate source. Each owning skill, agent, or [`references/bc-code-intelligence-dispatch.md`](references/bc-code-intelligence-dispatch.md) states its own fallback. Two exceptions:
+MCP-absence behavior is per-consumer, not uniform. The owning skill or agent states its fallback. Two exceptions:
 
 - `al-red-green` blocks on a missing object-ID allocator.
 - `al-review-refactor-perf` returns its skip line.
@@ -104,13 +103,12 @@ Adding a second hook is a deliberate decision, not a default.
 ## Layout
 
 ```
-agents/                          # Shipped custom agents (18; each pins its model in frontmatter)
-├── bc-standard-reference.agent.md   # BaseApp/System Application/APIV2 lookup against microsoft/BCApps
+agents/                          # Shipped custom agents (17; each pins its model in frontmatter)
 ├── al-red-green.agent.md            # One AAA case RED→GREEN
 ├── al-gate-runner.agent.md          # One authoritative gate run
 ├── al-mutant-cycle.agent.md         # One mutate→gate→revert cycle
 ├── al-design-option.agent.md        # One architecture candidate under a divergent constraint
-├── al-researcher.agent.md           # One BC fact arbitrated across source families
+├── al-researcher.agent.md           # One BC fact through isolated research tools
 ├── al-review-cr-*.agent.md          # 6 /al-code-review lenses (compliance, bugscan, bc, comments, appsource, perf)
 ├── al-review-judge.agent.md         # Dedups/ranks one lens finding batch
 └── al-review-refactor-*.agent.md    # 5 /al-refactor lenses (simplify, bc, structural, naming, perf)
@@ -132,7 +130,6 @@ skills/
 ├── al-quiz/SKILL.md
 ├── al-refactor/                 # SKILL.md + references/legacy-refactor-plan.md
 ├── al-refine/SKILL.md
-├── al-research/SKILL.md
 ├── al-scope/SKILL.md
 ├── al-steer/                    # SKILL.md + references/out-of-scope.template.md
 ├── al-sync-main/SKILL.md

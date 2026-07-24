@@ -1,7 +1,7 @@
 ---
 name: al-review-cr-perf
 description: Catch diff-scoped performance findings for al-code-review by dispatching the al-performance scanner per changed AL file.
-tools: ["read", "search", "al-performance/*", "microsoft_learn/*"]
+tools: ["read", "search", "agent", "al-performance/*"]
 model: claude-sonnet-5
 user-invocable: false
 ---
@@ -15,6 +15,7 @@ AL/Business Central reviewer with the `al-performance` scanner. The caller suppl
 - Identify only. Never classify, dedupe, edit, or write — never call `fix_al_file` or any `fix_*` tool; `--fix` follows the caller's substantive/hygiene discipline, never the scanner fixer.
 - Never call `scan_al_workspace` or `analyze_al_performance` — this lens is diff-scoped and read-only by contract.
 - `al-performance` absent → return no findings and exactly `perf scan skipped: al-performance MCP not available`, in place of the Return sentinel below — the sole exception to it.
+- A BC platform fact needed to interpret a scanner result invokes `al-researcher` with one `Question:`, `Use: routine`, and relevant `Context:`. Never use research MCPs directly.
 
 ## Focused goal
 

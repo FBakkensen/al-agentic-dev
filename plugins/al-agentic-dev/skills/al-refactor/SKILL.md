@@ -5,6 +5,8 @@ description: Reshape AL/Business Central production and test code while tests st
 
 # /al-refactor — improve shape while green
 
+Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file output. This is the compaction recovery path; point there rather than restating its rules.
+
 Reshape AL so modules that earn their keep deepen and the ones that don't dissolve. Observable behaviour does not change.
 
 ## Preconditions
@@ -16,7 +18,7 @@ Reshape AL so modules that earn their keep deepen and the ones that don't dissol
 
 ## What you answer before reshape
 
-**Unanswerable from the diff → the area is not ready to reshape.** Resolve via `/al-research`, `/al-grill-adr`, or `/al-steer`.
+**Unanswerable from the diff → the area is not ready to reshape.** Invoke `al-researcher` for a BC fact; route a domain rule through `/al-grill-adr` and an architectural gap through `/al-steer`.
 
 - **What seam is being introduced, hardened, or dissolved?** Name the mechanism (publisher event, AL `interface`, `Implementation` enum, internal helper) and the adapters that justify it.
 - **Where does decision logic split from the reads and writes around it in this area?** The full split is homed under **Functional core, imperative shell** in [LANGUAGE.md](../../references/LANGUAGE.md).
@@ -32,7 +34,7 @@ Invoke the 5 lens agents in parallel on the task diff — `al-review-refactor-si
 | # | Lens | Focused goal |
 |---|---|---|
 | 1 | `al-review-refactor-simplify` | Duplication, dead code, redundant procedures, inline candidates, speculative generality |
-| 2 | `al-review-refactor-bc` | BC anti-patterns and platform reinvention confirmed against the bc-code-intelligence topic store |
+| 2 | `al-review-refactor-bc` | BC anti-patterns and platform reinvention confirmed through `al-researcher` evidence |
 | 3 | `al-review-refactor-structural` | The decision-logic/IO split, depth over indirection, seam shape |
 | 4 | `al-review-refactor-naming` | BC vocabulary and project terminology per `CONTEXT.md`, ADRs, `architecture.md`, `event-model.md` |
 | 5 | `al-review-refactor-perf` | Structural performance reshapes via the al-performance scanner, gated at touched-procedure granularity |
@@ -74,7 +76,7 @@ Seam work is homed in [testability.md](../../references/testing/testability.md).
 
 - A test-procedure rename requires task-spec reconciliation — update the AAA header, `Procedure:`, and `Covered By` in the same change when the task is active. An intent shift routes through `/al-refine`.
 - `[HandlerFunctions('...')]` strings are invisible to symbol tools; grep before any test-procedure rename per [tdd.md](../../references/testing/tdd.md).
-- A rename pulling a BC name or verb from outside the codebase is grounded per [GROUND-RULES.md](../../references/GROUND-RULES.md) before it lands; conflicts escalate to `/al-research`.
+- A rename pulling a BC name or verb from outside the codebase is grounded per [GROUND-RULES.md](../../references/GROUND-RULES.md) before it lands; conflicts invoke `al-researcher` with `Use: resolve conflict`.
 
 ### Performance findings
 
@@ -119,7 +121,7 @@ If state can't be read, fall back: `/al-mutate` after a behaviour-bearing reshap
 |---|---|
 | **Runs after**     | `/al-implement` took the current task to green, OR standalone on legacy code |
 | **Hands off to**   | `/al-mutate` (the next rigor step); standalone with no mutation or architecture step warranted, the Gate report ends the run |
-| **Calls directly** | `/al-research` (BC facts), `/al-build` (green between applies) — the only skills it invokes; rubber-duck consult on a non-trivial apply queue per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
-| **Spawns**         | `al-review-refactor-simplify` / `al-review-refactor-bc` / `al-review-refactor-structural` / `al-review-refactor-naming` / `al-review-refactor-perf` custom agents; `al-review-judge` after the lens pass |
+| **Calls directly** | `/al-build` (green between applies) — the only skill it invokes; rubber-duck consult on a non-trivial apply queue per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
+| **Spawns**         | `al-researcher` for BC facts; `al-review-refactor-simplify` / `al-review-refactor-bc` / `al-review-refactor-structural` / `al-review-refactor-naming` / `al-review-refactor-perf` custom agents; `al-review-judge` after the lens pass |
 | **Replan venue**   | `/al-steer` |
-| **Sidebands**      | bc-standard-reference (BaseApp patterns), `/al-code-review` (non-structural concerns surface as out-of-scope notes), `/al-design` (standalone-on-legacy surfacing real architecture), `/grill-me` (non-obvious trade-off needs the user) |
+| **Sidebands**      | `/al-code-review` (non-structural concerns surface as out-of-scope notes), `/al-design` (standalone-on-legacy surfacing real architecture), `/grill-me` (non-obvious trade-off needs the user) |

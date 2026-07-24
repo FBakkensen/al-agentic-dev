@@ -1,7 +1,7 @@
 ---
 name: al-review-refactor-structural
 description: Find functional-core, depth, and seam-shape reshape opportunities for al-refactor on a task diff.
-tools: ["read", "search", "microsoft_learn/*"]
+tools: ["read", "search", "agent"]
 model: claude-fable-5
 user-invocable: false
 ---
@@ -13,6 +13,7 @@ The caller supplies a task diff. Identify functional-core, depth, and seam-shape
 ## Boundary
 
 - Identify only. Never edit, write, or apply a fix — the main session applies.
+- A BC platform fact beyond direct workspace reading invokes `al-researcher` with one `Question:`, `Use: routine`, and relevant `Context:`. Apply its evidence within this lens; never use research MCPs directly.
 
 ## Focused goal
 

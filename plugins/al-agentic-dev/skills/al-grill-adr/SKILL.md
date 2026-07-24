@@ -5,6 +5,8 @@ description: Domain-aware grilling for AL/Business Central. Sharpens BC vocabula
 
 # /al-grill-adr, Domain-aware grilling for AL/Business Central
 
+Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file output. This is the compaction recovery path; point there rather than restating its rules.
+
 **Interview the user about domain intent, one question at a time ([GROUND-RULES.md](../../references/GROUND-RULES.md) One decision per question), reading the codebase when it can answer.** Sharpen `CONTEXT.md` until BC vocabulary is unambiguous; offer a domain ADR when a constraint is hard to reverse and worth preserving.
 
 ## Artifact boundary
@@ -38,7 +40,7 @@ Journey pressure hands off to `/al-event-model`; architecture, object-responsibi
 
   Three of four does not earn one. When a question feels architectural, grill the domain constraint behind it. Template: `../../references/adr.template.md` (relative to this skill's base directory). Resolve `NNNN` per `../../references/cross-branch-numbering.md`.
 
-Every BC name landing in `CONTEXT.md` or a domain ADR is grounded per [GROUND-RULES.md](../../references/GROUND-RULES.md). A question stays unanswerable → grilling is not done: keep going, or run `/al-research` when the gap is a BC behavioural fact rather than user intent. Research fails → keep grilling; write neither the term nor the ADR this session.
+Every BC name landing in `CONTEXT.md` or a domain ADR is grounded per [GROUND-RULES.md](../../references/GROUND-RULES.md). A BC behavioural gap invokes `al-researcher` with `Use: durable artifact <path>`. `CONFLICT` or `UNRESOLVED` means grilling is not done: keep going and write neither the term nor the ADR this session.
 
 ## Document verification
 
@@ -46,7 +48,7 @@ Every BC name landing in `CONTEXT.md` or a domain ADR is grounded per [GROUND-RU
 
 ## Next step
 
-**Once the idea is grilled and any earned `CONTEXT.md` or ADR writes are integrity-checked, name the handoff.** `Next: /al-event-model` (user/API-facing feature) or `/al-design` (backend-only). Term still unsettled or a behavioural conflict unresolved → `Next: /al-research` (BC fact) or `/al-steer` (decision).
+**Once the idea is grilled and any earned `CONTEXT.md` or ADR writes are integrity-checked, name the handoff.** `Next: /al-event-model` (user/API-facing feature) or `/al-design` (backend-only). Term still unsettled or a behavioural conflict unresolved after research → `Next: /al-steer`.
 
 ## Composition
 
@@ -55,5 +57,6 @@ Every BC name landing in `CONTEXT.md` or a domain ADR is grounded per [GROUND-RU
 | **Runs after**     | `main` (kicks off new feature) or standalone for a fuzzy term |
 | **Hands off to**   | `/al-event-model` (user/API-facing features) or `/al-design` (backend-only) |
 | **Replan venue**   | `/al-steer` |
-| **Calls directly** | `/al-research` (BC facts) — the only skill it invokes; rubber-duck consult for ADR reconciliation per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
+| **Calls directly** | no skills; rubber-duck consult for ADR reconciliation per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
+| **Spawns**         | `al-researcher` for BC facts beyond direct workspace reading |
 | **Sidebands**      | `/grill-me` (interview the user) |

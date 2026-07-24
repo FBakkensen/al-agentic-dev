@@ -5,6 +5,8 @@ description: AL/Business Central code review at gate points. Report-only by defa
 
 # /al-code-review — review gate
 
+Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file output. This is the compaction recovery path; point there rather than restating its rules.
+
 Review finished AL/Business Central work at **slice-done** or **feature-done**. Default is report-only. `--fix` lands eligible must-fixes red→green and re-reviews once. `/al-build` is the only skill this skill invokes; lenses, `al-review-judge`, the rubber-duck, and (under `--fix`) `al-red-green` are spawned agents.
 
 ## Entry and stops
@@ -12,7 +14,7 @@ Review finished AL/Business Central work at **slice-done** or **feature-done**. 
 - **Slice-done:** every technical task in one slice is `done`. Review the technical code before verification: implement → code-review → refine verify task → page-script/user-verification → next user/API slice. A backend-only slice skips verification and opens its next slice. `/al-refactor` and `/al-mutate` run after implementation and before this gate; `/al-mutate` normally supplies the clean verdict that marks a task `done`.
 - **Feature-done:** review the full feature diff after the final task is `done`, before merge.
 - Require branch `^\d{3}-`, `specs/<branch>/tasks/`, a green `/al-build` baseline (CodeCop, AppSourceCop, UICop, AppSource Validation), and a tree matching reviewer intent — unrelated uncommitted reshape pollutes scope. `--fix` requires a clean tree. Any failure → **Stop** and report the gap; never review an uncertain baseline.
-- Read [`test-specification.md`](../../references/testing/test-specification.md), [`test-strategy.md`](../../references/testing/test-strategy.md), and [`GROUND-RULES.md`](../../references/GROUND-RULES.md) before synthesis.
+- Read [`test-specification.md`](../../references/testing/test-specification.md) and [`test-strategy.md`](../../references/testing/test-strategy.md) before synthesis.
 - A user/API slice is review-ready only when its verify task is `blocked` without a replan flag, or `ready-for-verification` without `review: clean`. `blocked` with a replan flag, a non-`done` technical task, or a `done` verify task → **Stop**; code lenses do not clear failed user evidence.
 
 ## Scope

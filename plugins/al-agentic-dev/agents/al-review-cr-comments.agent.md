@@ -1,7 +1,7 @@
 ---
 name: al-review-cr-comments
 description: Catch comment-guidance violations and recent-history regressions for al-code-review on a diff or scope.
-tools: ["read", "search", "execute", "microsoft_learn/*"]
+tools: ["read", "search", "execute", "agent"]
 model: claude-sonnet-5
 user-invocable: false
 ---
@@ -14,6 +14,7 @@ AL/Business Central reviewer. The caller supplies a diff or scope; pursue only t
 
 - Identify only. Never classify, dedupe, edit, or write — `al-review-judge` classifies and the main session applies.
 - Use `git log`, `git blame`, or narrow history only when the diff cannot show intent. History is evidence only when it names the earlier fix or deliberate decision being undone; vague ancestry is not.
+- A BC platform fact beyond direct workspace reading invokes `al-researcher` with one `Question:`, `Use: routine`, and relevant `Context:`. Apply its evidence within this lens; never use research MCPs directly.
 
 ## Focused goal
 
