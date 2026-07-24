@@ -14,7 +14,7 @@ The `tasks/` folder is the per-feature task bus. Its entire runtime contract is 
 
 ## Pipeline
 
-[`references/overview.md`](references/overview.md) is the single source of truth for the pipeline: diagram, 19-skill catalogue, custom-agent table, slice cycle, and cold-start guidance. `/al-agentic-dev-overview` emits it verbatim. Edit it in lockstep with any skill or agent addition, removal, rename, or repurpose.
+[`references/overview.md`](references/overview.md) is the single source of truth for the pipeline: diagram, 18-skill catalogue, custom-agent table, slice cycle, and cold-start guidance. `/al-agentic-dev-overview` emits it verbatim. Edit it in lockstep with any skill or agent addition, removal, rename, or repurpose.
 
 Per-skill mechanics live in the owning `SKILL.md`. Page-script recording, replay, and red classification live in `/al-page-script`. The verification spawns live in `/al-user-verification`. Report-only and `--fix` semantics live in `/al-code-review`. Replan trigger semantics live in [`references/task-lifecycle.md`](references/task-lifecycle.md). Status-flip and gate-open mechanics live in [`references/task-lifecycle.md`](references/task-lifecycle.md). Skills compose by name, so a change to one skill scans the others for cross-references and updates them in the same change.
 
@@ -36,7 +36,7 @@ Per-skill mechanics live in the owning `SKILL.md`. Page-script recording, replay
 - **`architecture.md` is reshape-only. Per-task files carry the surgical-edit contract.** Both are homed in [`references/task-lifecycle.md`](references/task-lifecycle.md).
 - **New skills need a stated gap.** Propose one only when no existing skill, task-file note, `al-researcher` result, or cross-cutting reference can absorb the need. Say so in one line.
 - **Express intent and rationale, not enumerated skip conditions.** SKILLs and references state why a discipline exists and what problem it solves. The agent maps rationale to situation. Slot prescriptions, `_When earned:_` / `_Skip when:_` enumerations, and fill-in templates are rejected by name.
-- **`telemetry.jsonl` is a producer/consumer contract between `/al-build` and `/al-debug-logging`.** `/al-build`'s `test.ps1` produces `.output/TestResults/<dirName>/telemetry.jsonl`. `/al-debug-logging`'s Inspect step reads it. Path, per-app subfolder layout, and the `FeatureTelemetry.LogUsage` JSON shape are coupled. Change one side, scan the other in the same edit. The coupling lives here because it crosses skill boundaries.
+- **`al-debug-logging` owns runtime probes and its telemetry MCP.** It emits temporary `Session.LogMessage` events and queries Application Insights through its embedded `bc-telemetry-buddy` server. `/al-build` owns no telemetry capture or telemetry artifacts.
 - **`al-researcher` owns canonical source lookup.** `microsoft/BCApps` paths, branch selection, search rules, `gh` commands, and fallback stay in `agents/al-researcher.agent.md`. Web access is only the raw-file fallback. No separately discoverable source agent may bypass the gateway.
 
 ## Reference layout
@@ -74,7 +74,7 @@ Templates are materialised lazily on first need by the owning flow.
 
 ## Runtime surface
 
-The plugin is distributed via `.github/plugin/marketplace.json` and targets GitHub Copilot CLI. It ships 17 custom agents under `agents/`, invoked via the task tool by name. Each agent's `.agent.md` frontmatter pins its model — the single home; the repo-root `scripts/Validate-PluginStructure.ps1` checks every pin against its fleet map. [`references/overview.md`](references/overview.md) carries the user-facing agent table. `al-researcher` alone owns the research MCPs and canonical BCApps lookup. The 14 other research-capable agents carry `agent` tool access and route facts through the gateway.
+The plugin is distributed via `.github/plugin/marketplace.json` and targets GitHub Copilot CLI. It ships 18 custom agents under `agents/`, invoked via the task tool by name. Each agent's `.agent.md` frontmatter pins its model — the single home; the repo-root `scripts/Validate-PluginStructure.ps1` checks every pin against its fleet map. [`references/overview.md`](references/overview.md) carries the user-facing agent table. `al-researcher` alone owns the research MCPs and canonical BCApps lookup. The 15 other research-capable agents carry `agent` tool access and route facts through the gateway. `al-debug-logging` alone owns `bc-telemetry-buddy`.
 
 SKILL.md bodies are injected verbatim and unexpanded, with no template variables. A skill locates its own files relative to the base directory announced at activation.
 
@@ -103,12 +103,13 @@ Adding a second hook is a deliberate decision, not a default.
 ## Layout
 
 ```
-agents/                          # Shipped custom agents (17; each pins its model in frontmatter)
+agents/                          # Shipped custom agents (18; each pins its model in frontmatter)
 ├── al-red-green.agent.md            # One AAA case RED→GREEN
 ├── al-gate-runner.agent.md          # One authoritative gate run
 ├── al-mutant-cycle.agent.md         # One mutate→gate→revert cycle
 ├── al-design-option.agent.md        # One architecture candidate under a divergent constraint
 ├── al-researcher.agent.md           # One BC fact through isolated research tools
+├── al-debug-logging.agent.md        # Temporary probes queried through Application Insights
 ├── al-review-cr-*.agent.md          # 6 /al-code-review lenses (compliance, bugscan, bc, comments, appsource, perf)
 ├── al-review-judge.agent.md         # Dedups/ranks one lens finding batch
 └── al-review-refactor-*.agent.md    # 5 /al-refactor lenses (simplify, bc, structural, naming, perf)
@@ -119,7 +120,6 @@ skills/
 ├── al-agentic-dev-overview/SKILL.md  # Emits ../../references/overview.md verbatim
 ├── al-build/                    # Build/test gate; own AGENTS.md, config/, scripts/
 ├── al-code-review/SKILL.md
-├── al-debug-logging/            # Transient telemetry probes; own AGENTS.md, references/
 ├── al-design/SKILL.md
 ├── al-event-model/SKILL.md
 ├── al-grill-adr/SKILL.md

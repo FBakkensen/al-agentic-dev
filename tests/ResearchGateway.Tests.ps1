@@ -29,9 +29,9 @@ Describe 'al-researcher gateway ownership' {
         Test-Path (Join-Path $script:PluginRoot 'references\bc-code-intelligence-dispatch.md') | Should -BeFalse
     }
 
-    It 'ships the breaking release version' {
+    It 'ships the breaking debug-agent release version' {
         $manifest = Get-Content -LiteralPath (Join-Path $script:PluginRoot 'plugin.json') -Raw | ConvertFrom-Json
-        $manifest.version | Should -Be '4.0.0'
+        $manifest.version | Should -Be '5.0.0'
     }
 
     It 'contains no shipped slash-command references to al-research' {
@@ -73,6 +73,7 @@ Describe 'al-researcher gateway ownership' {
 
     It 'gives every research-capable caller agent access and gateway instructions' {
         $researchCallers = @(
+            'al-debug-logging',
             'al-design-option',
             'al-red-green',
             'al-review-cr-appsource',
@@ -110,7 +111,6 @@ Describe 'al-researcher gateway ownership' {
 
     It 'routes research-capable skills through al-researcher' {
         $researchSkills = @(
-            'al-debug-logging',
             'al-design',
             'al-event-model',
             'al-grill-adr',

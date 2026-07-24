@@ -2,7 +2,7 @@ Marketplace of AI-assisted AL/Business Central development plugins for GitHub Co
 
 Two plugins live under `plugins/`:
 
-- `al-agentic-dev/` — 19 skills plus 17 custom agents under `agents/`. The skills cover the plugin tour (agentic-dev-overview), the feature-level agentic flow (steer, grill-adr, event-model, design, scope, refine, implement, page-script, user-verification, refactor, mutate, code-review, quiz), the build/test gate (build, provision, validate-breaking-changes, sync-main), and telemetry probes (debug-logging). The agents include `al-researcher`, the isolated BC research gateway.
+- `al-agentic-dev/` — 18 skills plus 18 custom agents under `agents/`. The skills cover the plugin tour (agentic-dev-overview), the feature-level agentic flow (steer, grill-adr, event-model, design, scope, refine, implement, page-script, user-verification, refactor, mutate, code-review, quiz), and the build/test gate (build, provision, validate-breaking-changes, sync-main). The agents include `al-researcher`, the isolated BC research gateway, and `al-debug-logging`, the Application Insights runtime-probe worker.
 - `al-language-server/` — AL language server for the Copilot CLI LSP tool. Ships `lsp.json` and nothing else.
 
 Top-level layout:

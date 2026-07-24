@@ -1,6 +1,6 @@
 # al-agentic-dev plugin overview
 
-**You drive.** Composable AL/Business Central skills carry a feature idea to merge. Each skill ends by naming its handoff, and you invoke the next `/<skill-name>` yourself. Nothing auto-chains. `/al-build` is the only skill called directly by another skill. BC knowledge beyond direct workspace reading goes through the internal `al-researcher` custom agent, keeping research tools in a separate context. Skills also consult the harness-provided **rubber-duck agent** on non-trivial artifacts ([`rubber-duck-review.md`](rubber-duck-review.md)). Custom agents in `agents/` are spawned programmatically — never slash commands, never invoked by you.
+**You drive.** Composable AL/Business Central skills carry a feature idea to merge. Each skill ends by naming its handoff, and you invoke the next `/<skill-name>` yourself. Nothing auto-chains. `/al-build` is the only skill called directly by another skill. BC knowledge beyond direct workspace reading goes through the internal `al-researcher` custom agent. Runtime path uncertainty goes through the internal `al-debug-logging` custom agent. Skills also consult the harness-provided **rubber-duck agent** on non-trivial artifacts ([`rubber-duck-review.md`](rubber-duck-review.md)). Custom agents in `agents/` are spawned programmatically — never slash commands, never invoked by you.
 
 ## Pipeline
 
@@ -16,8 +16,8 @@ Technical-task hardening: `/al-implement` (red→green, stop) → `/al-refactor`
 
 | Lane | Skills |
 |---|---|
-| **Cross-cutting** (invoked from any main-pipeline skill or standalone) | the internal `al-researcher` gateway, the rubber-duck consult ([`rubber-duck-review.md`](rubber-duck-review.md)), `/al-steer`, `/al-sync-main` (rebase the branch onto main, mechanically renumber object/field collisions) |
-| **Infrastructure** | `/al-build` (compile, publish, run tests), `/al-debug-logging` (transient `FeatureTelemetry.LogUsage` probes) |
+| **Cross-cutting** (invoked from any main-pipeline skill or standalone) | the internal `al-researcher` gateway, the internal `al-debug-logging` runtime-probe agent, the rubber-duck consult ([`rubber-duck-review.md`](rubber-duck-review.md)), `/al-steer`, `/al-sync-main` (rebase the branch onto main, mechanically renumber object/field collisions) |
+| **Infrastructure** | `/al-build` (compile, publish, run tests) |
 | **Ops** (bracket the feature; run an `/al-build` script + flip task status) | `/al-provision` (`T-001`, refresh the build environment), `/al-validate-breaking-changes` (last, validate against the provisioned baseline) |
 | **Shaping** (after `/al-implement` on a task, or standalone on legacy) | `/al-refactor`, `/al-mutate` |
 | **Verification** (user-facing slices, after `/al-code-review` per-slice) | `/al-page-script` (guide the user to record framework-limited E2E), `/al-user-verification` (walk the rest + gate the slice) |
@@ -34,7 +34,7 @@ State lives in `specs/` and task frontmatter, never memory; every skill can star
 
 ## Skills
 
-The plugin ships 19 skills.
+The plugin ships 18 skills.
 
 | Skill | Role | When to invoke |
 |---|---|---|
@@ -54,16 +54,16 @@ The plugin ships 19 skills.
 | `/al-steer` | Coach and navigator. Reads the `tasks/` folder, the goal, the codebase, and recent commits; names what is next, blocked, or drifting; never edits code. Owns `.out-of-scope/` and `.not-yet-specified/`. Canonical replan venue. | "Where are we?", "what's next?", trigger fired in another skill. |
 | `/al-sync-main` | Rebase the current branch onto `main` (never merges); mechanically renumbers any object/field number collisions introduced on this branch to the next free slot in their `idRanges` bucket. Full `/al-build` gate before and after. Stops and asks on any real content conflict, naming collision, or unsafe reference rewrite; aborts the rebase cleanly on any stop. | `main` has moved on and the branch needs to catch up before continuing work or opening a PR. |
 | `/al-build` | Compile, publish, run tests; writes results to `.output/TestResults/<dirName>/`. | After modifying AL code or tests. Required gate before commit. |
-| `/al-debug-logging` | Temporary `DEBUG-*` `FeatureTelemetry.LogUsage` probes; read `telemetry.jsonl`; remove probes. Final state: zero `DEBUG-*` in tree. | Runtime behaviour diverges from source and tests can't reveal which path ran. |
 | `/al-quiz` | Quizzes *you* on recently landed changes, one question at a time in chat — proves your mental model of what shipped, or shows where it is wrong. Read-only, no gate. | After a long agentic run, before merging a feature, returning after time away, or standalone on any diff, slice, or object area you name. |
 | `/al-page-script` | Guide the user to record the slice's framework-limited E2E Journey Examples (`Record: yes`) in BC's Page Scripting recorder — one scenario at a time, punchline first; the user records and downloads, the agent replays each on a fresh container and classifies reds. Reserved for behaviour no AL test layer can automate; commits on green. Produces the recordings `/al-user-verification` pre-flights. | After `/al-refine` writes a `Verification Plan` with `Record: yes` examples on a `review: clean` verify task (user-facing slice only). |
 
 ## Custom agents
 
-The plugin ships 17 custom agents. The rubber-duck is not one of them — it is the harness-provided agent type reached through the task tool ([`rubber-duck-review.md`](rubber-duck-review.md)).
+The plugin ships 18 custom agents. The rubber-duck is not one of them — it is the harness-provided agent type reached through the task tool ([`rubber-duck-review.md`](rubber-duck-review.md)).
 
 | Agent | Job | Invoked by |
 |---|---|---|
+| `al-debug-logging` | Adds temporary `Session.LogMessage` probes, runs the supplied harness, and queries Application Insights through its embedded Telemetry Buddy MCP. Not user-invocable; every `DEBUG-*` probe must be gone before commit. | Any skill or custom agent blocked on an unresolved runtime path |
 | `al-red-green` | One AAA case RED→GREEN: write the failing test, confirm RED, write minimal production code, confirm GREEN, return an outcome note. No in-loop escalation. | `/al-implement` (per case), `/al-code-review --fix` (per must-fix finding) |
 | `al-review-cr-compliance` | `/al-code-review` lens 1: project compliance, naming, scope, grounding, surface reconciliation. | `/al-code-review` |
 | `al-review-cr-bugscan` | `/al-code-review` lens 2: correctness and obvious logic faults. | `/al-code-review` |

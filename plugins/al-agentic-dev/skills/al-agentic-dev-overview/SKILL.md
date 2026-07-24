@@ -1,6 +1,6 @@
 ---
 name: al-agentic-dev-overview
-description: User-facing orientation for the al-agentic-dev plugin — pipeline diagram, 19-skill catalogue plus the custom agents, persistence layers, and cold-start guidance. Use when the user asks "what is al-agentic-dev", "what skills are in here", "show me the pipeline", "where do I start from scratch", or wants a tour. Pure static emit; does not inspect repo state. For state-aware navigation mid-feature ("what should I do next"), the dispatcher should prefer /al-steer.
+description: User-facing orientation for the al-agentic-dev plugin — pipeline diagram, 18-skill catalogue plus the custom agents, persistence layers, and cold-start guidance. Use when the user asks "what is al-agentic-dev", "what skills are in here", "show me the pipeline", "where do I start from scratch", or wants a tour. Pure static emit; does not inspect repo state. For state-aware navigation mid-feature ("what should I do next"), the dispatcher should prefer /al-steer.
 ---
 
 # /al-agentic-dev-overview, Plugin tour

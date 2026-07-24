@@ -1169,9 +1169,9 @@ function Invoke-ALTest {
     .PARAMETER TestDir
         Directory containing the test app
     .PARAMETER OutputDir
-        Directory to write test results (last.xml, telemetry.jsonl)
+        Directory to write test results (last.xml)
     .OUTPUTS
-        PSCustomObject with Passed, Runner, AppName, TestDir, Counts, ResultFile, TelemetryFile properties
+        PSCustomObject with Passed, Runner, AppName, TestDir, Counts, ResultFile properties
     #>
     [CmdletBinding()]
     param(
@@ -1196,19 +1196,13 @@ function Invoke-ALTest {
     Ensure-Directory -Path $OutputDir
 
     Write-BuildMessage -Type Step -Message "Cleaning test results in $OutputDir"
-    $localResultFiles = @(
-        Join-Path $OutputDir 'last.xml'
-        Join-Path $OutputDir 'telemetry.jsonl'
-    )
-
-    foreach ($localResultFile in $localResultFiles) {
-        if (Test-Path -LiteralPath $localResultFile) {
-            try {
-                Remove-Item -LiteralPath $localResultFile -Force
-                Write-BuildMessage -Type Detail -Message "Removed previous result: $localResultFile"
-            } catch {
-                Write-BuildMessage -Type Warning -Message "Failed to remove previous result: $localResultFile. $_"
-            }
+    $localResultFile = Join-Path $OutputDir 'last.xml'
+    if (Test-Path -LiteralPath $localResultFile) {
+        try {
+            Remove-Item -LiteralPath $localResultFile -Force
+            Write-BuildMessage -Type Detail -Message "Removed previous result: $localResultFile"
+        } catch {
+            Write-BuildMessage -Type Warning -Message "Failed to remove previous result: $localResultFile. $_"
         }
     }
 
@@ -1233,13 +1227,6 @@ function Invoke-ALTest {
     $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
     $sharedResultFile = Join-Path $sharedResultsPath "test-results-$timestamp.xml"
 
-    # Clear telemetry before tests
-    try {
-        Clear-TestTelemetryLogs -ContainerName $config.ContainerName | Out-Null
-    } catch {
-        Write-BuildMessage -Type Warning -Message "Pre-test telemetry cleanup failed (non-fatal): $_"
-    }
-
     # Get credentials
     $credential = Get-BCCredential -Username $config.ContainerUsername -Password $config.ContainerPassword
 
@@ -1263,20 +1250,6 @@ function Invoke-ALTest {
         Write-BuildMessage -Type Success -Message "Results saved: $resultFile"
     }
 
-    # Merge and copy telemetry
-    $telemetryFile = Join-Path $OutputDir 'telemetry.jsonl'
-    try {
-        Merge-TestTelemetryLogs -ContainerName $config.ContainerName | Out-Null
-    } catch {
-        Write-BuildMessage -Type Warning -Message "Telemetry consolidation failed (non-fatal): $_"
-    }
-
-    try {
-        Copy-TestTelemetryLogs -SharedFolder $sharedBaseFolder -LocalResultsPath $OutputDir | Out-Null
-    } catch {
-        Write-BuildMessage -Type Warning -Message "Telemetry copy failed (non-fatal): $_"
-    }
-
     # Parse authoritative counts from the JUnit result — never derived from console lines
     $counts = Get-JUnitTestCounts -ResultFile $resultFile
 
@@ -1288,7 +1261,6 @@ function Invoke-ALTest {
         TestDir       = $TestDir
         Counts        = $counts
         ResultFile    = $resultFile
-        TelemetryFile = $telemetryFile
     }
 
     if ($testsPassed) {
@@ -1322,7 +1294,7 @@ function Invoke-ALRunnerTest {
     .PARAMETER InitEvents
         Fire BC lifecycle events (OnCompanyInitialize, OnInstallAppPerCompany) at startup
     .OUTPUTS
-        PSCustomObject with Passed, Runner, AppName, TestDir, Counts, ResultFile, TelemetryFile properties
+        PSCustomObject with Passed, Runner, AppName, TestDir, Counts, ResultFile properties
     #>
     [CmdletBinding()]
     param(
@@ -1404,7 +1376,6 @@ function Invoke-ALRunnerTest {
         TestDir       = $TestDir
         Counts        = $counts
         ResultFile    = if (Test-Path -LiteralPath $resultFile) { $resultFile } else { '' }
-        TelemetryFile = ''
     }
 
     if ($testsPassed) {

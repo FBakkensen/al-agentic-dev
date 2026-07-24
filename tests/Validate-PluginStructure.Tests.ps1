@@ -112,6 +112,7 @@ description: "Fixture skill."
 
     $script:ExpectedAlAgenticDevFleet = [ordered]@{
         'al-design-option'              = 'claude-fable-5'
+        'al-debug-logging'              = 'claude-sonnet-5'
         'al-gate-runner'                = 'gpt-5.6-luna'
         'al-mutant-cycle'               = 'claude-sonnet-5'
         'al-red-green'                  = 'claude-sonnet-5'

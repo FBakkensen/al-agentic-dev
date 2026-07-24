@@ -39,7 +39,7 @@ One golden container per BC version, snapshotted once, then cheap branch-scoped 
 
 ## Canonical gate
 
-**Always run the full gate — never filter by codeunit or run bare `alc.exe`: `test.ps1` owns symbol resolution, container publish, and telemetry capture.**
+**Always run the full gate — never filter by codeunit or run bare `alc.exe`: `test.ps1` owns symbol resolution and container publish.**
 
 Set location to consumer repo root, then:
 
@@ -67,13 +67,12 @@ Compiles the main app, every `testApps` entry, and the unit-test app through the
 
 - `.output/TestResults/<dirName>/last.xml` → JUnit XML from the container run.
 - `.output/TestResults/<dirName>/al-runner.xml` → JUnit XML from the AL Runner run. Separate file — a full gate must never overwrite the unit result.
-- `.output/TestResults/<dirName>/telemetry.jsonl` → feature telemetry per container run. `/al-debug-logging` reads this.
-- `.output/TestResults/summary.json` → machine-readable summary: `gate` (`full`/`unit`), `totals` per runner, `runs[]` with one record per test run (`runner`, `appName`, `dir`, `passed`, `counts`, `resultFile`, `telemetryFile`).
+- `.output/TestResults/summary.json` → machine-readable summary: `gate` (`full`/`unit`), `totals` per runner, `runs[]` with one record per test run (`runner`, `appName`, `dir`, `passed`, `counts`, `resultFile`).
 - `.output/logs/build-timing.jsonl` → one gate-metrics entry per run, mirrored to `~/.al-build/gate-metrics.jsonl`.
 
 Take `resultFile` paths from `summary.json` run records; never glob because stale files can sit beside fresh output. `test.ps1` writes `summary.json` only after a unit-test failure, unit-only pass, or full-gate completion; bad `al-build.json` or a compile failure leaves a prior file untouched.
 
-Test failure with an unclear cause → name `/al-debug-logging` as the next step; a clear assertion or compile failure needs no telemetry. Don't grep the build log for clues telemetry already answers.
+Test failure with an unclear runtime path → invoke the `al-debug-logging` custom agent; a clear assertion or compile failure needs no probes.
 
 ## Delegation
 
@@ -84,7 +83,7 @@ Already inside an agent mid-workflow → run the gate script inline; nested cust
 Run one gate at a time — never multiple gates in parallel, and never an inline build alongside the worker. The spawn prompt carries exactly what the caller alone knows:
 
 - the one gate command — full, or `-UnitTestOnly`;
-- the authoritative artifact paths, marking the summary for mechanical expansion: `.output/TestResults/summary.json (expand: resultFile, telemetryFile where passed=false)`;
+- the authoritative artifact paths, marking the summary for mechanical expansion: `.output/TestResults/summary.json (expand: resultFile where passed=false)`;
 - this line verbatim: **findings must name file, object, and the observed fact; no verdict words without the check that produced them.**
 
 The caller — never the worker — judges whether a relayed `summary.json` is this run's own: `missing` means no file exists; a present file is current-run evidence only when the relayed exit code and bounded excerpt corroborate it.
@@ -95,7 +94,7 @@ After the worker returns, close the completed thread before interpreting or repo
 
 Derive the gate report from the evidence — the worker's relay when delegated, the directly captured exit code, artifacts, and output when inline; the same rules apply to both. Format: YAML-like plain text in a fenced `text` block, `VERDICT: PASS|FAIL` on line 1. `gate:` names the executed variant — `full`, or `unit` for `-UnitTestOnly`.
 
-- Take `totals` and all counts from the relayed `.output/TestResults/summary.json` content — the source of truth. Echo `appName`, `dir`, `resultFile`, `telemetryFile`, and every `counts` number verbatim.
+- Take `totals` and all counts from the relayed `.output/TestResults/summary.json` content — the source of truth. Echo `appName`, `dir`, `resultFile`, and every `counts` number verbatim.
 - **Never derive counts from console lines: `Codeunit … Success` lines are test codeunits (containers of tests), not tests.**
 - Report totals per runner; never sum across runners — the unit test app runs through both AL Runner and the container, so a cross-runner sum counts the same tests twice.
 - `counts` of `null` for a run → report `counts: unavailable`, never zeros.
@@ -200,7 +199,7 @@ Never patch the container by hand — no `docker exec`, no `Invoke-ScriptInBcCon
 ## Next step
 
 - **Green:** `Next:` resume the calling skill — usually `/al-implement` (continue the red→green cycle).
-- **Red:** fix the failing test or production code, then re-run `/al-build`. Test failure with an unclear cause → `/al-debug-logging` first.
+- **Red:** fix the failing test or production code, then re-run `/al-build`. An unclear runtime path → invoke the `al-debug-logging` custom agent first.
 
 ## Composition
 

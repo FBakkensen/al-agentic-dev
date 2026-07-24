@@ -12,7 +12,7 @@
        unit tests (fast, no container)
     4. Publish and run container tests for each test app
     5. Write per-run results to .output/TestResults/<dirName>/
-       (al-runner.xml for AL Runner, last.xml + telemetry.jsonl for container)
+       (al-runner.xml for AL Runner, last.xml for container)
     6. Write summary to .output/TestResults/summary.json
        (gate, per-runner totals, one record per run with test counts)
 
@@ -79,7 +79,6 @@ function ConvertTo-RunRecord {
         passed        = $Result.Passed
         counts        = $Result.Counts
         resultFile    = $Result.ResultFile
-        telemetryFile = $Result.TelemetryFile
     }
 }
 

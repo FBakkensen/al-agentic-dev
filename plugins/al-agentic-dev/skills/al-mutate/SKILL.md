@@ -64,7 +64,7 @@ The spawn prompt carries exactly what the caller alone knows:
 - the one mutant — file, site, operator, and the exact edit to apply;
 - the gate command and flags — full `test.ps1`, or `-UnitTestOnly`;
 - the baseline SHA;
-- the authoritative artifact paths, marking the summary for mechanical expansion: `.output/TestResults/summary.json (expand: resultFile where passed=false)` — add `telemetryFile where passed=false` only when telemetry will drive classification.
+- the authoritative artifact paths, marking the summary for mechanical expansion: `.output/TestResults/summary.json (expand: resultFile where passed=false)`.
 
 The caller — never the worker — judges whether a relayed `summary.json` is this attempt's own: `test.ps1` may leave an earlier run's file untouched when the attempt stops before result emission, so corroborate a present-but-unexpected summary against the exit code and the appended timing line before treating it as this attempt's result. `missing` means the path is absent — the worker never substitutes.
 
