@@ -18,6 +18,8 @@ BeforeAll {
         New-Item -ItemType Directory -Path $marketplaceDir -Force | Out-Null
         New-Item -ItemType Directory -Path $skillDir -Force | Out-Null
 
+        'Fixture instructions.' | Set-Content -LiteralPath (Join-Path $Root '.github\copilot-instructions.md') -Encoding UTF8
+
         @'
 {
   "plugins": [
@@ -43,7 +45,8 @@ BeforeAll {
             [string]$Model = 'gpt-5.6-terra',
             [string]$Tools = '["read", "search"]',
             [string]$UserInvocable = 'false',
-            [string]$AdditionalFrontmatter = ''
+            [string]$AdditionalFrontmatter = '',
+            [string]$Body = 'Fixture body.'
         )
 
         return @"
@@ -58,7 +61,7 @@ $AdditionalFrontmatter
 
 # $Name
 
-Fixture body.
+$Body
 "@
     }
 
@@ -79,6 +82,8 @@ Fixture body.
         New-Item -ItemType Directory -Path $marketplaceDir -Force | Out-Null
         New-Item -ItemType Directory -Path $skillDir -Force | Out-Null
         New-Item -ItemType Directory -Path $agentsDir -Force | Out-Null
+
+        'Fixture instructions.' | Set-Content -LiteralPath (Join-Path $Root '.github\copilot-instructions.md') -Encoding UTF8
 
         @"
 {
@@ -272,6 +277,54 @@ user-invocable: false
         ($output -join [Environment]::NewLine) | Should -Match 'Tools declaration contains a non-string entry'
     }
 
+    It 'fails when an agent declares edit without skill' {
+        $repoRoot = Join-Path $TestDrive 'agent-edit-no-skill'
+        New-PluginRepoFixtureWithAgents -Root $repoRoot -AgentFiles @{
+            'demo-agent' = (New-ValidAgentContent -Tools '["read", "edit", "execute"]')
+        }
+
+        $output = & pwsh -NoProfile -File $script:ValidatorPath -RepoRoot $repoRoot 2>&1
+
+        $LASTEXITCODE | Should -Be 1
+        ($output -join [Environment]::NewLine) | Should -Match "declares 'edit' but not 'skill'"
+    }
+
+    It 'accepts an agent declaring both edit and skill' {
+        $repoRoot = Join-Path $TestDrive 'agent-edit-with-skill'
+        New-PluginRepoFixtureWithAgents -Root $repoRoot -AgentFiles @{
+            'demo-agent' = (New-ValidAgentContent -Tools '["read", "edit", "skill"]')
+        }
+
+        $output = & pwsh -NoProfile -File $script:ValidatorPath -RepoRoot $repoRoot 2>&1
+
+        $LASTEXITCODE | Should -Be 0
+        ($output -join [Environment]::NewLine) | Should -Not -Match "declares 'edit' but not 'skill'"
+    }
+
+    It 'fails when an agent invokes a delegating gate skill without the agent tool' {
+        $repoRoot = Join-Path $TestDrive 'agent-gate-without-agent'
+        New-PluginRepoFixtureWithAgents -Root $repoRoot -AgentFiles @{
+            'demo-agent' = (New-ValidAgentContent -Tools '["read", "execute", "skill"]' -Body 'Run the gate by invoking /al-build with the supplied variant.')
+        }
+
+        $output = & pwsh -NoProfile -File $script:ValidatorPath -RepoRoot $repoRoot 2>&1
+
+        $LASTEXITCODE | Should -Be 1
+        ($output -join [Environment]::NewLine) | Should -Match "invokes a delegating gate skill but does not declare 'agent'"
+    }
+
+    It 'accepts an agent invoking a delegating gate skill with the agent tool' {
+        $repoRoot = Join-Path $TestDrive 'agent-gate-with-agent'
+        New-PluginRepoFixtureWithAgents -Root $repoRoot -AgentFiles @{
+            'demo-agent' = (New-ValidAgentContent -Tools '["read", "execute", "skill", "agent"]' -Body 'Run the gate by invoking /al-build with the supplied variant.')
+        }
+
+        $output = & pwsh -NoProfile -File $script:ValidatorPath -RepoRoot $repoRoot 2>&1
+
+        $LASTEXITCODE | Should -Be 0
+        ($output -join [Environment]::NewLine) | Should -Not -Match 'delegating gate skill'
+    }
+
     It 'fails when tools contains an empty string' {
         $repoRoot = Join-Path $TestDrive 'agent-empty-tool'
         New-PluginRepoFixtureWithAgents -Root $repoRoot -AgentFiles @{
@@ -393,5 +446,39 @@ user-invocable: false
 
         $LASTEXITCODE | Should -Be 1
         ($output -join [Environment]::NewLine) | Should -Match "al-agentic-dev agent 'al-red-green' must use model 'claude-sonnet-5' \(found 'gpt-5.6-sol'\)"
+    }
+}
+
+Describe 'Validate-PluginStructure instruction format checks' {
+    It 'fails when .github/copilot-instructions.md is missing' {
+        $repoRoot = Join-Path $TestDrive 'instructions-missing'
+        New-PluginRepoFixture -Root $repoRoot -SkillBody "---`nname: demo`ndescription: Fixture skill.`n---`n"
+        Remove-Item -LiteralPath (Join-Path $repoRoot '.github\copilot-instructions.md') -Force
+
+        $output = & pwsh -NoProfile -File $script:ValidatorPath -RepoRoot $repoRoot 2>&1
+
+        $LASTEXITCODE | Should -Be 1
+        ($output -join [Environment]::NewLine) | Should -Match 'Missing \.github/copilot-instructions\.md'
+    }
+
+    It 'fails when an AGENTS.md survives anywhere in the repo' {
+        $repoRoot = Join-Path $TestDrive 'instructions-stray-agents-md'
+        New-PluginRepoFixture -Root $repoRoot -SkillBody "---`nname: demo`ndescription: Fixture skill.`n---`n"
+        'Legacy context.' | Set-Content -LiteralPath (Join-Path $repoRoot 'plugins\demo\AGENTS.md') -Encoding UTF8
+
+        $output = & pwsh -NoProfile -File $script:ValidatorPath -RepoRoot $repoRoot 2>&1
+
+        $LASTEXITCODE | Should -Be 1
+        ($output -join [Environment]::NewLine) | Should -Match 'AGENTS\.md is not the native Copilot instruction format'
+    }
+
+    It 'passes when instructions use the native Copilot format' {
+        $repoRoot = Join-Path $TestDrive 'instructions-native'
+        New-PluginRepoFixture -Root $repoRoot -SkillBody "---`nname: demo`ndescription: Fixture skill.`n---`n"
+
+        $output = & pwsh -NoProfile -File $script:ValidatorPath -RepoRoot $repoRoot 2>&1
+
+        $LASTEXITCODE | Should -Be 0
+        ($output -join [Environment]::NewLine) | Should -Match 'no AGENTS\.md files'
     }
 }

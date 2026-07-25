@@ -105,8 +105,19 @@ Describe 'al-researcher gateway ownership' {
 
     It 'keeps execution-only agents outside the research route' {
         foreach ($agentName in @('al-gate-runner', 'al-mutant-cycle')) {
-            Get-AgentTools -Path (Join-Path $script:AgentsRoot "$agentName.agent.md") | Should -Not -Contain 'agent'
+            $path = Join-Path $script:AgentsRoot "$agentName.agent.md"
+            $tools = Get-AgentTools -Path $path
+
+            Get-Content -LiteralPath $path -Raw | Should -Not -Match 'al-researcher' -Because "$agentName must not reach the research route"
+            $tools | Should -Not -Contain 'microsoft_learn/*'
+            $tools | Should -Not -Contain 'bc-code-intelligence/*'
+            $tools | Should -Not -Contain 'bc-code-intelligence-mcp/*'
+            $tools | Should -Not -Contain 'web'
         }
+
+        # al-gate-runner spawns nothing; al-mutant-cycle needs the grant so its
+        # /al-build call can reach al-gate-runner.
+        Get-AgentTools -Path (Join-Path $script:AgentsRoot 'al-gate-runner.agent.md') | Should -Not -Contain 'agent'
     }
 
     It 'routes research-capable skills through al-researcher' {

@@ -4,7 +4,7 @@ Always-on rules for every reply and every line of AL. The `sessionStart` hook in
 
 ## Output shape
 
-Output follows the `i-have-adhd` skill's rules — invoke `/i-have-adhd`; not installed → install it from https://github.com/ayghri/i-have-adhd.
+Output follows the `i-have-adhd` skill's rules — invoke `/i-have-adhd`; not installed → install it from https://github.com/ayghri/i-have-adhd. This binds every skill and every agent that writes files or reports to the user. A fixed Return block stays byte-identical regardless, per Schema outranks style below.
 
 Schema outranks style: machine-read shapes (YAML frontmatter, task-file fields, template schemas, agent Return payloads) keep their consumer-required structure exactly — list caps and brevity never truncate them.
 

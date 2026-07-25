@@ -9,9 +9,12 @@
     extension, that any hooks config declares "version": 1 (Copilot CLI hook
     format), and that every custom agent's frontmatter carries a name matching its
     filename (unique across the marketplace), a JSON tools array of non-empty
-    strings, a model id, and user-invocable: false. The al-agentic-dev plugin
-    additionally declares its exact approved custom-agent fleet. This marketplace
-    targets GitHub Copilot CLI.
+    strings, a model id, and user-invocable: false. An agent declaring the edit tool
+    must also declare skill. An agent whose body invokes a delegating gate skill
+    must also declare agent. Repo instructions must use the native Copilot format:
+    .github/copilot-instructions.md is required and no AGENTS.md may survive. The
+    al-agentic-dev plugin additionally declares its exact approved custom-agent
+    fleet. This marketplace targets GitHub Copilot CLI.
 .EXAMPLE
     pwsh scripts/Validate-PluginStructure.ps1
 #>
@@ -164,15 +167,33 @@ function Test-AgentFrontmatterBlock {
                 } elseif ($toolsRoot.GetArrayLength() -eq 0) {
                     $result.Errors += "Empty tools declaration in agent frontmatter: $AgentFile"
                 } else {
+                    $toolNames = @()
                     foreach ($tool in $toolsRoot.EnumerateArray()) {
                         if ($tool.ValueKind -ne [System.Text.Json.JsonValueKind]::String) {
                             $result.Errors += "Tools declaration contains a non-string entry: $AgentFile"
+                            $toolNames = $null
                             break
                         }
 
                         if ([string]::IsNullOrWhiteSpace($tool.GetString())) {
                             $result.Errors += "Tools declaration contains an empty or whitespace-only entry: $AgentFile"
+                            $toolNames = $null
                             break
+                        }
+
+                        $toolNames += $tool.GetString()
+                    }
+
+                    if ($null -ne $toolNames -and $toolNames -contains 'edit' -and $toolNames -notcontains 'skill') {
+                        $result.Errors += "Agent declares 'edit' but not 'skill' — file-writing agents must be able to invoke skills: $AgentFile"
+                    }
+
+                    # The gate skills delegate their run to the al-gate-runner custom
+                    # agent, so a caller without the agent grant reports BLOCKED.
+                    if ($null -ne $toolNames -and $toolNames -notcontains 'agent') {
+                        $body = Get-Content -Path $AgentFile -Raw
+                        if ($body -match '/al-(build|provision|validate-breaking-changes)\b') {
+                            $result.Errors += "Agent invokes a delegating gate skill but does not declare 'agent' — it cannot spawn al-gate-runner: $AgentFile"
                         }
                     }
                 }
@@ -402,9 +423,27 @@ foreach ($pluginName in $pluginNames) {
     }
 }
 
+$rootInstructions = Join-Path $RepoRoot ".github\copilot-instructions.md"
+if (Test-Path $rootInstructions) {
+    Write-Host "OK: .github/copilot-instructions.md present" -ForegroundColor Green
+} else {
+    $errors += "Missing .github/copilot-instructions.md — repo-wide instructions must use the native Copilot format"
+    Write-Host "FAIL: .github/copilot-instructions.md is missing" -ForegroundColor Red
+}
+
+$strayAgentsMd = @(Get-ChildItem -Path $RepoRoot -Recurse -Filter AGENTS.md -File -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -notmatch '[\\/](\.git|node_modules|\.output)[\\/]' })
+foreach ($strayFile in $strayAgentsMd) {
+    $relative = [System.IO.Path]::GetRelativePath((Resolve-Path $RepoRoot), $strayFile.FullName)
+    $errors += "AGENTS.md is not the native Copilot instruction format — move $relative to .github/copilot-instructions.md or .github/instructions/<name>.instructions.md"
+    Write-Host "FAIL: $relative must migrate to the native Copilot instruction format" -ForegroundColor Red
+}
+if ($strayAgentsMd.Count -eq 0) {
+    Write-Host "OK: no AGENTS.md files — instructions use the native Copilot format" -ForegroundColor Green
+}
+
 if ($errors.Count -gt 0) {
     $errors | ForEach-Object { Write-Error $_ }
     exit 1
 }
-
 Write-Host "`nAll plugins have valid Copilot CLI marketplace structure." -ForegroundColor Cyan

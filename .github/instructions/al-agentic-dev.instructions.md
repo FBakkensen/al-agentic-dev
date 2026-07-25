@@ -1,8 +1,12 @@
+---
+applyTo: "plugins/al-agentic-dev/**"
+---
+
 # al-agentic-dev
 
 Composable skills for AL/Business Central agentic development.
 
-*Dev-time only — this file never ships. The shipped surface is the plugin's `SKILL.md`s, `agents/`, `hooks/`, `references/`, and `scripts/`. See the root `AGENTS.md`, "Shipped vs dev-time files".*
+*Dev-time only — this file never ships. The shipped surface is the plugin's `SKILL.md`s, `agents/`, `hooks/`, `references/`, and `scripts/`. See `.github/copilot-instructions.md`, "Shipped vs dev-time files".*
 
 ## Persistence layers
 
@@ -21,7 +25,7 @@ Per-skill mechanics live in the owning `SKILL.md`. Page-script recording, replay
 ## Editing rules
 
 - **Preserve the call boundary.** `/al-build` is the only direct skill-to-skill call. BC research spawns `al-researcher`; the rubber-duck consult, other custom-agent spawns, and inline state writes are homed in [`references/overview.md`](references/overview.md). A skill edit that adds a cross-skill call or auto-chain contradicts that canon. Change the canon first.
-- **Custom agent bodies are self-contained.** Skills and agents run in consumer projects where this AGENTS.md does not exist. The review lenses carry their BC vocabulary in their own bodies. The spawning skill's invocation carries only the diff or scope.
+- **Custom agent bodies are self-contained.** Skills and agents run in consumer projects where this instruction file does not exist. The review lenses carry their BC vocabulary in their own bodies. The spawning skill's invocation carries only the diff or scope.
 - **Naming, BC vocabulary, and grounding are homed in [`references/GROUND-RULES.md`](references/GROUND-RULES.md).** That includes names-as-citation (no inline `file:line` citations in durable artifacts) and the `Researched:` carve-out. Writing skills read it before writing.
 - **Four Return shapes deviate from the fixed line-1 label, each coupled to the callers that parse it.** Changing any of these shapes updates every parsing caller in the same change; never restyle one side alone.
 
@@ -118,7 +122,7 @@ hooks/
 references/                      # Plugin-level shared — see the Reference layout table
 skills/
 ├── al-agentic-dev-overview/SKILL.md  # Emits ../../references/overview.md verbatim
-├── al-build/                    # Build/test gate; own AGENTS.md, config/, scripts/
+├── al-build/                    # Build/test gate; config/, scripts/, own scoped instruction file
 ├── al-code-review/SKILL.md
 ├── al-design/SKILL.md
 ├── al-event-model/SKILL.md

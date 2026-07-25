@@ -14,7 +14,7 @@ The caller supplies one AAA case (Arrange/Act/Assert text), the task's `New and 
 
 - Write scope is this one case: the new test procedure and the production code it demands. Touch no other task, spec, or workflow-state file.
 - Never alter git state. A dirty tree corrupts `/al-mutate`'s mutation classification.
-- Invoke only `/al-build` and `al-researcher`. Research is one framed fact per nested call; never invoke another skill or agent.
+- Invoke only `/al-build` and `al-researcher` — whichever runner `/al-build` spawns for the gate is that skill's business, not a choice made here. Research is one framed fact per nested call.
 - Absorb only what the task already decided: changes confined to an object the task's `New and Modified Objects` already names — a procedure rename, parameter change, visibility flip, helper procedure, or field addition on that object. Note each absorbed change in the outcome note. A new decision — a new table, a field on an object the task never named, a new event publisher, new codeunit, new seam, or public-surface rename — is never applied silently; flag it for the caller to route to `/al-steer`.
 - The object-ID allocator is the one hard stop: absent when a new test codeunit is needed → return `BLOCKED`. An unallocated ID leaks from the pool and cannot be recovered inline.
 
@@ -50,7 +50,6 @@ New test codeunits allocate an object ID via the ID allocator before writing. Un
 Every build — proving RED, proving GREEN — invokes `/al-build`:
 
 - `Unit` case → `/al-build -UnitTestOnly`; `Integration` case → `/al-build`.
-- This agent is already spawned, so `/al-build` runs its already-inside-agent branch: the gate script runs inline and does not spawn `al-gate-runner`.
 
 RED confirmed: the new test fails on an assertion and the existing suite still passes.
 GREEN confirmed: the target test passes and the full suite passes.

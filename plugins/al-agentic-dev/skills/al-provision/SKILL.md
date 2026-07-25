@@ -22,9 +22,8 @@ pwsh "<this-skill-dir>/../al-build/scripts/provision.ps1"
 
 Replace `<this-skill-dir>` with this skill's base directory announced at activation; `al-build` is its sibling skill in the plugin.
 
-- A fresh run delegates this one command to the named `al-gate-runner` custom agent. Its own body carries the worker rules; this skill maps the relayed exit code.
-- Already inside an agent mid-workflow → run the command inline. No nested spawn.
-- `al-gate-runner` unavailable for a fresh spawn → report `BLOCKED`, name it as missing, and stop. No generic-subagent substitute.
+- Every run delegates this one command to the named `al-gate-runner` custom agent, from the main session and from inside another agent alike. Its own body carries the worker rules; this skill maps the relayed exit code.
+- `al-gate-runner` unavailable → report `BLOCKED`, name it as missing, and stop. No generic-subagent substitute.
 
 ## Write state
 

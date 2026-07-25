@@ -76,11 +76,11 @@ Test failure with an unclear runtime path → invoke the `al-debug-logging` cust
 
 ## Delegation
 
-**Fresh `/al-build` runs delegate to the named `al-gate-runner` custom agent**, which runs one gate command once and relays the exit code, artifacts, and one bounded output excerpt — its own body carries the worker rules. Keep verbose build output out of the main session.
+**Every `/al-build` run delegates to the named `al-gate-runner` custom agent**, which runs one gate command once and relays the exit code, artifacts, and one bounded output excerpt — its own body carries the worker rules. This holds from the main session and from inside another agent alike. Keep verbose build output out of the main session.
 
-Already inside an agent mid-workflow → run the gate script inline; nested custom-agent spawning does not occur. `al-gate-runner` unavailable for a fresh spawn → report `BLOCKED`, name it as missing, and stop. No generic-subagent or inline substitution.
+`al-gate-runner` unavailable → report `BLOCKED`, name it as missing, and stop. No generic-subagent or direct-command substitution.
 
-Run one gate at a time — never multiple gates in parallel, and never an inline build alongside the worker. The spawn prompt carries exactly what the caller alone knows:
+Run one gate at a time — never two gate runs in flight at once. The spawn prompt carries exactly what the caller alone knows:
 
 - the one gate command — full, or `-UnitTestOnly`;
 - the authoritative artifact paths, marking the summary for mechanical expansion: `.output/TestResults/summary.json (expand: resultFile where passed=false)`;
@@ -92,7 +92,7 @@ After the worker returns, close the completed thread before interpreting or repo
 
 ### Gate report
 
-Derive the gate report from the evidence — the worker's relay when delegated, the directly captured exit code, artifacts, and output when inline; the same rules apply to both. Format: YAML-like plain text in a fenced `text` block, `VERDICT: PASS|FAIL` on line 1. `gate:` names the executed variant — `full`, or `unit` for `-UnitTestOnly`.
+Derive the gate report from the worker's relay — the exit code, the artifacts, and the bounded excerpt it returns. Format: YAML-like plain text in a fenced `text` block, `VERDICT: PASS|FAIL` on line 1. `gate:` names the executed variant — `full`, or `unit` for `-UnitTestOnly`.
 
 - Take `totals` and all counts from the relayed `.output/TestResults/summary.json` content — the source of truth. Echo `appName`, `dir`, `resultFile`, and every `counts` number verbatim.
 - **Never derive counts from console lines: `Codeunit … Success` lines are test codeunits (containers of tests), not tests.**

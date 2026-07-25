@@ -1,8 +1,12 @@
+---
+applyTo: "plugins/al-agentic-dev/skills/al-build/**"
+---
+
 # al-build
 
 The build/test gate for AL/Business Central. It compiles, publishes to a local Docker container, runs tests, and writes results to `.output/TestResults/<dirName>/`.
 
-*Dev-time only — this file never ships. The shipped surface is `SKILL.md` and `scripts/`. See the root `AGENTS.md`, "Shipped vs dev-time files".*
+*Dev-time only — this file never ships. The shipped surface is `SKILL.md` and `scripts/`. See `.github/copilot-instructions.md`, "Shipped vs dev-time files".*
 
 ## Layout
 

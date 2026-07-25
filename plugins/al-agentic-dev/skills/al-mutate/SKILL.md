@@ -41,7 +41,7 @@ Cross-check every non-trivial plan via a rubber-duck consult before execution ([
 
 **A kill is behavioural, never a compile error.** Make the mutant compile, then let behaviour catch it. The evidence rules live in Classification below.
 
-The gate is `pwsh "<plugin>/skills/al-build/scripts/test.ps1"`, run directly — never `/al-build` as a nested skill. `-UnitTestOnly` applies only when `unitTestApp` is configured and the site is genuinely unit-layer. Every other site — integration, page/TestPage, install/publish, permissions, container-state behaviour — uses the full `test.ps1`. The final closeout is always the full `test.ps1`.
+The gate is `/al-build`, invoked by `al-mutant-cycle` itself while the mutation is applied. `-UnitTestOnly` applies only when `unitTestApp` is configured and the site is genuinely unit-layer. Every other site — integration, page/TestPage, install/publish, permissions, container-state behaviour — uses the full gate. The final closeout is always the full gate.
 
 **Survivors continue the plan.** A survivor fails the current mutation pass, not the task. Keep executing approved mutants after revert proof. A reached survivor exposing a test gap gets its killer test as TDD work the user resumes via `/al-implement` — name it as the next step, never write it here. Full plan rerun only when the new test or fix changes shared decision logic.
 
@@ -55,20 +55,20 @@ A green pass with no survivors and no equivalences prompts a plan check: "nothin
 
 **Invoke the named `al-mutant-cycle` custom agent once per approved mutant — the pass stays sequential.** Wait for its returned evidence, classify and record the verdict yourself, close the completed thread, then invoke the next. Never one invocation for the whole plan: a single run holding many cycles accumulates gate output until it misclassifies, and a mid-run failure loses every verdict it held. The agent's own body carries the worker rules.
 
-The host owns plan generation and approval, preflight facts (baseline SHA, clean-tree proof), classification from the relayed evidence, per-mutant verdict recording (the session todos), survivor/equivalence judgment, the final full `test.ps1` closeout, the `.output` report, and any killer tests.
+The host owns plan generation and approval, preflight facts (baseline SHA, clean-tree proof), classification from the relayed evidence, per-mutant verdict recording (the session todos), survivor/equivalence judgment, the final full-gate closeout, the `.output` report, and any killer tests.
 
 `al-mutant-cycle` unavailable → report `BLOCKED`, name it as the missing agent, and stop. No generic-subagent substitution.
 
 The spawn prompt carries exactly what the caller alone knows:
 
 - the one mutant — file, site, operator, and the exact edit to apply;
-- the gate command and flags — full `test.ps1`, or `-UnitTestOnly`;
+- the gate variant — full, or `-UnitTestOnly`;
 - the baseline SHA;
 - the authoritative artifact paths, marking the summary for mechanical expansion: `.output/TestResults/summary.json (expand: resultFile where passed=false)`.
 
-The caller — never the worker — judges whether a relayed `summary.json` is this attempt's own: `test.ps1` may leave an earlier run's file untouched when the attempt stops before result emission, so corroborate a present-but-unexpected summary against the exit code and the appended timing line before treating it as this attempt's result. `missing` means the path is absent — the worker never substitutes.
+The caller — never the worker — judges whether a relayed `summary.json` is this attempt's own: the gate may leave an earlier run's file untouched when the attempt stops before result emission, so corroborate a present-but-unexpected summary against the exit code and the appended timing line before treating it as this attempt's result. `missing` means the path is absent — the worker never substitutes.
 
-The final full `test.ps1` closeout is the host's own gate run, never a mutant cycle, and routes exactly like `/al-build`'s: delegate to the named `al-gate-runner` custom agent. Already inside an agent mid-workflow → run `test.ps1` inline; nested custom-agent spawning does not occur. `al-gate-runner` unavailable for a fresh spawn → report `BLOCKED`, name it, and stop.
+The final full-gate closeout is the host's own `/al-build` run, never a mutant cycle.
 
 ## Classification
 
@@ -115,7 +115,7 @@ If state can't be read, fall back to `/al-code-review`.
 |---|---|
 | **Runs after**     | `/al-refactor` (the rigor step the user runs after reshape), OR standalone on legacy code before `/al-refactor` |
 | **Hands off to**   | `/al-code-review` on a clean verdict (slice/feature gate); `/al-implement` for a reached survivor exposing a test gap (resume TDD for the killer test) or for the next `ready-for-implementation` task; `/al-refine` only for unreached-line or missing-coverage cases |
-| **Spawns**         | `al-researcher` for BaseApp behaviour needed to classify a survivor; `al-mutant-cycle` custom agent — one supplied mutate→gate→revert cycle per approved mutant; `al-gate-runner` custom agent — the final full `test.ps1` closeout, same routing as `/al-build` |
-| **Calls directly** | none — the rubber-duck consult cross-checks non-trivial mutation plans before execution ([rubber-duck-review.md](../../references/rubber-duck-review.md)) |
+| **Spawns**         | `al-researcher` for BaseApp behaviour needed to classify a survivor; `al-mutant-cycle` custom agent — one supplied mutate→gate→revert cycle per approved mutant |
+| **Calls directly** | `/al-build` (full-gate closeout) — the only skill it invokes; rubber-duck consult cross-checks non-trivial mutation plans before execution ([rubber-duck-review.md](../../references/rubber-duck-review.md)) |
 | **Replan venue**   | `/al-steer` |
 | **Sidebands**      | `/grill-me` (classification call needs the user) |

@@ -1,7 +1,7 @@
 ---
 name: al-debug-logging
 description: Diagnose an unresolved AL/Business Central runtime path with temporary `Session.LogMessage` probes and Application Insights evidence. Use when source and tests cannot show which branch, subscriber, or code path ran.
-tools: ["read", "search", "edit", "execute", "agent", "bc-telemetry-buddy/*"]
+tools: ["read", "search", "edit", "execute", "agent", "skill", "bc-telemetry-buddy/*"]
 mcp-servers:
   bc-telemetry-buddy:
     type: stdio
