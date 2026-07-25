@@ -41,6 +41,8 @@ Per-skill mechanics live in the owning `SKILL.md`. Page-script recording, replay
 - **New skills need a stated gap.** Propose one only when no existing skill, task-file note, `al-researcher` result, or cross-cutting reference can absorb the need. Say so in one line.
 - **Express intent and rationale, not enumerated skip conditions.** SKILLs and references state why a discipline exists and what problem it solves. The agent maps rationale to situation. Slot prescriptions, `_When earned:_` / `_Skip when:_` enumerations, and fill-in templates are rejected by name.
 - **`al-debug-logging` owns runtime probes and its telemetry MCP.** It emits temporary `Session.LogMessage` events and queries Application Insights through its embedded `bc-telemetry-buddy` server. `/al-build` owns no telemetry capture or telemetry artifacts.
+- **An agent naming `<server>/<tool>` in `tools:` must declare that server in `mcp-servers:`.** A `tools:` entry is a reference, not a declaration; without the block the agent silently holds nothing. `scripts/Validate-PluginStructure.ps1` gates this.
+- **No lens holds a fixer — capability custody is not change authority.** `al-performance` exposes `fix_al_file`, and it stays off both perf lenses' allowlists. The tool takes only a file path and a dry-run flag: no occurrence selector, and its dry-run `Fixes applied:` list names pattern ids rather than locations, so no approval gate can confine a rewrite to the diff. A provably equivalent one-line perf fix lands as a targeted `edit` under `/al-code-review`'s hygiene rule; anything structural queues as a manual reshape in `/al-refactor`.
 - **`al-researcher` owns canonical source lookup.** `microsoft/BCApps` paths, branch selection, search rules, `gh` commands, and fallback stay in `agents/al-researcher.agent.md`. Web access is only the raw-file fallback. No separately discoverable source agent may bypass the gateway.
 
 ## Reference layout
@@ -78,7 +80,15 @@ Templates are materialised lazily on first need by the owning flow.
 
 ## Runtime surface
 
-The plugin is distributed via `.github/plugin/marketplace.json` and targets GitHub Copilot CLI. It ships 18 custom agents under `agents/`, invoked via the task tool by name. Each agent's `.agent.md` frontmatter pins its model — the single home; the repo-root `scripts/Validate-PluginStructure.ps1` checks every pin against its fleet map. [`references/overview.md`](references/overview.md) carries the user-facing agent table. `al-researcher` alone owns the research MCPs and canonical BCApps lookup. The 15 other research-capable agents carry `agent` tool access and route facts through the gateway. `al-debug-logging` alone owns `bc-telemetry-buddy`.
+The plugin is distributed via `.github/plugin/marketplace.json` and targets GitHub Copilot CLI. It ships 18 custom agents under `agents/`, invoked via the task tool by name. Each agent's `.agent.md` frontmatter pins its model — the single home; the repo-root `scripts/Validate-PluginStructure.ps1` checks every pin against its fleet map. [`references/overview.md`](references/overview.md) carries the user-facing agent table. `al-researcher` alone owns the research MCPs and canonical BCApps lookup. The 15 other research-capable agents carry `agent` tool access and route facts through the gateway. `al-debug-logging` alone owns `bc-telemetry-buddy`; the two perf lenses alone own `al-performance`.
+
+Agent-scoped MCP behaviour, measured on CLI 1.0.71-2 with an isolated `COPILOT_HOME`:
+
+- An agent-declared server registers default-disabled and enables when that agent runs, so its startup cost is paid only then. The routine `Skipping disabled MCP server` log line is idle behaviour, not suppression.
+- An explicit user `disabledMcpServers` entry **wins** — the agent sees no tool. The plugin cannot defeat a user opt-out.
+- An agent's own declaration wins over a same-name entry in the user's `mcp-config.json`, so the pinned version is what the agent gets.
+
+Session-scoped mechanisms exist (`plugin.json` `"mcpServers"`, a plugin-root `.mcp.json`) and are deliberately unused: they would put every server in every session, including runs that never touch the capability.
 
 SKILL.md bodies are injected verbatim and unexpanded, with no template variables. A skill locates its own files relative to the base directory announced at activation.
 

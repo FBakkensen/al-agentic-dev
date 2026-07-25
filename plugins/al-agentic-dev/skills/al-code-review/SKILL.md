@@ -34,9 +34,9 @@ A per-slice diff spans every `T-NNN` commit from its first commit through `done`
    | `al-review-cr-bc` | BC topic-store anti-patterns, platform reinvention, speculative generality, and the direct-`xRec` validation trap | both |
    | `al-review-cr-comments` | Modified-file comment invariants and evidenced recent-history regressions | both |
    | `al-review-cr-appsource` | Intentionality of diff-added public shipped procedures, fields, and actions, read with `app.json` | per-feature only |
-   | `al-review-cr-perf` | `al-performance` `scan_al_code` findings in touched procedures of changed `.al` files; never `fix_al_file` | both |
+   | `al-review-cr-perf` | `al-performance` `scan_al_code` findings in touched procedures of changed `.al` files; identify-only, no apply plan | both |
 
-   Each lens returns its one-line sentinel, then labeled `Finding:` / `Where:` / `Why:` / `Source:` blocks; the perf lens adds `Severity:` and any auto-fixable marker. When `al-performance` is absent, the perf lens returns exactly `perf scan skipped: al-performance MCP not available` in place of its sentinel. Use [`LANGUAGE.md`](../../references/LANGUAGE.md) exactly.
+   Each lens returns its one-line sentinel, then labeled `Finding:` / `Where:` / `Why:` / `Source:` blocks; the perf lens adds `Severity:`. When `al-performance` is absent, the perf lens returns exactly `perf scan skipped: al-performance MCP not available` in place of its sentinel — name the remedy in the screen: the scanner needs `uv` or Python 3.9+ with `mcp[cli]` on PATH, and a `disabledMcpServers` entry naming `al-performance` suppresses it on purpose. Use [`LANGUAGE.md`](../../references/LANGUAGE.md) exactly.
 
 2. **Judge.** Invoke `al-review-judge` once with the scoped diff and all raw lens blocks. Its return begins `REVIEW JUDGMENT`; every supplied finding comes back with `Rank:`, `Classification:`, `Finding:`, `Where:`, `Evidence:`, `Lenses:`, and `Reason:`. Map `MUST-FIX` / `SHOULD-FIX` / `NO-ACTION` to must-fix, nit, and dropped. The judge alone classifies; this skill alone marks each must-fix as fixable in this run or as requiring a decision. Judge unavailable → `BLOCKED`, name it, **Stop**; no inline substitute.
 
@@ -56,6 +56,7 @@ Land the fix queue, then re-review once. Builds and containers stay serial.
 
 - **Substantive:** changed behaviour, decision, design judgment, or public/shipped surface. The fix runs under the originating task per the repair exception in [`task-lifecycle.md`](../../references/task-lifecycle.md); `status:` and `phase:` stay untouched. Invoke `al-red-green` with the missing or adjusted AAA case (Arrange/Act/Assert), the originating task's `New and Modified Objects` block, and the task file path. Reconcile `New and Modified Objects` and `Researched:` bullets, commit under the `T-NNN` prefix, and require green. Mutation is recommended follow-up, not run here. An AS0007 public/shipped rename is substantive or escalated, never hygiene.
 - **Hygiene:** provably non-semantic. Apply, run `/al-build`, and commit standalone. A red build → revert and re-judge as substantive or escalate.
+- A performance finding is classified by semantic risk like any other, never by its scanner provenance. A rewrite provably equivalent on the read path is hygiene. One that changes what is loaded, locked, persisted, or triggered is substantive — and since a behaviour-preserving change yields no red, it escalates rather than inventing one.
 - A substantive fix that cannot go green, or any finding that requires a decision → escalate; never leave the tree red or invent a decision.
 - In a per-feature diff, a substantive finding in a user/API slice already walked by `/al-user-verification` escalates to `/al-steer` — an automatic fix would invalidate the walk. Hygiene still lands. Backend-only substantive findings use red→green normally.
 

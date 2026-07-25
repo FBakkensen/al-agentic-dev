@@ -188,6 +188,43 @@ function Test-AgentFrontmatterBlock {
                         $result.Errors += "Agent declares 'edit' but not 'skill' — file-writing agents must be able to invoke skills: $AgentFile"
                     }
 
+                    # A tools: entry naming an MCP tool is a reference, not a
+                    # declaration. Without a matching mcp-servers: block the agent
+                    # silently holds nothing and degrades to its no-server path.
+                    # The allowlist names servers the consumer's own environment
+                    # supplies, each with a documented fallback when absent.
+                    if ($null -ne $toolNames) {
+                        $externallyProvided = @(
+                            'al-symbols-mcp',
+                            'al-objid-mcp-server',
+                            'microsoft_learn'
+                        )
+
+                        $declaredServers = @()
+                        $blockMatch = [regex]::Match(
+                            $frontmatter,
+                            '(?ms)^mcp-servers:\s*$(.*?)(?=^\S|\z)')
+                        if ($blockMatch.Success) {
+                            $declaredServers = @(
+                                [regex]::Matches($blockMatch.Groups[1].Value, '(?m)^\s{2}(\S+)\s*:\s*$') |
+                                    ForEach-Object { $_.Groups[1].Value }
+                            )
+                        }
+
+                        $referencedServers = @(
+                            $toolNames |
+                                Where-Object { $_ -match '^(?<server>[^/]+)/' } |
+                                ForEach-Object { $Matches['server'] } |
+                                Select-Object -Unique
+                        )
+
+                        foreach ($server in $referencedServers) {
+                            if ($declaredServers -notcontains $server -and $externallyProvided -notcontains $server) {
+                                $result.Errors += "Agent references MCP server '$server' in tools: but declares no matching mcp-servers: entry: $AgentFile"
+                            }
+                        }
+                    }
+
                     # The gate skills delegate their run to the al-gate-runner custom
                     # agent, so a caller without the agent grant reports BLOCKED.
                     if ($null -ne $toolNames -and $toolNames -notcontains 'agent') {

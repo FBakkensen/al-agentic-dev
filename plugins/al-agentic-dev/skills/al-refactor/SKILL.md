@@ -80,10 +80,7 @@ Seam work is homed in [testability.md](../../references/testing/testability.md).
 
 ### Performance findings
 
-Two apply paths, by the scanner's auto-fixable marker:
-
-- **Auto-fixable** findings apply via `fix_al_file` — one file batch = one queue entry. Dry-run first (the tool's default). Cross-check the proposed rewrites against the lens findings: the tool fixes every auto-fixable pattern in the file, while a per-task refactor owns only the diff-scoped findings. A rewrite touching a pattern or procedure the lens never flagged → drop the tool for that file and reshape manually. Cross-check clean → write, then `/al-build`. Red reverts the whole file batch.
-- **Not auto-fixable** structural findings join the queue as manual reshapes.
+Every perf survivor joins the queue as a manual reshape. The scanner marks nothing auto-fixable, and its fixer rewrites a whole file with no way to aim it at one occurrence — so it would reach patterns outside this task's diff. Reshape by hand, then `/al-build`, as for every other queue entry; red reverts that file.
 
 Server absent → the lens's skip note lands in the Gate report and reshape proceeds on the other four lenses.
 

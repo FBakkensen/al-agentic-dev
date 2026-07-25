@@ -215,6 +215,56 @@ mcp-servers:
         ($output -join [Environment]::NewLine) | Should -Match 'All plugins have valid Copilot CLI marketplace structure'
     }
 
+    It 'fails when an agent references an MCP server it does not declare' {
+        $repoRoot = Join-Path $TestDrive 'agent-undeclared-mcp'
+        New-PluginRepoFixtureWithAgents -Root $repoRoot -AgentFiles @{
+            'demo-agent' = (New-ValidAgentContent -Tools '["read", "demo-mcp/scan"]')
+        }
+
+        $output = & pwsh -NoProfile -File $script:ValidatorPath -RepoRoot $repoRoot 2>&1
+
+        $LASTEXITCODE | Should -Be 1
+        ($output -join [Environment]::NewLine) | Should -Match "references MCP server 'demo-mcp' in tools: but declares no matching mcp-servers: entry"
+    }
+
+    It 'accepts an agent referencing an MCP server it declares' {
+        $repoRoot = Join-Path $TestDrive 'agent-declared-mcp'
+        $mcpFrontmatter = @'
+mcp-servers:
+  demo-mcp:
+    type: stdio
+    command: npx
+    args: ["-y", "demo-mcp"]
+    tools: ["scan"]
+'@
+        New-PluginRepoFixtureWithAgents -Root $repoRoot -AgentFiles @{
+            'demo-agent' = (New-ValidAgentContent -Tools '["read", "demo-mcp/scan"]' -AdditionalFrontmatter $mcpFrontmatter)
+        }
+
+        $output = & pwsh -NoProfile -File $script:ValidatorPath -RepoRoot $repoRoot 2>&1
+
+        $LASTEXITCODE | Should -Be 0
+        ($output -join [Environment]::NewLine) | Should -Match 'All plugins have valid Copilot CLI marketplace structure'
+    }
+
+    It 'accepts an undeclared MCP server the consumer environment supplies' -TestCases @(
+        @{ Server = 'al-symbols-mcp' }
+        @{ Server = 'al-objid-mcp-server' }
+        @{ Server = 'microsoft_learn' }
+    ) {
+        param($Server)
+
+        $repoRoot = Join-Path $TestDrive "agent-external-mcp-$Server"
+        New-PluginRepoFixtureWithAgents -Root $repoRoot -AgentFiles @{
+            'demo-agent' = (New-ValidAgentContent -Tools "[`"read`", `"$Server/*`"]")
+        }
+
+        $output = & pwsh -NoProfile -File $script:ValidatorPath -RepoRoot $repoRoot 2>&1
+
+        $LASTEXITCODE | Should -Be 0
+        ($output -join [Environment]::NewLine) | Should -Match 'All plugins have valid Copilot CLI marketplace structure'
+    }
+
     It 'does not force unrelated plugin agents onto the al-agentic-dev model allow-list' {
         $repoRoot = Join-Path $TestDrive 'agent-independent-model'
         New-PluginRepoFixtureWithAgents -Root $repoRoot -AgentFiles @{ 'demo-agent' = (New-ValidAgentContent -Model 'gpt-4o') }
