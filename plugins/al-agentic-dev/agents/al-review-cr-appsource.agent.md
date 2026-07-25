@@ -2,7 +2,7 @@
 name: al-review-cr-appsource
 description: Catch accidental AppSource public-surface lock-in for al-code-review when a diff adds public symbols on shipped objects.
 tools: ["read", "search", "agent"]
-model: claude-sonnet-5
+model: claude-opus-5
 user-invocable: false
 ---
 

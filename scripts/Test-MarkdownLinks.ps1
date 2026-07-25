@@ -8,6 +8,10 @@
     within a paragraph), and non-local targets, and writes one sorted, unique
     source-file<TAB>literal-target pair for each unresolved target.
 
+    Use -Path to audit named repository-root-relative source files instead of
+    the tracked corpus; git is not consulted. A named file absent from the
+    working tree is skipped, matching a tracked file deleted from it.
+
     Targets starting with a single '/' resolve from the repository root. Any
     local target that resolves outside the repository root — textually or
     through a symlink, junction, or other reparse point — is reported as
@@ -23,11 +27,15 @@
 .EXAMPLE
     pwsh scripts/Test-MarkdownLinks.ps1
 .EXAMPLE
+    pwsh scripts/Test-MarkdownLinks.ps1 -Path README.md,docs/guide.md
+.EXAMPLE
     pwsh scripts/Test-MarkdownLinks.ps1 -BaselinePath .link-baseline.txt -FailOnUnresolved
 #>
 [CmdletBinding()]
 param(
     [string]$RepoRoot = (Join-Path $PSScriptRoot '..'),
+
+    [string[]]$Path,
 
     [string]$BaselinePath,
 
@@ -444,8 +452,40 @@ function Get-TrackedMarkdownFiles {
         throw "Could not list tracked Markdown files in '$Root'."
     }
 
-    return @($files -split "`0" | Where-Object {
-            $_ -and (Test-Path -LiteralPath (Join-Path $Root $_) -PathType Leaf)
+    return @($files -split "`0")
+}
+
+function Get-MarkdownSourceFiles {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Root,
+
+        [AllowEmptyCollection()]
+        [string[]]$ExplicitPaths,
+
+        [switch]$UseExplicitPaths
+    )
+
+    $candidates = if ($UseExplicitPaths) {
+        # pwsh -File hands a script one literal string per argument, so a
+        # multi-path -Path arrives comma-joined and is split here. Ceiling: a
+        # source file whose name contains a comma cannot be named with -Path.
+        @($ExplicitPaths | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
+    } else {
+        Get-TrackedMarkdownFiles -Root $Root
+    }
+
+    # A tracked path can be absent from the working tree, and a caller-supplied
+    # path can name a file that was never written or one that escapes the
+    # repository root; none of those is a source.
+    return @($candidates | Where-Object {
+            if ([string]::IsNullOrWhiteSpace($_)) {
+                return $false
+            }
+
+            $candidatePath = [System.IO.Path]::GetFullPath((Join-Path $Root $_))
+            (Test-PathWithinRoot -Path $candidatePath -RootPath $Root) -and
+            (Test-Path -LiteralPath $candidatePath -PathType Leaf)
         })
 }
 
@@ -553,7 +593,8 @@ function Add-UnresolvedParagraphPairs {
 }
 
 $unresolvedPairs = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
-foreach ($relativeSourcePath in Get-TrackedMarkdownFiles -Root $repoRootPath) {
+foreach ($relativeSourcePath in Get-MarkdownSourceFiles -Root $repoRootPath -ExplicitPaths $Path `
+        -UseExplicitPaths:$PSBoundParameters.ContainsKey('Path')) {
     $sourcePath = Join-Path $repoRootPath $relativeSourcePath
     $sourceDirectory = [System.IO.Path]::GetDirectoryName($sourcePath)
     $inFence = $false

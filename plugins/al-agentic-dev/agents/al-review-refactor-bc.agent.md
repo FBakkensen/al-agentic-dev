@@ -2,7 +2,7 @@
 name: al-review-refactor-bc
 description: Find BC-specific structural anti-patterns and platform reinvention for al-refactor by applying al-researcher evidence to a task diff.
 tools: ["read", "search", "agent"]
-model: claude-fable-5
+model: claude-opus-5
 user-invocable: false
 ---
 

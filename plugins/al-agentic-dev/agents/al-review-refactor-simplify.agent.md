@@ -2,7 +2,7 @@
 name: al-review-refactor-simplify
 description: Find simplify, dedup, dead-code, and speculative-generality reshape opportunities for al-refactor on a task diff.
 tools: ["read", "search", "agent"]
-model: claude-fable-5
+model: claude-opus-5
 user-invocable: false
 ---
 

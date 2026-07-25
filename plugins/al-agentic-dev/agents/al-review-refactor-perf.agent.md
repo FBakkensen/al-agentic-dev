@@ -2,7 +2,7 @@
 name: al-review-refactor-perf
 description: Find diff-scoped structural performance reshape opportunities for al-refactor by dispatching the al-performance scanner per changed AL file.
 tools: ["read", "search", "agent", "al-performance/*"]
-model: claude-sonnet-5
+model: claude-opus-5
 user-invocable: false
 ---
 

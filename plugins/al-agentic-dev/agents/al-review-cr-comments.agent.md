@@ -2,7 +2,7 @@
 name: al-review-cr-comments
 description: Catch comment-guidance violations and recent-history regressions for al-code-review on a diff or scope.
 tools: ["read", "search", "execute", "agent"]
-model: claude-sonnet-5
+model: claude-opus-5
 user-invocable: false
 ---
 

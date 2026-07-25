@@ -2,7 +2,7 @@
 name: al-review-cr-perf
 description: Catch diff-scoped performance findings for al-code-review by dispatching the al-performance scanner per changed AL file.
 tools: ["read", "search", "agent", "al-performance/*"]
-model: claude-sonnet-5
+model: claude-opus-5
 user-invocable: false
 ---
 

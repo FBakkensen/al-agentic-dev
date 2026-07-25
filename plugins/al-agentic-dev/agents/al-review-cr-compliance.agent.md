@@ -2,7 +2,7 @@
 name: al-review-cr-compliance
 description: Catch project-compliance, naming, grounding, push-up, scope, and reconcile drift findings for al-code-review on a diff or scope.
 tools: ["read", "search", "agent"]
-model: claude-sonnet-5
+model: claude-opus-5
 user-invocable: false
 ---
 

@@ -3,7 +3,7 @@
 BeforeAll {
     $script:AuditPath = Resolve-Path (Join-Path $PSScriptRoot '..' 'scripts' 'Test-MarkdownLinks.ps1')
 
-    function New-MarkdownRepoFixture {
+    function New-MarkdownFixture {
         param(
             [Parameter(Mandatory = $true)]
             [string]$Root,
@@ -19,12 +19,6 @@ BeforeAll {
             New-Item -ItemType Directory -Path $directory -Force | Out-Null
             Set-Content -LiteralPath $path -Value $Files[$relativePath] -Encoding utf8
         }
-
-        & git -C $Root init --quiet
-        & git -C $Root add -- '*.md'
-        if ($LASTEXITCODE -ne 0) {
-            throw "Could not stage Markdown fixture files in '$Root'."
-        }
     }
 
     function Invoke-MarkdownLinkAudit {
@@ -32,10 +26,13 @@ BeforeAll {
             [Parameter(Mandatory = $true)]
             [string]$Root,
 
+            [Parameter(Mandatory = $true)]
+            [string[]]$Source,
+
             [string[]]$Arguments = @()
         )
 
-        $output = @(& pwsh -NoProfile -File $script:AuditPath -RepoRoot $Root @Arguments)
+        $output = @(& pwsh -NoProfile -File $script:AuditPath -RepoRoot $Root -Path ($Source -join ',') @Arguments)
         return @{
             ExitCode = $LASTEXITCODE
             Pairs = @($output | Where-Object { $_ -is [string] })
@@ -46,7 +43,7 @@ BeforeAll {
 Describe 'Test-MarkdownLinks' {
     It 'resolves relative targets, fragments, URL-encoded names, and directories' {
         $root = Join-Path $TestDrive 'resolved-targets'
-        New-MarkdownRepoFixture -Root $root -Files @{
+        New-MarkdownFixture -Root $root -Files @{
             'docs\guide.md' = @'
 [Guide](guide/intro.md#overview)
 [Encoded](encoded%20name.md)
@@ -57,7 +54,7 @@ Describe 'Test-MarkdownLinks' {
             'docs\guide\.gitkeep' = ''
         }
 
-        $result = Invoke-MarkdownLinkAudit -Root $root
+        $result = Invoke-MarkdownLinkAudit -Root $root -Source 'docs/guide.md'
 
         $result.ExitCode | Should -Be 0
         $result.Pairs | Should -BeNullOrEmpty
@@ -65,7 +62,7 @@ Describe 'Test-MarkdownLinks' {
 
     It 'ignores external, protocol-relative, fragment-only, and intentional placeholder links' {
         $root = Join-Path $TestDrive 'ignored-targets'
-        New-MarkdownRepoFixture -Root $root -Files @{
+        New-MarkdownFixture -Root $root -Files @{
             'README.md' = @'
 [Web](https://example.test/missing.md)
 [Mail](mailto:docs@example.test)
@@ -75,7 +72,7 @@ Describe 'Test-MarkdownLinks' {
 '@
         }
 
-        $result = Invoke-MarkdownLinkAudit -Root $root
+        $result = Invoke-MarkdownLinkAudit -Root $root -Source 'README.md'
 
         $result.ExitCode | Should -Be 0
         $result.Pairs | Should -BeNullOrEmpty
@@ -83,7 +80,7 @@ Describe 'Test-MarkdownLinks' {
 
     It 'ignores Markdown-looking links inside fenced code blocks' {
         $root = Join-Path $TestDrive 'fenced-code'
-        New-MarkdownRepoFixture -Root $root -Files @{
+        New-MarkdownFixture -Root $root -Files @{
             'README.md' = @'
 ```markdown
 [Not rendered](missing-in-fence.md)
@@ -93,20 +90,37 @@ Describe 'Test-MarkdownLinks' {
 '@
         }
 
-        $result = Invoke-MarkdownLinkAudit -Root $root
+        $result = Invoke-MarkdownLinkAudit -Root $root -Source 'README.md'
 
         $result.ExitCode | Should -Be 0
         $result.Pairs | Should -Be @("README.md`tmissing.md")
     }
 
-    It 'ignores tracked Markdown files deleted from the working tree' {
+    It 'ignores source files absent from the working tree' {
         $root = Join-Path $TestDrive 'deleted-source'
-        New-MarkdownRepoFixture -Root $root -Files @{
+        New-MarkdownFixture -Root $root -Files @{
             'README.md' = '[Missing](missing.md)'
         }
+        # Matches a tracked file deleted from the working tree, which
+        # git ls-files still reports.
         Remove-Item -LiteralPath (Join-Path $root 'README.md')
 
-        $result = Invoke-MarkdownLinkAudit -Root $root
+        $result = Invoke-MarkdownLinkAudit -Root $root -Source 'README.md'
+
+        $result.ExitCode | Should -Be 0
+        $result.Pairs | Should -BeNullOrEmpty
+    }
+
+    It 'ignores source files that escape the repository root' {
+        $parent = Join-Path $TestDrive 'source-escape'
+        $root = Join-Path $parent 'repo'
+        New-MarkdownFixture -Root $root -Files @{
+            'README.md' = '[Present](README.md)'
+        }
+        Set-Content -LiteralPath (Join-Path $parent 'outside.md') `
+            -Value '[Missing](absent.md)' -Encoding utf8
+
+        $result = Invoke-MarkdownLinkAudit -Root $root -Source '../outside.md'
 
         $result.ExitCode | Should -Be 0
         $result.Pairs | Should -BeNullOrEmpty
@@ -114,7 +128,7 @@ Describe 'Test-MarkdownLinks' {
 
     It 'writes sorted unique literal source-target pairs' {
         $root = Join-Path $TestDrive 'unresolved-pairs'
-        New-MarkdownRepoFixture -Root $root -Files @{
+        New-MarkdownFixture -Root $root -Files @{
             'docs\a.md' = @'
 [Z](z.md)
 [A](absent-a.md)
@@ -123,7 +137,7 @@ Describe 'Test-MarkdownLinks' {
             'README.md' = '[Same target](docs/z.md)'
         }
 
-        $result = Invoke-MarkdownLinkAudit -Root $root
+        $result = Invoke-MarkdownLinkAudit -Root $root -Source 'docs/a.md', 'README.md'
 
         $result.ExitCode | Should -Be 0
         $result.Pairs | Should -Be @(
@@ -136,7 +150,7 @@ Describe 'Test-MarkdownLinks' {
     It 'uses a baseline for CI-style failure comparison and can write that baseline' {
         $root = Join-Path $TestDrive 'baseline-comparison'
         $baselinePath = Join-Path $root '.link-baseline.txt'
-        New-MarkdownRepoFixture -Root $root -Files @{
+        New-MarkdownFixture -Root $root -Files @{
             'README.md' = @'
 [Known](known.md)
 [New](new.md)
@@ -144,7 +158,7 @@ Describe 'Test-MarkdownLinks' {
         }
         Set-Content -LiteralPath $baselinePath -Value "README.md`tknown.md" -Encoding utf8
 
-        $comparison = Invoke-MarkdownLinkAudit -Root $root -Arguments @(
+        $comparison = Invoke-MarkdownLinkAudit -Root $root -Source 'README.md' -Arguments @(
             '-BaselinePath', $baselinePath, '-FailOnUnresolved'
         )
         $comparison.ExitCode | Should -Be 1
@@ -154,7 +168,7 @@ Describe 'Test-MarkdownLinks' {
         )
 
         $writtenBaseline = Join-Path $root 'written-baseline.txt'
-        $writeResult = Invoke-MarkdownLinkAudit -Root $root -Arguments @(
+        $writeResult = Invoke-MarkdownLinkAudit -Root $root -Source 'README.md' -Arguments @(
             '-BaselinePath', $writtenBaseline, '-WriteBaseline'
         )
         $writeResult.ExitCode | Should -Be 0
@@ -163,7 +177,7 @@ Describe 'Test-MarkdownLinks' {
             "README.md`tnew.md"
         )
 
-        $passingComparison = Invoke-MarkdownLinkAudit -Root $root -Arguments @(
+        $passingComparison = Invoke-MarkdownLinkAudit -Root $root -Source 'README.md' -Arguments @(
             '-BaselinePath', $writtenBaseline, '-FailOnUnresolved'
         )
         $passingComparison.ExitCode | Should -Be 0
@@ -172,11 +186,11 @@ Describe 'Test-MarkdownLinks' {
     It 'passes -WriteBaseline -FailOnUnresolved by comparing against the just-written baseline' {
         $root = Join-Path $TestDrive 'write-and-fail'
         $baselinePath = Join-Path $root '.link-baseline.txt'
-        New-MarkdownRepoFixture -Root $root -Files @{
+        New-MarkdownFixture -Root $root -Files @{
             'README.md' = '[Missing](missing.md)'
         }
 
-        $result = Invoke-MarkdownLinkAudit -Root $root -Arguments @(
+        $result = Invoke-MarkdownLinkAudit -Root $root -Source 'README.md' -Arguments @(
             '-BaselinePath', $baselinePath, '-WriteBaseline', '-FailOnUnresolved'
         )
 
@@ -187,7 +201,7 @@ Describe 'Test-MarkdownLinks' {
 
     It 'resolves leading-slash targets from the repository root' {
         $root = Join-Path $TestDrive 'repo-root-links'
-        New-MarkdownRepoFixture -Root $root -Files @{
+        New-MarkdownFixture -Root $root -Files @{
             'docs\nested\deep.md' = @'
 [Root doc](/docs/present.md)
 [Root missing](/docs/absent.md)
@@ -195,7 +209,7 @@ Describe 'Test-MarkdownLinks' {
             'docs\present.md' = '# Present'
         }
 
-        $result = Invoke-MarkdownLinkAudit -Root $root
+        $result = Invoke-MarkdownLinkAudit -Root $root -Source 'docs/nested/deep.md'
 
         $result.ExitCode | Should -Be 0
         $result.Pairs | Should -Be @("docs/nested/deep.md`t/docs/absent.md")
@@ -204,7 +218,7 @@ Describe 'Test-MarkdownLinks' {
     It 'reports targets escaping the repository root as unresolved without probing outside paths' {
         $parent = Join-Path $TestDrive 'containment'
         $root = Join-Path $parent 'repo'
-        New-MarkdownRepoFixture -Root $root -Files @{
+        New-MarkdownFixture -Root $root -Files @{
             'README.md' = @'
 [Escape](../outside.md)
 [Deep escape](docs/../../outside.md)
@@ -214,7 +228,7 @@ Describe 'Test-MarkdownLinks' {
         # still be unresolved: existence outside the root is never probed.
         Set-Content -LiteralPath (Join-Path $parent 'outside.md') -Value '# Outside' -Encoding utf8
 
-        $result = Invoke-MarkdownLinkAudit -Root $root
+        $result = Invoke-MarkdownLinkAudit -Root $root -Source 'README.md'
 
         $result.ExitCode | Should -Be 0
         $result.Pairs | Should -Be @(
@@ -225,7 +239,7 @@ Describe 'Test-MarkdownLinks' {
 
     It 'ignores Markdown-looking links inside inline code spans but keeps real links on the same line' {
         $root = Join-Path $TestDrive 'inline-code'
-        New-MarkdownRepoFixture -Root $root -Files @{
+        New-MarkdownFixture -Root $root -Files @{
             'README.md' = @'
 Use `[Not a link](missing-in-span.md)` as shown.
 Double span: ``[Also not](missing-double.md)`` here.
@@ -235,7 +249,7 @@ Unclosed backtick ` then [Still real](present.md) works.
             'present.md' = '# Present'
         }
 
-        $result = Invoke-MarkdownLinkAudit -Root $root
+        $result = Invoke-MarkdownLinkAudit -Root $root -Source 'README.md'
 
         $result.ExitCode | Should -Be 0
         $result.Pairs | Should -Be @("README.md`tmissing-real.md")
@@ -243,11 +257,11 @@ Unclosed backtick ` then [Still real](present.md) works.
 
     It 'keeps links visible around backslash-escaped backticks' {
         $root = Join-Path $TestDrive 'escaped-backticks'
-        New-MarkdownRepoFixture -Root $root -Files @{
+        New-MarkdownFixture -Root $root -Files @{
             'README.md' = 'Escaped \` then [Real](missing-escaped.md) and \` more.'
         }
 
-        $result = Invoke-MarkdownLinkAudit -Root $root
+        $result = Invoke-MarkdownLinkAudit -Root $root -Source 'README.md'
 
         $result.ExitCode | Should -Be 0
         $result.Pairs | Should -Be @("README.md`tmissing-escaped.md")
@@ -255,7 +269,7 @@ Unclosed backtick ` then [Still real](present.md) works.
 
     It 'ignores links inside code spans continuing across lines and keeps unmatched backticks literal' {
         $root = Join-Path $TestDrive 'multiline-spans'
-        New-MarkdownRepoFixture -Root $root -Files @{
+        New-MarkdownFixture -Root $root -Files @{
             'README.md' = @'
 Start ``code [Hidden](hidden-in-span.md)
 still code`` then [After](missing-after-span.md).
@@ -264,7 +278,7 @@ A lone ` backtick and [Literal](missing-literal.md) still count.
 '@
         }
 
-        $result = Invoke-MarkdownLinkAudit -Root $root
+        $result = Invoke-MarkdownLinkAudit -Root $root -Source 'README.md'
 
         $result.ExitCode | Should -Be 0
         $result.Pairs | Should -Be @(
@@ -275,7 +289,7 @@ A lone ` backtick and [Literal](missing-literal.md) still count.
 
     It 'strips query strings before resolution while reporting the literal target' {
         $root = Join-Path $TestDrive 'query-strings'
-        New-MarkdownRepoFixture -Root $root -Files @{
+        New-MarkdownFixture -Root $root -Files @{
             'README.md' = @'
 [Versioned](present.md?v=2)
 [Both](present.md?v=2#section)
@@ -285,7 +299,7 @@ A lone ` backtick and [Literal](missing-literal.md) still count.
             'present.md' = '# Present'
         }
 
-        $result = Invoke-MarkdownLinkAudit -Root $root
+        $result = Invoke-MarkdownLinkAudit -Root $root -Source 'README.md'
 
         $result.ExitCode | Should -Be 0
         $result.Pairs | Should -Be @("README.md`tabsent.md?x=1#frag")
@@ -297,7 +311,7 @@ A lone ` backtick and [Literal](missing-literal.md) still count.
         $outside = Join-Path $parent 'outside'
         New-Item -ItemType Directory -Path $outside -Force | Out-Null
         Set-Content -LiteralPath (Join-Path $outside 'note.md') -Value '# Outside' -Encoding utf8
-        New-MarkdownRepoFixture -Root $root -Files @{
+        New-MarkdownFixture -Root $root -Files @{
             'README.md' = @'
 [Escapes](linked/note.md)
 [Stays](docs-link/inside.md)
@@ -305,56 +319,30 @@ A lone ` backtick and [Literal](missing-literal.md) still count.
             'docs\inside.md' = '# Inside'
         }
 
+        # A junction on Windows and a directory symlink elsewhere; neither
+        # needs elevation, unlike a Windows file symlink.
         $directoryLinkType = if ($IsWindows) { 'Junction' } else { 'SymbolicLink' }
-        try {
-            New-Item -ItemType $directoryLinkType -Path (Join-Path $root 'linked') `
-                -Target $outside -ErrorAction Stop | Out-Null
-            New-Item -ItemType $directoryLinkType -Path (Join-Path $root 'docs-link') `
-                -Target (Join-Path $root 'docs') -ErrorAction Stop | Out-Null
-        } catch {
-            Set-ItResult -Skipped -Because "directory link creation is unavailable: $_"
-            return
-        }
+        New-Item -ItemType $directoryLinkType -Path (Join-Path $root 'linked') `
+            -Target $outside -ErrorAction Stop | Out-Null
+        New-Item -ItemType $directoryLinkType -Path (Join-Path $root 'docs-link') `
+            -Target (Join-Path $root 'docs') -ErrorAction Stop | Out-Null
 
-        $result = Invoke-MarkdownLinkAudit -Root $root
+        $result = Invoke-MarkdownLinkAudit -Root $root -Source 'README.md'
 
         $result.ExitCode | Should -Be 0
         $result.Pairs | Should -Be @("README.md`tlinked/note.md")
     }
 
-    It 'reports an existing file symlink whose final target resolves outside the repository root' {
-        $parent = Join-Path $TestDrive 'file-link-escape'
-        $root = Join-Path $parent 'repo'
-        New-Item -ItemType Directory -Path $parent -Force | Out-Null
-        Set-Content -LiteralPath (Join-Path $parent 'outside.md') -Value '# Outside' -Encoding utf8
-        New-MarkdownRepoFixture -Root $root -Files @{
-            'README.md' = '[Alias](alias.md)'
-        }
-
-        try {
-            New-Item -ItemType SymbolicLink -Path (Join-Path $root 'alias.md') `
-                -Target (Join-Path $parent 'outside.md') -ErrorAction Stop | Out-Null
-        } catch {
-            Set-ItResult -Skipped -Because "symbolic link creation is unavailable: $_"
-            return
-        }
-
-        $result = Invoke-MarkdownLinkAudit -Root $root
-
-        $result.ExitCode | Should -Be 0
-        $result.Pairs | Should -Be @("README.md`talias.md")
-    }
-
     It 'honors the case sensitivity of the hosting volume for root containment' {
         $parent = Join-Path $TestDrive 'case-volume'
         $root = Join-Path $parent 'repo'
-        New-MarkdownRepoFixture -Root $root -Files @{
+        New-MarkdownFixture -Root $root -Files @{
             'README.md' = '[Reenter](../REPO/present.md)'
             'present.md' = '# Present'
         }
 
         $caseInsensitiveVolume = Test-Path -LiteralPath (Join-Path $root 'PRESENT.MD')
-        $result = Invoke-MarkdownLinkAudit -Root $root
+        $result = Invoke-MarkdownLinkAudit -Root $root -Source 'README.md'
 
         $result.ExitCode | Should -Be 0
         if ($caseInsensitiveVolume) {
@@ -444,5 +432,79 @@ Describe 'Test-MarkdownLinks helpers' {
 
         $unmatched = 'lone ` backtick [Real](r.md)'
         Remove-InlineCodeSpans -Text $unmatched | Should -Be $unmatched
+    }
+
+    It 'splits the NUL-separated tracked corpus and keeps only existing files' {
+        $root = Join-Path $TestDrive 'tracked-corpus'
+        New-Item -ItemType Directory -Path (Join-Path $root 'docs') -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $root 'README.md') -Value '# Present' -Encoding utf8
+        Set-Content -LiteralPath (Join-Path $root 'docs\space name.md') -Value '# Present' -Encoding utf8
+        Mock git {
+            $global:LASTEXITCODE = 0
+            return "README.md`0docs/space name.md`0docs/deleted.md`0"
+        }
+
+        $sources = Get-MarkdownSourceFiles -Root $root
+
+        Should -Invoke git -Times 1 -Exactly
+        $sources | Should -Be @('README.md', 'docs/space name.md')
+    }
+
+    It 'throws when the tracked corpus cannot be listed' {
+        $root = Join-Path $TestDrive 'tracked-corpus-failure'
+        New-Item -ItemType Directory -Path $root -Force | Out-Null
+        Mock git {
+            $global:LASTEXITCODE = 128
+            return $null
+        }
+
+        { Get-MarkdownSourceFiles -Root $root } | Should -Throw "*Could not list tracked Markdown files*"
+    }
+
+    It 'never consults the tracked corpus when explicit paths are requested' {
+        $root = Join-Path $TestDrive 'explicit-corpus'
+        New-Item -ItemType Directory -Path $root -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $root 'README.md') -Value '# Present' -Encoding utf8
+        Mock git { throw 'git must not be called for explicit paths.' }
+
+        Get-MarkdownSourceFiles -Root $root -ExplicitPaths 'README.md' -UseExplicitPaths |
+            Should -Be @('README.md')
+        # An explicitly empty corpus stays empty instead of falling back to git.
+        Get-MarkdownSourceFiles -Root $root -ExplicitPaths @() -UseExplicitPaths |
+            Should -BeNullOrEmpty
+        Should -Invoke git -Times 0 -Exactly
+    }
+
+    It 'follows a file link to its final target when deciding root containment' {
+        # A Windows file symlink needs elevation to create, so the reparse
+        # point is described to Get-Item rather than laid down on disk.
+        $parent = Join-Path $TestDrive 'file-link-unit'
+        $root = Join-Path $parent 'repo'
+        New-Item -ItemType Directory -Path $root -Force | Out-Null
+        $aliasPath = Join-Path $root 'alias.md'
+        Set-Content -LiteralPath $aliasPath -Value '# Alias' -Encoding utf8
+        $insidePath = Join-Path $root 'inside.md'
+        Set-Content -LiteralPath $insidePath -Value '# Inside' -Encoding utf8
+        $insideTargetPath = Join-Path $root 'inside-target.md'
+        Set-Content -LiteralPath $insideTargetPath -Value '# Inside target' -Encoding utf8
+
+        function New-LinkItemStub {
+            param([string]$TargetPath)
+
+            $stub = [pscustomobject]@{ LinkType = 'SymbolicLink' }
+            $stub | Add-Member -MemberType ScriptMethod -Name ResolveLinkTarget -Value {
+                [pscustomobject]@{ FullName = $TargetPath }
+            }.GetNewClosure()
+            return $stub
+        }
+
+        Mock Get-Item { New-LinkItemStub -TargetPath (Join-Path $parent 'outside.md') } `
+            -ParameterFilter { $LiteralPath -eq $aliasPath }
+        Mock Get-Item { New-LinkItemStub -TargetPath $insideTargetPath } `
+            -ParameterFilter { $LiteralPath -eq $insidePath }
+
+        Get-PhysicalPath -Path $aliasPath | Should -Be (Join-Path $parent 'outside.md')
+        Test-PhysicalPathWithinRoot -Path $aliasPath -RootPath $root | Should -BeFalse
+        Test-PhysicalPathWithinRoot -Path $insidePath -RootPath $root | Should -BeTrue
     }
 }

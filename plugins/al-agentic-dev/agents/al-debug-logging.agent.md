@@ -8,7 +8,7 @@ mcp-servers:
     command: npx
     args: ["-y", "bc-telemetry-buddy-mcp", "start"]
     tools: ["*"]
-model: claude-sonnet-5
+model: claude-opus-5
 user-invocable: false
 ---
 

@@ -2,7 +2,7 @@
 name: al-red-green
 description: Drive one AAA case RED→GREEN for al-implement or al-code-review --fix — write the test, prove RED, land the least production code, prove GREEN, and stop.
 tools: ["read", "edit", "execute", "search", "skill", "agent", "al-symbols-mcp/*", "al-objid-mcp-server/*"]
-model: claude-sonnet-5
+model: claude-opus-5
 user-invocable: false
 ---
 

@@ -2,7 +2,7 @@
 name: al-gate-runner
 description: Execute one requested build, provision, or breaking-change gate command and relay its authoritative artifacts without interpretation.
 tools: ["read", "execute"]
-model: gpt-5.6-luna
+model: claude-sonnet-5
 user-invocable: false
 ---
 

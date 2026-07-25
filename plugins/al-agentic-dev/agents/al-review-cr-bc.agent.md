@@ -2,7 +2,7 @@
 name: al-review-cr-bc
 description: Catch BC-specific anti-patterns and platform reinvention for al-code-review by applying al-researcher evidence to a diff or scope.
 tools: ["read", "search", "agent"]
-model: claude-sonnet-5
+model: claude-opus-5
 user-invocable: false
 ---
 
