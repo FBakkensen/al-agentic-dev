@@ -1,86 +1,34 @@
 ---
 name: al-build
-description: Build and test AL/Business Central projects. Use after modifying AL code or tests to verify the build gate passes. Runs compilation, publishing, and test execution in a single command. Required gate before committing AL changes.
-allowed-tools: ["execute", "read"]
+description: "Build and test AL/Business Central projects: compile, publish, and run the tests. Use after modifying AL code or tests, and as the required gate before committing. Other skills and agents reach for this skill whenever they need the gate; it delegates execution to the isolated al-gate-runner agent."
+allowed-tools: ["execute", "read", "agent"]
 ---
 
 # /al-build — build and test gate
 
 Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file output. This is the compaction recovery path; point there rather than restating its rules.
 
-**Run after every AL change and before committing. Zero warnings and zero errors → green; anything else → red.** The script itself exits 0 on warnings by default (`WARN_AS_ERROR=false`) — the zero-warning bar is this skill's: treat any warning in the gate output as red, or set `WARN_AS_ERROR=true` to bind the bar to the exit code.
+Zero warnings and zero errors → green; anything else → red. `test.ps1` exits 0 on warnings by default (`WARN_AS_ERROR=false`), so the zero-warning bar is this skill's: treat any warning in the gate output as red, or set `WARN_AS_ERROR=true` to bind the bar to the exit code.
 
 The gate runs two test layers: Unit (AL Runner) and Integration (container + TestPage). See [`test-strategy.md`](../../references/testing/test-strategy.md).
 
-## Prerequisites
+## The gate
 
-PowerShell 7.2+ (`pwsh`), Docker Desktop, .NET SDK, Node.js ≥ 22 with `npx` on PATH (ALCops analyzers install through the official `@alcops/core` CLI), and the BcContainerHelper PowerShell module.
+**`al-gate-runner` executes every gate run.** The named custom agent runs one gate command once and relays the exit code, artifacts, and one bounded output excerpt — its own body carries the worker rules. This holds from the main session and from inside another agent alike, and the worker's isolation is what keeps verbose build output out of the caller's context.
 
-## Setup
+`al-gate-runner` unavailable → report `BLOCKED`, name it as missing, and stop; the gate has no substitute runner.
 
-1. `pwsh "<skill-folder>/scripts/init.ps1"` → drops `al-build.json` in repo root.
-2. Set `testApps` to list your test app directories.
-3. `pwsh "<skill-folder>/scripts/provision.ps1"` → compiler, symbols, and analyzers.
+Two preconditions hold before the spawn: `al-build.json` sits in the repo root, and the compiler and symbols are provisioned. Either missing → **Stop.** Provision first — `/al-provision` on a `kind: provision` task, or the Setup bootstrap below.
 
-Provision keeps two private compiler channels side by side — latest stable at `<ToolCacheRoot>/al/stable`, latest prerelease at `<ToolCacheRoot>/al/prerelease` — refreshed every run, the user's global `al` dotnet tool untouched. The build picks the channel repo-wide from the highest app.json `runtime` major across all apps; prerelease only when that major exceeds the installed stable. `-UpdateCompiler` forces a clean reinstall.
-
-Compiler or symbols missing → **Stop.** Run `pwsh "<skill-folder>/scripts/provision.ps1"` first.
-
-### Container lifecycle
-
-One golden container per BC version, snapshotted once, then cheap branch-scoped copies:
-
-1. `new-bc-container.ps1` → golden BC container, fully configured.
-2. Restart the PC — the stopped container still holds locked files the snapshot commit needs released.
-3. `commit-bc-container.ps1` → snapshot image.
-4. `new-agent-container.ps1` → agent container from the snapshot, named from the current git branch.
-
-`prune.ps1` removes agent containers whose branch is gone or that sat unused past seven days (`-Preview` for a dry run). `publish-apps.ps1` clean-republishes every configured app: unpublish all dependency-reversed, then publish in dependency order — no build, no tests.
-
-## Canonical gate
-
-**Always run the full gate — never filter by codeunit or run bare `alc.exe`: `test.ps1` owns symbol resolution and container publish.**
-
-Set location to consumer repo root, then:
+The gate command handed to the worker, run from the consumer repo root:
 
 ```powershell
 pwsh "<skill-folder>/scripts/test.ps1"
 ```
 
-Force republish: `pwsh "<skill-folder>/scripts/test.ps1" -Force`
+Force republish adds `-Force`. The full gate is the scope: `test.ps1` owns symbol resolution and container publish, which codeunit filtering and a bare `alc.exe` invocation both bypass.
 
-### Gate metrics (automatic)
-
-Each `test.ps1` run records one entry in `.output/logs/build-timing.jsonl` — on every exit path: pass, fail, throw — and mirrors it to `~/.al-build/gate-metrics.jsonl` (override: `ALBT_GATE_METRICS_GLOBAL_PATH`). Phase attribution derives from recorded evidence; callers pass no flags. Report repo-local metrics with `pwsh "<skill-folder>/scripts/report-gate-metrics.ps1"` or cross-repo metrics with `-GlobalLog`.
-
-### Fast unit test (inner loop)
-
-When `unitTestApp` is configured in `al-build.json`, run only AL Runner unit tests:
-
-```powershell
-pwsh "<skill-folder>/scripts/test.ps1" -UnitTestOnly
-```
-
-Compiles the main app, every `testApps` entry, and the unit-test app through the analyzer gate; then runs AL Runner and exits without a container. `testApps` must resolve in this mode: unit-only projects set `"testApps": []`; the default `["test"]` fails loudly without `test/`. Use this fast feedback loop during `/al-implement` RED→GREEN.
-
-### Outputs (per test run)
-
-- `.output/TestResults/<dirName>/last.xml` → JUnit XML from the container run.
-- `.output/TestResults/<dirName>/al-runner.xml` → JUnit XML from the AL Runner run. Separate file — a full gate must never overwrite the unit result.
-- `.output/TestResults/summary.json` → machine-readable summary: `gate` (`full`/`unit`), `totals` per runner, `runs[]` with one record per test run (`runner`, `appName`, `dir`, `passed`, `counts`, `resultFile`).
-- `.output/logs/build-timing.jsonl` → one gate-metrics entry per run, mirrored to `~/.al-build/gate-metrics.jsonl`.
-
-Take `resultFile` paths from `summary.json` run records; never glob because stale files can sit beside fresh output. `test.ps1` writes `summary.json` only after a unit-test failure, unit-only pass, or full-gate completion; bad `al-build.json` or a compile failure leaves a prior file untouched.
-
-Test failure with an unclear runtime path → invoke the `al-debug-logging` custom agent; a clear assertion or compile failure needs no probes.
-
-## Delegation
-
-**Every `/al-build` run delegates to the named `al-gate-runner` custom agent**, which runs one gate command once and relays the exit code, artifacts, and one bounded output excerpt — its own body carries the worker rules. This holds from the main session and from inside another agent alike. Keep verbose build output out of the main session.
-
-`al-gate-runner` unavailable → report `BLOCKED`, name it as missing, and stop. No generic-subagent or direct-command substitution.
-
-Run one gate at a time — never two gate runs in flight at once. The spawn prompt carries exactly what the caller alone knows:
+Run one gate at a time. The spawn prompt carries exactly what the caller alone knows:
 
 - the one gate command — full, or `-UnitTestOnly`;
 - the authoritative artifact paths, marking the summary for mechanical expansion: `.output/TestResults/summary.json (expand: resultFile where passed=false)`;
@@ -90,12 +38,39 @@ The caller — never the worker — judges whether a relayed `summary.json` is t
 
 After the worker returns, close the completed thread before interpreting or reporting the result. Report the outcome as the mid-task Gate one-liner per [GROUND-RULES.md](../../references/GROUND-RULES.md) — never paste the worker's block raw.
 
+Test failure with an unclear runtime path → invoke the `al-debug-logging` custom agent; a clear assertion or compile failure needs no probes.
+
+### Fast unit test (inner loop)
+
+When `unitTestApp` is configured in `al-build.json`, the gate command narrows to AL Runner unit tests:
+
+```powershell
+pwsh "<skill-folder>/scripts/test.ps1" -UnitTestOnly
+```
+
+Compiles the main app, every `testApps` entry, and the unit-test app through the analyzer gate; then runs AL Runner and exits without a container. `testApps` must resolve in this mode: unit-only projects set `"testApps": []`; the default `["test"]` fails loudly without `test/`. Use this fast feedback loop during `/al-implement` RED→GREEN.
+
+## Results
+
+### Outputs (per test run)
+
+- `.output/TestResults/<dirName>/last.xml` → JUnit XML from the container run.
+- `.output/TestResults/<dirName>/al-runner.xml` → JUnit XML from the AL Runner run. Separate file, so a full gate leaves the unit result intact.
+- `.output/TestResults/summary.json` → machine-readable summary: `gate` (`full`/`unit`), `totals` per runner, `runs[]` with one record per test run (`runner`, `appName`, `dir`, `passed`, `counts`, `resultFile`).
+- `.output/logs/build-timing.jsonl` → one gate-metrics entry per run, mirrored to `~/.al-build/gate-metrics.jsonl`.
+
+Take `resultFile` paths from `summary.json` run records; a glob can pick up stale files sitting beside fresh output. `test.ps1` writes `summary.json` only after a unit-test failure, unit-only pass, or full-gate completion; bad `al-build.json` or a compile failure leaves a prior file untouched.
+
+### Gate metrics (automatic)
+
+Each `test.ps1` run records one entry in `.output/logs/build-timing.jsonl` — on every exit path: pass, fail, throw — and mirrors it to `~/.al-build/gate-metrics.jsonl` (override: `ALBT_GATE_METRICS_GLOBAL_PATH`). Phase attribution derives from recorded evidence; callers pass no flags. Report repo-local metrics with `pwsh "<skill-folder>/scripts/report-gate-metrics.ps1"` or cross-repo metrics with `-GlobalLog`.
+
 ### Gate report
 
 Derive the gate report from the worker's relay — the exit code, the artifacts, and the bounded excerpt it returns. Format: YAML-like plain text in a fenced `text` block, `VERDICT: PASS|FAIL` on line 1. `gate:` names the executed variant — `full`, or `unit` for `-UnitTestOnly`.
 
 - Take `totals` and all counts from the relayed `.output/TestResults/summary.json` content — the source of truth. Echo `appName`, `dir`, `resultFile`, and every `counts` number verbatim.
-- **Never derive counts from console lines: `Codeunit … Success` lines are test codeunits (containers of tests), not tests.**
+- Counts come from that summary and the JUnit XML only: `Codeunit … Success` console lines are test codeunits (containers of tests), not tests.
 - Report totals per runner; never sum across runners — the unit test app runs through both AL Runner and the container, so a cross-runner sum counts the same tests twice.
 - `counts` of `null` for a run → report `counts: unavailable`, never zeros.
 - No summary → omit `totals` and `runs`.
@@ -128,6 +103,31 @@ failing_tests:
 - DefaultRuleNestedMintPersistsRevisedDescriptionAndPreservesPriorHeader: Assert.AreEqual failed. Expected: OR. Actual: AND.
 - DefaultWarningNestedMintPersistsRevisedDescriptionAndPreservesPriorHeader: Assert.AreEqual failed. Expected: OR. Actual: AND.
 ```
+
+## Prerequisites
+
+PowerShell 7.2+ (`pwsh`), Docker Desktop, .NET SDK, Node.js ≥ 22 with `npx` on PATH (ALCops analyzers install through the official `@alcops/core` CLI), and the BcContainerHelper PowerShell module.
+
+## Setup
+
+One-time per repo, run by the developer:
+
+1. `pwsh "<skill-folder>/scripts/init.ps1"` → drops `al-build.json` in repo root.
+2. Set `testApps` to list your test app directories.
+3. `pwsh "<skill-folder>/scripts/provision.ps1"` → compiler, symbols, and analyzers. Inside a feature with a `kind: provision` task, `/al-provision` owns this run.
+
+Provision keeps two private compiler channels side by side — latest stable at `<ToolCacheRoot>/al/stable`, latest prerelease at `<ToolCacheRoot>/al/prerelease` — refreshed every run, the user's global `al` dotnet tool untouched. The build picks the channel repo-wide from the highest app.json `runtime` major across all apps; prerelease only when that major exceeds the installed stable. `-UpdateCompiler` forces a clean reinstall.
+
+### Container lifecycle
+
+One golden container per BC version, snapshotted once, then cheap branch-scoped copies:
+
+1. `new-bc-container.ps1` → golden BC container, fully configured.
+2. Restart the PC — the stopped container still holds locked files the snapshot commit needs released.
+3. `commit-bc-container.ps1` → snapshot image.
+4. `new-agent-container.ps1` → agent container from the snapshot, named from the current git branch.
+
+`prune.ps1` removes agent containers whose branch is gone or that sat unused past seven days (`-Preview` for a dry run). `publish-apps.ps1` clean-republishes every configured app: unpublish all dependency-reversed, then publish in dependency order — no build, no tests.
 
 ## Configuration
 
@@ -167,7 +167,7 @@ Env overrides, with their built-in defaults:
 
 The agent container name has no override: `test.ps1` always derives it from the current git branch.
 
-_Avoid_: editing the plugin's template `config/al-build.json` — the live config is the copy in the consumer repo root, never the template.
+The live config is the copy in the consumer repo root; the plugin's `config/al-build.json` is the template `init.ps1` copies from.
 
 ## Analyzers
 
@@ -182,7 +182,7 @@ Diagnostic prefixes: `AA` CodeCop, `AW` UICop, `AS` AppSourceCop, `PTE` PerTenan
 **Off by default (`breakingChange.enabled`); when on, compile-time detection runs in every gate while heavyweight validation runs standalone at feature end or pre-release.**
 
 - **Compile-time, in every gate.** `provision.ps1` caches the latest release + deps and points `AppSourceCop.json` at them. `${AppSourceCop}` must be listed in the applicable `.vscode/settings.json` — without it the compile-time path never runs. A break then surfaces as a normal `AS00xx` diagnostic inside `test.ps1`'s compile (`-UnitTestOnly` included). `AS0001`–`AS0018` default to Error → red gate, like any cop. Not a special verdict — the rule ID is the signal; tune severity in `al.ruleset.json`. No `summary.json` change.
-- **Standalone heavyweight.** `validate-breaking-changes.ps1` runs the broader AppSource-style validation (per-country, install/upgrade) against the same cache. Reads the cache, never downloads; empty cache → stops with *"run provision.ps1"*. Not wired into `test.ps1` — a feature-end / pre-release check, never the inner loop.
+- **Standalone heavyweight.** `validate-breaking-changes.ps1` runs the broader AppSource-style validation (per-country, install/upgrade) against the same cache, driven by `/al-validate-breaking-changes`. Reads the cache, never downloads; empty cache → stops with *"run provision.ps1"*. Not wired into `test.ps1` — a feature-end / pre-release check, never the inner loop.
 
 `provision.ps1` is the sole baseline fetcher and refreshes per feature (re-run when a new release is cut). No release yet → detection stays cleanly off, never a false green.
 
@@ -190,20 +190,21 @@ Diagnostic prefixes: `AA` CodeCop, `AW` UICop, `AS` AppSourceCop, `PTE` PerTenan
 
 | Symptom | Action |
 |---|---|
-| `test.ps1` fails on container connect / publish | `docker restart <container>`, re-run `test.ps1`. |
-| Restart didn't fix it | `docker rm -f <container>`, re-run `test.ps1`. Script recreates it. |
-| Recreate didn't fix it | Re-run `provision.ps1`, then `test.ps1`. |
+| `test.ps1` fails on container connect / publish | `docker restart <container>`, re-run the gate. |
+| Restart didn't fix it | `docker rm -f <container>`, re-run the gate. `test.ps1` recreates it. |
+| Recreate didn't fix it | Re-run `provision.ps1`, then the gate. |
 
-Never patch the container by hand — no `docker exec`, no `Invoke-ScriptInBcContainer` to patch state, no hand-installing apps. The container is disposable; reproducibility lives in scripts.
+The container is disposable and reproducibility lives in the scripts, so recovery is always restart → delete → re-run rather than a hand patch: no `docker exec`, no `Invoke-ScriptInBcContainer` to patch state, no hand-installing apps.
 
 ## Next step
 
 - **Green:** `Next:` resume the calling skill — usually `/al-implement` (continue the red→green cycle).
-- **Red:** fix the failing test or production code, then re-run `/al-build`. An unclear runtime path → invoke the `al-debug-logging` custom agent first.
+- **Red:** fix the failing test or production code, then delegate the gate again. An unclear runtime path → invoke the `al-debug-logging` custom agent first.
 
 ## Composition
 
-- `/al-implement` — calls this after every RED, GREEN, `/al-refactor`, before stamping the task `phase: implemented`.
+- `/al-implement` — delegates the gate here after every RED, GREEN, `/al-refactor`, before stamping the task `phase: implemented`.
+- `al-gate-runner` — the worker this skill spawns for every gate run.
 
 ## Out of scope
 

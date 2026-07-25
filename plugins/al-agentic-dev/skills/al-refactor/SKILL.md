@@ -58,7 +58,7 @@ Every real survivor lands in one apply queue:
 
 ## Apply
 
-**One reshape at a time, `/al-build` after each.** Red → revert that step; recover before the next.
+**One reshape at a time; delegate the gate through `/al-build` after each.** Red → revert that step; recover before the next.
 
 ### Extraction
 
@@ -80,7 +80,7 @@ Seam work is homed in [testability.md](../../references/testing/testability.md).
 
 ### Performance findings
 
-Every perf survivor joins the queue as a manual reshape. The scanner marks nothing auto-fixable, and its fixer rewrites a whole file with no way to aim it at one occurrence — so it would reach patterns outside this task's diff. Reshape by hand, then `/al-build`, as for every other queue entry; red reverts that file.
+Every perf survivor joins the queue as a manual reshape. The scanner marks nothing auto-fixable, and its fixer rewrites a whole file with no way to aim it at one occurrence — so it would reach patterns outside this task's diff. Reshape by hand, then delegate the gate through `/al-build`, as for every other queue entry; red reverts that file.
 
 Server absent → the lens's skip note lands in the Gate report and reshape proceeds on the other four lenses.
 

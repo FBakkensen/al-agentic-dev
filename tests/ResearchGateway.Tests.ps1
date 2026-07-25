@@ -29,9 +29,9 @@ Describe 'al-researcher gateway ownership' {
         Test-Path (Join-Path $script:PluginRoot 'references\bc-code-intelligence-dispatch.md') | Should -BeFalse
     }
 
-    It 'ships the breaking debug-agent release version' {
+    It 'pins the shipped plugin release version' {
         $manifest = Get-Content -LiteralPath (Join-Path $script:PluginRoot 'plugin.json') -Raw | ConvertFrom-Json
-        $manifest.version | Should -Be '5.0.0'
+        $manifest.version | Should -Be '5.1.0'
     }
 
     It 'contains no shipped slash-command references to al-research' {

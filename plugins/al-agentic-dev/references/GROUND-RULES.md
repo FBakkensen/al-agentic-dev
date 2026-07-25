@@ -29,6 +29,10 @@ BC training data is stale fiction. Every exact BC name — object, procedure, ev
 - **Satisfiers.** `SINGLE-SOURCE` with a verbatim quote satisfies routine grounding. Facts landing in `event-model.md`, `architecture.md`, `CONTEXT.md`, or an ADR require `VERIFIED`. Source disagreement requires `Use: resolve conflict`; `CONFLICT` or `UNRESOLVED` blocks the fact from landing.
 - **Trace.** Declare the citation in chat as `Researched: <fact> → <source path / URL / topic id>`. Task-scoped citations also land as `Contract notes` bullets at task reconcile — the one inline-citation carve-out. Everything else in artifacts stays names-only.
 
+## Gates
+
+Gate execution belongs to the isolated `al-gate-runner`: its relay is the authoritative result, and its isolation keeps verbose build output out of the caller's context. A skill or agent needing the build gate delegates it through `/al-build`. The user starts the ops gates, `/al-provision` and `/al-validate-breaking-changes`, and each hands its own one command to the same worker.
+
 ## BC vocabulary
 
 A term naming a whole discipline with no BC equivalent — TDD, red/green, mutation testing, AAA — keeps its name and its density. Any word with a BC-domain rival takes the BC side: Insert not create, Modify not mutate or update, Delete not remove, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, No. not ID, procedure not method, codeunit not class, test data not fixture. The litmus — the term appears in BaseApp source or Microsoft Learn BC docs — governs only words with a BC-domain rival; exact platform and tool names (Git, Markdown, frontmatter, MCP, Copilot) stay exact.

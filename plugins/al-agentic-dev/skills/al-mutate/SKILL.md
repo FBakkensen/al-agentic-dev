@@ -16,7 +16,7 @@ This skill guards **oracle sensitivity** at the unit/integration driver layers (
 
 - Tree clean. Dirty tree makes revert ambiguous.
 - Committed green baseline. Broad revert returns to `HEAD`; uncommitted green work is not safe.
-- Baseline full `/al-build` green. Red baseline → survivors carry no signal.
+- Delegate the full gate through `/al-build` and require green. Red baseline → survivors carry no signal.
 - Target is production code; not tests, not generated `.rdlc` or `.xlf`, not captions / labels / tooltips.
 - Enough scope to plan. `/al-mutate` builds the mutation plan from caller scope, changed files, task context, and requested target; `/al-implement` does not pre-plan sites.
 - No refactor in flight. Land the reshape green, commit, then mutate — a shape still moving stales every classification.
