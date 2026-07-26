@@ -58,7 +58,7 @@ Every build — proving RED, proving GREEN — invokes `/al-build`:
 - `Unit` case → `/al-build -UnitTestOnly`; `Integration` case → `/al-build`.
 
 RED confirmed: the new test fails on an assertion and the existing suite still passes.
-GREEN confirmed: the target test passes and the full suite passes.
+GREEN confirmed: the target test passes and the suite that variant runs is green — AL Runner for a `Unit` case, the full gate for an `Integration` case.
 
 ## The blind RED gate
 

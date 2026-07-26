@@ -33,7 +33,7 @@ Read `architecture.md` — the module map, decision logic and test surfaces, bro
 
 ## One AAA case at a time
 
-One case runs RED → GREEN → gate before the next begins. There is no `in-progress` status; the task holds `ready-for-implementation` while `phase:` tracks progress.
+One case runs RED → GREEN before the next begins. There is no `in-progress` status; the task holds `ready-for-implementation` while `phase:` tracks progress.
 
 For each case, spawn the `al-red-green` custom agent. Pass it the single AAA case (Arrange/Act/Assert text from the `Test Specification`), the task's `New and Modified Objects` block, and the task file path.
 
@@ -45,7 +45,7 @@ Its red is graded by a fresh blind `al-review-red` before any of the case's beha
 
 Route on the line-1 verdict:
 
-- `GREEN` → run the full-suite gate — a red anywhere, including a sibling task's test, blocks the `phase: implemented` stamp — then the next case.
+- `GREEN` → the next case. The full gate lands once at task close, never per case ([tdd.md](../../references/testing/tdd.md), Task execution order); a red there, including a sibling task's test, blocks the `phase: implemented` stamp.
 - `PUSH-UP` → the commitment gate below.
 - `BLOCKED` naming a research question → invoke `al-researcher` with that exact `Question:`, `Use: routine`, and the case in `Context:`, then resume with its result. `UNRESOLVED` routes to `/al-steer`.
 - `BLOCKED` on two `FALSE-RED` rounds, or on the frozen test surface → the reason picks the venue. A wrong expected value in the AAA case is a `Test Specification` contract change → `Next: /al-refine T-NNN`, then respawn the case from scaffold. Anything else — behaviour written ahead of its red, a changed production contract, a case the reviewers read differently — → `Next: /al-steer`. Never re-spawn the case against the same unreconciled contract.
@@ -97,6 +97,8 @@ The tier test is what the unknown touches.
 A change that only applies a decision already made absorbs inline: missing scaffolding, a permission-set entry, an object ID, a caption, a local BC-vocab rename, a field addition on an object `New and Modified Objects` already names, or reusing a seam a sibling task established — apply, log a `deviations:` line when it rests on an assumption the user never blessed, delegate the gate through `/al-build`, then continue. A new decision routes through `/al-steer`: a new table or a field on an object the task never named, new event publishers, new codeunits, a genuinely new seam, test-outcome changes, or a production object the assertions require (trigger #2). A public-surface rename is an AppSource decision, not trivia — route it.
 
 ## Stamp at green
+
+The task-close full gate runs after the last case and before the stamp — `/al-refactor` gates its own reshape later. Diagnose a red there before repairing it: a container or publish failure routes through `/al-build`'s recovery table; a test green under AL Runner and red under the container is a placement or runner-semantics mismatch ([test-layout.md](../../references/testing/test-layout.md)), not a production defect; a production regression is an ordinary red — repair the production code and re-gate. When the honest repair is editing that test's expected value, that is a `Test Specification` contract change — **Stop**, `Next: /al-refine T-NNN`.
 
 For non-trivial work, consult the rubber-duck agent before the durable stamp ([rubber-duck-review.md](../../references/rubber-duck-review.md)).
 

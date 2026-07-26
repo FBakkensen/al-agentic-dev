@@ -26,7 +26,7 @@ A failure counts only on an assertion — never a compile or runtime error. Fix 
 |---|---|
 | **Scaffold** | Compilable stubs exist; build green; new test codeunit and production procedure declared but empty |
 | **Red** | Target test fails on an assertion; existing suite still passes; a blind reviewer returns `TRUE-RED` |
-| **Green** | Minimal production change makes the target test pass; full suite green; the test surface unchanged since the reviewed red |
+| **Green** | Minimal production change makes the target test pass; the suite that case's runner covers is green; the test surface unchanged since the reviewed red |
 | **Refactor** | A full grep for `DEBUG-` returns nothing before committing; full suite green |
 | **Mutate** | Targeted mutations compile, run, and die to ≥ 1 failing assertion; reverted; green confirmed |
 
@@ -45,15 +45,21 @@ A flat freeze over both halves would contradict compile-fix-first above; scaffol
 
 ## Task execution order
 
-1. `Unit` AAA cases red → green → gate.
-2. `Integration` AAA cases red → green → gate.
-3. Refactor the full task diff once.
-4. Full gate.
+1. `Unit` AAA cases red → green, each proved by AL Runner.
+2. `Integration` AAA cases red → green, each proved by the full gate its own red and green already run.
+3. Task-close full gate.
+4. Refactor the full task diff once, green at the end.
 5. Mutation at task end for whatever arrived without a red.
 
 Within each scope, ascending coverage ID order from the `Test Specification`: `B1`, `B2`, `B3`, … or `R1`, `R2`, `R3`, …
 
 When a unit seam should exist but does not, an Integration characterization test may land first to anchor current behaviour; then extract the seam and add Unit proof. Unit vs Integration is the **Placement rule**'s call ([test-layout.md](test-layout.md)).
+
+### One task-close container gate, none per case
+
+A `Unit` case's red and green are both proved by AL Runner, so publishing a container between `Unit` cases buys no proof the task-close gate does not already carry. An `Integration` case's red and green each run the full gate already, and on a mixed task that first `Integration` red re-checks everything the `Unit` block landed. A further gate on the same tree state is a duplicate run, not a check. What lands once per task is the closing gate, after the last case.
+
+The cost is attribution. A regression an existing `Integration` test catches surfaces at step 3 rather than after the case that caused it, and an all-`Unit` task meets the container for the first time there. The failure class picks the venue: a container or publish failure is infrastructure; a test that passes under AL Runner and fails under the container is a placement or runner-semantics mismatch ([test-layout.md](test-layout.md)), not a production defect; a genuine production regression is an ordinary red, because that test already existed and fails on an assertion. Editing the test's expected value instead is a contract change, and no agent makes one alone.
 
 ### Test naming
 

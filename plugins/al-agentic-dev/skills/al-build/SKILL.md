@@ -48,7 +48,7 @@ When `unitTestApp` is configured in `al-build.json`, the gate command narrows to
 pwsh "<skill-folder>/scripts/test.ps1" -UnitTestOnly
 ```
 
-Compiles the main app, every `testApps` entry, and the unit-test app through the analyzer gate; then runs AL Runner and exits without a container. `testApps` must resolve in this mode: unit-only projects set `"testApps": []`; the default `["test"]` fails loudly without `test/`. Use this fast feedback loop during `/al-implement` RED→GREEN.
+Compiles the main app, every `testApps` entry, and the unit-test app through the analyzer gate; then runs AL Runner and exits without a container. `testApps` must resolve in this mode: unit-only projects set `"testApps": []`; the default `["test"]` fails loudly without `test/`. No container publish means this is the cheap variant — seconds where the full gate spends minutes.
 
 ## Results
 
@@ -198,13 +198,13 @@ The container is disposable and reproducibility lives in the scripts, so recover
 
 ## Next step
 
-- **Green:** `Next:` resume the calling skill — usually `/al-implement` (continue the red→green cycle).
+- **Green:** `Next:` resume the calling skill.
 - **Red:** fix the failing test or production code, then delegate the gate again. An unclear runtime path → invoke the `al-debug-logging` custom agent first.
 
 ## Composition
 
-- `/al-implement` — delegates the gate here after every RED, GREEN, `/al-refactor`, before stamping the task `phase: implemented`.
-- `al-gate-runner` — the worker this skill spawns for every gate run.
+- **Called by** — every skill and agent that needs the gate. Which variant to run, and how often, is each caller's own contract; this skill states neither.
+- **Spawns** — `al-gate-runner`, the worker for every gate run.
 
 ## Out of scope
 
