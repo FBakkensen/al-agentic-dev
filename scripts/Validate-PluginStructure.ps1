@@ -44,6 +44,7 @@ $script:AlAgenticDevFleet = [ordered]@{
     'al-review-judge'       = 'claude-opus-5'
     'al-review-objects'     = 'claude-opus-5'
     'al-review-perf'        = 'claude-opus-5'
+    'al-review-red'         = 'claude-opus-5'
     'al-review-simplify'    = 'claude-opus-5'
     'al-review-structural'  = 'claude-opus-5'
 }

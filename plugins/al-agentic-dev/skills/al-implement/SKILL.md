@@ -37,8 +37,10 @@ One case runs RED → GREEN → gate before the next begins. There is no `in-pro
 
 For each case, spawn the `al-red-green` custom agent. Pass it the single AAA case (Arrange/Act/Assert text from the `Test Specification`), the task's `New and Modified Objects` block, and the task file path.
 
+Its red is graded by a fresh blind `al-review-red` before any of the case's behaviour exists, and its test surface is hash-frozen from that reviewed red to green ([tdd.md](../../references/testing/tdd.md)). Both halves report through the outcome note; neither is this skill's to run.
+
 - No in-loop escalation and no inline or `general-purpose` fallback. A case that can't reach green after retry surfaces as `BLOCKED` and routes on the verdict below.
-- `al-red-green` unavailable → report `BLOCKED`, name it as the missing agent, and stop.
+- `al-red-green` or `al-review-red` unavailable → report `BLOCKED`, name the missing agent, and stop.
 - Read the outcome note before proceeding. A note naming no object or observation goes back to the agent. Relay it through the Gate/Stop shapes, never raw.
 
 Route on the line-1 verdict:
@@ -46,11 +48,12 @@ Route on the line-1 verdict:
 - `GREEN` → run the full-suite gate — a red anywhere, including a sibling task's test, blocks the `phase: implemented` stamp — then the next case.
 - `PUSH-UP` → the commitment gate below.
 - `BLOCKED` naming a research question → invoke `al-researcher` with that exact `Question:`, `Use: routine`, and the case in `Context:`, then resume with its result. `UNRESOLVED` routes to `/al-steer`.
+- `BLOCKED` on two `FALSE-RED` rounds, or on the frozen test surface → the reason picks the venue. A wrong expected value in the AAA case is a `Test Specification` contract change → `Next: /al-refine T-NNN`, then respawn the case from scaffold. Anything else — behaviour written ahead of its red, a changed production contract, a case the reviewers read differently — → `Next: /al-steer`. Never re-spawn the case against the same unreconciled contract.
 - New decision flagged, or any other `BLOCKED` → `Next: /al-steer`.
 
 A multi-case task outlives the context window. Track per-case progress in the session todo list, one todo per AAA case — todos survive compaction; this skill's injected body and per-case chatter do not. After a compaction, re-read this skill and the task file, then resume from the todo state.
 
-**Characterization test.** When a Unit seam should exist but current code is tangled, instruct the spawn to write an Integration characterization test first, then spawn again to extract the Unit seam and add the Unit case. Reconcile scope changes in the task file.
+**Characterization test.** When a Unit seam should exist but current code is tangled, instruct the spawn to write an Integration characterization test first, then spawn again to extract the Unit seam and add the Unit case. Say `characterization case` in that first invocation — it anchors behaviour that already exists, so it has no red beat to grade, and only this declaration unfires the blind RED gate. The spawn never classifies a case that way itself. Reconcile scope changes in the task file.
 
 ## Gate every push-up above the blessed scope
 
@@ -118,5 +121,5 @@ Current task state chooses the handoff; a known exit outranks the fallback pipel
 | **Runs after**     | `/al-refine` (filled `Test Specification` in the task file and flipped task to `ready-for-implementation`) |
 | **Hands off to**   | `/al-refactor` on non-trivial green, then `/al-mutate` (its clean verdict flips the task `done`); next `ready-for-implementation` technical task; `/al-code-review` per-slice at slice-done (both slice types); `/al-code-review` per-feature at feature-done |
 | **Calls directly** | `/al-build` (compile/test) — the only skill it invokes; rubber-duck consult on non-trivial work per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
-| **Spawns**         | `al-researcher` for BC facts; `al-red-green` custom agent (RED→GREEN per AAA case) |
+| **Spawns**         | `al-researcher` for BC facts; `al-red-green` custom agent (RED→GREEN per AAA case), which nests `al-review-red` to grade its own red |
 | **Replan venue**   | `/al-steer` |

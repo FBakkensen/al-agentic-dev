@@ -59,12 +59,13 @@ The plugin ships 18 skills.
 
 ## Custom agents
 
-The plugin ships 18 custom agents. The rubber-duck is not one of them — it is the harness-provided agent type reached through the task tool ([`rubber-duck-review.md`](rubber-duck-review.md)).
+The plugin ships 19 custom agents. The rubber-duck is not one of them — it is the harness-provided agent type reached through the task tool ([`rubber-duck-review.md`](rubber-duck-review.md)).
 
 | Agent | Job | Invoked by |
 |---|---|---|
 | `al-debug-logging` | Adds temporary `Session.LogMessage` probes, runs the supplied harness, and queries Application Insights through its embedded Telemetry Buddy MCP. Not user-invocable; every `DEBUG-*` probe must be gone before commit. | Any skill or custom agent blocked on an unresolved runtime path |
-| `al-red-green` | One AAA case RED→GREEN: write the failing test, confirm RED, write minimal production code, confirm GREEN, return an outcome note. No in-loop escalation. | `/al-implement` (per case), `/al-code-review --fix` (per must-fix finding) |
+| `al-red-green` | One AAA case RED→GREEN: write the failing test, confirm RED, pass the blind RED gate, write minimal production code under a frozen test surface, confirm GREEN, return an outcome note. No in-loop escalation. | `/al-implement` (per case), `/al-code-review --fix` (per must-fix finding) |
+| `al-review-red` | Rules `TRUE-RED` or `FALSE-RED` on one red beat, fresh every time, before the behaviour under test exists — so the party that wrote the test is never the party that grades it. Not a review lens: no mode, no judge. | `al-red-green` |
 | `al-review-compliance` | Lens: project and domain compliance, BC/project naming, scope, grounding, surface reconciliation. Runs in every mode. | `/al-code-review`, `/al-refactor` |
 | `al-review-coverage` | Lens: behaviour a plan or design claims and never proves. | the design and refine gates |
 | `al-review-structural` | Lens: decision-logic boundary, depth over indirection, seam shape. | `/al-refactor`, the design and refine gates |
@@ -82,7 +83,7 @@ The plugin ships 18 custom agents. The rubber-duck is not one of them — it is 
 | `al-gate-runner` | Runs one supplied build, provision, or breaking-change gate command and relays its authoritative artifacts, no interpretation. | `/al-build`, `/al-provision`, `/al-validate-breaking-changes` |
 | `al-mutant-cycle` | Runs one supplied mutate→gate→revert cycle and returns observed evidence; the caller classifies the mutant. | `/al-mutate` |
 
-Eleven of those agents are review lenses — one per concern, each running under a mode the calling skill declares. Which lenses a gate spawns, what each returns, and how the judge fences its extra rules live in [`review-lenses.md`](review-lenses.md).
+Eleven of those agents are review lenses — one per concern, each running under a mode the calling skill declares. Which lenses a gate spawns, what each returns, and how the judge fences its extra rules live in [`review-lenses.md`](review-lenses.md). `al-review-red` shares the name family and none of the contract: it gates one red beat rather than judging an artifact, so it carries no mode and reaches no judge.
 
 ## What the agents need on your machine
 

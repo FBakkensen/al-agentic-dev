@@ -12,6 +12,11 @@ BeforeAll {
     $script:InvocationErrorLine = 'LENS INVOCATION ERROR: missing or unrecognised Mode'
     $script:PerfSkipLine = 'perf scan skipped: al-performance MCP not available'
 
+    # Agents in the al-review-* name family that are not lenses: they take no Mode,
+    # carry no sentinel, and never reach the judge. Named here so the membership
+    # checks below stay exhaustive over the lenses themselves.
+    $script:NonLensReviewAgents = @('al-review-judge', 'al-review-red')
+
     # The membership table in review-lenses.md is the single source of truth for
     # which lens runs in which mode. Parse it rather than restating it here.
     function Get-LensMembership {
@@ -60,7 +65,7 @@ Describe 'Review lens membership matrix' {
         $onDisk = @(
             Get-ChildItem -LiteralPath $script:AgentsRoot -File -Filter 'al-review-*.agent.md' |
                 ForEach-Object { $_.Name -replace '\.agent\.md$', '' } |
-                Where-Object { $_ -ne 'al-review-judge' } |
+                Where-Object { $script:NonLensReviewAgents -notcontains $_ } |
                 Sort-Object
         )
 
@@ -153,7 +158,7 @@ Describe 'Review gate wiring' {
             $named = @(
                 [regex]::Matches($body, '`(al-review-[a-z]+)`') |
                     ForEach-Object { $_.Groups[1].Value } |
-                    Where-Object { $_ -ne 'al-review-judge' } |
+                    Where-Object { $script:NonLensReviewAgents -notcontains $_ } |
                     Select-Object -Unique |
                     Sort-Object
             )

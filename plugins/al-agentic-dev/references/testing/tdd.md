@@ -25,10 +25,23 @@ A failure counts only on an assertion — never a compile or runtime error. Fix 
 | Phase | Exit criterion |
 |---|---|
 | **Scaffold** | Compilable stubs exist; build green; new test codeunit and production procedure declared but empty |
-| **Red** | Target test fails on an assertion; existing suite still passes |
-| **Green** | Minimal production change makes the target test pass; full suite green |
+| **Red** | Target test fails on an assertion; existing suite still passes; a blind reviewer returns `TRUE-RED` |
+| **Green** | Minimal production change makes the target test pass; full suite green; the test surface unchanged since the reviewed red |
 | **Refactor** | A full grep for `DEBUG-` returns nothing before committing; full suite green |
 | **Mutate** | Targeted mutations compile, run, and die to ≥ 1 failing assertion; reverted; green confirmed |
+
+## The two halves are frozen differently
+
+A red the test's own author certifies proves only that the author was satisfied, and a green bought by softening the test proves nothing at all. Each half is held by the mechanism its nature admits, and the two are not symmetric.
+
+| Half | Rule | Mechanism |
+|---|---|---|
+| Red | Production code may be scaffolded, signed, and compile-fixed, but stays behaviour-free — none of the delta the case exists to force | A fresh blind reviewer, spawned before that delta exists |
+| Green | The test surface is frozen from the reviewed red until green is confirmed | A content hash — a byte comparison, not a judgment call |
+
+A flat freeze over both halves would contradict compile-fix-first above; scaffolding production code mid-red is legitimate, so a reviewer judges the red rather than a hash.
+
+**`TRUE-RED` / `FALSE-RED`** is the verdict pair, sibling to false-pass below. A true red fails on a real assertion because the behaviour that would close the `Arrange`→`Assert` gap never ran. A compile error, a runtime error the `Act` never survived, a rigged assertion, an assertion passing for the wrong reason, and a delta already implemented are each a false red. Two review rounds per case at most; a red that cannot be made true blocks for a human, because a wrong expected value in the AAA case is a contract change and no agent makes one alone.
 
 ## Task execution order
 

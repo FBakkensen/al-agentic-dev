@@ -1,6 +1,6 @@
 {
   "name": "al-agentic-dev",
   "description": "Plugin tour: /al-agentic-dev-overview. Full AL/Business Central dev stack. Agentic flow: /al-steer, /al-grill-adr, /al-event-model, /al-design, /al-scope, /al-refine, /al-implement, /al-page-script, /al-user-verification, /al-refactor, /al-mutate, /al-code-review, /al-quiz. Ops: /al-provision, /al-validate-breaking-changes, /al-sync-main. Internal: the /al-build gate skill other skills invoke, plus the al-researcher (BC knowledge) and al-debug-logging (Application Insights runtime probes) agents.",
-  "version": "5.2.0",
+  "version": "5.3.0",
   "hooks": "hooks/hooks.json"
 }

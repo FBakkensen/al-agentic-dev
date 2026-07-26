@@ -31,7 +31,7 @@ Describe 'al-researcher gateway ownership' {
 
     It 'pins the shipped plugin release version' {
         $manifest = Get-Content -LiteralPath (Join-Path $script:PluginRoot 'plugin.json') -Raw | ConvertFrom-Json
-        $manifest.version | Should -Be '5.2.0'
+        $manifest.version | Should -Be '5.3.0'
     }
 
     It 'contains no shipped slash-command references to al-research' {

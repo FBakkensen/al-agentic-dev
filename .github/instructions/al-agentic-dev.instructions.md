@@ -33,6 +33,7 @@ Per-skill mechanics live in the owning `SKILL.md`. Page-script recording, replay
   |---|---|---|
   | `al-researcher` | dynamic evidence verdict: `SINGLE-SOURCE` / `VERIFIED` / `CONFLICT` / `UNRESOLVED` on line 1, then quoted evidence and conditional Conflict/Limit fields | every skill or custom agent that needs BC knowledge beyond direct workspace reading |
   | `al-red-green` | `## Outcome note` leads with a dynamic verdict chosen from `GREEN` / `PUSH-UP` / `BLOCKED` | `/al-implement`, `/al-code-review --fix` |
+  | `al-review-red` | dynamic red verdict `TRUE-RED` / `FALSE-RED` on line 1, or the fail-closed line `RED REVIEW INVOCATION ERROR: incomplete evidence` alone; no mode, no sentinel, no judge | `al-red-green` |
   | the eleven review lenses | zero or more labeled finding blocks under a fixed per-lens line-1 sentinel plus a line-2 `Mode:` echo — the sentinel registry, the invocation-error line, and the finding-block shape are homed in [`references/review-lenses.md`](references/review-lenses.md) | `/al-code-review`, `/al-refactor`, `al-review-judge` |
   | `al-review-perf` | when the `al-performance` MCP is missing, exactly the one line `perf scan skipped: al-performance MCP not available` — no sentinel, no other line | `/al-code-review`, `/al-refactor`, `al-review-judge` |
 
@@ -43,6 +44,7 @@ Per-skill mechanics live in the owning `SKILL.md`. Page-script recording, replay
 - **`al-debug-logging` owns runtime probes and its telemetry MCP.** It emits temporary `Session.LogMessage` events and queries Application Insights through its embedded `bc-telemetry-buddy` server. `/al-build` owns no telemetry capture or telemetry artifacts.
 - **An agent naming `<server>/<tool>` in `tools:` must declare that server in `mcp-servers:`.** A `tools:` entry is a reference, not a declaration; without the block the agent silently holds nothing. `scripts/Validate-PluginStructure.ps1` gates this.
 - **No lens holds a fixer — capability custody is not change authority.** `al-performance` exposes `fix_al_file`, and it stays off `al-review-perf`'s allowlist. The tool takes only a file path and a dry-run flag: no occurrence selector, and its dry-run `Fixes applied:` list names pattern ids rather than locations, so no approval gate can confine a rewrite to the diff. A provably equivalent one-line perf fix lands as a targeted `edit` under `/al-code-review`'s hygiene rule; anything structural queues as a manual reshape in `/al-refactor`.
+- **`al-review-red` shares the lens name family and none of the lens contract.** It takes no `Mode:`, carries no sentinel, never reaches `al-review-judge`, and stays out of `references/review-lenses.md`. `tests/ReviewLenses.Tests.ps1` keeps a named non-lens allowlist rather than an inline exclusion; a future `al-review-*` agent that is not a lens joins that list in the same change.
 - **`al-researcher` owns canonical source lookup.** `microsoft/BCApps` paths, branch selection, search rules, `gh` commands, and fallback stay in `agents/al-researcher.agent.md`. Web access is only the raw-file fallback. No separately discoverable source agent may bypass the gateway.
 
 ## Reference layout
@@ -81,7 +83,7 @@ Templates are materialised lazily on first need by the owning flow.
 
 ## Runtime surface
 
-The plugin is distributed via `.github/plugin/marketplace.json` and targets GitHub Copilot CLI. It ships 18 custom agents under `agents/`, invoked via the task tool by name. Each agent's `.agent.md` frontmatter pins its model — the single home; the repo-root `scripts/Validate-PluginStructure.ps1` checks every pin against its fleet map. [`references/overview.md`](references/overview.md) carries the user-facing agent table. `al-researcher` alone owns the research MCPs and canonical BCApps lookup. The 15 other research-capable agents carry `agent` tool access and route facts through the gateway. `al-debug-logging` alone owns `bc-telemetry-buddy`; `al-review-perf` alone owns `al-performance`.
+The plugin is distributed via `.github/plugin/marketplace.json` and targets GitHub Copilot CLI. It ships 19 custom agents under `agents/`, invoked via the task tool by name. Each agent's `.agent.md` frontmatter pins its model — the single home; the repo-root `scripts/Validate-PluginStructure.ps1` checks every pin against its fleet map. [`references/overview.md`](references/overview.md) carries the user-facing agent table. `al-researcher` alone owns the research MCPs and canonical BCApps lookup. The 17 other research-capable agents carry `agent` tool access and route facts through the gateway. `al-debug-logging` alone owns `bc-telemetry-buddy`; `al-review-perf` alone owns `al-performance`.
 
 Agent-scoped MCP behaviour, measured on CLI 1.0.71-2 with an isolated `COPILOT_HOME`:
 
@@ -118,8 +120,9 @@ Adding a second hook is a deliberate decision, not a default.
 ## Layout
 
 ```
-agents/                          # Shipped custom agents (18; each pins its model in frontmatter)
+agents/                          # Shipped custom agents (19; each pins its model in frontmatter)
 ├── al-red-green.agent.md            # One AAA case RED→GREEN
+├── al-review-red.agent.md           # Blind TRUE-RED/FALSE-RED verdict on one red beat (not a lens)
 ├── al-gate-runner.agent.md          # One authoritative gate run
 ├── al-mutant-cycle.agent.md         # One mutate→gate→revert cycle
 ├── al-design-option.agent.md        # One architecture candidate under a divergent constraint
