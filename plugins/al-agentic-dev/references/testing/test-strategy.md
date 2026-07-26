@@ -1,6 +1,6 @@
 # Test strategy — the execution pyramid
 
-Cover behaviour at the lowest layer that can cover it. Every push-up above that floor earns a justification. Sibling axes: [test-specification.md](test-specification.md) (task grammar), [tdd.md](tdd.md) (the red-green cycle), [test-layout.md](test-layout.md) (placement).
+Cover behaviour at the lowest layer that can cover it. Every push-up above that floor earns a justification. Sibling axes: [tdd.md](tdd.md) (the red-green cycle), [test-layout.md](test-layout.md) (placement). Task file grammar: [task-grammar.md](../task-grammar.md).
 
 ## The five layers
 
@@ -18,7 +18,7 @@ AL-Runner is the fast pre-gate; the container is authoritative and runs both iso
 
 Push-down fires at generation time, not only on a failure: behaviour a Unit or Integration test can pin gets its check there; the slow layers hold only what no lower layer can reach. E2E and Contract checks and Exploratory testing are written after the code from verify-task examples — regression guards, never red-first drivers.
 
-`/al-refine` makes the call when it sets a Journey Example's `Record:` flag (**The `Record:` flag**, [test-specification.md](test-specification.md)): `Record: yes` only where AL Runner / TestPage genuinely cannot reach the behaviour — the walls: control add-ins, canvas, rendering, web-client-only behaviour. A recording that doubles a lower test is pure cost.
+`/al-refine` makes the call when it sets a Journey Example's `Record:` flag (**The `Record:` flag**, [task-grammar.md](../task-grammar.md)): `Record: yes` only where AL Runner / TestPage genuinely cannot reach the behaviour — the walls: control add-ins, canvas, rendering, web-client-only behaviour. A recording that doubles a lower test is pure cost.
 
 Pushing down can cost a seam whose only justification is testability (**Earned seams**, [testability.md](testability.md)). That judgment has two homes: the right design up front (`/al-design`) and refactor-to-push-down (`/al-refactor`).
 
@@ -32,7 +32,7 @@ The justification is surfaced and committed, never silent:
 
 | Stage | Behaviour |
 |---|---|
-| `/al-refine` | Proposes scope, surfaces every push-up in chat ([the Push-up report](#the-push-up-report)), records each as a `Contract notes` line ([test-specification.md](test-specification.md)), and commits nothing — its handoff stop is the user's review point. |
+| `/al-refine` | Proposes scope, surfaces every push-up in chat ([the Push-up report](#the-push-up-report)), records each as a `Contract notes` line ([task-grammar.md](../task-grammar.md)), and commits nothing — its handoff stop is the user's review point. |
 | `/al-implement` | Gates: before writing a test above the blessed scope — a planned `Unit` case reclassified to `Integration` on an AL-Runner wall, or a new `Integration` case emerging mid-TDD — it stops for commitment: build the seam, or accept `Integration`. |
 | Unattended | Autopilot flips `status: blocked` and routes `/al-steer`; `/al-code-review --fix` stays mute and reports `cannot fix — escalate`. |
 | `/al-code-review` | Audits the recorded justification: a push-up with no wall and no named seam is a finding. |

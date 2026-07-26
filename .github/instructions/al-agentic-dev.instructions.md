@@ -51,7 +51,7 @@ Per-skill mechanics live in the owning `SKILL.md`. Page-script recording, replay
 
 References sit in two tiers:
 
-- Plugin-level shared, `references/` — read by two or more skills. Path from any SKILL.md: `../../references/<file>`. The five testing references live in the `references/testing/` subfolder; path from any SKILL.md: `../../references/testing/<file>`.
+- Plugin-level shared, `references/` — read by two or more skills. Path from any SKILL.md: `../../references/<file>`. The four testing references live in the `references/testing/` subfolder; path from any SKILL.md: `../../references/testing/<file>`.
 - Skill-local, `skills/<skill>/references/` — read by one skill only. Path from that SKILL.md: `references/<file>`.
 
 A resource read by two or more skills lives at plugin level. A shared resource inside one skill's folder makes ownership unclear. Cross-skill paths (`../<skill>/references/<file>`) are a smell to be migrated.
@@ -64,11 +64,11 @@ A resource read by two or more skills lives at plugin level. A shared resource i
 | `rubber-duck-review.md` | plugin-level | rubber-duck consult discipline; read by every skill that consults the duck |
 | `review-lenses.md` | plugin-level | the one home for the five review modes, the lens×mode membership matrix, the `Mode:`/`Scope:` invocation contract, the per-mode evidence bar, terminal states, the sentinel registry, the judge's mode fence, and the plan-gate stop shape (dispositions, plugin-gap record, one bounded re-review); read by `/al-code-review`, `/al-refactor`, `/al-design`, `/al-refine`, every review lens, and `al-review-judge` |
 | `testing/testability.md` | plugin-level | seams and test-double taxonomy; read by `/al-design`, `/al-implement`, `/al-refactor` |
-| `testing/test-specification.md` | plugin-level | Test Specification / Verification Plan grammar; read by `/al-refine`, `/al-implement`, `/al-code-review`, `/al-page-script`, `/al-user-verification` |
 | `testing/tdd.md` | plugin-level | TDD cycle axis incl. mutation operators; read by `/al-implement`, `/al-mutate` |
 | `testing/test-strategy.md` | plugin-level | test-execution pyramid on the BC stack (the execution axis); read by `/al-build`, `/al-implement`, `/al-mutate`, `/al-refine`, `/al-code-review`, `/al-page-script`, `/al-user-verification` |
 | `testing/test-layout.md` | plugin-level | two-peer-test-app layout and AL Runner capability map (the placement axis); read by `/al-scope`, `/al-refine`, `/al-implement`, `/al-refactor` |
-| `task-lifecycle.md` | plugin-level | `tasks/` folder shape, surgical-edit floor, content routing by lifetime, and the eight replan triggers; read by `/al-design`, `/al-event-model`, `/al-scope`, `/al-refine`, `/al-implement`, `/al-code-review`, `/al-user-verification`, `/al-mutate`, `/al-steer` |
+| `task-lifecycle.md` | plugin-level | `tasks/` folder shape, filenames, frontmatter, the `000-feature.md` header, surgical-edit floor, content routing by lifetime, and the eight replan triggers; read by `/al-design`, `/al-event-model`, `/al-scope`, `/al-refine`, `/al-implement`, `/al-code-review`, `/al-user-verification`, `/al-mutate`, `/al-steer` |
+| `task-grammar.md` | plugin-level | the per-task file body from the container line down — shape rules, sections, and the `Test Specification` / `Verification Plan` grammar for both kinds; read by `/al-refine`, `/al-implement`, `/al-code-review`, `/al-page-script`, `/al-user-verification` |
 | `examples/` (folder) | plugin-level | populated example artifacts; pattern-match source for writing skills |
 | `cross-branch-numbering.md` | plugin-level | `NNN`/`NNNN` picking across parallel branches; read by `/al-design`, `/al-event-model`, `/al-grill-adr` |
 | `worktree-feature-branching.md` | plugin-level | feature branch setup; read by `/al-event-model`, `/al-design` |
@@ -106,16 +106,25 @@ A blanket claim here would fork them.
 
 Skills stay project-agnostic across consumer repos. A skill runs in any AL/BC project without hardcoding this marketplace's paths or a specific repo's layout. Soft guidance, not a CI gate.
 
-### The one hook
+### The two hooks
 
-`hooks/hooks.json` (Copilot native format, `"version": 1`) registers a single `sessionStart` hook. It reads `references/GROUND-RULES.md` via `$env:COPILOT_PLUGIN_ROOT` (PowerShell) or `$COPILOT_PLUGIN_ROOT` (bash, jq-or-node encoded) and emits it as `{"additionalContext": ...}`. Four couplings, all empirically verified:
+`hooks/hooks.json` (Copilot native format, `"version": 1`) registers `sessionStart` and `agentStop`. Both are `powershell`-only: with both a `bash` and a `powershell` key the CLI picks `powershell` on Windows and `bash` elsewhere, but with only `powershell` it runs that on every platform, resolving `pwsh.exe`/`powershell.exe` on Windows and `pwsh` elsewhere. `pwsh` is already required by `skills/al-build/scripts/`, so a bash twin buys nothing and doubles every hook.
+
+`sessionStart` reads `references/GROUND-RULES.md` via `$env:COPILOT_PLUGIN_ROOT` and emits it as `{"additionalContext": ...}`. Couplings, all empirically verified:
 
 - The PowerShell command keeps its `[Console]::OutputEncoding = UTF8` prefix. Without it, `pwsh -c` on Windows writes stdout in the legacy codepage. That mangles `→`/`—` and silently breaks the CLI's JSON parse, and the hook injects nothing.
 - The compaction gap is accepted. `sessionStart` fires on new and resumed sessions only, never on compaction, and `preCompact` cannot inject. The recovery path is skills re-reading the file on invocation.
-- The hook only injects, never verifies. Enforcement stays prompt-resident, matching the plugin's all-advisory model. It fails open: a missing file or missing jq/node emits nothing and the session proceeds.
 - The hook never restates the rules. It reads the one file, so there is no second copy to drift.
 
-Adding a second hook is a deliberate decision, not a default.
+`agentStop` runs `hooks/Invoke-TaskGrammarHook.ps1`, which checks the task files written this session against `references/task-grammar.md` through `hooks/Test-TaskFileGrammar.ps1` — the same parser `tests/TaskGrammar.Tests.ps1` runs, so hook and CI cannot diverge. Couplings, all empirically verified against CLI 1.0.75:
+
+- `agentStop` returns `decision` and `reason`, never `additionalContext` — its mapper is `l => ({decision: l?.decision, reason: l?.reason})`. On `decision: "block"` the CLI calls `enqueueUserMessage({prompt: reason})`, so the reason becomes the agent's next instruction and the turn continues. That enforces rather than informs.
+- The event is `agentStop`, not `postToolUse` or `userPromptSubmitted`. A hook matcher tests the tool *name* only, so `postToolUse` would spawn on every edit anywhere in the repo — measured at ~590 ms per `pwsh -NoProfile -NoLogo` spawn, which the CLI already passes. `userPromptSubmitted` fires before the turn's writes, so a one-prompt session such as `/al-implement` would never see its own output. `agentStop` fires once per turn, after the writes, including that single turn.
+- Session start comes from the payload's `transcriptPath` creation time, so the first run of a session already sees that session's writes. Without it a marker written by the first run would set a baseline nothing predates.
+- The hook blocks at most twice per session, counted in a temp state file keyed by session id. A file the agent cannot fix stops the hook, never the session.
+- It fails open. A missing `specs/`, a missing parser, an unparseable payload, or any thrown error emits nothing and the session proceeds.
+
+Adding a third hook is a deliberate decision, not a default.
 
 ## Layout
 

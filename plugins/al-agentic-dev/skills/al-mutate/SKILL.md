@@ -91,7 +91,7 @@ A retry answers a documented `/al-build` infrastructure failure only — contain
 
 **Write the durable session report at `.output/mutation-report/<YYYYMMDD-HHMMSS>.md`** — ignored output, not committed. Survivors and stillborns are the actionable sections, one row per site with classification and next action — killer-test direction for a survivor, the re-planned compiling operator for a stillborn. Killed mutants each name the catching test. Equivalent candidates carry their specific reason; the host confirms. Include plan rationale, skipped-site rationale, baseline SHA, per-mutant gate command and `outcome`, recovery attempts, the final full-gate result, and counts: killed / survived / equivalent / stillborn / unclassified / blocked.
 
-The task file gets the `Closeout` mutation verdict shape from [test-specification.md](../../references/testing/test-specification.md).
+The task file gets the `Closeout` mutation verdict shape from [task-grammar.md](../../references/task-grammar.md).
 
 The frontmatter stamp reads off the verdict. A **clean verdict** — no survivors and no unresolved stillborns, or every remaining item a documented equivalence — flips the task `done` per [task-lifecycle.md](../../references/task-lifecycle.md), which homes the same-Edit `phase: mutated` stamp, the dependent opens, and the repair exception. An **open verdict** — survivor, unresolved stillborn — stamps `phase: mutated` only; `status:` stays `ready-for-implementation` until the follow-up round closes clean. Target already `status: done` (a post-hoc rigor run): a clean verdict stamps `phase: mutated` only, and a survivor routes its killer test through the repair exception — `/al-implement` re-entry under the originating `T-NNN`, never a demotion of `done`.
 

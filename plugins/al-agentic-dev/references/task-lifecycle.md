@@ -4,7 +4,7 @@
 
 ## Source of truth: examples
 
-Three populated examples in [`examples/`](./examples/) carry the canonical shape — pattern-match against them before writing a feature's artifacts. Shape per feature is the writing skill's call within these constraints.
+Three populated examples in [`examples/`](./examples/) carry the canonical shape — pattern-match against them before writing a feature's artifacts. The per-task file body has its own grammar in [`task-grammar.md`](./task-grammar.md); this file owns everything around it.
 
 | File | What it is |
 |---|---|
@@ -37,7 +37,7 @@ The live status board, the dependency graph, and "next actionable task" are comp
 
 ## Frontmatter
 
-YAML frontmatter tops every per-task file, then an H1 title, then the body. The H1 is just the title — no `[ ]`/`[x]` marker; `status:` in frontmatter is the only state.
+YAML frontmatter tops every per-task file, then an H1 title, then the body. The H1 is just the title — no `[ ]`/`[x]` marker; `status:` in frontmatter is the only state. The body's shape is [`task-grammar.md`](./task-grammar.md)'s.
 
 ```markdown
 ---

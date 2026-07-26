@@ -79,7 +79,7 @@ Reds routed here by `/al-page-script` arrive by chat handoff — status unchange
 
 ## Document verification
 
-After a structural write, before naming the downstream handoff, verify the `tasks/` folder against the `tasks/` profile in [`doc-integrity.md`](../../references/doc-integrity.md); the duplicate-prefix and dangling-edge checks are load-bearing after a re-prefix. Simple `status:` flips, closeout notes, and inline replan flags skip the gate.
+After a write of any kind — a structural reshape, a `status:` flip, a closeout note, an inline replan flag — verify the touched task files against the `tasks/` profile in [`doc-integrity.md`](../../references/doc-integrity.md) before naming the downstream handoff. The duplicate-prefix and dangling-edge checks are load-bearing after a re-prefix; the lifecycle checks are what a one-field flip most often breaks.
 
 ## Owns `.out-of-scope/`
 

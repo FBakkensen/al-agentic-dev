@@ -1,6 +1,6 @@
 # Document integrity check
 
-**Verify the artifact you just wrote yourself, inline, before the gate report.** The skills that write canonical planning markdown — `/al-grill-adr`, `/al-event-model`, `/al-design`, `/al-scope`, `/al-refine`, `/al-steer` — run these checks after writing or restructuring an artifact, before the gate report or downstream handoff. No subagent runs them. Every check lands on a verdict. The [Verdict table](#verdict-inline) owns what each verdict requires.
+**Verify the artifact you just wrote yourself, inline, before the gate report.** The skill that writes or edits a canonical planning artifact runs the matching profile's checks against what it wrote, before its gate report or downstream handoff — including a one-field edit, since a lifecycle field out of step is exactly what a one-field edit leaves behind. No subagent runs them. Every check lands on a verdict. The [Verdict table](#verdict-inline) owns what each verdict requires.
 
 Integrity means: the artifact exists and matches its profile, headings and task-file frontmatter are structurally sound, sibling spec files agree on shared IDs / slice slug / handoff wiring, and linked `CONTEXT.md` / `docs/adr/` references exist. Domain truth, BC fact truth, design quality, and test sufficiency are never judged here — the writing step and downstream skills own those.
 
@@ -13,7 +13,7 @@ Integrity means: the artifact exists and matches its profile, headings and task-
 | `CONTEXT.md` and ADR | durable intent, decision shape, and link integrity |
 | `event-model.md` | Role / Action / Business Event / View / Status structure |
 | `architecture.md` | module map, boundaries, cross-file consistency. Every object the slice introduces or extends carries a `new` / `extends <existing>` marker at first mention. A `(new)` suffix or inline `new <type>` / `extends <base>` both count. A missing marker is a **warn** — `/al-refine` seeds each task's `New and Modified Objects` ledes from those markers |
-| `tasks/` folder | per-task-file frontmatter, folder integrity, and the `Test Specification` / `Verification Plan` sections |
+| `tasks/` folder | per-task-file frontmatter, folder integrity, and the body shape and cross-references of the `Test Specification` / `Verification Plan` |
 
 ## `tasks/` structural checks
 
@@ -30,6 +30,8 @@ Integrity means: the artifact exists and matches its profile, headings and task-
 | Ops-slug pairing | **fail** | `kind: provision` without `slice: provision`, `kind: breaking-change` without `slice: breaking-change`, or a `kind: technical` / `verify` task on a reserved slug |
 | `New and Modified Objects` coverage | **fail** | the task under work carries a populated `Test Specification` but no `New and Modified Objects` — blocks the `ready-for-implementation` flip. The bare labeled line `New and Modified Objects: none` is the valid test-only form; a section heading without entries fails. Scope to the named task's file only. `done` tasks may predate the grammar. Task files without a `Test Specification` are not yet refined — do not flag them. Ops kinds (`provision`, `breaking-change`) carry no `Test Specification` or `Verification Plan` and never reach `ready-for-implementation` / `ready-for-verification` — do not flag them |
 | E2E `Record:` flag | **fail** | a `kind: verify` task with a populated `Verification Plan` whose `Scope: E2E` Journey Example omits the mandatory `Record: yes` / `Record: no` line — the flag routes the example to `/al-page-script` (record) vs `/al-user-verification` (walk). Scope to a task file with a populated plan only. `Contract` / `Exploration` examples carry no `Record:` — do not flag them |
+| Body shape | **fail** | a task file's body departs from the shape rules in [`task-grammar.md`](task-grammar.md) — a section at the wrong heading level, sections out of the declared order, a required section or case field absent, a case header that does not carry its handle, case fields out of order, or a block that never closes. Scope to the file just written. `done` tasks may predate the grammar. Ops kinds (`provision`, `breaking-change`) carry a description only — do not flag them |
+| Coverage cross-reference | **fail** | an `Expected Behaviors` or `Decision Matrix` row whose `Covered By` is empty or names a procedure no `AAA Cases` header defines, a `Covers:` naming a `B#` / `R#` no row defines, or a coverage id or case handle used more than once in the same file. Both directions resolve within the one file. Scope to the file just written; task files without a populated `Test Specification` are not yet refined — do not flag them |
 
 ## `tasks/` lifecycle checks
 
