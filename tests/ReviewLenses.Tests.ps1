@@ -147,13 +147,19 @@ Describe 'Review lens return contract' {
 }
 
 Describe 'Review gate wiring' {
-    It 'spawns exactly the matrix lens set from each wired gate' {
-        $gates = @{
-            'al-code-review' = 'code-review'
-            'al-refactor'    = 'refactor'
+    BeforeAll {
+        # One entry per wired gate skill. A skill whose branches review different
+        # artifacts declares every mode it drives; the lens set it must name is the
+        # union of those columns.
+        $script:Gates = [ordered]@{
+            'al-code-review' = @('code-review')
+            'al-refactor'    = @('refactor')
+            'al-refine'      = @('test-spec', 'verification-plan')
         }
+    }
 
-        foreach ($skill in $gates.Keys) {
+    It 'spawns exactly the matrix lens set from each wired gate' {
+        foreach ($skill in $script:Gates.Keys) {
             $body = Get-Content -LiteralPath (Join-Path $script:SkillsRoot "$skill\SKILL.md") -Raw
             $named = @(
                 [regex]::Matches($body, '`(al-review-[a-z]+)`') |
@@ -163,16 +169,44 @@ Describe 'Review gate wiring' {
                     Sort-Object
             )
 
-            $expected = @($script:Membership.Keys | Where-Object { $script:Membership[$_] -contains $gates[$skill] } | Sort-Object)
-            ($named -join ',') | Should -Be ($expected -join ',') -Because "/$skill runs the $($gates[$skill]) column"
+            $modes = $script:Gates[$skill]
+            $expected = @(
+                $script:Membership.Keys |
+                    Where-Object { @($script:Membership[$_] | Where-Object { $modes -contains $_ }).Count -gt 0 } |
+                    Sort-Object
+            )
+            ($named -join ',') | Should -Be ($expected -join ',') -Because "/$skill runs the $($modes -join ' + ') column"
         }
     }
 
     It 'declares the mode on every lens and judge invocation' {
-        foreach ($pair in @(@('al-code-review', 'code-review'), @('al-refactor', 'refactor'))) {
-            $body = Get-Content -LiteralPath (Join-Path $script:SkillsRoot "$($pair[0])\SKILL.md") -Raw
-            $body | Should -Match "Mode: $($pair[1])"
+        foreach ($skill in $script:Gates.Keys) {
+            $body = Get-Content -LiteralPath (Join-Path $script:SkillsRoot "$skill\SKILL.md") -Raw
+            foreach ($mode in $script:Gates[$skill]) {
+                $body | Should -Match "Mode: $mode" -Because "/$skill declares $mode"
+            }
         }
+    }
+}
+
+Describe 'Plan-gate stop shape' {
+    It 'homes the dispositions and the plugin-gap record in the shared reference' {
+        $script:ReferenceText | Should -Match 'A blocking finding on a plan'
+
+        foreach ($token in @('self-resolvable', 'upstream', 'Plugin gap:', 'Let through:', 'Would have caught it:')) {
+            $script:ReferenceText | Should -Match ([regex]::Escape($token)) -Because "the stop shape carries $token"
+        }
+    }
+
+    It 'points the refine gate at that home rather than forking it' {
+        $body = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-refine\SKILL.md') -Raw
+        $body | Should -Match 'A blocking finding on a plan'
+        $body | Should -Not -Match ([regex]::Escape('Plugin gap:'))
+    }
+
+    It 'keeps the retired rubber-duck consult out of the refine gate' {
+        $body = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-refine\SKILL.md') -Raw
+        $body | Should -Not -Match 'rubber-duck'
     }
 }
 

@@ -26,12 +26,13 @@ A case that would pass whether or not the behaviour under test works is the find
 
 - An `Assert` observing only state the `Arrange` already established, so the `Act` proves nothing.
 - An `Assert` that restates the `Act` rather than its outcome, or asserts a tautology.
+- An expected value the case derives the way the production code will derive it, or reads back through the procedure under test — a self-supplied oracle agrees with any implementation, right or wrong.
 - An `Assert` that never observes the `Expected Behavior` or `Decision Matrix` row the case `Covers` — including a row whose expected value the case never checks.
 - An expected error the row promises with no assertion on the error, or an assertion on the error text where the row's outcome is the state change.
 - An internal call assertion outside a `Unit` case where a double or spy is the behaviour boundary.
-- An `Arrange` or `Act` bullet carrying the proof the `Assert` block should hold.
+- An `Arrange` or `Act` bullet carrying the proof the `Assert` block should hold, or an `Assert` block absent altogether.
 
-Grammar per `references/testing/test-specification.md`; mutation operators that would survive such a case are catalogued in `references/testing/tdd.md`.
+Grammar per `references/testing/test-specification.md`; mutation operators that would survive such a case are catalogued in `references/testing/tdd.md`, whose false-red classes — a rigged assertion, an assertion passing for the wrong reason — name the same failures once the case is code. Every one caught here is one the red beat never has to argue about.
 
 ## Return
 

@@ -26,8 +26,8 @@ Behaviour the artifact claims and never proves is the finding. Read the claim si
 
 **`test-spec`.** Every `Expected Behaviors` row and every `Decision Matrix` row carries `Covered By`; a row without one, or naming a procedure no `AAA Cases` entry defines, is a gap. So is a decision branch, error path, or boundary value the `Decision Matrix` never rows at all, and an `Out of automated reach` claim carrying no destination. Grammar per `references/testing/test-specification.md`.
 
-**`verification-plan`.** Every user-visible outcome the slice promises carries a `Journey Examples` or `Contract Examples` entry. An `Exploration Charters` entry standing in for a missing example is a gap, not coverage.
+**`verification-plan`.** Every user-visible outcome the slice promises carries a `Journey Examples` or `Contract Examples` entry, and so does every exception path and boundary its Statuses admit — the error the developer is shown, the transition it blocks. An `Exploration Charters` entry standing in for a missing example is a gap, not coverage. An example whose `Observable Checks` read internal state rather than what the user or the client can see proves nothing at this layer, and counts as an uncovered outcome.
 
 ## Return
 
-Per `references/review-lenses.md`: line 1 `COVERAGE FINDINGS`, line 2 the `Mode:` echo, then labeled `Finding:` / `Where:` / `Why:` / `Source:` blocks, `Where:` naming the document section and the row or case id. A clean lens is a result — say so.
+Per `references/review-lenses.md`: line 1 `COVERAGE FINDINGS`, line 2 the `Mode:` echo, then labeled `Finding:` / `Where:` / `Why:` / `Source:` blocks. A clean lens is a result — say so.

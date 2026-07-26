@@ -75,22 +75,26 @@ Every exact BC name written into the `Test Specification` or `Verification Plan`
 
 Replace vague phrasing with exact object, procedure, and status names inline. An implicit domain rule, an edge the user must adjudicate, a missing bound, a boundary contradicting another rule, or split intent (`validate` as schema check vs. business rule check) → run `/grill-me`.
 
-## Rubber-duck review on non-trivial specs and plans
+## Document verification
 
-Consult per [rubber-duck-review.md](../../references/rubber-duck-review.md), before the section is written into the task file.
+Run the document-integrity check inline, no subagent, against [doc-integrity.md](../../references/doc-integrity.md) scoped to this `T-NNN`: the `New and Modified Objects` coverage check and, for a verify task, the E2E `Record:` flag check. It is mechanical and cheap, so it runs before the review gate below — a structurally broken artifact should not cost a lens fleet — and again on any regenerated text. A **fail** blocks the flip: fix it or route `/al-steer`. A **warn** rides in the close.
 
-- Technical artifact body: task title + description + proposed `Test Specification` + `CONTEXT.md` language excerpt if resolved + "what behaviours, decision rows, negatives, boundaries, scopes, procedure mappings, or object/signature landings are missing or wrong? AND does this surface any of the replan triggers? AND does wording use project vocabulary? Return a bulleted list."
-- Verify artifact body: task title + slice context from `event-model.md` + proposed `Verification Plan` + "what journeys, contract checks, exploration prompts, boundaries, or exception paths are missing or wrong? AND do examples name real surfaces? AND does this surface any of the replan triggers? Return a bulleted list."
+## Review gate
 
-A rejected bullet that encodes a durable principle escalates via `/al-steer` to `/al-grill-adr` or `/al-design`.
+The session that wrote this artifact is its worst reader — its own rationale stands by to argue every finding down. A fresh fleet reads it blind before the status flip, per [review-lenses.md](../../references/review-lenses.md).
+
+Spawn the branch's lenses in parallel, declaring the mode, the scope, and the artifact:
+
+- Technical task → `Mode: test-spec`: `al-review-compliance`, `al-review-objects`, `al-review-coverage`, `al-review-assertions`, `al-review-structural`.
+- Verify task → `Mode: verification-plan`: the three lenses that reference's membership matrix marks in that column.
+
+Each invocation carries the task file, `architecture.md`, `event-model.md` when present, `CONTEXT.md`, and the slice the task belongs to. Then invoke `al-review-judge` once with the same declared mode, the artifact, and every lens's raw finding blocks — never their `Out-of-scope:` notes, which this skill routes itself.
+
+A surviving `MUST-FIX` holds the flip. Report, tag, question, and re-review per **A blocking finding on a plan** in [review-lenses.md](../../references/review-lenses.md). A finding the design settled wrongly rather than the artifact stated wrongly is the upstream disposition, and a durable principle behind it reaches `/al-grill-adr` or `/al-design` through `/al-steer`.
 
 ## IDs and handles
 
 Coverage IDs: `B#` (`Expected Behaviors`), `R#` (`Decision Matrix`), `V#` (`E2E`), `C#` (`Contract`), `X#` (`Exploration`). Stable handles downstream skills grep for: the AL test procedure name (technical); the example ID plus title, e.g. `V1 BlocksReleaseFromSalesOrderPage` (verify).
-
-## Document verification
-
-Before any status flip, run the document-integrity check inline, no subagent, against [doc-integrity.md](../../references/doc-integrity.md) scoped to this `T-NNN`: the `New and Modified Objects` coverage check and, for a verify task, the E2E `Record:` flag check. A **fail** blocks the flip — fix it or route `/al-steer`. A **warn** rides in the close.
 
 ## Status flip
 
@@ -108,7 +112,8 @@ A re-refine re-stamps `phase:`. A verify task's `review: clean` rides the flip u
 Close with the task-close gate report per [GROUND-RULES.md](../../references/GROUND-RULES.md) House shapes — the `phase:` stamp is refine's closing stamp — with the Push-up report preceding it as its own section. A precondition failure closes with the one-line **Stop** shape.
 
 - Technical → `Next: /al-implement T-NNN`.
-- Verify → state-conditional: `/al-page-script T-NNN` when a `Record: yes` Journey Example's recording is missing, else `/al-user-verification T-NNN`. The review already ran — never route back through `/al-code-review`.
+- Verify → state-conditional: `/al-page-script T-NNN` when a `Record: yes` Journey Example's recording is missing, else `/al-user-verification T-NNN`. The slice's code review already ran — never route back through `/al-code-review`.
+- Gate held by a surviving `MUST-FIX` → no flip, no gate report: close with the tagged findings and the lettered question.
 - Stayed or flipped `blocked` → invoke `al-researcher`, or hand off to `/al-grill-adr` or `/al-steer`, per cause.
 
 ## Composition
@@ -117,7 +122,7 @@ Close with the task-close gate report per [GROUND-RULES.md](../../references/GRO
 |---|---|
 | **Runs after**     | `/al-scope`, or a gate-opened task at `status: ready` |
 | **Hands off to**   | as Next step above |
-| **Calls directly** | no skills; rubber-duck consult per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
-| **Spawns**         | `al-researcher` for BC facts beyond direct workspace reading |
+| **Calls directly** | no skills |
+| **Spawns**         | `al-researcher` for BC facts beyond direct workspace reading; the branch's mode lenses per [review-lenses.md](../../references/review-lenses.md), then `al-review-judge` |
 | **Replan venue**   | `/al-steer` |
 | **Sidebands**      | `/al-grill-adr`, `/grill-me` |

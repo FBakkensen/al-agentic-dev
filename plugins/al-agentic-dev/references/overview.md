@@ -45,7 +45,7 @@ The plugin ships 18 skills.
 | `/al-scope` | Decomposes `architecture.md` into a slice-grouped `tasks/` folder, one verification task per slice when `event-model.md` is present, bracketed by the two ops tasks. | After `/al-design`, before `/al-provision` on the bracketed `T-001` task. |
 | `/al-provision` | Runs the `kind: provision` task: refresh the build environment (compiler, symbols, analyzers, and — when enabled — the breaking-change baseline) via `/al-build`'s `provision.ps1`, flip the task `done`/`blocked`. | Any `kind: provision` task at `ready`, or a re-run after you clear the named blocker. |
 | `/al-validate-breaking-changes` | Runs the `kind: breaking-change` task: validate against the provisioned baseline via `validate-breaking-changes.ps1`, flip the task `done`/`blocked`; a detected break stops for a human. | The feature's last task, or a re-run after you clear the blocker from a failed run. |
-| `/al-refine` | One `ready` task → fresh `Test Specification` (technical → `ready-for-implementation`) or `Verification Plan` (verify → `ready-for-verification`). | Before working a specific task. |
+| `/al-refine` | One `ready` task → fresh `Test Specification` (technical → `ready-for-implementation`) or `Verification Plan` (verify → `ready-for-verification`). A review-lens fleet reads the artifact blind before the flip — 5 lenses on the specification, 3 on the plan — and a must-fix holds the gate. | Before working a specific task. |
 | `/al-implement` | TDD per technical task: Unit cases → Integration cases, red→green. Stops at green and hands off to `/al-refactor` then `/al-mutate`. | After `/al-refine` produces a `Test Specification`. One task per session. |
 | `/al-refactor` | Reshape production and test code while tests stay green. No new behaviour. 5 review-lens subagents identify, the session applies with `/al-build` between. | After `/al-implement` takes a task to green (full task diff, once per task), or standalone on legacy code. |
 | `/al-mutate` | Validate test rigor by injecting one mutation at a time: run the build gate, classify, revert, report killed/surviving/equivalent mutants. | The rigor step after `/al-refactor` for whatever arrived without a red, or standalone on legacy before `/al-refactor`. |
@@ -66,7 +66,7 @@ The plugin ships 19 custom agents. The rubber-duck is not one of them — it is 
 | `al-debug-logging` | Adds temporary `Session.LogMessage` probes, runs the supplied harness, and queries Application Insights through its embedded Telemetry Buddy MCP. Not user-invocable; every `DEBUG-*` probe must be gone before commit. | Any skill or custom agent blocked on an unresolved runtime path |
 | `al-red-green` | One AAA case RED→GREEN: write the failing test, confirm RED, pass the blind RED gate, write minimal production code under a frozen test surface, confirm GREEN, return an outcome note. No in-loop escalation. | `/al-implement` (per case), `/al-code-review --fix` (per must-fix finding) |
 | `al-review-red` | Rules `TRUE-RED` or `FALSE-RED` on one red beat, fresh every time, before the behaviour under test exists — so the party that wrote the test is never the party that grades it. Not a review lens: no mode, no judge. | `al-red-green` |
-| `al-review-compliance` | Lens: project and domain compliance, BC/project naming, scope, grounding, surface reconciliation. Runs in every mode. | `/al-code-review`, `/al-refactor` |
+| `al-review-compliance` | Lens: project and domain compliance, BC/project naming, scope, grounding, surface reconciliation. Runs in every mode. | `/al-code-review`, `/al-refactor`, the design and refine gates |
 | `al-review-coverage` | Lens: behaviour a plan or design claims and never proves. | the design and refine gates |
 | `al-review-structural` | Lens: decision-logic boundary, depth over indirection, seam shape. | `/al-refactor`, the design and refine gates |
 | `al-review-bc` | Lens: BC-specific anti-patterns and platform reinvention using `al-researcher` evidence. | `/al-code-review`, `/al-refactor`, the design gate |
@@ -77,13 +77,13 @@ The plugin ships 19 custom agents. The rubber-duck is not one of them — it is 
 | `al-review-simplify` | Lens: dedup, dead code, speculative generality. | `/al-refactor` |
 | `al-review-objects` | Lens: a task's `New and Modified Objects` entries against the workspace and `architecture.md`. | the refine gate |
 | `al-review-assertions` | Lens: AAA cases whose assertions would pass without the behaviour under test. | the refine gate |
-| `al-review-judge` | Dedups, substantiates, and ranks one supplied batch of lens findings against its scoped artifact, in the mode the caller declares. | `/al-code-review`, `/al-refactor` |
+| `al-review-judge` | Dedups, substantiates, and ranks one supplied batch of lens findings against its scoped artifact, in the mode the caller declares. | `/al-code-review`, `/al-refactor`, the refine gate |
 | `al-researcher` | Resolves one framed AL/BC fact through isolated BC patterns, Learn, symbols, or canonical BCApps source and returns a tagged verdict with quoted evidence. | Any skill, main session, or research-capable custom agent needing BC knowledge beyond direct workspace reading |
 | `al-design-option` | Develops one self-contained architecture candidate under a supplied divergent constraint — `/al-design` fans out three in parallel and chooses among them itself. | `/al-design` |
 | `al-gate-runner` | Runs one supplied build, provision, or breaking-change gate command and relays its authoritative artifacts, no interpretation. | `/al-build`, `/al-provision`, `/al-validate-breaking-changes` |
 | `al-mutant-cycle` | Runs one supplied mutate→gate→revert cycle and returns observed evidence; the caller classifies the mutant. | `/al-mutate` |
 
-Eleven of those agents are review lenses — one per concern, each running under a mode the calling skill declares. Which lenses a gate spawns, what each returns, and how the judge fences its extra rules live in [`review-lenses.md`](review-lenses.md). `al-review-red` shares the name family and none of the contract: it gates one red beat rather than judging an artifact, so it carries no mode and reaches no judge.
+Eleven of those agents are review lenses — one per concern, each running under a mode the calling skill declares. Which lenses a gate spawns, what each returns, how the judge fences its extra rules, and what a blocking finding does at a gate reviewing a plan all live in [`review-lenses.md`](review-lenses.md). `al-review-red` shares the name family and none of the contract: it gates one red beat rather than judging an artifact, so it carries no mode and reaches no judge.
 
 ## What the agents need on your machine
 

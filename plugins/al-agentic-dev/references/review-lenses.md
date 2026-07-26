@@ -87,7 +87,7 @@ Line 1 of a successful return is the lens's sentinel; line 2 echoes `Mode: <valu
 Every lens returns raw labeled blocks, lede first — never a fix plan, never an application order:
 
 - **Finding:** the observed concern, one line.
-- **Where:** file, object, and procedure; add the line number only when it sharpens the fact. Review findings are ephemeral, so these pointers are exempt from names-as-citation in `GROUND-RULES.md`.
+- **Where:** the address inside the artifact under review. Code names the file, object, and procedure, adding a line number only when it sharpens the fact; a plan names the document section plus the row, case, or example id. Review findings are ephemeral, so these pointers are exempt from names-as-citation in `GROUND-RULES.md`.
 - **Why:** the rule or risk at this lens's altitude.
 - **Source:** this lens's goal, plus the topic or pattern id when one was matched.
 
@@ -95,4 +95,31 @@ A concern a lens sees but its mode does not own returns as an **Out-of-scope:** 
 
 ## Judge fence
 
-`al-review-judge` receives the same `Mode:` from the caller — authoritative, not inferred from any lens. Three extra classification rules apply in `code-review` mode only: a spec-scope violation, a diff-added BC construct class carrying no `Researched:` grounding citation, and a substantiated `HIGH` scanner severity. The other modes classify on the plain cost criteria alone.
+`al-review-judge` receives the same `Mode:` from the caller — authoritative, not inferred from any lens. Three extra classification rules apply in `code-review` mode only: a spec-scope violation, a diff-added BC construct class carrying no `Researched:` grounding citation, and a substantiated `HIGH` scanner severity. The other modes classify on the plain cost criteria plus, in the three plan modes, the contractual-defect rule the judge's own body carries.
+
+## A blocking finding on a plan
+
+The three plan modes — `architecture`, `test-spec`, `verification-plan` — review a document before any code exists, so there is no fix queue, no commit, and nothing to revert. A surviving `MUST-FIX` holds the artifact's status flip until the artifact itself changes.
+
+The calling skill reports each survivor under one disposition:
+
+| Disposition | Meaning | Route |
+|---|---|---|
+| self-resolvable | regenerating this artifact fixes it | the same live session revises |
+| upstream | the artifact cannot fix it from here — a missing `architecture.md` slot, an ADR conflict, a wrong slice boundary, a missing `event-model.md` step | `Next: /al-steer` |
+
+A finding of either disposition may also carry a plugin-gap record, printed when this machine let through a failure class it should have prevented:
+
+```
+Plugin gap: <the gate that let it through>
+Let through: <the failure class>
+Would have caught it: <the rule or check that was absent>
+```
+
+The record reaches the maintainer and stops there — no ledger, no artifact, no follow-up task.
+
+Then one lettered question: regenerate against every finding, regenerate against a named subset and hold the gate on the rest, or escalate to `/al-steer` naming the upstream artifact. On the answer the same live session revises. A self-resolvable finding never routes to `/al-steer`, which could only route back here, and the skill never re-invokes itself — a fresh invocation carries no context the live session lacks.
+
+One re-review per run, spawning a complete fresh fleet and judging its batch from scratch. A `MUST-FIX` still standing after it keeps the disposition it already had: report it, stop regenerating, leave the flip unearned, and route `/al-steer` only where the evidence names an upstream artifact. A failed repair does not make a self-inflicted finding upstream.
+
+An incomplete fleet holds the flip on the same terms — a lens or judge that reaches no terminal state is coverage this gate never had, and it prints the plugin-gap record. `SHOULD-FIX` rides in the close as nits. Lens churn stays out of chat.

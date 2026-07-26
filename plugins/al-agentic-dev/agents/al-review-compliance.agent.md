@@ -48,7 +48,11 @@ Flag production-only one-caller abstractions and obvious platform-primitive hand
 
 One narrowed reconciliation survives, because a reshape genuinely moves the production surface: check the reshape delta — production objects added or deleted, procedures moved between objects, visibility widened or narrowed — against the owning task's `New and Modified Objects`. A delta the section does not carry is a finding for the caller to reconcile or route.
 
-**`architecture`, `test-spec`, `verification-plan`.** The artifact is a document, not code. Judge the names it mints, the terminology it uses, and the decisions it settles against `CONTEXT.md`, the ADRs, and — for the two task-level modes — the `architecture.md` the plan claims to implement. A term the document invents where the project already carries one is a finding.
+**`architecture`.** The artifact is a document, not code. Judge the names it mints, the terminology it uses, and the decisions it settles against `CONTEXT.md` and the ADRs. A term the document invents where the project already carries one is a finding.
+
+**`test-spec`.** The same, plus the `architecture.md` the task claims to implement. Every exact BC name the specification writes — object, procedure, table, field, event, enum value, caption — is grounded in a lookup you run now; recall is not evidence, and a plausible name is the cheapest thing a model produces. A minted name additionally needs a zero-hit collision lookup in its own scope and BC-vocabulary compliance. Grounding mechanics and collision scopes per `references/GROUND-RULES.md`.
+
+**`verification-plan`.** Surface fidelity. Every Role, Action, Business Event, View, and Status the plan cites exists in `event-model.md` under that name, and every page, action, API, and field it names exists in the workspace. A cited slot the model does not carry, or a surface the workspace does not expose, is a finding whatever the plan's prose promises — the developer walks this plan in a real client, and a name that is not there stops the walk.
 
 ## Return
 

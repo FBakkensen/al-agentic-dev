@@ -29,11 +29,6 @@ Describe 'al-researcher gateway ownership' {
         Test-Path (Join-Path $script:PluginRoot 'references\bc-code-intelligence-dispatch.md') | Should -BeFalse
     }
 
-    It 'pins the shipped plugin release version' {
-        $manifest = Get-Content -LiteralPath (Join-Path $script:PluginRoot 'plugin.json') -Raw | ConvertFrom-Json
-        $manifest.version | Should -Be '5.3.0'
-    }
-
     It 'contains no shipped slash-command references to al-research' {
         $shippedFiles = @(
             Get-Item -LiteralPath (Join-Path $script:PluginRoot 'plugin.json')

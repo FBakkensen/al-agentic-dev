@@ -32,7 +32,9 @@ Judge production code against **Production-AL thrift** in `references/GROUND-RUL
 
 **`architecture`.** The artifact is `architecture.md`, so the targets are proposed rather than landed: a module that carries no decision logic, an interface with one named implementation, decision logic spread across modules, a seam named without its two adapters.
 
-**`test-spec`, `verification-plan`.** The artifact is a plan. Judge its shape: a case proving decision logic through a full I/O path where a functional-core case would prove it, a case placed on the wrong layer per `references/testing/test-strategy.md`, a case landing in the wrong app per `references/testing/test-layout.md`, or a seam the plan needs that the design never named (`references/testing/testability.md`).
+**`test-spec`.** The artifact is a plan. Judge its shape: a case proving decision logic through a full I/O path where a functional-core case would prove it, a case placed on the wrong layer per `references/testing/test-strategy.md`, a case landing in the wrong app per `references/testing/test-layout.md`, or a seam the plan needs that the design never named (`references/testing/testability.md`). An `Integration` case naming neither a wall nor a seam is an unearned push-up.
+
+**`verification-plan`.** Push-down discipline, on the one plan that spends the developer's own attention. A `Record: yes` claims a wall no AL test layer can cross — control add-in, canvas, rendering, web-client-only behaviour; a flag raised over behaviour a TestPage could drive buys a whole recording session for a check a lower test should hold. A `Record: no` claims a lower test already pins the regression, and the claim needs a named `Test Specification` case or an existing test procedure behind it, or it is a gap wearing push-down's clothes. A journey step or contract check a Unit or Integration case could pin routes down rather than onto the walk.
 
 ## Return
 
