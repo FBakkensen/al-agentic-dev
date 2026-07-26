@@ -25,7 +25,7 @@ Per-skill mechanics live in the owning `SKILL.md`. Page-script recording, replay
 ## Editing rules
 
 - **Preserve the call boundary.** `/al-build` is the only direct skill-to-skill call. BC research spawns `al-researcher`; the rubber-duck consult, other custom-agent spawns, and inline state writes are homed in [`references/overview.md`](references/overview.md). A skill edit that adds a cross-skill call or auto-chain contradicts that canon. Change the canon first.
-- **Custom agent bodies are self-contained.** Skills and agents run in consumer projects where this instruction file does not exist. The review lenses carry their BC vocabulary in their own bodies. The spawning skill's invocation carries only the diff or scope.
+- **Custom agent bodies are self-contained.** Skills and agents run in consumer projects where this instruction file does not exist. A lens carries its own detection rules and BC vocabulary in its body, and reads the shared protocol from `references/review-lenses.md`. The spawning skill's invocation carries the declared mode, the scope, and the payload — nothing else.
 - **Naming, BC vocabulary, and grounding are homed in [`references/GROUND-RULES.md`](references/GROUND-RULES.md).** That includes names-as-citation (no inline `file:line` citations in durable artifacts) and the `Researched:` carve-out. Writing skills read it before writing.
 - **Four Return shapes deviate from the fixed line-1 label, each coupled to the callers that parse it.** Changing any of these shapes updates every parsing caller in the same change; never restyle one side alone.
 
@@ -33,8 +33,8 @@ Per-skill mechanics live in the owning `SKILL.md`. Page-script recording, replay
   |---|---|---|
   | `al-researcher` | dynamic evidence verdict: `SINGLE-SOURCE` / `VERIFIED` / `CONFLICT` / `UNRESOLVED` on line 1, then quoted evidence and conditional Conflict/Limit fields | every skill or custom agent that needs BC knowledge beyond direct workspace reading |
   | `al-red-green` | `## Outcome note` leads with a dynamic verdict chosen from `GREEN` / `PUSH-UP` / `BLOCKED` | `/al-implement`, `/al-code-review --fix` |
-  | the six `al-review-cr-*` lenses | zero or more labeled finding blocks under a fixed per-lens line-1 sentinel (`COMPLIANCE FINDINGS`, `CORRECTNESS FINDINGS`, `BC REVIEW FINDINGS`, `COMMENT AND HISTORY FINDINGS`, `PUBLIC-SURFACE FINDINGS`, `PERFORMANCE SCAN FINDINGS`) — the finding-block shape, not one fixed payload, is the contract | `/al-code-review`, `al-review-judge` |
-  | `al-review-refactor-perf` | when the `al-performance` MCP is missing, exactly the one line `perf scan skipped: al-performance MCP not available` — no sentinel, no other line | `/al-refactor`, `al-review-judge` |
+  | the eleven review lenses | zero or more labeled finding blocks under a fixed per-lens line-1 sentinel plus a line-2 `Mode:` echo — the sentinel registry, the invocation-error line, and the finding-block shape are homed in [`references/review-lenses.md`](references/review-lenses.md) | `/al-code-review`, `/al-refactor`, `al-review-judge` |
+  | `al-review-perf` | when the `al-performance` MCP is missing, exactly the one line `perf scan skipped: al-performance MCP not available` — no sentinel, no other line | `/al-code-review`, `/al-refactor`, `al-review-judge` |
 
 - **Spec artifacts are pure markdown, text-only.** The no-mermaid rule is homed in the `/al-design` and `/al-scope` skill bodies. Visual polish is a separate dev-server concern, never the spec's.
 - **`architecture.md` is reshape-only. Per-task files carry the surgical-edit contract.** Both are homed in [`references/task-lifecycle.md`](references/task-lifecycle.md).
@@ -42,7 +42,7 @@ Per-skill mechanics live in the owning `SKILL.md`. Page-script recording, replay
 - **Express intent and rationale, not enumerated skip conditions.** SKILLs and references state why a discipline exists and what problem it solves. The agent maps rationale to situation. Slot prescriptions, `_When earned:_` / `_Skip when:_` enumerations, and fill-in templates are rejected by name.
 - **`al-debug-logging` owns runtime probes and its telemetry MCP.** It emits temporary `Session.LogMessage` events and queries Application Insights through its embedded `bc-telemetry-buddy` server. `/al-build` owns no telemetry capture or telemetry artifacts.
 - **An agent naming `<server>/<tool>` in `tools:` must declare that server in `mcp-servers:`.** A `tools:` entry is a reference, not a declaration; without the block the agent silently holds nothing. `scripts/Validate-PluginStructure.ps1` gates this.
-- **No lens holds a fixer — capability custody is not change authority.** `al-performance` exposes `fix_al_file`, and it stays off both perf lenses' allowlists. The tool takes only a file path and a dry-run flag: no occurrence selector, and its dry-run `Fixes applied:` list names pattern ids rather than locations, so no approval gate can confine a rewrite to the diff. A provably equivalent one-line perf fix lands as a targeted `edit` under `/al-code-review`'s hygiene rule; anything structural queues as a manual reshape in `/al-refactor`.
+- **No lens holds a fixer — capability custody is not change authority.** `al-performance` exposes `fix_al_file`, and it stays off `al-review-perf`'s allowlist. The tool takes only a file path and a dry-run flag: no occurrence selector, and its dry-run `Fixes applied:` list names pattern ids rather than locations, so no approval gate can confine a rewrite to the diff. A provably equivalent one-line perf fix lands as a targeted `edit` under `/al-code-review`'s hygiene rule; anything structural queues as a manual reshape in `/al-refactor`.
 - **`al-researcher` owns canonical source lookup.** `microsoft/BCApps` paths, branch selection, search rules, `gh` commands, and fallback stay in `agents/al-researcher.agent.md`. Web access is only the raw-file fallback. No separately discoverable source agent may bypass the gateway.
 
 ## Reference layout
@@ -60,6 +60,7 @@ A resource read by two or more skills lives at plugin level. A shared resource i
 | `GROUND-RULES.md` | plugin-level | the one always-on contract: output shape via the `i-have-adhd` skill, one-decision-per-question, grounding mechanics, BC vocabulary, house shapes, production-AL thrift; injected by the `sessionStart` hook, re-read by skills on invocation |
 | `doc-integrity.md` | plugin-level | inline document-integrity check; run by the writing skills (`/al-grill-adr`, `/al-event-model`, `/al-design`, `/al-scope`, `/al-refine`, `/al-steer`) before the gate report |
 | `rubber-duck-review.md` | plugin-level | rubber-duck consult discipline; read by every skill that consults the duck |
+| `review-lenses.md` | plugin-level | the one home for the five review modes, the lens×mode membership matrix, the `Mode:`/`Scope:` invocation contract, terminal states, the sentinel registry, and the judge's mode fence; read by `/al-code-review`, `/al-refactor`, every review lens, and `al-review-judge` |
 | `testing/testability.md` | plugin-level | seams and test-double taxonomy; read by `/al-design`, `/al-implement`, `/al-refactor` |
 | `testing/test-specification.md` | plugin-level | Test Specification / Verification Plan grammar; read by `/al-refine`, `/al-implement`, `/al-code-review`, `/al-page-script`, `/al-user-verification` |
 | `testing/tdd.md` | plugin-level | TDD cycle axis incl. mutation operators; read by `/al-implement`, `/al-mutate` |
@@ -69,7 +70,7 @@ A resource read by two or more skills lives at plugin level. A shared resource i
 | `examples/` (folder) | plugin-level | populated example artifacts; pattern-match source for writing skills |
 | `cross-branch-numbering.md` | plugin-level | `NNN`/`NNNN` picking across parallel branches; read by `/al-design`, `/al-event-model`, `/al-grill-adr` |
 | `worktree-feature-branching.md` | plugin-level | feature branch setup; read by `/al-event-model`, `/al-design` |
-| `bc-patterns.md` | plugin-level | BC pattern catalogue; read by `/al-design` |
+| `bc-patterns.md` | plugin-level | BC pattern catalogue; read by `/al-design`, `al-review-bc` |
 | `LANGUAGE.md` | plugin-level | architectural vocabulary; read by `/al-design`, `/al-grill-adr`, `/al-event-model`, `/al-refactor`, `/al-code-review` |
 | `CONTEXT.template.md` | plugin-level | materialised into the target repo's `CONTEXT.md` |
 | `adr.template.md` | plugin-level | materialised into the target repo's `docs/adr/NNNN-<slug>.md` |
@@ -80,7 +81,7 @@ Templates are materialised lazily on first need by the owning flow.
 
 ## Runtime surface
 
-The plugin is distributed via `.github/plugin/marketplace.json` and targets GitHub Copilot CLI. It ships 18 custom agents under `agents/`, invoked via the task tool by name. Each agent's `.agent.md` frontmatter pins its model — the single home; the repo-root `scripts/Validate-PluginStructure.ps1` checks every pin against its fleet map. [`references/overview.md`](references/overview.md) carries the user-facing agent table. `al-researcher` alone owns the research MCPs and canonical BCApps lookup. The 15 other research-capable agents carry `agent` tool access and route facts through the gateway. `al-debug-logging` alone owns `bc-telemetry-buddy`; the two perf lenses alone own `al-performance`.
+The plugin is distributed via `.github/plugin/marketplace.json` and targets GitHub Copilot CLI. It ships 18 custom agents under `agents/`, invoked via the task tool by name. Each agent's `.agent.md` frontmatter pins its model — the single home; the repo-root `scripts/Validate-PluginStructure.ps1` checks every pin against its fleet map. [`references/overview.md`](references/overview.md) carries the user-facing agent table. `al-researcher` alone owns the research MCPs and canonical BCApps lookup. The 15 other research-capable agents carry `agent` tool access and route facts through the gateway. `al-debug-logging` alone owns `bc-telemetry-buddy`; `al-review-perf` alone owns `al-performance`.
 
 Agent-scoped MCP behaviour, measured on CLI 1.0.71-2 with an isolated `COPILOT_HOME`:
 
@@ -97,7 +98,7 @@ When authoring new plugin capability, default to a skill. Add a custom agent onl
 MCP-absence behavior is per-consumer, not uniform. The owning skill or agent states its fallback. Two exceptions:
 
 - `al-red-green` blocks on a missing object-ID allocator.
-- `al-review-refactor-perf` returns its skip line.
+- `al-review-perf` returns its skip line.
 
 A blanket claim here would fork them.
 
@@ -124,9 +125,9 @@ agents/                          # Shipped custom agents (18; each pins its mode
 ├── al-design-option.agent.md        # One architecture candidate under a divergent constraint
 ├── al-researcher.agent.md           # One BC fact through isolated research tools
 ├── al-debug-logging.agent.md        # Temporary probes queried through Application Insights
-├── al-review-cr-*.agent.md          # 6 /al-code-review lenses (compliance, bugscan, bc, comments, appsource, perf)
-├── al-review-judge.agent.md         # Dedups/ranks one lens finding batch
-└── al-review-refactor-*.agent.md    # 5 /al-refactor lenses (simplify, bc, structural, naming, perf)
+├── al-review-*.agent.md             # 11 review lenses, one per concern (compliance, coverage, structural,
+│                                    #   bc, perf, appsource, bugscan, comments, simplify, objects, assertions)
+└── al-review-judge.agent.md         # Dedups/ranks one lens finding batch
 hooks/
 └── hooks.json                   # Sole hook: sessionStart injects references/GROUND-RULES.md; fail-open
 references/                      # Plugin-level shared — see the Reference layout table

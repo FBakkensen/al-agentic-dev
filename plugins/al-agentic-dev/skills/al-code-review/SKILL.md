@@ -25,20 +25,20 @@ A per-slice diff spans every `T-NNN` commit from its first commit through `done`
 
 ## Review pass
 
-1. **Find.** Fan out the mode's read-only lenses in parallel — five per-slice, six per-feature, per the Mode column — passing only the scoped diff and context. Pass the compliance lens the grounding rules' **Constructs** bullet from [`GROUND-RULES.md`](../../references/GROUND-RULES.md) verbatim. A failed or empty lens is a reported summary gap, never a silent retry.
+1. **Find.** Fan out the read-only lenses in parallel — five per-slice, six per-feature, per the Scope column — declaring `Mode: code-review`, the scope, and the scoped diff and context, per [`review-lenses.md`](../../references/review-lenses.md). Pass the compliance lens the grounding rules' **Constructs** bullet from [`GROUND-RULES.md`](../../references/GROUND-RULES.md) verbatim. A failed lens, an empty lens, or one returning the invocation-error line is a reported summary gap, never a silent retry and never a clean lens.
 
-   | Lens | Owns | Mode |
+   | Lens | Owns | Scope |
    |---|---|---|
-   | `al-review-cr-compliance` | Project/domain/task compliance from `CONTEXT.md`, `docs/adr/`, `architecture.md`, and `Test Specification`; BC/project naming, construct grounding, `Integration` push-up seams, traceability to `Expected Behaviors` / `Decision Matrix` / AAA cases, mutation recommendations, and reconciled `New and Modified Objects` | both |
-   | `al-review-cr-bugscan` | Fresh-read correctness and obvious logic faults; design escalation for ad-hoc conditionals | both |
-   | `al-review-cr-bc` | BC topic-store anti-patterns, platform reinvention, speculative generality, and the direct-`xRec` validation trap | both |
-   | `al-review-cr-comments` | Modified-file comment invariants and evidenced recent-history regressions | both |
-   | `al-review-cr-appsource` | Intentionality of diff-added public shipped procedures, fields, and actions, read with `app.json` | per-feature only |
-   | `al-review-cr-perf` | `al-performance` `scan_al_code` findings in touched procedures of changed `.al` files; identify-only, no apply plan | both |
+   | `al-review-compliance` | Project/domain/task compliance from `CONTEXT.md`, `docs/adr/`, `architecture.md`, and `Test Specification`; BC/project naming, construct grounding, `Integration` push-up seams, traceability to `Expected Behaviors` / `Decision Matrix` / AAA cases, mutation recommendations, and reconciled `New and Modified Objects` | both |
+   | `al-review-bugscan` | Fresh-read correctness and obvious logic faults; design escalation for ad-hoc conditionals | both |
+   | `al-review-bc` | BC topic-store anti-patterns, platform reinvention, speculative generality, and the direct-`xRec` validation trap | both |
+   | `al-review-comments` | Modified-file comment invariants and evidenced recent-history regressions | both |
+   | `al-review-appsource` | Intentionality of diff-added public shipped procedures, fields, and actions, read with `app.json` | per-feature only |
+   | `al-review-perf` | `al-performance` `scan_al_code` findings in touched procedures of changed `.al` files; identify-only, no apply plan | both |
 
-   Each lens returns its one-line sentinel, then labeled `Finding:` / `Where:` / `Why:` / `Source:` blocks; the perf lens adds `Severity:`. When `al-performance` is absent, the perf lens returns exactly `perf scan skipped: al-performance MCP not available` in place of its sentinel — name the remedy in the screen: the scanner needs `uv` or Python 3.9+ with `mcp[cli]` on PATH, and a `disabledMcpServers` entry naming `al-performance` suppresses it on purpose. Use [`LANGUAGE.md`](../../references/LANGUAGE.md) exactly.
+   Each lens returns its sentinel, the `Mode:` echo, then labeled `Finding:` / `Where:` / `Why:` / `Source:` blocks; the perf lens adds `Severity:`. When `al-performance` is absent, the perf lens returns exactly `perf scan skipped: al-performance MCP not available` in place of its sentinel — degraded coverage, never clean. Name the remedy in the screen: the scanner needs `uv` or Python 3.9+ with `mcp[cli]` on PATH, and a `disabledMcpServers` entry naming `al-performance` suppresses it on purpose. Use [`LANGUAGE.md`](../../references/LANGUAGE.md) exactly.
 
-2. **Judge.** Invoke `al-review-judge` once with the scoped diff and all raw lens blocks. Its return begins `REVIEW JUDGMENT`; every supplied finding comes back with `Rank:`, `Classification:`, `Finding:`, `Where:`, `Evidence:`, `Lenses:`, and `Reason:`. Map `MUST-FIX` / `SHOULD-FIX` / `NO-ACTION` to must-fix, nit, and dropped. The judge alone classifies; this skill alone marks each must-fix as fixable in this run or as requiring a decision. Judge unavailable → `BLOCKED`, name it, **Stop**; no inline substitute.
+2. **Judge.** Invoke `al-review-judge` once with `Mode: code-review`, the scoped diff, and all raw lens blocks — never the lenses' `Out-of-scope:` notes. Its return begins `REVIEW JUDGMENT`; every supplied finding comes back with `Rank:`, `Classification:`, `Finding:`, `Where:`, `Evidence:`, `Lenses:`, and `Reason:`. Map `MUST-FIX` / `SHOULD-FIX` / `NO-ACTION` to must-fix, nit, and dropped. The judge alone classifies; this skill alone marks each must-fix as fixable in this run or as requiring a decision. Judge unavailable → `BLOCKED`, name it, **Stop**; no inline substitute.
 
 3. **Veto.** Send the rubber-duck every must-fix survivor per [`rubber-duck-review.md`](../../references/rubber-duck-review.md). A duck refutation vetoes autonomous action → escalate, never fix. A candidate the duck raises gets one bounded judge follow-up containing only that candidate, its prior classification, and the scope; reconcile that result without another duck or judge loop. Missing follow-up judge → `BLOCKED`, **Stop**. Rubber-duck unavailable under `--fix` → degrade to report-only: report the must-fix queue and land nothing, since the veto is what licenses autonomous fixing.
 
@@ -95,5 +95,5 @@ Relay findings as `Finding:` / `Where:` / `Action:`, verifying each cause → ef
 | **Runs after** | Slice-done (including user/API re-review after `/al-steer` strips `review: clean`) or feature-done |
 | **Hands off to** | `/al-implement`, `/al-refine`, `/al-page-script`, `/al-user-verification`, `/al-validate-breaking-changes`, or `/al-steer` as above |
 | **Calls directly** | `/al-build`; one rubber-duck veto pass per review pass |
-| **Spawns** | The mode's `al-review-cr-*` lenses (five per-slice, six per-feature), `al-review-judge`, bounded judge follow-up, and under `--fix` `al-red-green` |
+| **Spawns** | The mode's lenses (five per-slice, six per-feature, per [`review-lenses.md`](../../references/review-lenses.md)), `al-review-judge`, bounded judge follow-up, and under `--fix` `al-red-green` |
 | **Replan venue** | `/al-steer` only for escalation classes |

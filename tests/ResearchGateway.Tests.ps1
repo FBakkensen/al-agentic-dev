@@ -31,7 +31,7 @@ Describe 'al-researcher gateway ownership' {
 
     It 'pins the shipped plugin release version' {
         $manifest = Get-Content -LiteralPath (Join-Path $script:PluginRoot 'plugin.json') -Raw | ConvertFrom-Json
-        $manifest.version | Should -Be '5.1.0'
+        $manifest.version | Should -Be '5.2.0'
     }
 
     It 'contains no shipped slash-command references to al-research' {
@@ -76,18 +76,18 @@ Describe 'al-researcher gateway ownership' {
             'al-debug-logging',
             'al-design-option',
             'al-red-green',
-            'al-review-cr-appsource',
-            'al-review-cr-bc',
-            'al-review-cr-bugscan',
-            'al-review-cr-comments',
-            'al-review-cr-compliance',
-            'al-review-cr-perf',
+            'al-review-appsource',
+            'al-review-assertions',
+            'al-review-bc',
+            'al-review-bugscan',
+            'al-review-comments',
+            'al-review-compliance',
+            'al-review-coverage',
             'al-review-judge',
-            'al-review-refactor-bc',
-            'al-review-refactor-naming',
-            'al-review-refactor-perf',
-            'al-review-refactor-simplify',
-            'al-review-refactor-structural'
+            'al-review-objects',
+            'al-review-perf',
+            'al-review-simplify',
+            'al-review-structural'
         )
 
         foreach ($agentName in $researchCallers) {

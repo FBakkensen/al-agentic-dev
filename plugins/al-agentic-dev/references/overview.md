@@ -65,22 +65,24 @@ The plugin ships 18 custom agents. The rubber-duck is not one of them — it is 
 |---|---|---|
 | `al-debug-logging` | Adds temporary `Session.LogMessage` probes, runs the supplied harness, and queries Application Insights through its embedded Telemetry Buddy MCP. Not user-invocable; every `DEBUG-*` probe must be gone before commit. | Any skill or custom agent blocked on an unresolved runtime path |
 | `al-red-green` | One AAA case RED→GREEN: write the failing test, confirm RED, write minimal production code, confirm GREEN, return an outcome note. No in-loop escalation. | `/al-implement` (per case), `/al-code-review --fix` (per must-fix finding) |
-| `al-review-cr-compliance` | `/al-code-review` lens 1: project compliance, naming, scope, grounding, surface reconciliation. | `/al-code-review` |
-| `al-review-cr-bugscan` | `/al-code-review` lens 2: correctness and obvious logic faults. | `/al-code-review` |
-| `al-review-cr-bc` | `/al-code-review` lens 3: BC-specific anti-patterns using `al-researcher` evidence. | `/al-code-review` |
-| `al-review-cr-comments` | `/al-code-review` lens 4: code-comment invariants + git history context. | `/al-code-review` |
-| `al-review-cr-appsource` | `/al-code-review` lens 5: AppSource public-surface addition lock-in (per-feature only). | `/al-code-review` |
-| `al-review-cr-perf` | `/al-code-review` lens 6: performance via al-performance MCP `scan_al_code`. Read-only — it holds no fixer. | `/al-code-review` |
-| `al-review-refactor-simplify` | `/al-refactor` lens 1: dedup, dead code, speculative generality. | `/al-refactor` |
-| `al-review-refactor-bc` | `/al-refactor` lens 2: BC best-practice + platform-reinvention using `al-researcher` evidence. | `/al-refactor` |
-| `al-review-refactor-structural` | `/al-refactor` lens 3: decision-logic boundary, depth over indirection, seam introduction. | `/al-refactor` |
-| `al-review-refactor-naming` | `/al-refactor` lens 4: BC vocabulary + project terminology naming. | `/al-refactor` |
-| `al-review-refactor-perf` | `/al-refactor` lens 5: performance via al-performance MCP, structural reshapes only. Read-only — it holds no fixer. | `/al-refactor` |
-| `al-review-judge` | Dedups, substantiates, and ranks one supplied batch of `/al-code-review` or `/al-refactor` lens findings against its scoped diff. | `/al-code-review`, `/al-refactor` |
+| `al-review-compliance` | Lens: project and domain compliance, BC/project naming, scope, grounding, surface reconciliation. Runs in every mode. | `/al-code-review`, `/al-refactor` |
+| `al-review-coverage` | Lens: behaviour a plan or design claims and never proves. | the design and refine gates |
+| `al-review-structural` | Lens: decision-logic boundary, depth over indirection, seam shape. | `/al-refactor`, the design and refine gates |
+| `al-review-bc` | Lens: BC-specific anti-patterns and platform reinvention using `al-researcher` evidence. | `/al-code-review`, `/al-refactor`, the design gate |
+| `al-review-perf` | Lens: performance via al-performance MCP `scan_al_code`. Read-only — it holds no fixer. | `/al-code-review`, `/al-refactor` |
+| `al-review-appsource` | Lens: AppSource public-surface addition lock-in (per-feature only under `/al-code-review`). | `/al-code-review`, the design gate |
+| `al-review-bugscan` | Lens: correctness and obvious logic faults. | `/al-code-review` |
+| `al-review-comments` | Lens: code-comment invariants + git history context. | `/al-code-review` |
+| `al-review-simplify` | Lens: dedup, dead code, speculative generality. | `/al-refactor` |
+| `al-review-objects` | Lens: a task's `New and Modified Objects` entries against the workspace and `architecture.md`. | the refine gate |
+| `al-review-assertions` | Lens: AAA cases whose assertions would pass without the behaviour under test. | the refine gate |
+| `al-review-judge` | Dedups, substantiates, and ranks one supplied batch of lens findings against its scoped artifact, in the mode the caller declares. | `/al-code-review`, `/al-refactor` |
 | `al-researcher` | Resolves one framed AL/BC fact through isolated BC patterns, Learn, symbols, or canonical BCApps source and returns a tagged verdict with quoted evidence. | Any skill, main session, or research-capable custom agent needing BC knowledge beyond direct workspace reading |
 | `al-design-option` | Develops one self-contained architecture candidate under a supplied divergent constraint — `/al-design` fans out three in parallel and chooses among them itself. | `/al-design` |
 | `al-gate-runner` | Runs one supplied build, provision, or breaking-change gate command and relays its authoritative artifacts, no interpretation. | `/al-build`, `/al-provision`, `/al-validate-breaking-changes` |
 | `al-mutant-cycle` | Runs one supplied mutate→gate→revert cycle and returns observed evidence; the caller classifies the mutant. | `/al-mutate` |
+
+Eleven of those agents are review lenses — one per concern, each running under a mode the calling skill declares. Which lenses a gate spawns, what each returns, and how the judge fences its extra rules live in [`review-lenses.md`](review-lenses.md).
 
 ## What the agents need on your machine
 
@@ -90,9 +92,9 @@ Three agents embed an MCP server and start it on demand — nothing to install u
 |---|---|---|
 | `al-researcher` | `bc-code-intelligence-mcp` | Node 18+ and network for `npx` |
 | `al-debug-logging` | `bc-telemetry-buddy` | Node 18+ and network for `npx` |
-| both perf lenses | `al-performance` (pinned `@2.1.3`) | Node 18+ and network, plus **`uv`** — or Python 3.9+ with `mcp[cli]>=1.0.0`, since the scanner is a Python server behind an `npx` launcher |
+| `al-review-perf` | `al-performance` (pinned `@2.1.3`) | Node 18+ and network, plus **`uv`** — or Python 3.9+ with `mcp[cli]>=1.0.0`, since the scanner is a Python server behind an `npx` launcher |
 
-Missing runtime, no network, or a `disabledMcpServers` entry naming the server all land the same way: the agent reports the capability as absent and the run continues without it. The perf lenses say so in one line and the other lenses carry the review.
+Missing runtime, no network, or a `disabledMcpServers` entry naming the server all land the same way: the agent reports the capability as absent and the run continues without it. The perf lens says so in one line and the other lenses carry the review.
 
 ## Persistence layers
 

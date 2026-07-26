@@ -113,7 +113,7 @@ if PriorRec.Get(Rec."Primary Key") then
         exit;                          // no real change → do not cascade / recompute
 ```
 
-The persisted-row comparison behaves identically from UI, code, API, and background, and is unit-provable — AL Runner leaves `xRec` unwired on a code-path field `OnValidate`. alguidelines' No. Series pattern ships the `xRec` change-guard as canonical. This rule wins. The `al-review-cr-bc` lens carries the check.
+The persisted-row comparison behaves identically from UI, code, API, and background, and is unit-provable — AL Runner leaves `xRec` unwired on a code-path field `OnValidate`. alguidelines' No. Series pattern ships the `xRec` change-guard as canonical. This rule wins. The `al-review-bc` lens carries the check.
 
 ## Five kinds of test double
 

@@ -29,21 +29,21 @@ Architectural vocabulary (Module, Interface, Implementation, Seam, Adapter, Dept
 
 ## Lenses
 
-Invoke the 5 lens agents in parallel on the task diff — `al-review-refactor-simplify`, `al-review-refactor-bc`, `al-review-refactor-structural`, `al-review-refactor-naming`, `al-review-refactor-perf`. Each agent body carries its own detection rules, read-only posture, and findings shape; the invocation carries the task diff, plus the changed `.al` files for the perf lens.
+Invoke the 5 lens agents in parallel on the task diff — `al-review-simplify`, `al-review-bc`, `al-review-structural`, `al-review-compliance`, `al-review-perf` — declaring `Mode: refactor` and the scope per [review-lenses.md](../../references/review-lenses.md). Each agent body carries its own detection rules, read-only posture, and findings shape; the invocation carries the task diff, plus the changed `.al` files for the perf lens. A lens returning the invocation-error line is a failed lens: name it in the Gate report, never read it as clean.
 
 | # | Lens | Focused goal |
 |---|---|---|
-| 1 | `al-review-refactor-simplify` | Duplication, dead code, redundant procedures, inline candidates, speculative generality |
-| 2 | `al-review-refactor-bc` | BC anti-patterns and platform reinvention confirmed through `al-researcher` evidence |
-| 3 | `al-review-refactor-structural` | The decision-logic/IO split, depth over indirection, seam shape |
-| 4 | `al-review-refactor-naming` | BC vocabulary and project terminology per `CONTEXT.md`, ADRs, `architecture.md`, `event-model.md` |
-| 5 | `al-review-refactor-perf` | Structural performance reshapes via the al-performance scanner, gated at touched-procedure granularity |
+| 1 | `al-review-simplify` | Duplication, dead code, redundant procedures, inline candidates, speculative generality |
+| 2 | `al-review-bc` | BC anti-patterns and platform reinvention confirmed through `al-researcher` evidence |
+| 3 | `al-review-structural` | The decision-logic/IO split, depth over indirection, seam shape |
+| 4 | `al-review-compliance` | BC vocabulary and project terminology per `CONTEXT.md`, ADRs, `architecture.md`, `event-model.md`; ADR and module-boundary compliance; over-build; the reshape delta against the task's `New and Modified Objects` |
+| 5 | `al-review-perf` | Structural performance reshapes via the al-performance scanner, gated at touched-procedure granularity |
 
 When the diff touches test code, the invocation also names [test-layout.md](../../references/testing/test-layout.md): its authoring contract is exactly what tidy passes break silently. Moving a test across the unit/integration boundary is replan, never a lens call — route `/al-steer`.
 
 ## Judge
 
-Invoke the `al-review-judge` custom agent once, passing the task diff plus all 5 lenses' raw findings blocks. It dedupes the overlap, substantiates each survivor against the diff — defaulting to false-positive when it can't — and classifies. `MUST-FIX` and `SHOULD-FIX` survivors are real reshape opportunities, ranked by the consequence of leaving the diff as it is. `NO-ACTION` survivors are dropped.
+Invoke the `al-review-judge` custom agent once, passing `Mode: refactor`, the task diff, and all 5 lenses' raw findings blocks — never their `Out-of-scope:` notes. It dedupes the overlap, substantiates each survivor against the diff — defaulting to false-positive when it can't — and classifies. `MUST-FIX` and `SHOULD-FIX` survivors are real reshape opportunities, ranked by the consequence of leaving the diff as it is. `NO-ACTION` survivors are dropped.
 
 The judge never chooses apply order, sequences edits, or touches build/workflow state. This skill owns the queue and checks each survivor before it reaches the user. A finding naming no object or observation goes back to its lens.
 
@@ -82,11 +82,13 @@ Seam work is homed in [testability.md](../../references/testing/testability.md).
 
 Every perf survivor joins the queue as a manual reshape. The scanner marks nothing auto-fixable, and its fixer rewrites a whole file with no way to aim it at one occurrence — so it would reach patterns outside this task's diff. Reshape by hand, then delegate the gate through `/al-build`, as for every other queue entry; red reverts that file.
 
-Server absent → the lens's skip note lands in the Gate report and reshape proceeds on the other four lenses.
+Server absent → the perf lens returns exactly `perf scan skipped: al-performance MCP not available` and nothing else. That is degraded coverage, never a clean lens: name it in the Gate report and reshape on the other four lenses.
 
 ## Out-of-scope routing
 
-Non-structural concerns the BC lens's topic store surfaces (AppSource compliance, publisher/subscriber contracts beyond structural reshape) and pure one-line perf fixes belong to `/al-code-review`: surface them as out-of-scope notes in the calling task file, never act on them here.
+Non-structural concerns the lenses surface as `Out-of-scope:` notes — AppSource compliance, publisher/subscriber contracts beyond structural reshape, the direct-`xRec` validation trap, and pure one-line perf fixes — belong to `/al-code-review`: record them in the calling task file, never act on them here. Correcting the `xRec` trap changes when a cascade runs, so it is never a reshape.
+
+A `New and Modified Objects` delta the compliance lens raises is the exception that lands here: reconcile the section under the surgical-edit contract in [task-lifecycle.md](../../references/task-lifecycle.md) when the reshape genuinely moved the production surface, or route `/al-steer` when the delta means the task's scope changed.
 
 ## AppSource compatibility
 
@@ -119,6 +121,6 @@ If state can't be read, fall back: `/al-mutate` after a behaviour-bearing reshap
 | **Runs after**     | `/al-implement` took the current task to green, OR standalone on legacy code |
 | **Hands off to**   | `/al-mutate` (the next rigor step); standalone with no mutation or architecture step warranted, the Gate report ends the run |
 | **Calls directly** | `/al-build` (green between applies) — the only skill it invokes; rubber-duck consult on a non-trivial apply queue per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
-| **Spawns**         | `al-researcher` for BC facts; `al-review-refactor-simplify` / `al-review-refactor-bc` / `al-review-refactor-structural` / `al-review-refactor-naming` / `al-review-refactor-perf` custom agents; `al-review-judge` after the lens pass |
+| **Spawns**         | `al-researcher` for BC facts; the `refactor` mode's five lenses per [review-lenses.md](../../references/review-lenses.md) — `al-review-simplify`, `al-review-bc`, `al-review-structural`, `al-review-compliance`, `al-review-perf`; `al-review-judge` after the lens pass |
 | **Replan venue**   | `/al-steer` |
 | **Sidebands**      | `/al-code-review` (non-structural concerns surface as out-of-scope notes), `/al-design` (standalone-on-legacy surfacing real architecture), `/grill-me` (non-obvious trade-off needs the user) |
