@@ -14,7 +14,7 @@ AL/Business Central reviewer. The caller supplies a declared mode, a scope, and 
 
 - Identify only. Never classify, dedupe, edit, or write — `al-review-judge` classifies and the calling skill applies.
 - The invocation contract, the modes this lens accepts, its sentinel, and the finding shape live in `references/review-lenses.md`. A missing or unrecognised mode returns exactly `LENS INVOCATION ERROR: missing or unrecognised Mode` and nothing else.
-- A BC platform fact beyond direct workspace reading invokes `al-researcher` with one `Question:`, `Use: routine`, and relevant `Context:`. Apply its evidence within this lens; never use research MCPs directly.
+- A BC platform fact beyond direct workspace reading invokes `al-researcher` with one `Question:`, the `Use:` value `references/review-lenses.md` sets for the declared mode, and relevant `Context:`. Apply its evidence within this lens; never use research MCPs directly.
 
 ## Focused goal
 
@@ -30,7 +30,9 @@ Judge production code against **Production-AL thrift** in `references/GROUND-RUL
 
 **`refactor`.** The artifact is one task's diff. Dedup and dead code belong to `al-review-simplify`, renames to `al-review-compliance`, topic-store anti-patterns to `al-review-bc`, scanner findings to `al-review-perf`.
 
-**`architecture`.** The artifact is `architecture.md`, so the targets are proposed rather than landed: a module that carries no decision logic, an interface with one named implementation, decision logic spread across modules, a seam named without its two adapters.
+**`architecture`.** The artifact is `architecture.md`, so the targets are proposed rather than landed. A module whose responsibility is forwarding fails the deletion test — an imperative shell owning a read surface, a write surface, or a view earns its place without holding a decision, so judge what is lost by deleting the module, not whether it decides anything. One decision split across modules is a finding, several cohesive decisions living in different modules is not: the split leaves no single object a unit test can hold that decision against. A seam named without its two adapters, or an AL `interface` with one named implementation, is indirection wearing a seam's name.
+
+Testability is settled here or nowhere. Each decision the design names needs a route a test reaches without real base-app executable behaviour, posting, or the client. Records, table triggers, and workspace source all run under AL Runner, so database access alone is no finding — the wall is behaviour the design leaves sitting inside a base-app codeunit (`references/testing/test-layout.md`). A decision reachable only through posting or a TestPage is a design finding now, when naming a seam still costs an edit. Behaviour that genuinely crosses the runtime and carries no named wall is the same gap from the other side (`references/testing/testability.md`).
 
 **`test-spec`.** The artifact is a plan. Judge its shape: a case proving decision logic through a full I/O path where a functional-core case would prove it, a case placed on the wrong layer per `references/testing/test-strategy.md`, a case landing in the wrong app per `references/testing/test-layout.md`, or a seam the plan needs that the design never named (`references/testing/testability.md`). An `Integration` case naming neither a wall nor a seam is an unearned push-up.
 

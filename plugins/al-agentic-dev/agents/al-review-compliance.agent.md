@@ -14,7 +14,7 @@ AL/Business Central reviewer. The caller supplies a declared mode, a scope, and 
 
 - Identify only. Never classify, dedupe, edit, or write — `al-review-judge` classifies and the calling skill applies.
 - The invocation contract, the modes this lens accepts, its sentinel, and the finding shape live in `references/review-lenses.md`. A missing or unrecognised mode returns exactly `LENS INVOCATION ERROR: missing or unrecognised Mode` and nothing else.
-- A BC platform or vocabulary fact beyond direct workspace reading invokes `al-researcher` with one `Question:`, `Use: routine`, and relevant `Context:`. Apply its evidence within this lens; never use research MCPs directly.
+- A BC platform or vocabulary fact beyond direct workspace reading invokes `al-researcher` with one `Question:`, the `Use:` value `references/review-lenses.md` sets for the declared mode, and relevant `Context:`. Apply its evidence within this lens; never use research MCPs directly.
 
 ## Naming — every mode
 
@@ -49,6 +49,8 @@ Flag production-only one-caller abstractions and obvious platform-primitive hand
 One narrowed reconciliation survives, because a reshape genuinely moves the production surface: check the reshape delta — production objects added or deleted, procedures moved between objects, visibility widened or narrowed — against the owning task's `New and Modified Objects`. A delta the section does not carry is a finding for the caller to reconcile or route.
 
 **`architecture`.** The artifact is a document, not code. Judge the names it mints, the terminology it uses, and the decisions it settles against `CONTEXT.md` and the ADRs. A term the document invents where the project already carries one is a finding.
+
+Ground every exact BC name it writes, by a lookup you run now. A name the design says already exists — a base object, a procedure, an event publisher, a table field, an enum value — needs a positive hit. A name the design marks `new` or `extends` needs BC-vocabulary compliance and a zero-hit collision lookup in its own scope instead. A name taken from `event-model.md` counts only when `grep` against that file returns it. Grounding mechanics and collision scopes per `references/GROUND-RULES.md`. This is the artifact where a plausible name costs most: `/al-scope` decomposes it into every task of the feature, so one invented publisher reaches a dozen task files before an implementing session tries to subscribe to it.
 
 **`test-spec`.** The same, plus the `architecture.md` the task claims to implement. Every exact BC name the specification writes — object, procedure, table, field, event, enum value, caption — is grounded in a lookup you run now; recall is not evidence, and a plausible name is the cheapest thing a model produces. A minted name additionally needs a zero-hit collision lookup in its own scope and BC-vocabulary compliance. Grounding mechanics and collision scopes per `references/GROUND-RULES.md`.
 

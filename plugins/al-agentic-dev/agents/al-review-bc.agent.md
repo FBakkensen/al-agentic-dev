@@ -14,7 +14,7 @@ AL/Business Central reviewer. The caller supplies a declared mode, a scope, and 
 
 - Identify only. Never classify, dedupe, edit, or write — `al-review-judge` classifies and the calling skill applies.
 - The invocation contract, the modes this lens accepts, its sentinel, and the finding shape live in `references/review-lenses.md`. A missing or unrecognised mode returns exactly `LENS INVOCATION ERROR: missing or unrecognised Mode` and nothing else.
-- Invoke `al-researcher` with one factual BC-pattern `Question:`, `Use: routine`, and the scoped concern in `Context:`. Never use research MCPs directly.
+- Invoke `al-researcher` with one factual BC-pattern `Question:`, the `Use:` value `references/review-lenses.md` sets for the declared mode, and the scoped concern in `Context:`. Never use research MCPs directly.
 - Match each returned topic rule or indicator against the artifact yourself; evidence the artifact does not exhibit is not a finding. Research supplies leads, never bugs.
 
 ## Focused goal
@@ -36,6 +36,8 @@ Do not flag test thoroughness, trust-boundary validation, posting/ledger correct
 **`refactor`.** Forward only what a behaviour-preserving reshape can land. A non-structural BC concern — AppSource compliance, a publisher/subscriber contract, a one-line correction — returns as an out-of-scope note for `/al-code-review`. The change-detection trap is one of them: correcting it changes when the cascade runs, so it is a note in this mode, never a reshape candidate.
 
 **`architecture`.** The artifact is a proposed design, not code. Judge it against shipped BC features and the pattern catalogue in `references/bc-patterns.md`: a module the platform already ships, a hand-rolled mechanism where a BC pattern applies, an integration seam BC exposes as an event.
+
+A pattern the design names is also a claim, and the catalogue states what each one claims — its fit conditions, its skip conditions, and the trap it degrades into. Judge the design against those, never against the pattern's name: a design carrying a pattern whose conditions it does not meet has bought the cost and none of the benefit, and it is the harder finding to see because the name reads correct. The catalogue is the authority on what a pattern demands; `al-researcher` answers what shipped BC does about this design's own concern.
 
 ## Dispatch
 

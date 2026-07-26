@@ -154,6 +154,7 @@ Describe 'Review gate wiring' {
         $script:Gates = [ordered]@{
             'al-code-review' = @('code-review')
             'al-refactor'    = @('refactor')
+            'al-design'      = @('architecture')
             'al-refine'      = @('test-spec', 'verification-plan')
         }
     }
@@ -190,6 +191,13 @@ Describe 'Review gate wiring' {
 }
 
 Describe 'Plan-gate stop shape' {
+    BeforeAll {
+        # Both plan gates review an artifact the calling session authored minutes
+        # earlier, so both reuse the shared stop shape rather than forking it.
+        $script:PlanGates = @('al-refine', 'al-design')
+        $script:DesignBody = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-design\SKILL.md') -Raw
+    }
+
     It 'homes the dispositions and the plugin-gap record in the shared reference' {
         $script:ReferenceText | Should -Match 'A blocking finding on a plan'
 
@@ -198,15 +206,61 @@ Describe 'Plan-gate stop shape' {
         }
     }
 
-    It 'points the refine gate at that home rather than forking it' {
-        $body = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-refine\SKILL.md') -Raw
-        $body | Should -Match 'A blocking finding on a plan'
-        $body | Should -Not -Match ([regex]::Escape('Plugin gap:'))
+    It 'points every plan gate at that home rather than forking it' {
+        foreach ($skill in $script:PlanGates) {
+            $body = Get-Content -LiteralPath (Join-Path $script:SkillsRoot "$skill\SKILL.md") -Raw
+            $body | Should -Match 'A blocking finding on a plan' -Because "/$skill reuses the shared stop shape"
+            $body | Should -Not -Match ([regex]::Escape('Plugin gap:')) -Because "/$skill must not fork the record"
+        }
+    }
+
+    It 'sends every plan gate batch through the judge' {
+        foreach ($skill in $script:PlanGates) {
+            $body = Get-Content -LiteralPath (Join-Path $script:SkillsRoot "$skill\SKILL.md") -Raw
+            $body | Should -Match 'al-review-judge' -Because "/$skill judges its own fleet's batch"
+        }
     }
 
     It 'keeps the retired rubber-duck consult out of the refine gate' {
         $body = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-refine\SKILL.md') -Raw
         $body | Should -Not -Match 'rubber-duck'
+    }
+
+    It 'confines the design gate rubber-duck to the candidate pick' {
+        $script:DesignBody | Should -Match 'rubber-duck'
+
+        $start = $script:DesignBody.IndexOf('## Review gate')
+        $end = $script:DesignBody.IndexOf('## Next step')
+        $start | Should -BeGreaterThan 0
+        $end | Should -BeGreaterThan $start
+
+        $gate = $script:DesignBody.Substring($start, $end - $start)
+        $gate | Should -Not -Match 'rubber-duck' -Because 'the fleet, not the duck, reviews the written artifact'
+    }
+
+    It 'runs the cheap document-integrity check before the design fleet' {
+        $script:DesignBody.IndexOf('## Document verification') | Should -BeGreaterThan 0
+        $script:DesignBody.IndexOf('## Review gate') |
+            Should -BeGreaterThan $script:DesignBody.IndexOf('## Document verification')
+    }
+
+    It 'holds the /al-scope handoff on a surviving must-fix' {
+        $script:DesignBody | Should -Match ([regex]::Escape('holds the `/al-scope` handoff'))
+    }
+}
+
+Describe 'Architecture-mode evidence bar' {
+    It 'homes the durable-artifact bar in the shared reference' {
+        $script:ReferenceText | Should -Match ([regex]::Escape('Use: durable artifact architecture.md'))
+    }
+
+    It 'leaves no architecture lens pinning its own research bar' {
+        foreach ($lens in $script:Membership.Keys) {
+            if ($script:Membership[$lens] -notcontains 'architecture') { continue }
+
+            $body = Get-Content -LiteralPath (Join-Path $script:AgentsRoot "$lens.agent.md") -Raw
+            $body | Should -Not -Match ([regex]::Escape('`Use: routine`')) -Because "$lens takes its bar from review-lenses.md"
+        }
     }
 }
 

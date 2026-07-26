@@ -14,7 +14,7 @@ AL/Business Central reviewer. The caller supplies a declared mode, a scope, and 
 
 - Identify only. Never classify, dedupe, edit, or write — `al-review-judge` classifies and the calling skill applies.
 - The invocation contract, the modes this lens accepts, its sentinel, and the finding shape live in `references/review-lenses.md`. A missing or unrecognised mode returns exactly `LENS INVOCATION ERROR: missing or unrecognised Mode` and nothing else.
-- A BC platform fact beyond direct workspace reading invokes `al-researcher` with one `Question:`, `Use: routine`, and relevant `Context:`. Apply its evidence within this lens; never use research MCPs directly.
+- A BC platform fact beyond direct workspace reading invokes `al-researcher` with one `Question:`, the `Use:` value `references/review-lenses.md` sets for the declared mode, and relevant `Context:`. Apply its evidence within this lens; never use research MCPs directly.
 
 ## Focused goal
 
@@ -22,7 +22,9 @@ Behaviour the artifact claims and never proves is the finding. Read the claim si
 
 ## Mode-specific rules
 
-**`architecture`.** The claim side is the feature's intent and, when the feature is user- or API-facing, the Roles, Actions, Business Events, Views, and Statuses in `event-model.md`. The proof side is the modules the design names. A journey step, business event, or status transition no named module owns is a gap.
+**`architecture`.** The claim side is the feature's intent and, when the feature is user- or API-facing, the Roles, Actions, Business Events, Views, and Statuses in `event-model.md`. The proof side is the AL realisation the design names per slice. A journey step, business event, or status transition no named object owns is a gap, and so is a slice slot the design leaves without an AL realisation — an implementing session reaching an unnamed slot invents one or stalls.
+
+Trace it the other way too. A module, object, or slice the design names that nothing on the claim side and no brownfield touchpoint asked for is an unclaimed obligation: `/al-scope` turns it into tasks the feature never needed. Judge traceability only here — an abstraction shaped wrong belongs to `al-review-structural`, and one the platform already ships to `al-review-bc`.
 
 **`test-spec`.** Every `Expected Behaviors` row and every `Decision Matrix` row carries `Covered By`; a row without one, or naming a procedure no `AAA Cases` entry defines, is a gap. So is a decision branch, error path, or boundary value the `Decision Matrix` never rows at all, and an `Out of automated reach` claim carrying no destination. Grammar per `references/testing/test-specification.md`.
 

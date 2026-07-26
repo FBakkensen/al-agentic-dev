@@ -52,6 +52,8 @@ LENS INVOCATION ERROR: missing or unrecognised Mode
 
 as its only line — never its sentinel, never a finding block.
 
+A lens's own `al-researcher` call carries `Use: routine`: a finding is ephemeral and the caller decides what survives it. `architecture` mode is the exception. What a lens confirms there stays in an artifact `/al-scope` decomposes into every task of the feature, so the call carries `Use: durable artifact architecture.md` and a `SINGLE-SOURCE` verdict settles nothing — the same bar the design gate holds itself to.
+
 ## Terminal states
 
 | State | Shape | The caller reads it as |

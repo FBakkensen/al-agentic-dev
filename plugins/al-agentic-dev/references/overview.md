@@ -41,7 +41,7 @@ The plugin ships 18 skills.
 | `/al-agentic-dev-overview` | Tour of this plugin: pipeline, skills, persistence, cold-start. | "What is al-agentic-dev?", "show me the pipeline", "where do I start from scratch" (no `specs/` folder yet). Mid-feature "where are we?" goes to `/al-steer`. |
 | `/al-grill-adr` | Domain-aware grilling. Sharpens BC vocabulary against `CONTEXT.md`, cross-references intent with the codebase, offers domain ADRs only when a hard-to-reverse business rule earns one. | Idea is rough; you want it grilled before settling intent. |
 | `/al-event-model` | User-facing journey: `event-model.md` in BC vocabulary (Role / Action / Business Event / View / Status). | User- or API-facing feature, after `/al-grill-adr`. Backend-only features skip this. |
-| `/al-design` | Feature architecture: `architecture.md`, from the idea or `event-model.md`. | After `/al-event-model` for user/API features, or after `/al-grill-adr` for backend-only. |
+| `/al-design` | Feature architecture: `architecture.md`, from the idea or `event-model.md`. A review-lens fleet reads the written artifact blind before the `/al-scope` handoff — 5 lenses in `architecture` mode — and a must-fix holds the gate. | After `/al-event-model` for user/API features, or after `/al-grill-adr` for backend-only. |
 | `/al-scope` | Decomposes `architecture.md` into a slice-grouped `tasks/` folder, one verification task per slice when `event-model.md` is present, bracketed by the two ops tasks. | After `/al-design`, before `/al-provision` on the bracketed `T-001` task. |
 | `/al-provision` | Runs the `kind: provision` task: refresh the build environment (compiler, symbols, analyzers, and — when enabled — the breaking-change baseline) via `/al-build`'s `provision.ps1`, flip the task `done`/`blocked`. | Any `kind: provision` task at `ready`, or a re-run after you clear the named blocker. |
 | `/al-validate-breaking-changes` | Runs the `kind: breaking-change` task: validate against the provisioned baseline via `validate-breaking-changes.ps1`, flip the task `done`/`blocked`; a detected break stops for a human. | The feature's last task, or a re-run after you clear the blocker from a failed run. |
@@ -71,13 +71,13 @@ The plugin ships 19 custom agents. The rubber-duck is not one of them — it is 
 | `al-review-structural` | Lens: decision-logic boundary, depth over indirection, seam shape. | `/al-refactor`, the design and refine gates |
 | `al-review-bc` | Lens: BC-specific anti-patterns and platform reinvention using `al-researcher` evidence. | `/al-code-review`, `/al-refactor`, the design gate |
 | `al-review-perf` | Lens: performance via al-performance MCP `scan_al_code`. Read-only — it holds no fixer. | `/al-code-review`, `/al-refactor` |
-| `al-review-appsource` | Lens: AppSource public-surface addition lock-in (per-feature only under `/al-code-review`). | `/al-code-review`, the design gate |
+| `al-review-appsource` | Lens: the AppSource contract — public-surface addition lock-in, base-app modification over interception, shipped-surface lifecycle (per-feature only under `/al-code-review`). | `/al-code-review`, the design gate |
 | `al-review-bugscan` | Lens: correctness and obvious logic faults. | `/al-code-review` |
 | `al-review-comments` | Lens: code-comment invariants + git history context. | `/al-code-review` |
 | `al-review-simplify` | Lens: dedup, dead code, speculative generality. | `/al-refactor` |
 | `al-review-objects` | Lens: a task's `New and Modified Objects` entries against the workspace and `architecture.md`. | the refine gate |
 | `al-review-assertions` | Lens: AAA cases whose assertions would pass without the behaviour under test. | the refine gate |
-| `al-review-judge` | Dedups, substantiates, and ranks one supplied batch of lens findings against its scoped artifact, in the mode the caller declares. | `/al-code-review`, `/al-refactor`, the refine gate |
+| `al-review-judge` | Dedups, substantiates, and ranks one supplied batch of lens findings against its scoped artifact, in the mode the caller declares. | `/al-code-review`, `/al-refactor`, the design and refine gates |
 | `al-researcher` | Resolves one framed AL/BC fact through isolated BC patterns, Learn, symbols, or canonical BCApps source and returns a tagged verdict with quoted evidence. | Any skill, main session, or research-capable custom agent needing BC knowledge beyond direct workspace reading |
 | `al-design-option` | Develops one self-contained architecture candidate under a supplied divergent constraint — `/al-design` fans out three in parallel and chooses among them itself. | `/al-design` |
 | `al-gate-runner` | Runs one supplied build, provision, or breaking-change gate command and relays its authoritative artifacts, no interpretation. | `/al-build`, `/al-provision`, `/al-validate-breaking-changes` |

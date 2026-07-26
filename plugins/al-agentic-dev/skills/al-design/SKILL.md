@@ -77,11 +77,19 @@ Present all three sequentially. Compare along **depth** / **locality** / **seam 
 
 ## Document verification
 
-Between writing `architecture.md` and the close, run the document-integrity check yourself, inline, no subagent. Check against [doc-integrity.md](../../references/doc-integrity.md): the `architecture.md` profile and sibling consistency in the spec folder. A **fail** blocks the close and the `/al-scope` handoff — fix it or route to `/al-steer`. A **warn** rides in the close. The check judges structure only, never whether the architecture is the best design.
+Between writing `architecture.md` and the close, run the document-integrity check yourself, inline, no subagent. Check against [doc-integrity.md](../../references/doc-integrity.md): the `architecture.md` profile and sibling consistency in the spec folder. It is mechanical and cheap, so it runs before the review gate below — a structurally broken artifact should not cost a lens fleet — and again on any regenerated text. A **fail** blocks the close and the `/al-scope` handoff — fix it or route to `/al-steer`. A **warn** rides in the close. The check judges structure only, never whether the architecture is the best design; that is the review gate's job.
+
+## Review gate
+
+The session that wrote this artifact is its worst reader — it chose the candidate and wrote the file, and its own rationale stands by to argue every finding down. `/al-scope` decomposes `architecture.md` into every task of the feature, so a wrong module boundary or an unearned seam reaches a dozen task files before anything catches it. A fresh fleet reads the written artifact blind before the `/al-scope` handoff, per [review-lenses.md](../../references/review-lenses.md).
+
+Spawn the five lenses in parallel, declaring `Mode: architecture`, the scope, and the artifact: `al-review-compliance`, `al-review-coverage`, `al-review-structural`, `al-review-bc`, `al-review-appsource`. Each invocation carries `architecture.md`, `event-model.md` when present, `CONTEXT.md`, the domain and design ADRs, and the brownfield touchpoints. Then invoke `al-review-judge` once with the same declared mode, the artifact, and every lens's raw finding blocks — never their `Out-of-scope:` notes, which this skill routes itself.
+
+A surviving `MUST-FIX` holds the `/al-scope` handoff. Report, tag, question, and re-review per **A blocking finding on a plan** in [review-lenses.md](../../references/review-lenses.md). Upstream at this gate means the wrong artifact is under repair: a slice `event-model.md` settled badly, a term `CONTEXT.md` already owns, a decision an ADR already made the other way. Everything else is a design this session can rewrite.
 
 ## Next step
 
-Close with the task-close gate report ([GROUND-RULES.md](../../references/GROUND-RULES.md) House shapes). It gives the user the evidence for the greenlight call on `/al-scope`, naming the chosen BC pattern and the core boundary as how the feature fits. `architecture.md` landed with no integrity fail → `Next: /al-scope`. `al-researcher` returned `CONFLICT` or `UNRESOLVED` → `Next: /al-steer`. A domain rule is unsettled → `Next: /al-grill-adr`. The decomposition needs a new decision → `Next: /al-steer`.
+Close with the task-close gate report ([GROUND-RULES.md](../../references/GROUND-RULES.md) House shapes). It gives the user the evidence for the greenlight call on `/al-scope`, naming the chosen BC pattern and the core boundary as how the feature fits. `architecture.md` landed with no integrity fail and a clear review gate → `Next: /al-scope`. A `MUST-FIX` surviving the review gate → no handoff and no gate report: close with the tagged findings and the lettered question. `al-researcher` returned `CONFLICT` or `UNRESOLVED` → `Next: /al-steer`. A domain rule is unsettled → `Next: /al-grill-adr`. The decomposition needs a new decision → `Next: /al-steer`.
 
 ## Composition
 
@@ -90,6 +98,6 @@ Close with the task-close gate report ([GROUND-RULES.md](../../references/GROUND
 | **Runs after**     | `/al-event-model` (user/API-facing features) or `/al-grill-adr` (backend-only) |
 | **Hands off to**   | `/al-scope` (decomposes `architecture.md` into the slice-grouped `tasks/` folder) |
 | **Calls directly** | no skills; rubber-duck consult on the candidate pick |
-| **Spawns**         | `al-researcher` for BC facts; `al-design-option` custom agent, three parallel calls (non-trivial designs only) |
+| **Spawns**         | `al-researcher` for BC facts; `al-design-option` custom agent, three parallel calls (non-trivial designs only); the five `architecture` lenses per [review-lenses.md](../../references/review-lenses.md), then `al-review-judge` |
 | **Replan venue**   | `/al-steer` |
 | **Sidebands**      | `/grill-me` (candidate picks that are the user's call) |
