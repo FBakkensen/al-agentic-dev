@@ -74,7 +74,7 @@ Seam work is homed in [testability.md](../../references/testing/testability.md).
 
 ### Renames
 
-- A test-procedure rename requires task-spec reconciliation — update the AAA header, `Procedure:`, and `Covered By` in the same change when the task is active. An intent shift routes through `/al-refine`.
+- A test-procedure rename requires task-spec reconciliation — update the AAA case header and `Covered By` in the same change when the task is active. An intent shift routes through `/al-refine`.
 - `[HandlerFunctions('...')]` strings are invisible to symbol tools; grep before any test-procedure rename per [tdd.md](../../references/testing/tdd.md).
 - A rename pulling a BC name or verb from outside the codebase is grounded per [GROUND-RULES.md](../../references/GROUND-RULES.md) before it lands; conflicts invoke `al-researcher` with `Use: resolve conflict`.
 

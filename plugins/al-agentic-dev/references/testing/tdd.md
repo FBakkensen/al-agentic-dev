@@ -1,6 +1,6 @@
 # AL TDD
 
-Task grammar: [test-specification.md](test-specification.md). Execution pyramid: [test-strategy.md](test-strategy.md). Placement: [test-layout.md](test-layout.md).
+Task grammar: [task-grammar.md](../task-grammar.md). Execution pyramid: [test-strategy.md](test-strategy.md). Placement: [test-layout.md](test-layout.md).
 
 TDD applies to all new development, feature changes, and bug fixes. The only exception is the user explicitly saying to skip ("skip TDD", "no tests", "without TDD"). "Quickly add X" does not count.
 

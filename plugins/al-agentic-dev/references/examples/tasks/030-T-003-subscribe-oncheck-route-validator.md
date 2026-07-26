@@ -40,7 +40,6 @@ Out of automated reach:
 ## AAA Cases
 
 ### PostsSalesOrderWithBalancedAllocation
-Procedure: `PostsSalesOrderWithBalancedAllocation`
 Scope: Integration
 Covers: R1
 Arrange:
@@ -52,7 +51,6 @@ Assert:
 - Posting Date matches the Sales Order.
 
 ### BlocksPostingWithMismatchedAllocation
-Procedure: `BlocksPostingWithMismatchedAllocation`
 Scope: Integration
 Covers: R2
 Arrange:

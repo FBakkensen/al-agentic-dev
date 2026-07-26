@@ -26,7 +26,7 @@ Behaviour the artifact claims and never proves is the finding. Read the claim si
 
 Trace it the other way too. A module, object, or slice the design names that nothing on the claim side and no brownfield touchpoint asked for is an unclaimed obligation: `/al-scope` turns it into tasks the feature never needed. Judge traceability only here — an abstraction shaped wrong belongs to `al-review-structural`, and one the platform already ships to `al-review-bc`.
 
-**`test-spec`.** Every `Expected Behaviors` row and every `Decision Matrix` row carries `Covered By`; a row without one, or naming a procedure no `AAA Cases` entry defines, is a gap. So is a decision branch, error path, or boundary value the `Decision Matrix` never rows at all, and an `Out of automated reach` claim carrying no destination. Grammar per `references/testing/test-specification.md`.
+**`test-spec`.** A decision branch, error path, or boundary value the `Decision Matrix` never rows at all is a gap, and so is an `Out of automated reach` claim carrying no destination. Judge whether the rows are the right rows; whether each row resolves to a procedure is the document-integrity check's. Grammar per `references/task-grammar.md`.
 
 **`verification-plan`.** Every user-visible outcome the slice promises carries a `Journey Examples` or `Contract Examples` entry, and so does every exception path and boundary its Statuses admit — the error the developer is shown, the transition it blocks. An `Exploration Charters` entry standing in for a missing example is a gap, not coverage. An example whose `Observable Checks` read internal state rather than what the user or the client can see proves nothing at this layer, and counts as an uncovered outcome.
 

@@ -35,7 +35,6 @@ Contract notes:
 ## AAA Cases
 
 ### ShowsAllocationMismatchBreakdown
-Procedure: `ShowsAllocationMismatchBreakdown`
 Scope: Integration
 Covers: B1
 Arrange:
@@ -49,7 +48,6 @@ Assert:
 - Overflow row is marked as imbalance.
 
 ### HidesBreakdownAfterAllocationCorrection
-Procedure: `HidesBreakdownAfterAllocationCorrection`
 Scope: Integration
 Covers: B2
 Arrange:

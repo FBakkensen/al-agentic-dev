@@ -31,7 +31,6 @@ Allocation validation protects posting correctness by rejecting Sales Orders whe
 ## AAA Cases
 
 ### AcceptsBalancedAllocationQuantity
-Procedure: `AcceptsBalancedAllocationQuantity`
 Scope: Unit
 Covers: R1
 Arrange:
@@ -43,7 +42,6 @@ Assert:
 - Result is balanced.
 
 ### RejectsShortfallAllocationQuantity
-Procedure: `RejectsShortfallAllocationQuantity`
 Scope: Unit
 Covers: R2
 Arrange:
@@ -56,7 +54,6 @@ Assert:
 - Shortfall is 2.
 
 ### RejectsOverflowAllocationQuantity
-Procedure: `RejectsOverflowAllocationQuantity`
 Scope: Unit
 Covers: R3
 Arrange:

@@ -33,6 +33,8 @@ BC training data is stale fiction. Every exact BC name — object, procedure, ev
 
 Gate execution belongs to the isolated `al-gate-runner`: its relay is the authoritative result, and its isolation keeps verbose build output out of the caller's context. A skill or agent needing the build gate delegates it through `/al-build`. The user starts the ops gates, `/al-provision` and `/al-validate-breaking-changes`, and each hands its own one command to the same worker.
 
+A write to a per-task file under `tasks/` is followed by that file's `tasks/` checks from [doc-integrity.md](doc-integrity.md), run inline by the writing skill before it closes — a one-field `status:` flip as much as a regenerated body. The body's shape is [task-grammar.md](task-grammar.md)'s.
+
 ## BC vocabulary
 
 A term naming a whole discipline with no BC equivalent — TDD, red/green, mutation testing, AAA — keeps its name and its density. Any word with a BC-domain rival takes the BC side: Insert not create, Modify not mutate or update, Delete not remove, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, No. not ID, procedure not method, codeunit not class, test data not fixture. The litmus — the term appears in BaseApp source or Microsoft Learn BC docs — governs only words with a BC-domain rival; exact platform and tool names (Git, Markdown, frontmatter, MCP, Copilot) stay exact.

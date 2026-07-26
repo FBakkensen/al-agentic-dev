@@ -49,7 +49,7 @@ A procedure is either a **command** (causes an effect — `Insert`/`Modify`/`Del
 _Avoid_: "getter/setter" (too OO, misses the no-effect guarantee), "side-effect-free" (only half — names the query, not the command).
 
 **Functional core, imperative shell** _(Bernhardt)_
-The pure core — decisions computed from parameters alone, no DB, no external calls — is the unit-test surface; `Access = Internal` makes it test-accessible without crossing the external interface. The shell performs the reads (`Get`/`Find*`, events subscribed) and the writes (`Insert` / `Modify` / `Delete`, telemetry, errors, events published), passing read results into the core as parameters. Technical proof has two surfaces: Integration tests cross the external interface end-to-end; Unit tests target the core directly with stubbed collaborators. See [tdd.md](testing/tdd.md), [test-specification.md](testing/test-specification.md), and [testability.md](testing/testability.md).
+The pure core — decisions computed from parameters alone, no DB, no external calls — is the unit-test surface; `Access = Internal` makes it test-accessible without crossing the external interface. The shell performs the reads (`Get`/`Find*`, events subscribed) and the writes (`Insert` / `Modify` / `Delete`, telemetry, errors, events published), passing read results into the core as parameters. Technical proof has two surfaces: Integration tests cross the external interface end-to-end; Unit tests target the core directly with stubbed collaborators. See [tdd.md](testing/tdd.md), [task-grammar.md](task-grammar.md), and [testability.md](testing/testability.md).
 _Avoid_: treating the split as a label slapped on an existing tangle — the split *is* the refactor.
 
 ## Behavioural decomposition

@@ -31,7 +31,7 @@ The task's `New and Modified Objects` section is the production surface `/al-imp
 - A production object the `AAA Cases` assertions require that no entry names, and its mirror: a listed object no case ever exercises.
 - A test codeunit or test procedure listed here — those belong in `AAA Cases` and `Covered By`.
 
-Grammar and lede semantics per `references/testing/test-specification.md`; minted names ground per `references/GROUND-RULES.md`.
+Grammar and lede semantics per `references/task-grammar.md`; minted names ground per `references/GROUND-RULES.md`.
 
 ## Return
 

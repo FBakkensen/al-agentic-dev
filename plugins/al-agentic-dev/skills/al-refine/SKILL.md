@@ -7,7 +7,7 @@ description: "One `status: ready` task to a fresh Test Specification or Verifica
 
 Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file output. This is the compaction recovery path; point there rather than restating its rules.
 
-One named `status: ready` task in `tasks/` gets its `Test Specification` or `Verification Plan` regenerated from the current app and tests, in the grammar of [test-specification.md](../../references/testing/test-specification.md). One task per run.
+One named `status: ready` task in `tasks/` gets its `Test Specification` or `Verification Plan` regenerated from the current app and tests, in the grammar of [task-grammar.md](../../references/task-grammar.md). One task per run.
 
 Branch by `kind:` in the task file's frontmatter:
 
@@ -22,7 +22,7 @@ Branch by `kind:` in the task file's frontmatter:
 - User/API-facing features carry `event-model.md` alongside. A `kind: verify` task without it is a contract violation: **Stop**, route `/al-steer`.
 - The target task is named and has `status: ready`.
 - A `ready` verify task carries `review: clean` — `/al-code-review` stamped it when it opened the task. Absent → torn state: **Stop**, `Next: /al-steer`.
-- Read [test-specification.md](../../references/testing/test-specification.md), [test-strategy.md](../../references/testing/test-strategy.md), [test-layout.md](../../references/testing/test-layout.md) (the Unit-vs-Integration placement rule lives there — a codepath needing real BaseApp behaviour cannot be scoped `Unit`), and [task-lifecycle.md](../../references/task-lifecycle.md) before writing.
+- Read [task-grammar.md](../../references/task-grammar.md), [test-strategy.md](../../references/testing/test-strategy.md), [test-layout.md](../../references/testing/test-layout.md) (the Unit-vs-Integration placement rule lives there — a codepath needing real BaseApp behaviour cannot be scoped `Unit`), and [task-lifecycle.md](../../references/task-lifecycle.md) before writing.
 - Scan `.not-yet-specified/*.md` at repo root when present. A question the task's behaviour touches → **Stop**, name the question file, route `/al-steer` (or `/al-grill-adr` for a domain rule).
 
 ### A `blocked` or `done` task routes by why
@@ -44,9 +44,9 @@ Preserve scope-time context: title, description, the `depends_on:` / `refactors:
 Answer before writing:
 
 - **What does the task deliver?** Resolve from the description, the `architecture.md` slice, `event-model.md` when present, `CONTEXT.md`, and the codebase.
-- **Which coverage table?** Choose per the table criteria in [test-specification.md](../../references/testing/test-specification.md); multiple unrelated groups → split or route `/al-steer`.
+- **Which coverage table?** Choose per the table criteria in [task-grammar.md](../../references/task-grammar.md); multiple unrelated groups → split or route `/al-steer`.
 - **What is each AAA case's scope?** Unit vs Integration per [test-layout.md](../../references/testing/test-layout.md). Refine proposes scope; `/al-implement` may change it and must reconcile the task file.
-- **What procedure names should exist?** Propose short PascalCase AL test procedure names; they populate `Covered By`, AAA headers, and `Procedure:` per the grammar.
+- **What procedure names should exist?** Propose short PascalCase AL test procedure names; they populate `Covered By` and the AAA case headers per the grammar.
 - **What does the codebase actually expose?** Real codeunits, tables, fields, pages, procedures, events, and APIs on the boundary.
 - **Which objects and signatures does the task land?** Write `New and Modified Objects` per the grammar. Seed `New:` vs `Modified:` from `architecture.md`'s `new` / `extends` markers. Override the seed by workspace state at refine time. Architecture silent on a needed object → mint it when it serves a listed slice slot. A missing slot is a replan trigger ([task-lifecycle.md](../../references/task-lifecycle.md)), route `/al-steer`.
 
@@ -54,7 +54,7 @@ Unanswerable → keep or flip `status: blocked`; invoke `al-researcher` for BC b
 
 ## Verify task: Verification Plan
 
-Every check derives from the slice's observable user/API surface, never internal state. Write only subsections that apply — `Journey Examples`, `Contract Examples`, `Exploration Charters` — per the grammar and at-least-one-example rules in [test-specification.md](../../references/testing/test-specification.md). Answer before writing:
+Every check derives from the slice's observable user/API surface, never internal state. Write only subsections that apply — `Journey Examples`, `Contract Examples`, `Exploration Charters` — per the grammar and at-least-one-example rules in [task-grammar.md](../../references/task-grammar.md). Answer before writing:
 
 - **Which slice does this verify?** Resolve `slice:` to the `event-model.md` timeline step; title and description quote its Role, Action, Business Event, View, Status vocabulary.
 - **Which surface is exercised?** Name it inline — downstream skills must not guess.
@@ -77,7 +77,7 @@ Replace vague phrasing with exact object, procedure, and status names inline. An
 
 ## Document verification
 
-Run the document-integrity check inline, no subagent, against [doc-integrity.md](../../references/doc-integrity.md) scoped to this `T-NNN`: the `New and Modified Objects` coverage check and, for a verify task, the E2E `Record:` flag check. It is mechanical and cheap, so it runs before the review gate below — a structurally broken artifact should not cost a lens fleet — and again on any regenerated text. A **fail** blocks the flip: fix it or route `/al-steer`. A **warn** rides in the close.
+Run the document-integrity check inline, no subagent, against [doc-integrity.md](../../references/doc-integrity.md) scoped to this `T-NNN`: the `tasks/` profile's checks that reach a single task file. It is mechanical and cheap, so it runs before the review gate below — a structurally broken artifact should not cost a lens fleet — and again on any regenerated text. A **fail** blocks the flip: fix it or route `/al-steer`. A **warn** rides in the close.
 
 ## Review gate
 

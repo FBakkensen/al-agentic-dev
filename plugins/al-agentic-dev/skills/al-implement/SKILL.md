@@ -25,7 +25,7 @@ Any disagreement between the branch, feature artifacts, task kind, status, and `
 - Exactly two named follow-ups re-enter such a task, including at `status: done`: an `/al-mutate` survivor's killer test, and an `/al-code-review` must-fix finding routed as `T-NNN`. Either lands red-first under the originating task and commits under its `T-NNN` prefix. Stamp mechanics follow the repair exception in [task-lifecycle.md](../../references/task-lifecycle.md).
 - One flip only: a survivor killer-test round that closes the last open gap on a still-`ready-for-implementation` task flips `status: done` — the clean verdict is now proved.
 - Any other reason to touch a `done` task → **Stop**, `Next: /al-steer`.
-- Read [test-specification.md](../../references/testing/test-specification.md) before code. Production names and signatures arrive minted in the task's `New and Modified Objects`. Test codeunits and procedures are the per-case subagent's to mint. `al-red-green` reads its own implementation references on each invocation.
+- Read [task-grammar.md](../../references/task-grammar.md) before code. Production names and signatures arrive minted in the task's `New and Modified Objects`. Test codeunits and procedures are the per-case subagent's to mint. `al-red-green` reads its own implementation references on each invocation.
 
 ## Name the seam
 
@@ -71,12 +71,14 @@ A push-up already blessed by `/al-refine`'s report flows without a stop. Unatten
 
 The `phase: implemented` stamp certifies the task file matches actual proof — before stamping, edit it to actuals:
 
-- `Procedure:` and AAA headers match actual AL test procedure names; `Covered By` names them only.
+- AAA case headers match actual AL test procedure names; `Covered By` names them only.
 - `Covers:` references real `B#` / `R#`.
 - `Scope:` is final; any scope change is edited back in.
 - `New and Modified Objects` matches the actual diff: objects, fields, signatures, visibility, placement in the module map.
 - Implementation discoveries land in `Contract notes` as new bullets, one fact per line. `Researched:` citations and the absorbed changes each subagent outcome note reports land there too ([GROUND-RULES.md](../../references/GROUND-RULES.md)) — skipped research stays visible to `/al-code-review`.
-- Closeout follows the [test-specification.md](../../references/testing/test-specification.md) shape; the mutation verdict table lands later, when `/al-mutate` runs.
+- Closeout follows the [task-grammar.md](../../references/task-grammar.md) shape; the mutation verdict table lands later, when `/al-mutate` runs.
+
+Then verify the reconciled file against the `tasks/` profile in [doc-integrity.md](../../references/doc-integrity.md), scoped to this task. A **fail** blocks the stamp — fix it, or route `/al-steer` when the fix is a contract change.
 
 ## AppSource compliance bites at implementation time
 

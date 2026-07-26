@@ -27,7 +27,6 @@ Test Specification:
 ## AAA Cases
 
 ### ReadsSingleItemChargeAssignment
-Procedure: `ReadsSingleItemChargeAssignment`
 Scope: Unit
 Covers: B1
 Arrange:
@@ -40,7 +39,6 @@ Assert:
 - Assignment carries source Sales Line reference.
 
 ### ReadsNoItemChargeAssignmentsAsEmpty
-Procedure: `ReadsNoItemChargeAssignmentsAsEmpty`
 Scope: Unit
 Covers: B2
 Arrange:

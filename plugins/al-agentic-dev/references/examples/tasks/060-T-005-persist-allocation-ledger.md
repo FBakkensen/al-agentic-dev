@@ -48,7 +48,6 @@ Out of automated reach:
 ## AAA Cases
 
 ### InsertsAllocationLedgerEntries
-Procedure: `InsertsAllocationLedgerEntries`
 Scope: Integration
 Covers: B1
 Arrange:
@@ -60,7 +59,6 @@ Assert:
 - Each entry carries source Sales Line, receiving Sales Line, allocated quantity, and Posting Date.
 
 ### SkipsAuditEntriesWhenPostingFails
-Procedure: `SkipsAuditEntriesWhenPostingFails`
 Scope: Integration
 Covers: B2
 Arrange:

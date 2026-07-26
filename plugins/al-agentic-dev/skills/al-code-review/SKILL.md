@@ -14,7 +14,7 @@ Review finished AL/Business Central work at **slice-done** or **feature-done**. 
 - **Slice-done:** every technical task in one slice is `done`. Review the technical code before verification: implement → code-review → refine verify task → page-script/user-verification → next user/API slice. A backend-only slice skips verification and opens its next slice. `/al-refactor` and `/al-mutate` run after implementation and before this gate; `/al-mutate` normally supplies the clean verdict that marks a task `done`.
 - **Feature-done:** review the full feature diff after the final task is `done`, before merge.
 - Delegate the full gate through `/al-build` and require green (CodeCop, AppSourceCop, UICop, AppSource Validation), plus branch `^\d{3}-`, `specs/<branch>/tasks/`, and a tree matching reviewer intent — unrelated uncommitted reshape pollutes scope. `--fix` requires a clean tree. Any failure → **Stop** and report the gap; never review an uncertain baseline.
-- Read [`test-specification.md`](../../references/testing/test-specification.md) and [`test-strategy.md`](../../references/testing/test-strategy.md) before synthesis.
+- Read [`task-grammar.md`](../../references/task-grammar.md) and [`test-strategy.md`](../../references/testing/test-strategy.md) before synthesis.
 - A user/API slice is review-ready only when its verify task is `blocked` without a replan flag, or `ready-for-verification` without `review: clean`. `blocked` with a replan flag, a non-`done` technical task, or a `done` verify task → **Stop**; code lenses do not clear failed user evidence.
 
 ## Scope
