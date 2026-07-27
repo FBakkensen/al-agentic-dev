@@ -60,7 +60,7 @@ Name the gate by name so the user picks the right skill. Each entry states cause
 
 ## Route to next skill, do not perform it
 
-User uncertain which way to jump → run `/grill-me` on the branch.
+User uncertain which way to jump → run `/grill-me` on the branch. This skill grills inline on the interview contract in [`user-involvement.md`](../../references/user-involvement.md).
 
 ## Replan flags
 

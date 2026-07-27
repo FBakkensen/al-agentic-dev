@@ -9,12 +9,31 @@ Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file
 
 Decompose `architecture.md` into `specs/<NNN>-<slug>/tasks/`: a `000-feature.md` header plus one file per task, grouped by slice.
 
+## The interview
+
+Run the interview contract in [user-involvement.md](../../references/user-involvement.md).
+
+Strategic here — what every downstream skill works inside and can only reopen through `/al-steer`: how tasks map onto slices, where each task's boundary falls, which dependency edges hold, and the delivery order wherever the upstream artifact leaves it open. Tactical: `NNN` prefixes, filenames, titles, description wording, and which task absorbs a scaffolding constraint.
+
+The dependency graph is the case a panel pays for at this altitude — following an edge, and reading what actually stands in the way of one task.
+
 ## Preconditions
 
 - Branch matches `^\d{3}-`. If not: **Stop**, run `/al-event-model` (or `/al-design` for backend-only).
 - `specs/<branch>/architecture.md` exists. Missing → **Stop**, run `/al-design`.
 - User/API-facing features carry `event-model.md` alongside; backend-only features carry `architecture.md` only.
 - [task-lifecycle.md](../../references/task-lifecycle.md) owns the `tasks/` folder shape — file naming, frontmatter fields, the status lifecycle, and the surgical-edit floor. Read it, and pattern-match against [examples/tasks/](../../references/examples/tasks/), before writing.
+
+## Question repertoire
+
+- **Where does one task end?** A task lands one behaviour with the tests that prove it; two behaviours in one task hide one of them from its own red. The vertical-slice shape below is not negotiable — the open call is where the seam falls between two tasks that compose into it.
+- **Which slice does the user want working first?** Upstream order is the default and holds wherever the dependency graph binds. Ask only where two slices are genuinely independent, because that order decides what the user can exercise soonest.
+- **Which dependency edge is real?** Source every edge from the architecture first. Ask only where the evidence leaves two credible delivery sequences standing — a false edge serialises work that could land together, and a missing one opens a task before its ground exists.
+- **Which unnamed constraint does this task carry?** Permission, caption, translation, packaging, or a rollout order the architecture never wrote down. The user knows the ones that never reached an artifact.
+
+A gap `architecture.md` cannot answer is replan work, never an inline scope decision — see **Replan check before writing** below.
+
+Where the interview names a fork — a slice order, a task seam — building out at this altitude is a complete task list for the affected slice per candidate, edges included, per the alternatives beat in [user-involvement.md](../../references/user-involvement.md).
 
 ## What goes into the tasks/ folder
 
@@ -25,6 +44,8 @@ Decompose `architecture.md` into `specs/<NNN>-<slug>/tasks/`: a `000-feature.md`
 - **Bracketing ops tasks**: always emit both. `T-001` `kind: provision` `slice: provision` first; `kind: breaking-change` `slice: breaking-change` last. Neither carries a `Test Specification` or `Verification Plan` — run-and-flip. Emit the breaking-change task even when detection is off; `/al-validate-breaking-changes` self-skips.
 - **Edges**: source every `depends_on:` / `refactors:` / `fixes:` edge now, from the architecture's slices, module map, and brownfield touchpoints. Titles alone cannot reconstruct them later. Cross-slice gate: slice N+1's first technical task carries `depends_on:` slice N's verify task. Backend-only, the gate points at slice N's last technical task. No mermaid fence: spec artifacts are pure markdown, text-only.
 - **Scaffolding context**: permission, caption, translation, and packaging constraints bundle into the task that needs them. Name the constraint, not a code shape.
+
+Task files land slice by slice as each slice settles, per [user-involvement.md](../../references/user-involvement.md).
 
 ## Ordering
 
@@ -48,15 +69,15 @@ A verify-task description names the slice's user-facing outcome in `event-model.
 
 ## Replan check before writing
 
-A question `architecture.md` cannot answer, or a gap decomposition surfaces that it does not cover — a missing module, a pattern conflict, an unnamed brownfield touchpoint, a slice absent from `event-model.md` — stops the write: **Stop**, run `/al-steer`. Inventing the answer here corrupts every downstream skill invisibly.
+A question `architecture.md` cannot answer, or a gap decomposition surfaces that it does not cover — a missing module, a pattern conflict, an unnamed brownfield touchpoint, a slice absent from `event-model.md` — stops the write: **Stop**, run `/al-steer`. Inventing the answer here corrupts every downstream skill invisibly, and asking the user to patch the upstream artifact from inside this skill does the same.
 
 ## Document verification
 
-Between writing the folder and the close, run the document-integrity check yourself, inline, no subagent: the `tasks/` profile in [doc-integrity.md](../../references/doc-integrity.md). A **fail** blocks the close and the `/al-refine` handoff — fix it or route to `/al-steer`. A **warn** rides in the close. The check judges structure only, never whether the decomposition is optimal.
+Between the settled folder and the close, run the document-integrity check yourself, inline, no subagent: the `tasks/` profile in [doc-integrity.md](../../references/doc-integrity.md). A **fail** blocks the close and the `/al-refine` handoff — fix it or route to `/al-steer`. A **warn** rides in the close. The check judges structure only, never whether the decomposition is optimal.
 
 ## Next step
 
-Close with the task-close gate report ([GROUND-RULES.md](../../references/GROUND-RULES.md) House shapes). The report gives the user the evidence for the greenlight call on `/al-provision T-001`, the only `ready` task after scope. It names the slices, the verify-task count (or *none, backend-only*), the dependency shape (linear or branching), and the feature Goal in user terms. The folder landed with no integrity fail → `Next: /al-provision T-001`. `/al-refine` follows once provision opens the first slice. A gap `architecture.md` could not answer halted the write → `Next: /al-steer`.
+Close with the task-close gate report ([GROUND-RULES.md](../../references/GROUND-RULES.md) House shapes). The picks were made in the room, so the report records what settled: the slices, the verify-task count (or *none, backend-only*), the dependency shape (linear or branching), and the feature Goal in user terms. `/al-provision T-001` is the only `ready` task after scope. The folder landed with no integrity fail → `Next: /al-provision T-001`. `/al-refine` follows once provision opens the first slice. A gap `architecture.md` could not answer halted the write → `Next: /al-steer`.
 
 ## Composition
 
@@ -66,3 +87,4 @@ Close with the task-close gate report ([GROUND-RULES.md](../../references/GROUND
 | **Hands off to**   | `/al-provision` (`T-001`), then `/al-refine` once the first slice opens (one task at a time, technical or verify) |
 | **Replan venue**   | `/al-steer` (gap surfaced during decomposition) |
 | **Spawns**         | `al-researcher` for non-trivial BC areas and BaseApp grounding beyond direct workspace reading |
+| **Sidebands**      | `/grill-me` when an answer itself needs pressure ([user-involvement.md](../../references/user-involvement.md)) |

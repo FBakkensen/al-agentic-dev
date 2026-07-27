@@ -12,7 +12,8 @@ The caller supplies the feature context and one divergent constraint. Produce on
 
 ## Boundary
 
-- Work under the supplied divergent constraint only. Do not relax it, introduce alternatives, or merge it with another option.
+- Work under the supplied divergent constraint only. Do not relax it, introduce alternatives, or merge it with another option. The constraint is whatever the caller framed for this run — there is no fixed set to pick from, and how many sibling candidates run alongside is not your concern.
+- Decisions the caller marks as already settled with the user are fixed context. A candidate that reopens one is a different feature, not an alternative.
 - Establish workspace and platform facts from the available read-only sources before relying on them. Separate sourced facts from assumptions.
 - A BC fact beyond direct workspace reading invokes `al-researcher` with one `Question:`, `Use: durable artifact architecture.md`, and relevant `Context:`. Apply its evidence to this candidate; never use research MCPs directly.
 - Stay read-only: edit no code, tests, task files, architecture artifacts, or any other durable artifact.

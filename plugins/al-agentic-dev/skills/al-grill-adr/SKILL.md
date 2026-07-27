@@ -9,6 +9,8 @@ Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file
 
 **Interview the user about domain intent, one question at a time ([GROUND-RULES.md](../../references/GROUND-RULES.md) One decision per question), reading the codebase when it can answer.** Sharpen `CONTEXT.md` until BC vocabulary is unambiguous; offer a domain ADR when a constraint is hard to reverse and worth preserving.
 
+[user-involvement.md](../../references/user-involvement.md) is the interview contract this session runs on. Strategic here: what a term means in this project, which constraint earns an ADR, and which question is deferred rather than answered. Where a `CONTEXT.md` entry sits, how an ADR's prose reads, and which of two equivalent phrasings lands are tactical — decide them and say so in one line.
+
 ## Artifact boundary
 
 **Writes only `CONTEXT.md`, accepted domain ADRs under `docs/adr/`, and new question files under `.not-yet-specified/`** — the deferred-question ledger `/al-steer` grooms.
@@ -32,13 +34,14 @@ Journey pressure hands off to `/al-event-model`; architecture, object-responsibi
 - **What concrete BC scenario forces a boundary between two concepts to be precise?** Partial posting, reversal, dimension inheritance, multi-company, AppSource constraint.
 - **What is the user not asking because they don't know to ask it?** Name the adjacent BC behaviour, historical constraint, or standard pattern the user shows no sign of having considered, and let the user decide whether it matters — an unclaimed one is where the implementation guesses later. One that matters but can't be decided yet is written as `.not-yet-specified/<question>.md` at repo root (the question and what it waits on) so it survives the session.
 - **Where does the user's stated behaviour disagree with the code?** Read the code when it can answer; ask the user only what code cannot tell (intent, future direction, why a constraint exists). Name the conflict; resolution is the user's call.
+- **What is the cheapest rung that settles this question?** Route it per the fidelity ladder in [user-involvement.md](../../references/user-involvement.md). A term the workspace or `al-researcher` settles is a fact — resolve it and name what you found instead of asking. A rule whose consequences the user cannot judge from one sentence earns the concrete BC scenario sketched in chat, not a second question.
 - **Does a domain constraint earn an ADR?** Offer one inline only when all four hold:
   - hard to reverse (shipped data, partner integrations, behavioural contracts)
   - surprising without context
   - a real trade-off with genuine alternatives
   - domain — a rule about *what the business does*, not *how the code is shaped*
 
-  Three of four does not earn one. When a question feels architectural, grill the domain constraint behind it. Template: `../../references/adr.template.md` (relative to this skill's base directory). Resolve `NNNN` per `../../references/cross-branch-numbering.md`.
+  Three of four does not earn one. When a question feels architectural, grill the domain constraint behind it. Where the fork behind a constraint is genuinely open, building out at this altitude is one complete ADR candidate per option — context, decision, consequences — presented together, per the alternatives beat in [user-involvement.md](../../references/user-involvement.md). Template: `../../references/adr.template.md` (relative to this skill's base directory). Resolve `NNNN` per `../../references/cross-branch-numbering.md`.
 
 Every BC name landing in `CONTEXT.md` or a domain ADR is grounded per [GROUND-RULES.md](../../references/GROUND-RULES.md). A BC behavioural gap invokes `al-researcher` with `Use: durable artifact <path>`. `CONFLICT` or `UNRESOLVED` means grilling is not done: keep going and write neither the term nor the ADR this session.
 
@@ -59,4 +62,4 @@ Every BC name landing in `CONTEXT.md` or a domain ADR is grounded per [GROUND-RU
 | **Replan venue**   | `/al-steer` |
 | **Calls directly** | no skills; rubber-duck consult for ADR reconciliation per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
 | **Spawns**         | `al-researcher` for BC facts beyond direct workspace reading |
-| **Sidebands**      | `/grill-me` (interview the user) |
+| **Sidebands**      | `/grill-me` when an answer itself needs pressure ([user-involvement.md](../../references/user-involvement.md)) |

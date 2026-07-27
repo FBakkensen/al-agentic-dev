@@ -10,6 +10,8 @@ Schema outranks style: machine-read shapes (YAML frontmatter, task-file fields, 
 
 **One decision per question.** A reply that needs the user's input asks one question per message, with lettered options. Carve-out: the ask-before-reveal questions in `/al-user-verification` and `/al-quiz` are witness elicitation, not decisions — options that reveal the expected value would lead the witness.
 
+Grilling escalates to the `/grill-me` skill — not installed → install it from https://github.com/mattpocock/skills. What each planning skill asks, decides, and names is homed in [user-involvement.md](user-involvement.md).
+
 ## Chat thrift
 
 Lead with the verdict on line 1, then the reason. The first line of each landing point carries its outcome. House shapes keep their schema; thrift governs the wording inside them.

@@ -110,6 +110,8 @@ The calling skill reports each survivor under one disposition:
 | self-resolvable | regenerating this artifact fixes it | the same live session revises |
 | upstream | the artifact cannot fix it from here — a missing `architecture.md` slot, an ADR conflict, a wrong slice boundary, a missing `event-model.md` step | `Next: /al-steer` |
 
+Authority splits on the line the interview drew ([user-involvement.md](user-involvement.md)). A `MUST-FIX` against something the agent decided holds the flip on the terms above. A `MUST-FIX` against a decision the user settled in the interview holds nothing: the lens read the artifact blind and cannot see that the pick was made rather than guessed. Report it, name the decision it argues against, and carry it into the question below as one more revision the user can take. Keeping the decision as it stands clears the finding, which then rides in the close alongside the nits. The calling skill ran the interview and holds that provenance — where compaction has cost it, the finding counts as agent-made and blocks.
+
 A finding of either disposition may also carry a plugin-gap record, printed when this machine let through a failure class it should have prevented:
 
 ```

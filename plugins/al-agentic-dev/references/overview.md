@@ -2,6 +2,8 @@
 
 **You drive.** Composable AL/Business Central skills carry a feature idea to merge. Each pipeline skill ends by naming its handoff, and you invoke the next `/<skill-name>` yourself; nothing auto-chains. `/al-build` is the exception — a support skill the working skill invokes for you whenever it needs the gate, never a pipeline step awaiting your handoff. BC knowledge beyond direct workspace reading goes through the internal `al-researcher` custom agent. Runtime path uncertainty goes through the internal `al-debug-logging` custom agent. Skills also consult the harness-provided **rubber-duck agent** on non-trivial artifacts ([`rubber-duck-review.md`](rubber-duck-review.md)). Custom agents in `agents/` are spawned programmatically — never slash commands, never invoked by you.
 
+**You are in the room while the plan is made.** `/al-grill-adr`, `/al-event-model`, `/al-design`, `/al-scope`, and `/al-refine` interview you while the artifact takes shape. Decisions the artifact locks in for downstream come to you one at a time; the rest the skill decides and names, so you can override it without being asked; a fact it can look up it never asks. The shared contract is [`user-involvement.md`](user-involvement.md).
+
 ## Pipeline
 
 ```
@@ -79,7 +81,7 @@ The plugin ships 19 custom agents. The rubber-duck is not one of them — it is 
 | `al-review-assertions` | Lens: AAA cases whose assertions would pass without the behaviour under test. | the refine gate |
 | `al-review-judge` | Dedups, substantiates, and ranks one supplied batch of lens findings against its scoped artifact, in the mode the caller declares. | `/al-code-review`, `/al-refactor`, the design and refine gates |
 | `al-researcher` | Resolves one framed AL/BC fact through isolated BC patterns, Learn, symbols, or canonical BCApps source and returns a tagged verdict with quoted evidence. | Any skill, main session, or research-capable custom agent needing BC knowledge beyond direct workspace reading |
-| `al-design-option` | Develops one self-contained architecture candidate under a supplied divergent constraint — `/al-design` fans out three in parallel and chooses among them itself. | `/al-design` |
+| `al-design-option` | Develops one self-contained architecture candidate under a supplied divergent constraint — `/al-design` runs one call per constraint its interview named, at the count you set, and you pick among the candidates. | `/al-design` |
 | `al-gate-runner` | Runs one supplied build, provision, or breaking-change gate command and relays its authoritative artifacts, no interpretation. | `/al-build`, `/al-provision`, `/al-validate-breaking-changes` |
 | `al-mutant-cycle` | Runs one supplied mutate→gate→revert cycle and returns observed evidence; the caller classifies the mutant. | `/al-mutate` |
 

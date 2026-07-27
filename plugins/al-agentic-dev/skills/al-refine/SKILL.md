@@ -15,6 +15,12 @@ Branch by `kind:` in the task file's frontmatter:
 - `verify` → fresh `Verification Plan`, flip `ready` → `ready-for-verification`, stamp `phase: planned`.
 - `provision` / `breaking-change` → decline: *"ops task → run `/al-provision`"* or *"ops task → run `/al-validate-breaking-changes`"*.
 
+## The interview
+
+Run the interview contract in [user-involvement.md](../../references/user-involvement.md).
+
+Strategic here — what `/al-implement`, `/al-page-script`, and `/al-user-verification` work against and can only reopen through a replan: which behaviours this task's proof has to pin, the proof layer where a behaviour lands when the choice leaves manual verification behind, any public surface the task commits to, and what the user signs off by hand. Tactical: AL test procedure names, case ordering, which coverage table carries the cases, assertion phrasing, and the `New:` / `Modified:` seeds.
+
 ## Preconditions
 
 - Branch matches `^\d{3}-`. If not: **Stop**, run `/al-event-model` (or `/al-design` for backend-only).
@@ -35,9 +41,18 @@ Opening a task whose gate has already been earned is applying a decision; crossi
 - `blocked` on an unsatisfied edge or a replan flag → `/al-steer`.
 - `done` → reopen only through `/al-steer`.
 
+## Question repertoire
+
+- **Which business edge does this task have to survive?** Mine the description, `architecture.md`, `event-model.md`, `CONTEXT.md`, the codebase, and `al-researcher` first, and name what you found. Ask only where the business behaviour is genuinely unsettled — partial posting, reversal, dimension inheritance, a bound nobody wrote down.
+- **Is this push-up worth taking?** Which layer can reach a behaviour is a fact. What the user decides is whether the manual verification the push-up leaves behind is a price worth paying on this task.
+- **Which name here becomes a commitment?** A private procedure name is tactical. A name landing on public surface — a shipped object, an API, a published event — is a commitment AppSource holds for the life of the app, so it is asked.
+- **Verify task: what would you check by hand, and where would you look hardest?** The expected outcomes come from `event-model.md`, and a new one is upstream replan. What the user adds is the emphasis at sign-off and the risk worth an `Exploration Charter`.
+
+Where the interview names a fork — a proof layer, a coverage boundary — building out at this altitude is a complete AAA case set per candidate for the behaviour in question, per the alternatives beat in [user-involvement.md](../../references/user-involvement.md).
+
 ## Regenerate the section whole
 
-Preserve scope-time context: title, description, the `depends_on:` / `refactors:` / `fixes:` edges, `slice:`, constraints, risks, source context, acceptance intent. Regenerate the `Test Specification` / `Verification Plan` section whole — never keep stale cases, tables, examples, or charters because they existed.
+Preserve scope-time context: title, description, the `depends_on:` / `refactors:` / `fixes:` edges, `slice:`, constraints, risks, source context, acceptance intent. Regenerate the `Test Specification` / `Verification Plan` section whole — never keep stale cases, tables, examples, or charters because they existed. Cases land in the task file as they settle, per [user-involvement.md](../../references/user-involvement.md).
 
 ## Technical task: Test Specification
 
@@ -50,7 +65,7 @@ Answer before writing:
 - **What does the codebase actually expose?** Real codeunits, tables, fields, pages, procedures, events, and APIs on the boundary.
 - **Which objects and signatures does the task land?** Write `New and Modified Objects` per the grammar. Seed `New:` vs `Modified:` from `architecture.md`'s `new` / `extends` markers. Override the seed by workspace state at refine time. Architecture silent on a needed object → mint it when it serves a listed slice slot. A missing slot is a replan trigger ([task-lifecycle.md](../../references/task-lifecycle.md)), route `/al-steer`.
 
-Unanswerable → keep or flip `status: blocked`; invoke `al-researcher` for BC behaviour, `/al-grill-adr` for a domain rule, `/grill-me` for intent the user must adjudicate, or `/al-steer` for replan.
+Unanswerable routes by what is missing: a BC behaviour invokes `al-researcher`, a domain rule goes to `/al-grill-adr`, a strategic call goes to the user, an answer only running code can give routes per the fidelity ladder in [user-involvement.md](../../references/user-involvement.md), and a replan goes to `/al-steer`. Keep or flip `status: blocked` when none of them lands this run.
 
 ## Verify task: Verification Plan
 
@@ -61,7 +76,7 @@ Every check derives from the slice's observable user/API surface, never internal
 - **Which E2E journeys are `Record: yes`?** Per the `Record:` flag semantics in the grammar: only when no AL test layer can automate the behaviour. Behaviour a lower test should pin is pushed down via `/al-steer`, never recorded.
 - **Which `event-model.md` slots are cited?** Every Role / Action / Business Event / View / Status name is backed by `grep` against `event-model.md` or a workspace lookup on the underlying BC surface.
 
-Unanswerable → keep or flip `status: blocked`; invoke `al-researcher` for a BC surface fact, `/grill-me` for intent, or `/al-steer` for a wrong slice boundary or missing prerequisite.
+Unanswerable routes the same way: `al-researcher` for a BC surface fact, the user for a strategic call, `/al-steer` for a wrong slice boundary or missing prerequisite.
 
 ## Surface push-ups, commit nothing
 
@@ -90,7 +105,7 @@ Spawn the branch's lenses in parallel, declaring the mode, the scope, and the ar
 
 Each invocation carries the task file, `architecture.md`, `event-model.md` when present, `CONTEXT.md`, and the slice the task belongs to. Then invoke `al-review-judge` once with the same declared mode, the artifact, and every lens's raw finding blocks — never their `Out-of-scope:` notes, which this skill routes itself.
 
-A surviving `MUST-FIX` holds the flip. Report, tag, question, and re-review per **A blocking finding on a plan** in [review-lenses.md](../../references/review-lenses.md). A finding the design settled wrongly rather than the artifact stated wrongly is the upstream disposition, and a durable principle behind it reaches `/al-grill-adr` or `/al-design` through `/al-steer`.
+A surviving `MUST-FIX` holds the flip. Report, tag, question, and re-review per **A blocking finding on a plan** in [review-lenses.md](../../references/review-lenses.md) — including its split between what the agent decided and what the user settled in the interview. A finding the design settled wrongly rather than the artifact stated wrongly is the upstream disposition, and a durable principle behind it reaches `/al-grill-adr` or `/al-design` through `/al-steer`.
 
 ## IDs and handles
 
@@ -125,4 +140,4 @@ Close with the task-close gate report per [GROUND-RULES.md](../../references/GRO
 | **Calls directly** | no skills |
 | **Spawns**         | `al-researcher` for BC facts beyond direct workspace reading; the branch's mode lenses per [review-lenses.md](../../references/review-lenses.md), then `al-review-judge` |
 | **Replan venue**   | `/al-steer` |
-| **Sidebands**      | `/al-grill-adr`, `/grill-me` |
+| **Sidebands**      | `/al-grill-adr`; `/grill-me` when an answer itself needs pressure ([user-involvement.md](../../references/user-involvement.md)) |
