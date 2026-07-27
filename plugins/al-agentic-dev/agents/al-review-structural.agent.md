@@ -2,7 +2,7 @@
 name: al-review-structural
 description: Find functional-core, depth, and seam-shape findings in the mode the caller declares.
 tools: ["read", "search", "agent"]
-model: claude-opus-5
+model: claude-fable-5
 user-invocable: false
 ---
 

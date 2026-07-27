@@ -8,7 +8,7 @@ mcp-servers:
     command: npx
     args: ["-y", "bc-code-intelligence-mcp"]
     tools: ["*"]
-model: claude-opus-5
+model: claude-fable-5
 user-invocable: false
 ---
 

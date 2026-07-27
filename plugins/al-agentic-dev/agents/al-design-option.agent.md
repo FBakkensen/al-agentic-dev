@@ -2,7 +2,7 @@
 name: al-design-option
 description: Develop one self-contained AL/Business Central architecture candidate under a supplied divergent constraint for al-design.
 tools: ["read", "search", "agent", "al-symbols-mcp/*"]
-model: claude-opus-5
+model: claude-fable-5
 user-invocable: false
 ---
 

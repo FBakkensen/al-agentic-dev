@@ -116,25 +116,25 @@ description: "Fixture skill."
     }
 
     $script:ExpectedAlAgenticDevFleet = [ordered]@{
-        'al-design-option'     = 'claude-opus-5'
+        'al-design-option'     = 'claude-fable-5'
         'al-debug-logging'     = 'claude-opus-5'
         'al-gate-runner'       = 'claude-sonnet-5'
         'al-mutant-cycle'      = 'claude-sonnet-5'
         'al-red-green'         = 'claude-opus-5'
-        'al-researcher'        = 'claude-opus-5'
+        'al-researcher'        = 'claude-fable-5'
         'al-review-appsource'  = 'claude-opus-5'
-        'al-review-assertions' = 'claude-opus-5'
+        'al-review-assertions' = 'claude-fable-5'
         'al-review-bc'         = 'claude-opus-5'
         'al-review-bugscan'    = 'claude-opus-5'
         'al-review-comments'   = 'claude-opus-5'
-        'al-review-compliance' = 'claude-opus-5'
-        'al-review-coverage'   = 'claude-opus-5'
-        'al-review-judge'      = 'claude-opus-5'
-        'al-review-objects'    = 'claude-opus-5'
+        'al-review-compliance' = 'claude-fable-5'
+        'al-review-coverage'   = 'claude-fable-5'
+        'al-review-judge'      = 'claude-fable-5'
+        'al-review-objects'    = 'claude-fable-5'
         'al-review-perf'       = 'claude-opus-5'
         'al-review-red'        = 'claude-opus-5'
         'al-review-simplify'   = 'claude-opus-5'
-        'al-review-structural' = 'claude-opus-5'
+        'al-review-structural' = 'claude-fable-5'
     }
 
     function New-AlAgenticDevFleetAgentFiles {

@@ -2,7 +2,7 @@
 name: al-review-assertions
 description: Catch AAA cases whose assertions would pass without the behaviour under test, in the mode the caller declares.
 tools: ["read", "search", "agent"]
-model: claude-opus-5
+model: claude-fable-5
 user-invocable: false
 ---
 

@@ -2,7 +2,7 @@
 name: al-review-compliance
 description: Catch project-compliance, naming, grounding, push-up, scope, and surface-reconcile findings in the mode the caller declares.
 tools: ["read", "search", "agent"]
-model: claude-opus-5
+model: claude-fable-5
 user-invocable: false
 ---
 

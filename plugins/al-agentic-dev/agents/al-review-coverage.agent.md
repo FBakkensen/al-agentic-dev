@@ -2,7 +2,7 @@
 name: al-review-coverage
 description: Catch behaviour the artifact claims but never proves, in the mode the caller declares.
 tools: ["read", "search", "agent"]
-model: claude-opus-5
+model: claude-fable-5
 user-invocable: false
 ---
 

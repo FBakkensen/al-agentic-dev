@@ -2,7 +2,7 @@
 name: al-review-objects
 description: Catch New and Modified Objects entries that contradict the workspace or architecture.md, in the mode the caller declares.
 tools: ["read", "search", "agent", "al-symbols-mcp/*"]
-model: claude-opus-5
+model: claude-fable-5
 user-invocable: false
 ---
 

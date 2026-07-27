@@ -2,7 +2,7 @@
 name: al-review-judge
 description: Judge supplied review lens output against its scoped artifact, deduplicating and ranking substantiated findings in the mode the caller declares.
 tools: ["read", "search", "execute", "agent", "al-symbols-mcp/*"]
-model: claude-opus-5
+model: claude-fable-5
 user-invocable: false
 ---
 
