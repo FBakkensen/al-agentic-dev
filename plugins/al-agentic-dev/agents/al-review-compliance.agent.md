@@ -32,7 +32,7 @@ Read `CONTEXT.md`, the design and domain ADRs in `docs/adr/`, and `architecture.
 
 ## Over-build — every mode
 
-Flag production-only one-caller abstractions and obvious platform-primitive hand-rolls; `al-review-bc` confirms the specific shipped alternative. Do not flag test thoroughness — Unit-first TDD and mutation rigor are not over-build — nor trust-boundary validation, posting/ledger correctness, permission checks, or a shortcut carrying a one-line ceiling and upgrade path.
+Flag production-only one-caller abstractions and platform-primitive hand-rolls; `al-review-bc` confirms the specific shipped alternative. Do not flag test thoroughness — Unit-first TDD and mutation rigor are not over-build — nor trust-boundary validation, posting/ledger correctness, permission checks, or a shortcut carrying a one-line ceiling and upgrade path.
 
 ## Mode-specific rules
 

@@ -23,7 +23,7 @@ Flag hand-rolls where shipped BC already provides the feature: setup table plus 
 
 Do not flag test thoroughness, trust-boundary validation, posting/ledger correctness, permission checks, or a shortcut carrying a one-line ceiling and upgrade path — Unit-first TDD and mutation rigor stay outside this over-build screen.
 
-`al-review-simplify` and `al-review-structural` flag the obvious hand-roll and leave the confirmation here: this lens confirms through `al-researcher` that the shipped alternative exists before flagging it.
+`al-review-simplify` and `al-review-structural` flag the hand-roll and leave the confirmation here: this lens confirms through `al-researcher` that the shipped alternative exists before flagging it.
 
 ## The omitted change-detection trap
 

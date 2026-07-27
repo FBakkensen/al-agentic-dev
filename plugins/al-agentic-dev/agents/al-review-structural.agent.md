@@ -24,7 +24,7 @@ Depth targets. A long procedure splits into private helpers behind `Access = Int
 
 Seam shape: two adapters or no seam (`references/LANGUAGE.md`) — an interface with one implementation and no test adapter written is indirection, not a seam. A unit test reaching past `Access = Internal` signals responsibility on the wrong codeunit; the reshape splits out a smaller internal codeunit so the surface tells the truth (**Internal seams stay private**, Principles in `references/LANGUAGE.md`).
 
-Judge production code against **Production-AL thrift** in `references/GROUND-RULES.md`. Flag the obvious hand-roll of a platform primitive; `al-review-bc` confirms the shipped BC alternative.
+Judge production code against **Production-AL thrift** in `references/GROUND-RULES.md`. Flag the hand-roll of a platform primitive; `al-review-bc` confirms the shipped BC alternative.
 
 ## Mode-specific rules
 

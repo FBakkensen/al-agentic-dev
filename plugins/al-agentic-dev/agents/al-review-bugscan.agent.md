@@ -1,6 +1,6 @@
 ---
 name: al-review-bugscan
-description: Catch correctness and obvious logic faults in the mode the caller declares, skipping style and lint-class noise.
+description: Catch correctness and logic faults in the mode the caller declares, skipping style and lint-class noise.
 tools: ["read", "search", "agent"]
 model: claude-opus-5
 user-invocable: false
@@ -18,7 +18,7 @@ AL/Business Central reviewer. The caller supplies a declared mode, a scope, and 
 
 ## Focused goal
 
-Catch large bugs a fresh read exposes. Skip nitpicks, style, and linter-class findings. An ad-hoc conditional bolted into an unrelated flow is a design escalation.
+Catch the bugs a fresh read exposes and report every one — severity ranking is `al-review-judge`'s pass, not this lens's filter. Style and linter-class findings stay outside this lens. An ad-hoc conditional bolted into an unrelated flow is a design escalation.
 
 Naming belongs to `al-review-compliance`; over-build to `al-review-compliance` and `al-review-bc`. One exception stays here: an identifier whose claimed behaviour is itself false — a mutating `Get...` procedure, an `Is...` boolean that does not reflect its named state — is a correctness fault.
 

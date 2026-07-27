@@ -194,7 +194,7 @@ Diagnostic prefixes: `AA` CodeCop, `AW` UICop, `AS` AppSourceCop, `PTE` PerTenan
 | Restart didn't fix it | `docker rm -f <container>`, re-run the gate. `test.ps1` recreates it. |
 | Recreate didn't fix it | Re-run `provision.ps1`, then the gate. |
 
-The container is disposable and reproducibility lives in the scripts, so recovery is always restart → delete → re-run rather than a hand patch: no `docker exec`, no `Invoke-ScriptInBcContainer` to patch state, no hand-installing apps.
+The container is disposable and reproducibility lives in the scripts, so recover only through the scripted lifecycle above — restart → delete → re-run. A hand patch (`docker exec`, `Invoke-ScriptInBcContainer`, hand-installing apps) leaves container state the scripts cannot reproduce.
 
 ## Next step
 

@@ -74,7 +74,7 @@ The plugin ships 19 custom agents. The rubber-duck is not one of them — it is 
 | `al-review-bc` | Lens: BC-specific anti-patterns and platform reinvention using `al-researcher` evidence. | `/al-code-review`, `/al-refactor`, the design gate |
 | `al-review-perf` | Lens: performance via al-performance MCP `scan_al_code`. Read-only — it holds no fixer. | `/al-code-review`, `/al-refactor` |
 | `al-review-appsource` | Lens: the AppSource contract — public-surface addition lock-in, base-app modification over interception, shipped-surface lifecycle (per-feature only under `/al-code-review`). | `/al-code-review`, the design gate |
-| `al-review-bugscan` | Lens: correctness and obvious logic faults. | `/al-code-review` |
+| `al-review-bugscan` | Lens: correctness and logic faults. | `/al-code-review` |
 | `al-review-comments` | Lens: code-comment invariants + git history context. | `/al-code-review` |
 | `al-review-simplify` | Lens: dedup, dead code, speculative generality. | `/al-refactor` |
 | `al-review-objects` | Lens: a task's `New and Modified Objects` entries against the workspace and `architecture.md`. | the refine gate |

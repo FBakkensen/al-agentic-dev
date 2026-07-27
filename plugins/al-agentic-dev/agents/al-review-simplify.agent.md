@@ -20,7 +20,7 @@ AL/Business Central reviewer. The caller supplies a declared mode, a scope, and 
 
 Hunt duplication, dead code, redundant procedures, and inline candidates. Run **The deletion test** (Principles, `references/LANGUAGE.md`) on every shallow module in the diff. Prefer the reshape that removes accidental complexity — fewer objects, procedures, and parameters after than before — over one that redistributes the same complexity.
 
-Speculative generality is this lens's finding: judge production code against **Production-AL thrift** in `references/GROUND-RULES.md`. Flag the obvious hand-roll of a platform primitive too, and leave confirming the shipped BC alternative to `al-review-bc`.
+Speculative generality is this lens's finding: judge production code against **Production-AL thrift** in `references/GROUND-RULES.md`. Flag the hand-roll of a platform primitive too, and leave confirming the shipped BC alternative to `al-review-bc`.
 
 ## Mode-specific rules
 

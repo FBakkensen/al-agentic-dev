@@ -30,7 +30,7 @@ A per-slice diff spans every `T-NNN` commit from its first commit through `done`
    | Lens | Owns | Scope |
    |---|---|---|
    | `al-review-compliance` | Project/domain/task compliance from `CONTEXT.md`, `docs/adr/`, `architecture.md`, and `Test Specification`; BC/project naming, construct grounding, `Integration` push-up seams, traceability to `Expected Behaviors` / `Decision Matrix` / AAA cases, mutation recommendations, and reconciled `New and Modified Objects` | both |
-   | `al-review-bugscan` | Fresh-read correctness and obvious logic faults; design escalation for ad-hoc conditionals | both |
+   | `al-review-bugscan` | Fresh-read correctness and logic faults; design escalation for ad-hoc conditionals | both |
    | `al-review-bc` | BC topic-store anti-patterns, platform reinvention, speculative generality, and the direct-`xRec` validation trap | both |
    | `al-review-comments` | Modified-file comment invariants and evidenced recent-history regressions | both |
    | `al-review-appsource` | Intentionality of diff-added public shipped procedures, fields, and actions, read with `app.json` | per-feature only |
