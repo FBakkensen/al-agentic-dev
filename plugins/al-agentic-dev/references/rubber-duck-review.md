@@ -18,4 +18,4 @@ A bullet contradicting primary-source evidence in hand (the file says X, the use
 
 ## Veto (`/al-code-review` only)
 
-`/al-code-review` sends every round's must-fix survivor list. A duck refutation of a must-fix finding drops it from the fix queue and escalates to the user — a veto on autonomous fixing, not another opinion to weigh.
+`/al-code-review` sends every round's must-fix survivor list. A duck refutation of a must-fix finding drops it from the rework queue and escalates to the user — a veto on autonomous fixing, not another opinion to weigh.

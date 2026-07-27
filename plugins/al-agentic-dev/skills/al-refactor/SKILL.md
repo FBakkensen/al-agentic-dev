@@ -49,9 +49,9 @@ The judge never chooses apply order, sequences edits, or touches build/workflow 
 
 **`al-review-judge` unavailable** → report `BLOCKED`, name `al-review-judge` as the missing agent, and stop. No inline substitution.
 
-## Order the queue
+## Disposition and queue
 
-Every real survivor lands in one apply queue:
+Disposition every `MUST-FIX` and `SHOULD-FIX` survivor by the baseline test under **A finding on code** in [review-lenses.md](../../references/review-lenses.md): `rework` lands in one apply queue, a `change request` is held for the grilling close, `NO-ACTION` drops.
 
 - Renames and seam introduction land before dedup — they touch many call sites and conflict otherwise.
 - Rubber-duck review when the queue is non-trivial ([rubber-duck-review.md](../../references/rubber-duck-review.md)).
@@ -96,11 +96,13 @@ A `New and Modified Objects` delta the compliance lens raises is the exception t
 
 ## Replan and behaviour preservation
 
-Reshape surfacing an architectural gap stops the run — code stays green; the halt is on planning. Missing module, pattern conflict, unnamed brownfield touchpoint, the decision-logic/IO split cutting across tasks, a sibling task whose description the reshape invalidates → **Stop**, route `/al-steer`.
+Reshape surfacing an architectural gap that blocks the reshape itself stops the run — code stays green; the halt is on planning → **Stop**, route `/al-steer`. Every other escalation takes the baseline test: a finding whose resolution would contradict baselined content, or establish content no baseline yet contains, is a change request held for the grilling close per **A finding on code** in [review-lenses.md](../../references/review-lenses.md).
 
 The diff leaves observable behaviour identical. New behaviour belongs to `/al-implement` (new task) or `/al-refine` (re-plan).
 
 ## Gate report and phase stamp
+
+Before stamping, grill the change-request residue in the live session per **A finding on code**: one conversation at a time in the judge's `Rank:` order, clustered by contested baseline decision, each converging on one of the three terminal outcomes. A do-it-now ruling joins the apply queue on the same one-reshape-at-a-time terms. A written task lands in `specs/<branch>/tasks/` and holds the stamp until it is `done`. A keep-the-code ruling clears here and routes the baseline update as `Next: /al-steer` citing trigger #6.
 
 **Emit one Gate report at module / pattern / seam altitude (not procedure level), naming the application invariant preserved and the next step.**
 

@@ -284,6 +284,45 @@ Describe 'Judge mode fence' {
     }
 }
 
+Describe 'Code-gate disposition' {
+    BeforeAll {
+        # Both code gates disposition survivors by the shared baseline test rather
+        # than forking it: the criterion, the grilling loop, and its three terminal
+        # outcomes have one home in review-lenses.md.
+        $script:CodeGates = @('al-code-review', 'al-refactor')
+    }
+
+    It 'homes the baseline test and the terminal outcomes in the shared reference' {
+        $script:ReferenceText | Should -Match 'A finding on code'
+
+        foreach ($token in @('`rework`', '`change request`', 'Do it now', 'Write a task', 'Keep the code, fix the baseline')) {
+            $script:ReferenceText | Should -Match ([regex]::Escape($token)) -Because "the code-gate disposition carries $token"
+        }
+    }
+
+    It 'points every code gate at that home rather than forking it' {
+        foreach ($skill in $script:CodeGates) {
+            $body = Get-Content -LiteralPath (Join-Path $script:SkillsRoot "$skill\SKILL.md") -Raw
+            $body | Should -Match 'A finding on code' -Because "/$skill dispositions by the shared baseline test"
+            $body | Should -Not -Match ([regex]::Escape('terminal states of a dialogue')) -Because "/$skill must not fork the outcome definitions"
+        }
+    }
+
+    It 'keeps the retired --fix flag out of the marketplace' {
+        $files = @(
+            Get-ChildItem -LiteralPath $script:PluginRoot -Recurse -File -Include '*.md', '*.json'
+            Get-ChildItem -LiteralPath (Join-Path $script:RepoRoot 'scripts') -File -Filter '*.ps1'
+            Get-ChildItem -LiteralPath (Join-Path $script:RepoRoot 'tests') -Recurse -File -Filter '*.ps1'
+        )
+
+        $hits = @($files | Select-String -SimpleMatch -Pattern '--fix' | Where-Object {
+                $_.Path -notlike '*ReviewLenses.Tests.ps1'
+            })
+
+        $hits | Should -BeNullOrEmpty
+    }
+}
+
 Describe 'Retired gate-scoped lens names' {
     It 'survives nowhere in the marketplace' {
         $files = @(

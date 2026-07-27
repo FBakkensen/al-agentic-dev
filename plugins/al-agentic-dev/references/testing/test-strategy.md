@@ -34,7 +34,7 @@ The justification is surfaced and committed, never silent:
 |---|---|
 | `/al-refine` | Proposes scope, surfaces every push-up in chat ([the Push-up report](#the-push-up-report)), records each as a `Contract notes` line ([task-grammar.md](../task-grammar.md)), and commits nothing — its handoff stop is the user's review point. |
 | `/al-implement` | Gates: before writing a test above the blessed scope — a planned `Unit` case reclassified to `Integration` on an AL-Runner wall, or a new `Integration` case emerging mid-TDD — it stops for commitment: build the seam, or accept `Integration`. |
-| Unattended | Autopilot flips `status: blocked` and routes `/al-steer`; `/al-code-review --fix` stays mute and reports `cannot fix — escalate`. |
+| Unattended | Autopilot flips `status: blocked` and routes `/al-steer`; `/al-code-review` reports `cannot fix — escalate` and holds the finding for the grilling close. |
 | `/al-code-review` | Audits the recorded justification: a push-up with no wall and no named seam is a finding. |
 
 ### The Push-up report

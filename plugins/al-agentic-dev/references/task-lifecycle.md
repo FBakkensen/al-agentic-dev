@@ -136,7 +136,7 @@ Durable content surfacing in an in-flight task file routes through `/al-steer`, 
 
 ## Replan triggers
 
-The trigger number is an address, not a state: a flag in a task file cites `trigger #N` and the next agent knows what pattern was seen. `/al-refine`, `/al-implement`, `/al-refactor`, and `/al-user-verification` cite these triggers in their pre-close replan checks. `/al-steer` clears them. Detection cues are skill-specific. Each skill's replan check names what the cue looks like in its own work.
+The trigger number is an address, not a state: a flag in a task file cites `trigger #N` and the next agent knows what pattern was seen. `/al-refine`, `/al-implement`, `/al-refactor`, `/al-code-review`, and `/al-user-verification` cite these triggers in their pre-close replan checks. `/al-steer` clears them. Detection cues are skill-specific. Each skill's replan check names what the cue looks like in its own work.
 
 | # | Name | Pattern |
 |---|---|---|
@@ -145,7 +145,7 @@ The trigger number is an address, not a state: a flag in a task file cites `trig
 | 3 | Wrong order | The task's `Test Specification` or `Verification Plan` references behaviour a later task introduces. |
 | 4 | Sibling now wrong | The current task invalidates another task's context, `Test Specification`, or `Verification Plan`. |
 | 5 | New behaviour emerges | A surfaced code path needs its own test — appending the assertion would make an eager test. |
-| 6 | Architecture decomposition wrong | Shotgun surgery across the task boundary — one behaviour lands only as edits across several tasks' modules. Or architectural drift — `architecture.md` no longer describes the workspace. |
+| 6 | Architecture decomposition wrong | Shotgun surgery across the task boundary — one behaviour lands only as edits across several tasks' modules. Or baseline drift — a baselined artifact (`architecture.md`, `CONTEXT.md`, `event-model.md`) no longer describes the workspace, or the user ruled the code right and the baseline wrong. |
 | 7 | Goal drift | The Goal in `000-feature.md` no longer describes what the `tasks/` folder delivers. |
 | 8 | Verification failed | A `Verification Plan` example does not match observed behaviour. Judgement call between defect (insert a `fixes:` task), wrong `Verification Plan` (rewrite via `/al-refine`), or wrong slice boundary (split via `/al-scope`). |
 

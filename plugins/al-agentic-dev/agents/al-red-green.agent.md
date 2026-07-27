@@ -1,6 +1,6 @@
 ---
 name: al-red-green
-description: Drive one AAA case RED→GREEN for al-implement or al-code-review --fix — write the test, prove RED past the blind RED gate, land the least production code under a frozen test surface, prove GREEN, and stop.
+description: Drive one AAA case RED→GREEN for al-implement or al-code-review — write the test, prove RED past the blind RED gate, land the least production code under a frozen test surface, prove GREEN, and stop.
 tools: ["read", "edit", "execute", "search", "skill", "agent", "al-symbols-mcp/*", "al-objid-mcp-server/*"]
 model: claude-opus-5
 user-invocable: false

@@ -149,7 +149,7 @@ Describe 'Both spawning skills route the new blocks' {
         $body | Should -Match 'Next: /al-refine T-NNN'
     }
 
-    It 'escalates both blocks from al-code-review --fix' {
+    It 'escalates both blocks from al-code-review rework' {
         $body = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-code-review\SKILL.md') -Raw
 
         $body | Should -Match 'graded blind by `al-review-red`'

@@ -58,4 +58,4 @@ A canvas changes how a decision is presented, never which decisions must settle.
 
 ## Findings against what the user settled
 
-A review lens reads the artifact blind, so it cannot tell a decision the agent made from one the user settled. Blocking authority splits on the same line the interview does; [review-lenses.md](review-lenses.md) owns the terms, under **A blocking finding on a plan**.
+A review lens reads the artifact blind, so it cannot tell a decision the agent made from one the user settled. Blocking authority splits on the same line the interview does: a finding the agent may simply fix never reaches the user; only a finding that needs the user's authority — one whose resolution would contradict what a baselined artifact settled, or establish what no baseline yet contains — does. [review-lenses.md](review-lenses.md) owns the terms: **A blocking finding on a plan** for the plan gates, **A finding on code** for the code gates.

@@ -101,7 +101,7 @@ A concern a lens sees but its mode does not own returns as an **Out-of-scope:** 
 
 ## A blocking finding on a plan
 
-The three plan modes — `architecture`, `test-spec`, `verification-plan` — review a document before any code exists, so there is no fix queue, no commit, and nothing to revert. A surviving `MUST-FIX` holds the artifact's status flip until the artifact itself changes.
+The three plan modes — `architecture`, `test-spec`, `verification-plan` — review a document before any code exists, so there is no rework queue, no commit, and nothing to revert. A surviving `MUST-FIX` holds the artifact's status flip until the artifact itself changes.
 
 The calling skill reports each survivor under one disposition:
 
@@ -127,3 +127,21 @@ Then one lettered question: regenerate against every finding, regenerate against
 One re-review per run, spawning a complete fresh fleet and judging its batch from scratch. A `MUST-FIX` still standing after it keeps the disposition it already had: report it, stop regenerating, leave the flip unearned, and route `/al-steer` only where the evidence names an upstream artifact. A failed repair does not make a self-inflicted finding upstream.
 
 An incomplete fleet holds the flip on the same terms — a lens or judge that reaches no terminal state is coverage this gate never had, and it prints the plugin-gap record. `SHOULD-FIX` rides in the close as nits. Lens churn stays out of chat.
+
+## A finding on code
+
+The two code modes — `code-review` and `refactor` — review landed code, so every surviving finding gets a disposition. The code is the configuration item. The task spec, `architecture.md`, `event-model.md`, `CONTEXT.md`, ADRs, and user-verified behaviour are baselines — baselines by existence, not by register. A historical spec under `specs/` binds unless a later one overwrote it.
+
+A finding is **`rework`** when resolving it restores the code's conformance to a baseline without modifying or extending any baseline's content. A finding is a **`change request`** when resolving it would contradict baselined content, or establish content no baseline yet contains. Conformance findings are rework; baseline findings are change requests; and a finding whose baseline you cannot name is asking you to write one — escalate. The change cannot authorize itself: a comment, doc, or artifact the diff under review wrote is not a baseline for that diff.
+
+Severity routes nothing here. A `MUST-FIX` and a `SHOULD-FIX` survivor take the same test — a `SHOULD-FIX` baseline variance is rework and gets fixed. `NO-ACTION` drops. The calling skill applies its whole rework queue autonomously: a finding the agent may simply fix never reaches the user; only a finding that needs the user's authority does.
+
+The change-request residue is grilled at the close, in the live session — the skill never hands the residue to a fresh invocation, which carries no context the live session lacks. One conversation at a time, in the judge's `Rank:` order. The unit of grilling is the contested baseline decision, not the finding: change requests contradicting the same baselined content, or establishing the same missing content, merge into one conversation whose outcome dispositions them all. Each conversation converges on one of three terminal outcomes — terminal states of a dialogue, never an opening menu:
+
+| Outcome | Meaning | Route |
+|---|---|---|
+| Do it now | the user reclassifies the finding as rework | fixed in this run, covered by the single re-review |
+| Write a task | the resolution is authorized as scheduled work | a new task in `specs/<branch>/tasks/`; the gate holds until it is `done` |
+| Keep the code, fix the baseline | code and baseline disagree and the user rules the baseline wrong | cleared at this gate; the baseline update is replan work — `Next: /al-steer` citing trigger #6 ([task-lifecycle.md](task-lifecycle.md)) |
+
+At any point the user may close the remainder in one ruling — write tasks for the rest — and each remaining conversation becomes one task.
