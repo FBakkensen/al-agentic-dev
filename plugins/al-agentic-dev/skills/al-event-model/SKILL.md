@@ -59,7 +59,7 @@ Candidates follow the alternatives beat in [user-involvement.md](../../reference
 
 ## The write
 
-Slots land in `event-model.md` as they settle, per [user-involvement.md](../../references/user-involvement.md). [task-lifecycle.md](../../references/task-lifecycle.md) is a mandatory read before the first write — it carries the markdown-only constraints and the examples table whose `event-model.example.md` owns the artifact shape. A non-trivial timeline — multi-Role, branching, brownfield, integration — takes a rubber-duck consult ([rubber-duck-review.md](../../references/rubber-duck-review.md)) as a shape check once the timeline is complete, before the close.
+Slots land in `event-model.md` as they settle, per [user-involvement.md](../../references/user-involvement.md). [task-lifecycle.md](../../references/task-lifecycle.md) is a mandatory read before the first write — it carries the markdown-only constraints and the examples table whose `event-model.example.md` owns the artifact shape.
 
 ## Document verification
 
@@ -75,7 +75,7 @@ Close with the task-close gate report ([GROUND-RULES.md](../../references/GROUND
 |---|---|
 | **Runs after**     | `/al-grill-adr` (CONTEXT + domain ADRs settled) |
 | **Hands off to**   | `/al-design` (consumes `event-model.md`) |
-| **Calls directly** | no skills; rubber-duck consult on non-trivial timelines |
+| **Calls directly** | no skills |
 | **Spawns**         | `al-researcher` for BC names and behaviour beyond direct workspace reading |
 | **Replan venue**   | `/al-steer` (downstream fact invalidates timeline) |
 | **Sidebands**      | `/grill-me` when an answer itself needs pressure ([user-involvement.md](../../references/user-involvement.md)) |

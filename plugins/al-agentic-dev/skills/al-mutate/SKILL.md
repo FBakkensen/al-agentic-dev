@@ -33,8 +33,6 @@ Ties break toward mutating where a fault costs most: irreversible writes, ledger
 
 [tdd.md](../../references/testing/tdd.md) homes the operator catalogue, the one-operator-per-qualifying-site selection heuristics, the two AL operators that risk a stillborn, and the reachability check — an unreached line routes to `/al-refine` (add coverage) or `/al-refactor` (delete the dead branch), never to a killer test.
 
-Cross-check every non-trivial plan via a rubber-duck consult before execution ([rubber-duck-review.md](../../references/rubber-duck-review.md)): *"what mutations are missing or misaligned? AND does this surface any of the eight replan triggers? Return a bulleted list."*
-
 ## Execution
 
 **One mutation, one build, one revert.** Verify the tree matches `HEAD` before the next mutation — batched mutations conflate the signal, and one un-reverted mutation poisons every later classification.
@@ -116,6 +114,6 @@ If state can't be read, fall back to `/al-code-review`.
 | **Runs after**     | `/al-refactor` (the rigor step the user runs after reshape), OR standalone on legacy code before `/al-refactor` |
 | **Hands off to**   | `/al-code-review` on a clean verdict (slice/feature gate); `/al-implement` for a reached survivor exposing a test gap (resume TDD for the killer test) or for the next `ready-for-implementation` task; `/al-refine` only for unreached-line or missing-coverage cases |
 | **Spawns**         | `al-researcher` for BaseApp behaviour needed to classify a survivor; `al-mutant-cycle` custom agent — one supplied mutate→gate→revert cycle per approved mutant |
-| **Calls directly** | `/al-build` (full-gate closeout) — the only skill it invokes; rubber-duck consult cross-checks non-trivial mutation plans before execution ([rubber-duck-review.md](../../references/rubber-duck-review.md)) |
+| **Calls directly** | `/al-build` (full-gate closeout) — the only skill it invokes |
 | **Replan venue**   | `/al-steer` |
 | **Sidebands**      | `/grill-me` (classification call needs the user) |

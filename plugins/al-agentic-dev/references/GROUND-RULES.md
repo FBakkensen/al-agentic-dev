@@ -50,7 +50,7 @@ A term naming a whole discipline with no BC equivalent — TDD, red/green, mutat
 - **Interview question** — a decision put to the user: one line naming what it locks in, then the question, then lettered options of one line each, recommendation first and marked. The recommendation is stated once — in its option line, nowhere else. Context beyond the one line rides only as a chat sketch when the judgment needs items seen together ([user-involvement.md](user-involvement.md) Fidelity). Progress restating stays in the chip line, not prose.
 - **Names are the citation.** The object, procedure, table, field, or event publisher appears by name — the name is the address; no inline `(file.al:120)` annotations in durable artifacts. Name the specific target: "Extract `PostSalesOrder` from codeunit 80 into `Sales-Post Impl`", never "refactor the codeunit".
 - **Tasks appear by name in chat.** A bare `T-NNN` never stands alone in human-read text — the title or slug rides along at first mention: `copy-doc-dimension-inheritance (T-014)`. Agent-channel surfaces — frontmatter, `depends_on:` lists, filenames, commit trailers — keep bare ids.
-- **Workflow lives in the commit.** An artifact carries the forward-facing fact in declarative voice. The step-by-step story, the deciding-skill prefix (a `/al-implement decision:` line), and the rubber-duck reconciliation go in the commit message.
+- **Workflow lives in the commit.** An artifact carries the forward-facing fact in declarative voice. The step-by-step story, the deciding-skill prefix (a `/al-implement decision:` line), and any rubber-duck reconciliation go in the commit message.
 
 ## Production-AL thrift
 

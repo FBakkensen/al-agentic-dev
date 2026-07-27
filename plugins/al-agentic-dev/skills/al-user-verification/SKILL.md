@@ -10,9 +10,9 @@ Read [GROUND-RULES.md](../../references/GROUND-RULES.md) before any chat or file
 
 **User is the runner; agent is the guide.** The agent operates everything mechanical — container spawns, publish, the pre-flight replay batch, Contract examples, status flips, the transcript — and turns each `Record: no` Journey Example and each Exploration Charter into single concrete instructions the user performs in the BC Web Client. The user's eyes are the oracle; the user never reads the task file or the plan grammar — they click, look, and answer. No AL writes, no `/al-build` run, no codebase walk; one carve-out: page-ID and option/enum value-range lookups for deep links and structured questions.
 
-The walk does both halves of checking vs testing ([`test-strategy.md`](../../references/testing/test-strategy.md)): **functional/observable** outcomes — a Status value, a cue count, an HTTP status, an error — **gate** the verify task; **subjective usability** outcomes become **findings → tasks**, never a gate. Two guards against leading the witness: **ask-before-reveal** — the agent asks what the user sees before naming the expected value — and a rubber-duck review of the written verdict for coverage.
+The walk does both halves of checking vs testing ([`test-strategy.md`](../../references/testing/test-strategy.md)): **functional/observable** outcomes — a Status value, a cue count, an HTTP status, an error — **gate** the verify task; **subjective usability** outcomes become **findings → tasks**, never a gate. Two guards against leading the witness: **ask-before-reveal** — the agent asks what the user sees before naming the expected value — and a coverage check of the written verdict before the gate.
 
-Run the plan in order: pre-flight the recording batch, run Contract examples against the named client, then guide the user — one scenario at a time, in chat, punchline first — through the `Record: no` Journey Examples and the Exploration Charters. All functional checks pass + pre-flight green (or the recordings glob empty) + rubber-duck reconciled or skipped per [`rubber-duck-review.md`](../../references/rubber-duck-review.md) → flip `done` and open the next slice — or, on the last slice, hand off to `/al-code-review` per-feature. A functional fail or a current-slice pre-flight red → flip `blocked` with trigger #8; a prior-slice pre-flight red → flip `blocked` with trigger #4; both route `/al-steer` (*Pre-flight failure routing*, *Functional fail*). Every flip follows the surgical-edit discipline and `review: clean` strip rules in [`task-lifecycle.md`](../../references/task-lifecycle.md).
+Run the plan in order: pre-flight the recording batch, run Contract examples against the named client, then guide the user — one scenario at a time, in chat, punchline first — through the `Record: no` Journey Examples and the Exploration Charters. All functional checks pass + pre-flight green (or the recordings glob empty) + no coverage gap in the written verdict → flip `done` and open the next slice — or, on the last slice, hand off to `/al-code-review` per-feature. A functional fail or a current-slice pre-flight red → flip `blocked` with trigger #8; a prior-slice pre-flight red → flip `blocked` with trigger #4; both route `/al-steer` (*Pre-flight failure routing*, *Functional fail*). Every flip follows the surgical-edit discipline and `review: clean` strip rules in [`task-lifecycle.md`](../../references/task-lifecycle.md).
 
 Read before guiding: [`task-grammar.md`](../../references/task-grammar.md) — the `Verification Plan` grammar, the `Record:` flag, the Closeout shape; [`test-strategy.md`](../../references/testing/test-strategy.md) — layer ownership and the checking-vs-testing frame; [`task-lifecycle.md`](../../references/task-lifecycle.md) — status flips, strip rules, and the replan triggers.
 
@@ -122,11 +122,9 @@ First functional fail in any `Record: no` Journey Example or Contract example, o
 
 Append the fail line to `Partial-run record:` (line shape from *Preconditions*): which example (`V#`, `C#`, or `X#`) and which step/check/prompt, observed vs expected verbatim, the screenshot path, `**Replan flag**: trigger #8 (verification failed)`. Flip `status: blocked` and route `/al-steer T-NNN`. Surface the failure and stop — the fix is `/al-steer`'s to propose. A usability finding is never a functional fail.
 
-### Rubber-duck review before the gate
+### Coverage before the gate
 
-The gate reviews coverage and routing — it does not re-see the screen. All checkable examples pass → before flipping `done`, consult the rubber-duck agent on the written verdict per [rubber-duck-review.md](../../references/rubber-duck-review.md). Tell the user they're free first — the review can take minutes.
-
-The artifact carries, per scenario/charter:
+The gate reviews coverage and routing — it does not re-see the screen. Before flipping `done`, the written verdict must carry, per scenario/charter:
 
 - the instruction given
 - the exact question as posed — verbatim, including any structured-question options offered and any follow-ups asked while triaging a remark
@@ -135,24 +133,17 @@ The artifact carries, per scenario/charter:
 - the evidence reference
 - usability findings with their classification
 
-Plus the list of `Record: yes` scenarios confirmed by replay, with the pre-flight result. The question goes in as asked — a neutral paraphrase of a led question hides exactly the defect this gate exists to catch.
+Plus the list of `Record: yes` scenarios confirmed by replay, with the pre-flight result. The question is recorded as asked — a neutral paraphrase of a led question hides exactly the defect this gate exists to catch.
 
-The review asks:
-
-- was every observable check and prompt asked and answered with an observed value
-- were the replay-confirmed scenarios accounted for
-- did any pass rest on a led question, a bare yes/no, or an inferred value
-- was every user remark routed correctly (functional vs usability)
-
-Reconcile: a real coverage gap → re-ask that check; a real routing gap → re-classify and re-state the verdict.
+A check with no observed value, a pass resting on a led question, a bare yes/no, or an inferred value is a coverage gap → re-ask that check. A user remark routed to the wrong half of functional vs usability → re-classify and re-state the verdict.
 
 ### Pass: advance per check, flip on the functional gate
 
 The gate flips on the user's own reported observations plus replay-confirmation of the recorded scenarios (Contract-only: captured client output); the user can halt or veto at any step.
 
 - **Check passes** → next check.
-- **Last check of a scenario** → append the scenario's line to `Partial-run record:` in the line shape from *Preconditions* — the rubber-duck artifact needs the questions verbatim, and a session boundary erases the chat transcript. Then the next scenario/charter.
-- **All checkable examples pass + pre-flight green (or the recordings glob empty) + rubber-duck reconciled or skipped per reference** → flip `status: done` (`phase:` stays as `/al-page-script` left it — `page-scripted`, or `planned` when the plan had no recordings). Collapse `Partial-run record:` into the Closeout shape from [`task-grammar.md`](../../references/task-grammar.md), including the `Record: yes` scenarios as replay-confirmed.
+- **Last check of a scenario** → append the scenario's line to `Partial-run record:` in the line shape from *Preconditions* — the coverage check needs the questions verbatim, and a session boundary erases the chat transcript. Then the next scenario/charter.
+- **All checkable examples pass + pre-flight green (or the recordings glob empty) + no coverage gap** → flip `status: done` (`phase:` stays as `/al-page-script` left it — `page-scripted`, or `planned` when the plan had no recordings). Collapse `Partial-run record:` into the Closeout shape from [`task-grammar.md`](../../references/task-grammar.md), including the `Record: yes` scenarios as replay-confirmed.
 - **Usability findings** → candidate task files in the slice, named `NNN-T-MMM-<slug>.md` with a fresh `T-MMM` id and a run-order prefix per the gap rule in [`task-lifecycle.md`](../../references/task-lifecycle.md), frontmatter `status: ready`, `kind: technical`, same `slice:`. Non-gating; `/grill-me` adjudicates ambiguous ones. They queue after the next slice's opened tasks unless the user promotes one.
 - **Next slice** → flip every technical task in the next slice (whose first task carries `depends_on:` this verify task) from `blocked` to `ready`. The cross-slice gate is the only mechanism that opens the next slice.
 
@@ -173,7 +164,6 @@ Emit the task-close gate report once, when the verify task flips `done` — the 
 - what the user confirmed by walking, and what the `Record: yes` scenarios confirmed by replay
 - the usability findings surfaced (→ candidate tasks)
 - the evidence — transcript, replay result, saved screenshots
-- the rubber-duck outcome (reconciled / skipped)
 - the handoff per *Next step*
 
 On failure (flip to `blocked`): one stop line naming scenario / check / observed-vs-expected, a state table (verify task id, scenarios completed, scenario blocked on), next action `/al-steer T-NNN`.
@@ -195,7 +185,7 @@ State can't be read → **Stop.** The verify task's state is unreadable — any 
 | **Invoked by**     | user. Suggested by `/al-page-script` (batch pre-flight green, recordings committed — or a plan with no `Record: yes` examples); `/al-steer` (state-read routing on a `ready-for-verification` verify task whose recordings are in place) |
 | **Runs after**     | `/al-page-script` recorded every `Record: yes` Journey Example, and `/al-code-review` per-slice stamped `review: clean` at slice-done (preserved through refine) |
 | **Hands off to**   | next slice's technical tasks opened to `ready` for `/al-refine`; or — if last slice — `/al-code-review` per-feature → its clean pass opens the `kind: breaking-change` task → `/al-validate-breaking-changes`. `/al-steer` on failure (after `status: blocked`). Usability findings → candidate tasks in the slice. |
-| **Uses**           | `new-agent-container.ps1` (up to three spawns per cycle), `publish-apps.ps1` (spawn #1, #2), `pagescript-replay.ps1` (spawn #1's batch pre-flight), Web Client deep links + `al-build.json` credentials, the rubber-duck agent ([rubber-duck-review.md](../../references/rubber-duck-review.md)), [`../../references/task-grammar.md`](../../references/task-grammar.md) (`Verification Plan` grammar, `Record:` flag, Closeout), [`../../references/testing/test-strategy.md`](../../references/testing/test-strategy.md) (layers + checking-vs-testing), [`../../references/task-lifecycle.md`](../../references/task-lifecycle.md) (status flips, strip rules, replan triggers, gap rule) |
+| **Uses**           | `new-agent-container.ps1` (up to three spawns per cycle), `publish-apps.ps1` (spawn #1, #2), `pagescript-replay.ps1` (spawn #1's batch pre-flight), Web Client deep links + `al-build.json` credentials, [`../../references/task-grammar.md`](../../references/task-grammar.md) (`Verification Plan` grammar, `Record:` flag, Closeout), [`../../references/testing/test-strategy.md`](../../references/testing/test-strategy.md) (layers + checking-vs-testing), [`../../references/task-lifecycle.md`](../../references/task-lifecycle.md) (status flips, strip rules, replan triggers, gap rule) |
 | **Replan venue**   | `/al-steer` — trigger #4 (pre-flight prior-slice red), trigger #8 (pre-flight current-slice red or functional fail) |
 | **Spawns**         | `al-researcher` for BC surface behaviour to verify against authoritative evidence |
 | **Sidebands**      | `/grill-me` (adjudicate an ambiguous usability finding, or whether an observation matches the expected outcome) |

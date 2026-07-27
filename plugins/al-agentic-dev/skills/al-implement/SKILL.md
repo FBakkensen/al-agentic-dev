@@ -100,8 +100,6 @@ A change that only applies a decision already made absorbs inline: missing scaff
 
 The task-close full gate runs after the last case and before the stamp — `/al-refactor` gates its own reshape later. Diagnose a red there before repairing it: a container or publish failure routes through `/al-build`'s recovery table; a test green under AL Runner and red under the container is a placement or runner-semantics mismatch ([test-layout.md](../../references/testing/test-layout.md)), not a production defect; a production regression is an ordinary red — repair the production code and re-gate. When the honest repair is editing that test's expected value, that is a `Test Specification` contract change — **Stop**, `Next: /al-refine T-NNN`.
 
-For non-trivial work, consult the rubber-duck agent before the durable stamp ([rubber-duck-review.md](../../references/rubber-duck-review.md)).
-
 The stamp edits the `phase:` frontmatter line alone per the Surgical-edit discipline in [task-lifecycle.md](../../references/task-lifecycle.md) — add the line after `status:` if absent, overwrite if present. `status:` does not change. A re-entry repair on a `done` task stamps nothing, per the repair exception — its record is the `T-NNN`-prefixed commit and the re-review; the sole exception is the survivor killer-test flip named in Preconditions.
 
 Commit the work at green before handing off, so the tree is clean for `/al-refactor` and `/al-mutate`. When a `done` flip does happen here (the developer ends the hardening early), open the dependents it unblocks per [task-lifecycle.md](../../references/task-lifecycle.md).
@@ -124,6 +122,6 @@ Current task state chooses the handoff; a known exit outranks the fallback pipel
 |---|---|
 | **Runs after**     | `/al-refine` (filled `Test Specification` in the task file and flipped task to `ready-for-implementation`) |
 | **Hands off to**   | `/al-refactor` on non-trivial green, then `/al-mutate` (its clean verdict flips the task `done`); next `ready-for-implementation` technical task; `/al-code-review` per-slice at slice-done (both slice types); `/al-code-review` per-feature at feature-done |
-| **Calls directly** | `/al-build` (compile/test) — the only skill it invokes; rubber-duck consult on non-trivial work per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
+| **Calls directly** | `/al-build` (compile/test) — the only skill it invokes |
 | **Spawns**         | `al-researcher` for BC facts; `al-red-green` custom agent (RED→GREEN per AAA case), which nests `al-review-red` to grade its own red |
 | **Replan venue**   | `/al-steer` |

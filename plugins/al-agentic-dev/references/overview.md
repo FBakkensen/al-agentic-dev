@@ -1,6 +1,6 @@
 # al-agentic-dev plugin overview
 
-**You drive.** Composable AL/Business Central skills carry a feature idea to merge. Each pipeline skill ends by naming its handoff, and you invoke the next `/<skill-name>` yourself; nothing auto-chains. `/al-build` is the exception — a support skill the working skill invokes for you whenever it needs the gate, never a pipeline step awaiting your handoff. BC knowledge beyond direct workspace reading goes through the internal `al-researcher` custom agent. Runtime path uncertainty goes through the internal `al-debug-logging` custom agent. Skills also consult the harness-provided **rubber-duck agent** on non-trivial artifacts ([`rubber-duck-review.md`](rubber-duck-review.md)). Custom agents in `agents/` are spawned programmatically — never slash commands, never invoked by you.
+**You drive.** Composable AL/Business Central skills carry a feature idea to merge. Each pipeline skill ends by naming its handoff, and you invoke the next `/<skill-name>` yourself; nothing auto-chains. `/al-build` is the exception — a support skill the working skill invokes for you whenever it needs the gate, never a pipeline step awaiting your handoff. BC knowledge beyond direct workspace reading goes through the internal `al-researcher` custom agent. Runtime path uncertainty goes through the internal `al-debug-logging` custom agent. `/al-design` and `/al-code-review` consult the harness-provided **rubber-duck agent** at their one judgment call each ([`rubber-duck-review.md`](rubber-duck-review.md)). Custom agents in `agents/` are spawned programmatically — never slash commands, never invoked by you.
 
 **You are in the room while the plan is made.** `/al-grill-adr`, `/al-event-model`, `/al-design`, `/al-scope`, and `/al-refine` interview you while the artifact takes shape. Decisions the artifact locks in for downstream come to you one at a time; the rest the skill decides and names, so you can override it without being asked; a fact it can look up it never asks. The shared contract is [`user-involvement.md`](user-involvement.md).
 
@@ -18,7 +18,7 @@ Technical-task hardening: `/al-implement` (red→green, stop) → `/al-refactor`
 
 | Lane | Skills |
 |---|---|
-| **Cross-cutting** (invoked from any main-pipeline skill or standalone) | the internal `al-researcher` gateway, the internal `al-debug-logging` runtime-probe agent, the rubber-duck consult ([`rubber-duck-review.md`](rubber-duck-review.md)), `/al-steer`, `/al-sync-main` (rebase the branch onto main, mechanically renumber object/field collisions) |
+| **Cross-cutting** (invoked from any main-pipeline skill or standalone) | the internal `al-researcher` gateway, the internal `al-debug-logging` runtime-probe agent, `/al-steer`, `/al-sync-main` (rebase the branch onto main, mechanically renumber object/field collisions) |
 | **Infrastructure** | `/al-build` (compile, publish, run tests) |
 | **Ops** (bracket the feature; run an `/al-build` script + flip task status) | `/al-provision` (`T-001`, refresh the build environment), `/al-validate-breaking-changes` (last, validate against the provisioned baseline) |
 | **Shaping** (after `/al-implement` on a task, or standalone on legacy) | `/al-refactor`, `/al-mutate` |

@@ -54,7 +54,6 @@ The judge never chooses apply order, sequences edits, or touches build/workflow 
 Disposition every `MUST-FIX` and `SHOULD-FIX` survivor by the baseline test under **A finding on code** in [review-lenses.md](../../references/review-lenses.md): `rework` lands in one apply queue, a `change request` is held for the grilling close, `NO-ACTION` drops.
 
 - Renames and seam introduction land before dedup — they touch many call sites and conflict otherwise.
-- Rubber-duck review when the queue is non-trivial ([rubber-duck-review.md](../../references/rubber-duck-review.md)).
 
 ## Apply
 
@@ -122,7 +121,7 @@ If state can't be read, fall back: `/al-mutate` after a behaviour-bearing reshap
 |---|---|
 | **Runs after**     | `/al-implement` took the current task to green, OR standalone on legacy code |
 | **Hands off to**   | `/al-mutate` (the next rigor step); standalone with no mutation or architecture step warranted, the Gate report ends the run |
-| **Calls directly** | `/al-build` (green between applies) — the only skill it invokes; rubber-duck consult on a non-trivial apply queue per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
+| **Calls directly** | `/al-build` (green between applies) — the only skill it invokes |
 | **Spawns**         | `al-researcher` for BC facts; the `refactor` mode's five lenses per [review-lenses.md](../../references/review-lenses.md) — `al-review-simplify`, `al-review-bc`, `al-review-structural`, `al-review-compliance`, `al-review-perf`; `al-review-judge` after the lens pass |
 | **Replan venue**   | `/al-steer` |
 | **Sidebands**      | `/al-code-review` (non-structural concerns surface as out-of-scope notes), `/al-design` (standalone-on-legacy surfacing real architecture), `/grill-me` (non-obvious trade-off needs the user) |

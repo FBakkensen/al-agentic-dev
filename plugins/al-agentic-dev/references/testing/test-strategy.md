@@ -49,7 +49,7 @@ A failure routes to the layer whose oracle can pin it.
 
 **Oracle sensitivity.** An oracle insensitive to a fault class is a wrong-layer symptom, not a defect to fix in place. bc-replay re-reads the page-bound `Rec` exactly as a TestPage does, so it is insensitive to the stale-bound-`Rec` fault class: such a recording is a false net. Push down to a layer with a sensitive oracle, or escalate.
 
-**Checking vs testing.** Usability is un-checkable by construction and belongs to the exploratory layer. The same guided walk does both: `/al-user-verification` gates on the checkable outcomes the user reads off the screen, routes usability judgements to findings → tasks, and guards leading-the-witness with ask-before-reveal plus the rubber-duck coverage review.
+**Checking vs testing.** Usability is un-checkable by construction and belongs to the exploratory layer. The same guided walk does both: `/al-user-verification` gates on the checkable outcomes the user reads off the screen, routes usability judgements to findings → tasks, and guards leading-the-witness with ask-before-reveal plus the coverage check of the written verdict.
 
 ## Nested loops
 

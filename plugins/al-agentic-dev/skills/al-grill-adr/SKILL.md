@@ -60,6 +60,6 @@ Every BC name landing in `CONTEXT.md` or a domain ADR is grounded per [GROUND-RU
 | **Runs after**     | `main` (kicks off new feature) or standalone for a fuzzy term |
 | **Hands off to**   | `/al-event-model` (user/API-facing features) or `/al-design` (backend-only) |
 | **Replan venue**   | `/al-steer` |
-| **Calls directly** | no skills; rubber-duck consult for ADR reconciliation per [rubber-duck-review.md](../../references/rubber-duck-review.md) |
+| **Calls directly** | no skills |
 | **Spawns**         | `al-researcher` for BC facts beyond direct workspace reading |
 | **Sidebands**      | `/grill-me` when an answer itself needs pressure ([user-involvement.md](../../references/user-involvement.md)) |
