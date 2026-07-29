@@ -1,6 +1,6 @@
-# Contributing to bc-agentic-dev-tools
+# Contributing to al-agentic-dev
 
-Thank you for your interest in contributing to the Business Central agentic development tools!
+Thank you for your interest in contributing to these harness-neutral Agent Skills for AL/Business Central development!
 
 ## How to Contribute
 
@@ -28,24 +28,21 @@ Thank you for your interest in contributing to the Business Central agentic deve
 - Update documentation when adding features
 - Test PowerShell scripts on PowerShell 7.2+
 
-### Plugin Development
+### Skill Development
 
-When adding or modifying plugins:
+When adding or modifying a skill:
 
-1. Follow the existing plugin structure:
+1. Follow the existing skill structure:
    ```
-   plugins/plugin-name/
-   ├── plugin.json
-   └── skills/
-       └── plugin-name/
-           ├── SKILL.md
-           ├── scripts/
-           └── config/
+   skills/skill-name/
+   ├── SKILL.md          # frontmatter: name + description only
+   ├── SOME-FORMAT.md    # optional sibling files, referenced relatively
+   └── scripts/          # al-build only
    ```
 
-2. Update `plugin.json` with accurate metadata
-3. Write comprehensive `SKILL.md` documentation
-4. Test with multiple AI assistants if possible
+2. Keep every relative link inside the skill folder — a skill is installed on its own.
+3. Read `.github/instructions/skills.instructions.md` before writing; it is the full authoring contract.
+4. Run the five gates before opening a PR: `Validate-Json.ps1`, `Validate-PowerShell.ps1`, `Validate-Skills.ps1`, `Update-Review.ps1 -Check`, `Invoke-Pester tests`.
 
 ### Commit Messages
 

@@ -10,7 +10,7 @@
 # (Install-ALCompilerChannel) with dotnet mocked — no real install, no network.
 
 BeforeAll {
-    $scriptsDir = Resolve-Path (Join-Path $PSScriptRoot '..' '..' 'plugins' 'al-agentic-dev' 'skills' 'al-build' 'scripts')
+    $scriptsDir = Resolve-Path (Join-Path $PSScriptRoot '..' '..' 'skills' 'al-build' 'scripts')
     Import-Module (Join-Path $scriptsDir 'common.psm1') -Force -DisableNameChecking
     Import-Module (Join-Path $scriptsDir 'build-operations.psm1') -Force -DisableNameChecking
 

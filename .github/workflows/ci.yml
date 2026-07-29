@@ -22,9 +22,13 @@ jobs:
         shell: pwsh
         run: ./scripts/Validate-PowerShell.ps1
 
-      - name: Check plugin structure
+      - name: Validate skills
         shell: pwsh
-        run: ./scripts/Validate-PluginStructure.ps1
+        run: ./scripts/Validate-Skills.ps1
+
+      - name: Check REVIEW.md is in sync with skills.instructions.md
+        shell: pwsh
+        run: ./scripts/Update-Review.ps1 -Check
 
   test:
     runs-on: windows-latest

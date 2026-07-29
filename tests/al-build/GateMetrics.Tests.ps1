@@ -1,7 +1,7 @@
 #Requires -Version 7.2
 
 BeforeAll {
-    $scriptsDir = Resolve-Path (Join-Path $PSScriptRoot '..' '..' 'plugins' 'al-agentic-dev' 'skills' 'al-build' 'scripts')
+    $scriptsDir = Resolve-Path (Join-Path $PSScriptRoot '..' '..' 'skills' 'al-build' 'scripts')
     Import-Module (Join-Path $scriptsDir 'common.psm1') -Force -DisableNameChecking
 
     # Isolate the global mirror: never touch the real ~/.al-build log from tests

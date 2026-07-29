@@ -6,7 +6,7 @@
 # BC container and no BcContainerHelper installed.
 
 BeforeAll {
-    $script:CommonModule = Resolve-Path (Join-Path $PSScriptRoot '..' '..' 'plugins' 'al-agentic-dev' 'skills' 'al-build' 'scripts' 'common.psm1')
+    $script:CommonModule = Resolve-Path (Join-Path $PSScriptRoot '..' '..' 'skills' 'al-build' 'scripts' 'common.psm1')
     Import-Module $script:CommonModule -Force
     # BcContainerHelper isn't installed off a BC host, so Get-BcContainerAppInfo
     # doesn't exist for Mock to target. When it's absent, inject a global stub —

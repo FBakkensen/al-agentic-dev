@@ -18,11 +18,11 @@ How should this work?
 ## Alternatives Considered
 Other approaches you have considered.
 
-## Plugin/Skill
-Which plugin would this affect?
-- [ ] New plugin
-- [ ] Core/General
-<!-- Add plugin-specific checkboxes as plugins are added -->
+## Skill
+Which skill would this affect?
+- [ ] New skill
+- [ ] Existing skill (name it):
+- [ ] General/repo tooling
 
 ## Additional Context
 Any other relevant information.

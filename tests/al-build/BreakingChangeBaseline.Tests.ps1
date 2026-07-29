@@ -1,7 +1,7 @@
 #Requires -Version 7.2
 
 BeforeAll {
-    $base = Join-Path $PSScriptRoot '..' '..' 'plugins' 'al-agentic-dev' 'skills' 'al-build' 'scripts'
+    $base = Join-Path $PSScriptRoot '..' '..' 'skills' 'al-build' 'scripts'
     Import-Module (Resolve-Path (Join-Path $base 'common.psm1')) -Force -DisableNameChecking
     Import-Module (Resolve-Path (Join-Path $base 'build-operations.psm1')) -Force -DisableNameChecking
 }

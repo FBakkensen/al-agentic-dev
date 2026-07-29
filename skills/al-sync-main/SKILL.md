@@ -1,0 +1,65 @@
+---
+name: al-sync-main
+description: Rebase the AL/Business Central feature branch onto main and mechanically renumber object or field numbers main has claimed. Run it before opening a PR or on returning to a stale branch.
+disable-model-invocation: true
+---
+
+# al-sync-main — rebase onto main, renumber the collisions
+
+**Rebase, never merge** — the replay makes every surfacing collision this branch's to move.
+Start from a clean working tree on a branch that is not main. Uncommitted work →
+ask the user to commit or stash. Already on main → stop; nothing to sync.
+
+## Sync
+
+1. **Baseline gate.** Run `/al-build` on the current tip. Red → report it as
+   pre-existing and stop; the rebase would otherwise take the blame for it.
+2. **Rebase.** Record the pre-rebase tip — `git rev-parse HEAD` — then
+   `git fetch origin main` and `git rebase origin/main`.
+3. **Classify each conflict** as it surfaces. One shape is mechanical: the same
+   object type and number, or the same field number in one object, claimed by both
+   sides with no overlapping logic. Resolve it by keeping both declarations,
+   `git rebase --continue`, and fix the number in *Renumber*.
+
+   Everything else is a decision — conflicting logic in one object, one object name
+   carrying two different numbers (the concept was modelled twice), or anything
+   else the rebase flags. `git rebase --abort` so the tree sits back at the branch
+   tip, then report the object type, number, file, and reason, and ask.
+4. **Closing gate.** After the renumber pass, run `/al-build` on the rebased
+   tree. Green → push with `git push --force-with-lease` (`git push -u origin
+   HEAD` where no remote counterpart exists). Red → name the object, field, or
+   test that broke, then the user's call: repair it in this session and rerun
+   this gate, or `git reset --hard` to the recorded tip and abandon the sync.
+
+## Renumber
+
+One pass once the rebase completes, never per commit, landed as one commit
+before the closing gate. `git log origin/main..HEAD` names the objects and
+fields this branch introduced — the only ones eligible to move. Find the surviving collisions through the workspace symbol index, or by
+searching the workspace where no index is available; that scan is what a number is
+checked against, never recall.
+
+Move the branch-new number within the same `idRanges` bucket in the owning app's
+`app.json` that the colliding number already used. The project's object-ID
+allocator picks the replacement where one is configured; otherwise take the lowest
+number in that bucket the scan did not hit. Rewrite the declaration and every
+reference in the same file that is unambiguous — the extension's own target, an
+internal field reference. An ID allocated and then abandoned goes back to the
+allocator rather than leaking from the pool.
+
+Stop and ask where a literal number sits outside its own object — `Record 50100`, a
+permission set entry, an `extends` target elsewhere — and cannot be rewritten
+without guessing; or where the bucket has no free slot, the user's call to widen.
+
+A spec folder `NNN` or ADR `NNNN` this branch minted that main has since taken
+renames on the same terms: the branch's copy takes the next free number of that
+width, scanned across the working tree, local branches, and remote-tracking refs.
+A renamed spec folder renames the branch with it (`git branch -m`) — folder and
+branch stay matched; name the stale remote branch for the user to delete.
+
+## Close
+
+Name the outcome — the branch replayed onto main, gates green, pushed, and each
+renumber as old → new; the rollback and what broke; or the open decision.
+
+Then `/al-next`.

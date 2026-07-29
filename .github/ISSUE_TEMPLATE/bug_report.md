@@ -9,9 +9,8 @@ assignees: ''
 ## Description
 A clear description of the bug.
 
-## Plugin/Skill Affected
-- [ ] Other/General
-<!-- Add plugin-specific checkboxes as plugins are added -->
+## Skill Affected
+Name the skill folder under `skills/` (e.g. `al-build`), or "general".
 
 ## Steps to Reproduce
 1.

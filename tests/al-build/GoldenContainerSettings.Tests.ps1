@@ -31,7 +31,7 @@ BeforeAll {
         return $null
     }
 
-    $scriptsRoot = Join-Path $PSScriptRoot '..' '..' 'plugins' 'al-agentic-dev' 'skills' 'al-build' 'scripts'
+    $scriptsRoot = Join-Path $PSScriptRoot '..' '..' 'skills' 'al-build' 'scripts'
     $script:GoldenContainerScriptPath = Resolve-Path (Join-Path $scriptsRoot 'new-bc-container.ps1')
     $script:BuildOperationsModulePath = Resolve-Path (Join-Path $scriptsRoot 'build-operations.psm1')
 

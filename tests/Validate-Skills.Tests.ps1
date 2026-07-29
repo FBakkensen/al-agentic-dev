@@ -1,0 +1,542 @@
+#Requires -Version 7.2
+
+BeforeAll {
+    $script:ValidatorPath = (Resolve-Path (Join-Path $PSScriptRoot '..' 'scripts' 'Validate-Skills.ps1')).Path
+
+    function New-SkillsRoot {
+        param(
+            [Parameter(Mandatory = $true)]
+            [string]$Root,
+
+            [Parameter(Mandatory = $true)]
+            [hashtable]$Files
+        )
+
+        New-Item -ItemType Directory -Path $Root -Force | Out-Null
+        foreach ($relativePath in $Files.Keys) {
+            $path = Join-Path $Root $relativePath
+            New-Item -ItemType Directory -Path ([System.IO.Path]::GetDirectoryName($path)) -Force | Out-Null
+            Set-Content -LiteralPath $path -Value $Files[$relativePath] -Encoding utf8
+        }
+
+        return $Root
+    }
+
+    function New-SkillContent {
+        param(
+            [string]$Name = 'demo',
+            [string]$Body = 'Name the outcome.',
+            [switch]$ModelInvocable
+        )
+
+        $flagLine = if ($ModelInvocable) { '' } else { "disable-model-invocation: true`n" }
+        return @"
+---
+name: $Name
+description: "Do the thing. Use when a task is at phase: implemented."
+$flagLine---
+
+# $Name
+
+$Body
+"@
+    }
+
+    function Invoke-SkillValidator {
+        param(
+            [Parameter(Mandatory = $true)]
+            [string]$Root
+        )
+
+        $output = & pwsh -NoProfile -File $script:ValidatorPath -SkillsRoot $Root 2>&1
+        return [pscustomobject]@{
+            ExitCode = $LASTEXITCODE
+            Text     = (@($output | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine)
+        }
+    }
+}
+
+Describe 'Validate-Skills structure checks' {
+    It 'passes a well-formed skills root' {
+        $body = @'
+Read [FORMAT.md](FORMAT.md) before writing, and see https://example.test/docs.
+
+```markdown
+[Escapes the folder](../other/SKILL.md)
+```
+
+Name the outcome, then /al-build.
+'@
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'good') -Files @{
+            'demo/SKILL.md'     = (New-SkillContent -Body $body)
+            'demo/FORMAT.md'    = '# Format'
+            'al-build/SKILL.md' = (New-SkillContent -Name 'al-build' -ModelInvocable -Body 'Run scripts/test.ps1 and provision.ps1.')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+        $result.Text | Should -Match 'All skills validated successfully'
+    }
+
+    It 'fails when SKILL.md is missing' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'no-skill-md') -Files @{
+            'demo/RECORDING-FORMAT.md' = '# Recording format'
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'demo: SKILL\.md is missing'
+    }
+
+    It 'fails when the frontmatter block does not parse' -TestCases @(
+        @{ Case = 'no-delimiters'; Content = "# demo`n`nNo frontmatter at all." }
+        @{ Case = 'unclosed'; Content = "---`nname: demo`ndescription: `"Do the thing.`"`n`n# demo" }
+    ) {
+        param($Case, $Content)
+
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive "frontmatter-$Case") -Files @{
+            'demo/SKILL.md' = $Content
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'frontmatter block does not parse'
+    }
+
+    It 'fails when the frontmatter carries unknown, missing, or duplicate keys' -TestCases @(
+        @{ Case = 'extra'; Frontmatter = "name: demo`ndescription: `"Do the thing.`"`nallowed-tools: read" }
+        @{ Case = 'missing'; Frontmatter = 'name: demo' }
+        @{ Case = 'duplicate'; Frontmatter = "name: demo`nname: demo`ndescription: `"Do the thing.`"" }
+    ) {
+        param($Case, $Frontmatter)
+
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive "keys-$Case") -Files @{
+            'demo/SKILL.md' = "---`n$Frontmatter`n---`n`n# demo`n"
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'frontmatter keys must be name, description, and optionally disable-model-invocation'
+    }
+
+    It 'fails when a frontmatter key differs from the lowercase key only by case' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'keys-case') -Files @{
+            'demo/SKILL.md' = "---`nname: demo`nDescription: `"Use when a task is at phase: implemented.`"`n---`n`n# demo`n"
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'frontmatter keys must be name, description, and optionally disable-model-invocation'
+    }
+
+    It 'fails when a skill omits disable-model-invocation' -TestCases @(
+        @{ Case = 'missing-flag'; Frontmatter = "name: demo`ndescription: `"Do the thing.`"" }
+        @{ Case = 'flag-false'; Frontmatter = "name: demo`ndescription: `"Do the thing.`"`ndisable-model-invocation: false" }
+    ) {
+        param($Case, $Frontmatter)
+
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive "flag-$Case") -Files @{
+            'demo/SKILL.md' = "---`n$Frontmatter`n---`n`n# demo`n"
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'disable-model-invocation: true is required'
+    }
+
+    It 'fails when a model-invocable skill carries disable-model-invocation' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'flag-on-exception') -Files @{
+            'al-next/SKILL.md' = (New-SkillContent -Name 'al-next')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'al-next is model-invocable; remove disable-model-invocation'
+    }
+
+    It 'fails when the name does not match the folder name' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'name-mismatch') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Name 'al-demo')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "name 'al-demo' does not match the folder name"
+    }
+
+    It 'fails when the name breaks the spec format' -TestCases @(
+        @{ Case = 'uppercase'; Name = 'Demo'; Folder = 'Demo' }
+        @{ Case = 'double-hyphen'; Name = 'de--mo'; Folder = 'de--mo' }
+        @{ Case = 'trailing-hyphen'; Name = 'demo-'; Folder = 'demo-' }
+        @{ Case = 'too-long'; Name = ('a' * 65); Folder = ('a' * 65) }
+    ) {
+        param($Case, $Name, $Folder)
+
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive "name-spec-$Case") -Files @{
+            "$Folder/SKILL.md" = (New-SkillContent -Name $Name)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'must be 1-64 characters of lowercase letters, digits, and single hyphens'
+    }
+
+    It 'fails when the name matches the folder name only by case' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'name-case') -Files @{
+            'Al-Demo/SKILL.md' = (New-SkillContent -Name 'al-demo')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "name 'al-demo' does not match the folder name"
+    }
+
+    It 'fails when the description is missing, empty, or a block scalar' -TestCases @(
+        @{ Case = 'empty'; Description = '' }
+        @{ Case = 'quoted-empty'; Description = '""' }
+        @{ Case = 'folded-block'; Description = ">-`n  Use when a task lands." }
+        @{ Case = 'literal-block'; Description = "|`n  Use when a task lands." }
+    ) {
+        param($Case, $Description)
+
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive "description-$Case") -Files @{
+            'demo/SKILL.md' = "---`nname: demo`ndescription: $Description`n---`n`n# demo`n"
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'description must be a non-empty single-line value'
+    }
+
+    It 'fails when the description exceeds 1024 characters' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'description-long') -Files @{
+            'demo/SKILL.md' = "---`nname: demo`ndescription: $('x' * 1025)`n---`n`n# demo`n"
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'description exceeds 1024 characters'
+    }
+
+    It 'fails when a description carrying a colon is unquoted' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'unquoted-description') -Files @{
+            'demo/SKILL.md' = "---`nname: demo`ndescription: Use when a task is at phase: implemented.`n---`n`n# demo`n"
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'description contains a colon and must be quoted'
+    }
+}
+
+Describe 'Validate-Skills link checks' {
+    It 'fails on a link that leaves the skill folder' -TestCases @(
+        @{ Case = 'parent'; Target = '../al-build/SKILL.md' }
+        @{ Case = 'absolute'; Target = '/skills/demo/FORMAT.md' }
+        @{ Case = 'deep-escape'; Target = 'nested/../../outside.md' }
+    ) {
+        param($Case, $Target)
+
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive "link-$Case") -Files @{
+            'demo/SKILL.md'  = (New-SkillContent -Body "See [Format]($Target).")
+            'demo/FORMAT.md' = '# Format'
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'link leaves the skill folder'
+    }
+
+    It 'fails on a link that uses backslashes' -TestCases @(
+        @{ Case = 'parent-escape'; Target = '..\other\SECRET.md' }
+        @{ Case = 'resolvable-sibling'; Target = 'sub\FORMAT.md' }
+    ) {
+        param($Case, $Target)
+
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive "backslash-$Case") -Files @{
+            'demo/SKILL.md'      = (New-SkillContent -Body "See [Format]($Target).")
+            'demo/sub/FORMAT.md' = '# Format'
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'link uses backslashes; use forward slashes'
+    }
+
+    It 'accepts an angle-bracket link target containing spaces' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'angle-spaces') -Files @{
+            'demo/SKILL.md'     = (New-SkillContent -Body 'See [Format](<my format.md>).')
+            'demo/my format.md' = '# Format'
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+
+    It 'fails on an angle-bracket link target that does not exist, naming the whole target' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'angle-missing') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body 'See [Format](<my format.md>).')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'link target does not exist: my format\.md'
+    }
+
+    It 'fails on a link whose target does not exist' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'link-absent') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body 'See [Format](TASK-FORMAT.md).')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'link target does not exist: TASK-FORMAT\.md'
+    }
+
+    It 'checks links in sibling files, not only in SKILL.md' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'link-sibling-file') -Files @{
+            'demo/SKILL.md'  = (New-SkillContent -Body 'See [Format](FORMAT.md).')
+            'demo/FORMAT.md' = '# Format' + [Environment]::NewLine + 'Back to [the skill](../demo/SKILL.md).'
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'demo/FORMAT\.md: link leaves the skill folder'
+    }
+
+    It 'ignores a link inside a fenced block and flags the same link outside it' {
+        $fenced = @'
+```markdown
+[Hidden](hidden-missing.md)
+```
+'@
+        $fencedRoot = New-SkillsRoot -Root (Join-Path $TestDrive 'fence-hidden') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body $fenced)
+        }
+        $plainRoot = New-SkillsRoot -Root (Join-Path $TestDrive 'fence-plain') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body '[Hidden](hidden-missing.md)')
+        }
+
+        (Invoke-SkillValidator -Root $fencedRoot).ExitCode | Should -Be 0
+
+        $plain = Invoke-SkillValidator -Root $plainRoot
+        $plain.ExitCode | Should -Be 1
+        $plain.Text | Should -Match 'link target does not exist: hidden-missing\.md'
+    }
+
+    It 'closes a fenced block only on a run at least as long as its opener' {
+        $nested = @'
+````markdown
+```
+[Inner](inner-missing.md)
+```
+[Between](between-missing.md)
+````
+
+[After](after-missing.md)
+'@
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'fence-nested') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body $nested)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'after-missing\.md'
+        $result.Text | Should -Not -Match 'inner-missing\.md'
+        $result.Text | Should -Not -Match 'between-missing\.md'
+    }
+}
+
+Describe 'Validate-Skills script-path checks' {
+    It 'fails when a skill outside al-build names a script' -TestCases @(
+        @{ Case = 'ps1'; Body = 'Run test.ps1 to gate the change.'; Expected = 'test\.ps1' }
+        @{ Case = 'scripts-path'; Body = 'Entry points live in scripts/ for this skill.'; Expected = 'scripts/' }
+        @{ Case = 'fenced-ps1'; Body = "``````powershell`npwsh provision.ps1`n``````"; Expected = 'provision\.ps1' }
+    ) {
+        param($Case, $Body, $Expected)
+
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive "script-$Case") -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body $Body)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "names a script outside al-build: $Expected"
+    }
+
+    It 'catches a script mention in any casing' -TestCases @(
+        @{ Case = 'upper-ps1'; Body = 'Run Provision.PS1 to refresh the environment.'; Expected = 'Provision\.PS1' }
+        @{ Case = 'upper-scripts'; Body = 'Entry points live in Scripts/ for this skill.'; Expected = 'Scripts/' }
+    ) {
+        param($Case, $Body, $Expected)
+
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive "script-case-$Case") -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body $Body)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "names a script outside al-build: $Expected"
+    }
+
+    It 'exempts script-shaped segments inside URLs' {
+        $body = 'See https://github.com/org/repo/tree/main/scripts/ and https://example.test/tools/foo.ps1 for background.'
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'script-url') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body $body)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+
+    It 'accepts pagescripts/ outside al-build' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'script-pagescripts') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body 'Recordings land under pagescripts/recordings/ in the repo.')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+
+    It 'exempts al-build by folder, not by content' {
+        $body = 'Run scripts/test.ps1 for the gate.'
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'script-exemption') -Files @{
+            'al-build/SKILL.md' = (New-SkillContent -Name 'al-build' -ModelInvocable -Body $body)
+            'demo/SKILL.md'     = (New-SkillContent -Body $body)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'demo/SKILL\.md: names a script outside al-build'
+        $result.Text | Should -Not -Match 'al-build/SKILL\.md: names a script'
+    }
+}
+
+Describe 'Validate-Skills state-home checks' {
+    It 'fails when a skill body states a lifecycle field outside al-routing' -TestCases @(
+        @{ Case = 'status'; Body = 'Flip `status: done` when the gate is green.'; Expected = "status:" }
+        @{ Case = 'phase'; Body = 'Stamp `phase: refined` on the task.'; Expected = "phase:" }
+        @{ Case = 'blocked-on'; Body = 'Write blocked-on: with the reason.'; Expected = "blocked-on:" }
+        @{ Case = 'review'; Body = 'Add `review: clean` to the last task.'; Expected = "review:" }
+    ) {
+        param($Case, $Body, $Expected)
+
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive "lifecycle-$Case") -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body $Body)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "states the lifecycle field '$Expected' outside al-routing"
+    }
+
+    It 'fails when a sibling file states a lifecycle field' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'lifecycle-sibling') -Files @{
+            'demo/SKILL.md'  = (New-SkillContent -Body 'See [Format](FORMAT.md).')
+            'demo/FORMAT.md' = '# Format' + [Environment]::NewLine + 'The task lands at status: open.'
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "demo/FORMAT\.md: states the lifecycle field 'status:' outside al-routing"
+    }
+
+    It 'accepts lifecycle fields inside al-routing' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'lifecycle-home') -Files @{
+            'al-routing/SKILL.md' = (New-SkillContent -Name 'al-routing' -ModelInvocable -Body 'Stamp `status: done` and `phase: mutated` in one edit.')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+
+    It 'ignores a lifecycle-shaped token in SKILL.md frontmatter' {
+        # The default fixture description contains "phase: implemented"; only the body is scanned.
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'lifecycle-frontmatter') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body 'Name the outcome.')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+}
+
+Describe 'Validate-Skills skill-reference checks' {
+    It 'fails when a body names a skill that has no folder' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'ref-missing') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body 'Name the outcome, then /al-nonexistent.')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'names a skill that has no folder: /al-nonexistent'
+    }
+
+    It 'accepts a reference to an existing skill' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'ref-existing') -Files @{
+            'demo/SKILL.md'     = (New-SkillContent -Body 'Run the gate with /al-build.')
+            'al-build/SKILL.md' = (New-SkillContent -Name 'al-build' -ModelInvocable -Body 'Run scripts/test.ps1.')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+
+    It 'ignores skill-shaped tokens inside paths and filenames' {
+        $body = 'Read .output/TestResults/<dir>/al-runner.xml and pagescripts/al-thing/notes.md for context.'
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'ref-path') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body $body)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+}
+
+Describe 'Validate-Skills reporting' {
+    It 'reports every violation, not only the first' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'many-violations') -Files @{
+            'alpha/SKILL.md' = (New-SkillContent -Name 'wrong-name' -Body 'See [Format](FORMAT.md).')
+            'beta/NOTES.md'  = '# Notes'
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "name 'wrong-name' does not match the folder name"
+        $result.Text | Should -Match 'alpha/SKILL\.md: link target does not exist: FORMAT\.md'
+        $result.Text | Should -Match 'beta: SKILL\.md is missing'
+    }
+}

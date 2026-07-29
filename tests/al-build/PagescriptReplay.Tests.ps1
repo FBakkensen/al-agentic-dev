@@ -1,7 +1,7 @@
 #Requires -Version 7.2
 
 BeforeAll {
-    $script:ReplayScriptPath = Resolve-Path (Join-Path $PSScriptRoot '..' '..' 'plugins' 'al-agentic-dev' 'skills' 'al-build' 'scripts' 'pagescript-replay.ps1')
+    $script:ReplayScriptPath = Resolve-Path (Join-Path $PSScriptRoot '..' '..' 'skills' 'al-build' 'scripts' 'pagescript-replay.ps1')
     $script:ReplayScript = Get-Content -LiteralPath $script:ReplayScriptPath -Raw
 
     $tokens = $null
@@ -62,5 +62,16 @@ Describe 'pagescript-replay batch mode' {
 
     It 'keeps batch mode on the pagescripts recordings glob' {
         $script:ReplayScript | Should -Match '(?m)^\s*\$testsArg\s*=\s*''recordings/\*\.yml'''
+    }
+
+    It 'hands bc-replay a forward-slash glob in single-file mode' {
+        # In bc-replay's -Tests glob '\' escapes the next character, so a Windows relative path matches nothing.
+        $expression = '[IO.Path]::GetRelativePath($pagescriptDir, $resolvedFile).Replace(''\'', ''/'')'
+        $script:ReplayScript | Should -Match ([regex]::Escape($expression))
+
+        $pagescriptDir = 'C:\repo\.output\pagescripts'
+        $resolvedFile = Join-Path $pagescriptDir 'recordings' '007-post-invoice.yml'
+        [IO.Path]::GetRelativePath($pagescriptDir, $resolvedFile).Replace('\', '/') |
+            Should -Be 'recordings/007-post-invoice.yml'
     }
 }
