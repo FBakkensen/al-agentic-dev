@@ -46,6 +46,8 @@ Every `Integration` case, `Record: yes` journey, and `Contract` example sits abo
 
 Every exact BC name written into the task — object, table, field, procedure, event, enum value — comes from a workspace or documentation lookup made this session; recall is not evidence. A minted name earns a zero-hit collision lookup first: objects against workspace declarations, fields against the target table and its extensions, procedures against the target object.
 
+A technical task's behaviour answers to a `Precedent` verdict in `architecture.md`'s module map. A behaviour no verdict covers gets its own `.bcapps/` read — clone missing → stop, naming `/al-clone-bcapps` — and the verdict lands as a `Precedent:` line in `Contract notes:`; a verdict that already covers the behaviour is consumed, never copied down. A read contradicting the map — Microsoft ships what a module builds — is a strategic finding: stop the run and name it in chat, because it reopens the architecture, not the task.
+
 ## Close
 
 Name the task and what this run left on it — the proof written, the open question that stopped it, or the decline and the skill it names.

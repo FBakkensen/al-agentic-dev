@@ -18,7 +18,7 @@ Read `architecture.md` and name the seam in BC vocabulary — the procedure to e
 
 ## Writing AL here
 
-Every BC object, table, field, procedure, event, and enum value name comes from a lookup run in this session — search the workspace source and symbols, or read the official BC documentation. Recall is fiction. Where `.bcapps/` is present, search it explicitly for Microsoft's own implementation — default search skips gitignored folders. A name you mint earns a zero-hit collision lookup first: objects against workspace declarations, fields against the target table and its extensions, procedures against the target object.
+Every BC object, table, field, procedure, event, and enum value name comes from a lookup run in this session — search the workspace source and symbols, or read the official BC documentation. Recall is fiction. `.bcapps/` is the pattern library, not a name oracle: before shaping a procedure, read how its precedent implements the behaviour — the `Precedent` verdict the task or `architecture.md` carries, or the nearest System Application neighbour — and take its signature shape, error style, and event placement; default search skips gitignored folders. A `reused:` verdict binds: the implementation calls the Microsoft object, and writing a parallel one is a stop below. A name you mint earns a zero-hit collision lookup first: objects against workspace declarations, fields against the target table and its extensions, procedures against the target object.
 
 BC vocabulary: Insert not create, Modify not update, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, codeunit not class, procedure not method. TDD, red/green, and AAA keep their own names.
 
@@ -65,7 +65,7 @@ Commit at green under the task's `T-NNN` prefix — the slice review selects its
 
 Apply and continue: build scaffolding, a permission-set entry, an object ID, a caption, a local rename, a field on an object the task already names, reusing a seam a sibling task established. Where one rests on an assumption nobody blessed, append one line to the task body's `Deviations:` block — never edited away.
 
-Stop when the work makes a new decision: a new table, a new event publisher, a genuinely new seam, a production object the assertions require that `New and Modified Objects` never named, a public-surface rename, a code path that needs its own case rather than an appended assertion, or a task that no longer matches the feature Goal. Name the decision in chat and leave the task file untouched; the user re-runs once it settles.
+Stop when the work makes a new decision: a new table, a new event publisher, a genuinely new seam, a `.bcapps/` find that Microsoft already ships what the task is building, a production object the assertions require that `New and Modified Objects` never named, a public-surface rename, a code path that needs its own case rather than an appended assertion, or a task that no longer matches the feature Goal. Name the decision in chat and leave the task file untouched; the user re-runs once it settles.
 
 ## Close
 

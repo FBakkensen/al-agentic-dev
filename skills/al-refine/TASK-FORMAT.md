@@ -12,7 +12,7 @@ Skills parse these shapes, so field names and structure are exact.
 4. Sections appear in the order the table below declares.
 5. A case header carries the handle other sections reference: the AL test procedure name in `AAA Cases`, which `Covered By` cells name; the ID plus a short name in the verify sections, which `Closeout:` and `Partial-run record:` name.
 6. Inside a case, `Scope:` comes first, then the remaining scalar fields, then the bullet blocks in execution order.
-7. `; ` separates multiple values in a field. Rationale that needs writing down lands in `Contract notes:`, never as an inline comment.
+7. `; ` separates multiple values in a field. Rationale that needs writing down lands in `Contract notes:`, never as an inline comment. A `Contract notes:` bullet may carry a lede naming its kind: `Researched:` for a grounding citation, `Precedent:` for a `.bcapps/` verdict on behaviour the `architecture.md` module map does not cover.
 
 ## Section order
 
@@ -75,6 +75,7 @@ Test Specification:
 Contract notes:
 - Zero Integration cases — the policy decides from parameters alone; T-005 proves the wiring.
 - Researched: `Vendor."Lead Time Calculation"` is a DateFormula, not an Integer → Learn al-vendor-table.
+- Precedent: none in System App / apps — no shipped policy measures receipt dates against a per-Vendor tolerance.
 
 ## Decision Matrix
 

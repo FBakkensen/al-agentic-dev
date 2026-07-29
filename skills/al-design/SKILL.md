@@ -12,11 +12,12 @@ Settle the feature-level architecture through an interview and write it into `ar
 
 - Sharpened intent comes first — `CONTEXT.md` vocabulary plus the domain ADRs. Without it, domain confusion is indistinguishable from architectural choice. **Stop.** Run `/al-grill-adr`.
 - A user/API-facing feature needs `event-model.md` in the spec folder. Missing → ask whether the feature is backend-only (no human, no API consumer) or whether `/al-event-model` was skipped, and **stop** unless the user confirms backend-only.
+- The module map's `Precedent` verdicts are read from `.bcapps/`. Clone missing → **stop.** Run `/al-clone-bcapps`.
 - An existing `architecture.md` is reshaped whole by this run, never edited surgically. Say so before starting.
 
 ## Grounding and AL voice
 
-Every BC object, table, field, procedure, event, and enum value name comes from a lookup run this session — a workspace symbol search, or official BC documentation read and quoted. Recall is stale fiction. Where `.bcapps/` is present, search it explicitly for Microsoft's own implementation — default search skips gitignored folders. A name carried in from `event-model.md` counts once a search of that file returns it this session; a name being minted needs a zero-hit collision search first.
+Every BC object, table, field, procedure, event, and enum value name comes from a lookup run this session — a workspace symbol search, or official BC documentation read and quoted. Recall is stale fiction. `.bcapps/` is the pattern library: read how Microsoft implements the nearest analogous behaviour before shaping your own — default search skips gitignored folders. System Application, Business Foundation, and the apps under `src/Apps/W1` are the design authority; BaseApp binds for integration points — its events, its tables, its posting routines — but its internal shape is legacy, not a pattern to lift. A name carried in from `event-model.md` counts once a search of that file returns it this session; a name being minted needs a zero-hit collision search first.
 
 BC vocabulary throughout: Insert not create, Modify not update, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, codeunit not class, procedure not method.
 
@@ -28,7 +29,7 @@ Ask one question per message, with lettered options and the recommendation marke
 
 Strategic, and therefore asked: module ownership and dependency direction, where persisted data lives, seam placement, which existing behaviour the feature may change, the public surface it commits to, the boundary between pure decisions and BC runtime, the future change this architecture must keep cheap, and the binding constraint. The interview closes when each of those is settled or stopped on a named spike.
 
-Module ownership takes the delete test: delete the module in imagination — complexity that vanishes was a pass-through, complexity that reappears across callers earned its keep. Name modules in the project's own vocabulary — "the Settlement intake module", never "the FooBarHandler".
+Module ownership takes the delete test: delete the module in imagination — complexity that vanishes was a pass-through, complexity that reappears across callers earned its keep. Name modules in the project's own vocabulary — "the Settlement intake module", never "the FooBarHandler". Each module row closes with its `Precedent` verdict from the `.bcapps/` read — the Microsoft object reused, the pattern lifted and where it differs, or `none in System App / apps`, a claim only the search can earn.
 
 Tactical — object and file names, which of two equivalent patterns carries a module, the order sections land in — is decided and named in one line; naming it is what makes it overridable. A fact is never asked: search the workspace, or read the documentation. Escalate to `/al-grilling` when an answer itself needs pressure — a requirement that shifts each time it is restated, a preference with no reason under it.
 

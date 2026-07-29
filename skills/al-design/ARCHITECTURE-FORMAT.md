@@ -7,7 +7,7 @@ One file per feature, in the feature's spec folder next to `event-model.md` and 
 1. **Title and opening** — an H1 naming the feature outcome, then one paragraph stating the single most important structural fact about the design (usually where it touches the base app, or what it deliberately does not touch).
 2. **Identity table** — a borderless two-column table: `Slug`, `ADR` (number plus title, or omit the row), `Event model` (`event-model.md`, or omit for backend-only), `Tasks` (`tasks/`). Values are plain text; sibling artifacts are named, not linked.
 3. **Goal** — two or three sentences on the behaviour the feature adds, in BC vocabulary.
-4. **Module map** — a table of `Module | Responsibility`. Each module is a folder under `src/<module>/`, named in the project's ubiquitous language, marked `new` or naming the existing folder. The responsibility states what it decides and what it writes, and where it deliberately writes nothing.
+4. **Module map** — a table of `Module | Responsibility | Precedent`. Each module is a folder under `src/<module>/`, named in the project's ubiquitous language, marked `new` or naming the existing folder. The responsibility states what it decides and what it writes, and where it deliberately writes nothing. `Precedent` is the module's verdict from reading `.bcapps/`: `reused: <Microsoft object>` when the module calls what Microsoft ships, `pattern: <source> — <difference>` when it lifts a shape, or `none in System App / apps` — earned by the search, never assumed.
 5. **Decision logic and test surfaces** — prose, one paragraph per stage: the reads, the pure decision, the writes. Name which decision is reproducible from its inputs alone; that paragraph is what unit tests will reach.
 6. **Brownfield touchpoints** — a table of `Object | Kind | Touch`. Every existing object the feature reads, subscribes to, extends, or writes through. `Touch` says what happens and what stays untouched.
 7. **AL realisation per slice** — one small table per slice, below.
@@ -49,10 +49,10 @@ Catch item charge allocation mismatches while the invoice is still unposted, sur
 
 ## Module map
 
-| Module | Responsibility |
-|---|---|
-| `Charge Validation` (new, `src/ChargeValidation/`) | Reads `Item Charge Assignment (Sales)`. Decides allocation balance from the read rows. Writes nothing. |
-| `Charge Post Subscribers` (new, `src/ChargePostSubscribers/`) | Carries the subscribers on `Sales-Post` codeunit 80 and owns every write. |
+| Module | Responsibility | Precedent |
+|---|---|---|
+| `Charge Validation` (new, `src/ChargeValidation/`) | Reads `Item Charge Assignment (Sales)`. Decides allocation balance from the read rows. Writes nothing. | pattern: `Document Totals` — pure read-and-decide codeunit; ours decides per assignment row |
+| `Charge Post Subscribers` (new, `src/ChargePostSubscribers/`) | Carries the subscribers on `Sales-Post` codeunit 80 and owns every write. | none in System App / apps |
 
 ## Decision logic and test surfaces
 
