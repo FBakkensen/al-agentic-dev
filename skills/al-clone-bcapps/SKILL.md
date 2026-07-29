@@ -43,11 +43,13 @@ from `.bcapps/main` is next-major code, ahead of what the app runs against.
 
 When the green bar below already holds, leave both checkouts alone; drift
 within a branch is deliberately unhandled. Otherwise delete `.bcapps/` and
-clone each checkout fresh:
+clone each checkout fresh — `core.longpaths` before the sparse set, since
+BCApps paths overrun Windows' path limit; it is harmless elsewhere:
 
 ```
 git clone --depth 1 --single-branch --branch <branch> --sparse \
     --filter=blob:none https://github.com/microsoft/BCApps .bcapps/<checkout>
+git -C .bcapps/<checkout> config core.longpaths true
 git -C .bcapps/<checkout> sparse-checkout set <its folders>
 ```
 
@@ -58,8 +60,7 @@ wanted folder is populated in exactly one checkout.
 ## Close
 
 Name the outcome — the checkouts on their branches, ready to search, or one
-line naming what failed in the terms the developer acts on: the manifest that
-is missing, the branch that did not resolve, the network. Clearing a red is
+line naming what failed in the terms the developer acts on. Clearing a red is
 the developer's move; re-run this skill afterwards.
 
 Ran as the provision task's step → then `/al-routing`. Ran ad hoc → close back
