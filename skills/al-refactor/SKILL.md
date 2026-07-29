@@ -34,7 +34,7 @@ A finding that would move observable behaviour, or that contradicts `architectur
 
 ## Writing AL
 
-Every BC object, table, field, procedure, event, and enum value name comes from a lookup in this session — search the workspace, or read the symbols. Recall is not evidence.
+Every BC object, table, field, procedure, event, and enum value name comes from a lookup in this session — search the workspace, or read the symbols. Recall is not evidence. Where `.bcapps/` is present, search it explicitly for Microsoft's own implementation — default search skips gitignored folders.
 
 Use BC vocabulary: Insert not create, Modify not update, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, procedure not method, codeunit not class.
 

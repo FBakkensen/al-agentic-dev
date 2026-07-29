@@ -12,7 +12,7 @@ Preconditions: the `CONTEXT.md` terms and the domain ADRs are settled — run `/
 
 `event-model.md` lands in the feature's spec folder, `specs/<NNN>-<slug>/`, created if absent with `<NNN>` one past the highest spec folder present, together with a matching `<NNN>-<slug>` branch off the default branch. Where the file already exists for this feature, reshape it in place.
 
-Every BC name that lands in a slot — a persona, a BaseApp event, a table, a field, a page — comes from a lookup made this session: search the workspace, or read Microsoft's BC documentation. Recall is fiction.
+Every BC name that lands in a slot — a persona, a BaseApp event, a table, a field, a page — comes from a lookup made this session: search the workspace, or read Microsoft's BC documentation. Recall is fiction. Where `.bcapps/` is present, search it explicitly for BaseApp's own events and code — default search skips gitignored folders.
 
 ## The five slots
 

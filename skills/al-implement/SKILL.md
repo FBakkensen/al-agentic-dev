@@ -18,7 +18,7 @@ Read `architecture.md` and name the seam in BC vocabulary — the procedure to e
 
 ## Writing AL here
 
-Every BC object, table, field, procedure, event, and enum value name comes from a lookup run in this session — search the workspace source and symbols, or read the official BC documentation. Recall is fiction. A name you mint earns a zero-hit collision lookup first: objects against workspace declarations, fields against the target table and its extensions, procedures against the target object.
+Every BC object, table, field, procedure, event, and enum value name comes from a lookup run in this session — search the workspace source and symbols, or read the official BC documentation. Recall is fiction. Where `.bcapps/` is present, search it explicitly for Microsoft's own implementation — default search skips gitignored folders. A name you mint earns a zero-hit collision lookup first: objects against workspace declarations, fields against the target table and its extensions, procedures against the target object.
 
 BC vocabulary: Insert not create, Modify not update, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, codeunit not class, procedure not method. TDD, red/green, and AAA keep their own names.
 

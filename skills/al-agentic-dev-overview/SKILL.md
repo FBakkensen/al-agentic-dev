@@ -10,7 +10,8 @@ These skills carry a Business Central feature from a rough idea to a merged bran
 ## Pipeline
 
 ```
-/al-grill-adr → /al-event-model → /al-design → /al-scope → /al-provision
+/al-grill-adr → /al-event-model → /al-design → /al-scope
+   → /al-provision → /al-clone-bcapps
    → /al-refine → /al-implement → /al-refactor → /al-mutate
    → /al-code-review → /al-user-verification → /al-validate-breaking-changes
 ```
@@ -35,7 +36,8 @@ These skills carry a Business Central feature from a rough idea to a merged bran
 | `/al-code-review` | Reviews at slice-done and before merge, splitting rework from change requests. |
 | `/al-user-verification` | Walks a slice's verify task with you, one scenario at a time, recordings included. |
 | `/al-build` | Compiles, publishes, runs the tests — the gate every other skill reaches through. |
-| `/al-provision` | Runs the feature's first task, refreshing compiler, symbols, and baseline. |
+| `/al-provision` | Runs the provision task's first step, refreshing compiler, symbols, and baseline. |
+| `/al-clone-bcapps` | Runs its second step, cloning Microsoft's W1 source at the matching BC version into `.bcapps/`. |
 | `/al-validate-breaking-changes` | Runs the feature's last task, validating the shipped surface against that baseline. |
 | `/al-quiz` | Quizzes you on what just landed, one question at a time. |
 | `/al-grilling` | Stress-tests one answer at a time; the interview skills escalate to it. |

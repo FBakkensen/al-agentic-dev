@@ -19,12 +19,13 @@ slice: <slug>        # an event-model.md timeline step or architecture.md slice;
 depends_on: [T-004]  # hard edges onto the tasks this one must follow
 status: open | done  # the only two written states
 phase: refined | implemented | refactored | mutated   # technical stamps;
-                     # on a verify task the stamps are planned | page-scripted
+                     # on a verify task the stamps are planned | page-scripted;
+                     # on the provision task the single stamp is provisioned
 review: clean        # the review gate's stamp — the slice's last task at slice-done,
                      # the breaking-change task at feature-done
 ```
 
-Creation writes the structural fields plus `status: open` and no `phase:` — `/al-scope` at scoping, or the skill that finds new work mid-pipeline, naming the edges its find must wait on. A finder task takes a free `NNN` below the slice's verify task where one exists, so the verify task stays the slice's tail; a backend-only slice appends at the tail. Ops tasks never carry `phase:`. Every later write is a stamp this skill makes when a run's outcome arrives.
+Creation writes the structural fields plus `status: open` and no `phase:` — `/al-scope` at scoping, or the skill that finds new work mid-pipeline, naming the edges its find must wait on. A finder task takes a free `NNN` below the slice's verify task where one exists, so the verify task stays the slice's tail; a backend-only slice appends at the tail. The breaking-change task never carries `phase:`. Every later write is a stamp this skill makes when a run's outcome arrives.
 
 ## Derived, never written
 
@@ -40,13 +41,13 @@ Ready, blocked, and waiting are computed fresh at every read — no field mirror
 
 - `technical`, open — no phase → `/al-refine` · `refined` → `/al-implement` · `implemented` → `/al-refactor` · `refactored` → `/al-mutate`.
 - `verify`, open — no phase → `/al-refine` · `planned` with its `review: clean` stamp → `/al-user-verification` · `page-scripted` → `/al-user-verification` resumes the walk from the task body's `Partial-run record:`, or starts it when none exists.
-- `provision` → `/al-provision` · `breaking-change` → `/al-validate-breaking-changes`; neither passes through `/al-refine`.
+- `provision`, open — no phase → `/al-provision` · `provisioned` → `/al-clone-bcapps`. `breaking-change` → `/al-validate-breaking-changes`. Neither ops kind passes through `/al-refine`.
 - `done` is settled at any phase; on a technical task short of `mutated` it is a deliberate early close, not a gap.
 
 ## Gates
 
 - **Scoping** — no breaking-change task in `tasks/` means the folder is half-scoped: `/al-scope` finishes the write before anything routes.
-- **Provisioning** — while the provision task is not `done`, `/al-provision` is the only move.
+- **Provisioning** — while the provision task is not `done`, its ladder step is the only move.
 - **Slice-done** — every technical task in a feature slice `done` (the reserved ops slugs never gate) and the slice's last task lacking `review: clean` → `/al-code-review` on the slice.
 - **Feature-done** — every task `done` except the breaking-change task, which lacks `review: clean` → `/al-code-review` across the feature; its stamp is what opens the breaking-change task.
 - **All done** — everything `done`, breaking-change included → `/al-sync-main`, then the user opens the PR. Branch synced and PR open → the feature is closed; nothing to route.
@@ -64,7 +65,8 @@ One edit per stamped outcome; nothing else moves:
 | `/al-user-verification` sealed the slice's last recording | `phase: page-scripted` |
 | `/al-user-verification` finished the walk clean | `status: done` |
 | `/al-code-review` cleared the slice / the feature | `review: clean` on the slice's last task / on the breaking-change task |
-| `/al-provision` or `/al-validate-breaking-changes` ran | green → `status: done`; red → one `Last run:` line in the task body naming what failed, frontmatter untouched |
+| `/al-provision` ran | green → `phase: provisioned`; red → one `Last run:` line in the task body naming what failed, frontmatter untouched |
+| `/al-clone-bcapps` or `/al-validate-breaking-changes` ran | green → `status: done`; red → one `Last run:` line in the task body naming what failed, frontmatter untouched |
 | the user closes a task early | `status: done` |
 
 Four outcomes stamp nothing:

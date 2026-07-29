@@ -16,7 +16,7 @@ Settle the feature-level architecture through an interview and write it into `ar
 
 ## Grounding and AL voice
 
-Every BC object, table, field, procedure, event, and enum value name comes from a lookup run this session — a workspace symbol search, or official BC documentation read and quoted. Recall is stale fiction. A name carried in from `event-model.md` counts once a search of that file returns it this session; a name being minted needs a zero-hit collision search first.
+Every BC object, table, field, procedure, event, and enum value name comes from a lookup run this session — a workspace symbol search, or official BC documentation read and quoted. Recall is stale fiction. Where `.bcapps/` is present, search it explicitly for Microsoft's own implementation — default search skips gitignored folders. A name carried in from `event-model.md` counts once a search of that file returns it this session; a name being minted needs a zero-hit collision search first.
 
 BC vocabulary throughout: Insert not create, Modify not update, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, codeunit not class, procedure not method.
 

@@ -1,6 +1,6 @@
 ---
 name: al-provision
-description: Run the feature's provision task — refresh the AL toolchain through /al-build. The first move of every feature.
+description: Refresh the AL toolchain through /al-build — the provision task's first step, and runnable anytime the toolchain is suspect.
 disable-model-invocation: true
 ---
 
@@ -12,14 +12,11 @@ anything is built on a stale toolchain.
 
 ## Precondition
 
-Run it on the feature's `kind: provision` task while that task is open — first
-time, or as a re-run once the developer has cleared what the task body's
-`Last run:` line names. Task-file state is `/al-routing`'s.
-
-Any other `kind:` → stop and name the kind you found. A settled provision task →
-stop; the environment is already refreshed for this feature — unless a later
-gate reported the baseline cache empty or stale, in which case re-run on the
-settled task and leave its state as it stands.
+None beyond the workspace itself. Run it as the provision task's first step
+when routed there — first time, or as a re-run once the developer has cleared
+what the task body's `Last run:` line names — or ad hoc whenever the toolchain
+is suspect: a stale compiler, missing symbols, a baseline cache a later gate
+reported empty. Task-file state is `/al-routing`'s.
 
 ## Run
 
@@ -34,4 +31,5 @@ the terms the developer acts on: the prerequisite that is missing, the package
 that did not resolve, the tool that is not on PATH. Clearing a red is the
 developer's move; re-run this skill afterwards.
 
-Then `/al-routing`.
+Ran as the provision task's step → then `/al-routing`. Ran ad hoc → close back
+into the work that needed the refresh; nothing to route.
