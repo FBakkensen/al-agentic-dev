@@ -9,24 +9,10 @@ These skills carry a Business Central feature from a rough idea to a merged bran
 
 ## The tour
 
-Emit five sections in order, one screen in total; the skills table below is reference for follow-up questions, never emitted whole.
+Emit [TOUR.md](TOUR.md) exactly as written, filling its two slots; the skills table below is reference for follow-up questions, never emitted whole.
 
-1. One line naming what the toolkit is — the user drives, nothing auto-chains.
-2. **Pipeline** — the flow below.
-3. **Support skills** — one line: `/al-routing`, `/al-next`, `/al-build`, `/al-quiz`, `/al-grilling`, `/al-sync-main`.
-4. **Start here** — the line the detection picks. Search the tree for `app.json`; it is rarely at the repo root. Found beside a `specs/<NNN>-<slug>/` folder at repo root → mid-feature, run `/al-next`. Found without `specs/` → cold start, begin at `/al-grill-adr` — a crystallised idea may skip it, most gain from it. Not found → `cd` into the AL repo, then re-run. Detection names the kind of place only; the open moves belong to `/al-next`.
-5. **Snippet** — only when the check below finds a home missing or stale: the final paragraph, on its own, naming the stale homes and the words that run the install — "install the snippet".
-
-## Pipeline
-
-```
-/al-grill-adr → /al-event-model → /al-design → /al-scope
-   → /al-provision → /al-clone-bcapps → /al-clone-bcquality
-   → /al-refine → /al-implement → /al-refactor → /al-mutate
-   → /al-code-review → /al-user-verification → /al-validate-breaking-changes
-```
-
-`/al-event-model` runs for user- or API-facing features only; backend-only features go straight to `/al-design`. `/al-refine` through `/al-mutate` runs once per task; `/al-code-review` and `/al-user-verification` run once per slice, with `/al-code-review` again across the whole feature before merge. `/al-quiz` and `/al-sync-main` run whenever you want them. Whichever of `/al-event-model` or `/al-design` runs first creates the branch and the spec folder.
+- **Start here** — no `app.json` anywhere in the tree (it is rarely at the repo root) → the not-an-AL-repo line. Present, but `.bcapps/` or `.bcquality/` missing at repo root → the provision-first line; the three provision skills run ad hoc, no task file needed. Provisioned, no `specs/<NNN>-<slug>/` at repo root → the cold-start line; whichever of `/al-event-model` or `/al-design` runs first creates the branch and the spec folder. `specs/` present → the mid-feature line. Detection names the kind of place only; the open moves belong to `/al-next`.
+- **Snippet** — the section appears only when the check below finds a home missing or stale, naming which; all four current → omit the section.
 
 ## The skills
 
