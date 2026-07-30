@@ -17,7 +17,7 @@ Functional outcomes gate: a Status value, a cue count, an HTTP status, an error.
 
 ## Preconditions
 
-The task this skill takes is the slice's `kind: verify` task with a populated `Verification Plan` and the review gate's stamp on it — `/al-routing` routes it here only in that state, and task-file state stays `/al-routing`'s throughout. An empty plan, a missing stamp, or a Contract Example whose named client is unconfigured — stop and name which.
+Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. The task this skill takes is the slice's `kind: verify` task with a populated `Verification Plan` and the review gate's stamp on it — `/al-routing` routes it here only in that state, and task-file state stays `/al-routing`'s throughout. An empty plan, a missing stamp, or a Contract Example whose named client is unconfigured — stop and name which.
 
 Login is the user's; an annotated walk signs you in with the same throwaway credentials. Hand over the Web Client URL and the credentials from repo-root `al-build.json` (defaults `admin` / `P@ssw0rd`), local container hosts only. The user cannot reach the URL → stop and fix the environment first.
 

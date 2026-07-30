@@ -18,7 +18,7 @@ Scope is one of three diffs:
 - **Feature-done** — the whole branch against `main`, after every task but the breaking-change task is settled.
 - **Repair** — the fix commits of one named repair episode from a verification walk, reviewed against the check that failed; this scope reports its verdict and stamps nothing.
 
-Mixed state, a squash that hides the `T-NNN` prefixes, or an ambiguous range is one lettered question to the user. Task files under `tasks/` are evidence — read their bodies and their frontmatter (the schema is `/al-routing`'s) rather than inferring state from the diff.
+Mixed state, a squash that hides the `T-NNN` prefixes, or an ambiguous range is one lettered question to the user. Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. Task files are evidence — read their bodies and their frontmatter (the schema is `/al-routing`'s) rather than inferring state from the diff.
 
 ## Ground every AL judgment
 

@@ -10,7 +10,7 @@ disable-model-invocation: true
 
 ## Scope
 
-Quiz the work least likely to have been absorbed: whatever the user names, or else the branch's commits since main, a slice whose tasks are settled, the whole feature before merge, or a legacy object area the user points at. Task frontmatter (`/al-routing`'s schema) is read only to find that scope.
+Quiz the work least likely to have been absorbed: whatever the user names, or else the branch's commits since main, a slice whose tasks are settled, the whole feature before merge, or a legacy object area the user points at. Task frontmatter (`/al-routing`'s schema) is read only to find that scope. Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch.
 
 Read the diff first, then the `Test Specification`, `Verification Plan`, and `Contract notes` of the tasks covering it. Every question comes from what shipped — a developer who can recite the plan has proved nothing about the code.
 

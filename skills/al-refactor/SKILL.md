@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Reshape while green
 
-The build is green before the first change. Reshaping against red is debugging — that belongs in /al-implement. Task-file state is `/al-routing`'s; this skill reshapes code. The knowledge pass below reads `.bcquality/` — missing → name `/al-clone-bcquality` and stop. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+The build is green before the first change. Reshaping against red is debugging — that belongs in /al-implement. Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. Task-file state is `/al-routing`'s; this skill reshapes code. The knowledge pass below reads `.bcquality/` — missing → name `/al-clone-bcquality` and stop. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 ## The knowledge pass
 

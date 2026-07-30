@@ -10,7 +10,7 @@ A suite that passes a broken program proves nothing. Break the program on purpos
 
 ## Before the first mutation
 
-The tree is clean and the green baseline is committed — revert returns to `HEAD`, so uncommitted work is not safe. Run `/al-build` and require green; survivors measured against a red baseline carry no signal. Mutate production AL only: not tests, not generated `.rdlc` or `.xlf`, not captions, labels, or tooltips. Let a reshape in flight land green and commit first — a shape still moving stales every classification. Anything missing here: name it and stop.
+Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. The tree is clean and the green baseline is committed — revert returns to `HEAD`, so uncommitted work is not safe. Run `/al-build` and require green; survivors measured against a red baseline carry no signal. Mutate production AL only: not tests, not generated `.rdlc` or `.xlf`, not captions, labels, or tooltips. Let a reshape in flight land green and commit first — a shape still moving stales every classification. Anything missing here: name it and stop.
 
 ## Plan the sites first
 

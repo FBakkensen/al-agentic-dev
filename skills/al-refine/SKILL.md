@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Refine a task into its proof
 
-One named task per run. Regenerate its Test Specification or Verification Plan whole against the current app and tests; keep everything scope-time — title, description, `depends_on:`, `slice:`, constraints, risks, acceptance intent. [TASK-FORMAT.md](TASK-FORMAT.md) is the body's exact shape — section order, heading levels, labels, and column names.
+One named task per run. Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. Regenerate its Test Specification or Verification Plan whole against the current app and tests; keep everything scope-time — title, description, `depends_on:`, `slice:`, constraints, risks, acceptance intent. [TASK-FORMAT.md](TASK-FORMAT.md) is the body's exact shape — section order, heading levels, labels, and column names.
 
 The body is your write; the frontmatter is `/al-routing`'s. An open question this run cannot settle — one only running code can answer, a slot `architecture.md` never allotted, an unsettled domain rule — stops the run instead: name it in chat and leave the body as the interview left it; the next run regenerates it whole once the question settles.
 

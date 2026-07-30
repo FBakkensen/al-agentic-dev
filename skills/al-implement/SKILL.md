@@ -10,7 +10,7 @@ One task per session. Consume its `Test Specification`, stop at green. Reshaping
 
 ## Before any code
 
-The task this skill takes is `kind: technical` with a populated `Test Specification`. Missing its specification, `/al-refine` writes it first. Another `kind:` is declined — `/al-routing`'s ladder names its skill. Task-file state is `/al-routing`'s; this skill edits only the task body.
+Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. The task this skill takes is `kind: technical` with a populated `Test Specification`. Missing its specification, `/al-refine` writes it first. Another `kind:` is declined — `/al-routing`'s ladder names its skill. Task-file state is `/al-routing`'s; this skill edits only the task body.
 
 A task whose behaviour is already proved is re-entered by one named repair alone, settled tasks included: a functional fail from a verification run — its failed check is the red, written as a test at the layer that can catch it. It lands red-first, commits under the owning `T-NNN`, and moves no task-file state. At green, the user runs `/al-code-review` on the fix diff under its repair scope, then resumes `/al-user-verification` at the failed scenario.
 
