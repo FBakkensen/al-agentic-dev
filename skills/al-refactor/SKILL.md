@@ -22,7 +22,7 @@ Read the whole diff — a task's full diff, once per task — through each of th
 - **Terminology** — object, procedure, and field names agreeing with `CONTEXT.md`, the ADRs, `architecture.md`, `event-model.md`, and the task's `New and Modified Objects`.
 - **Performance shape** — a lookup hoisted out of a loop, a filtered read replacing a scan, fields loaded selectively. The structural kind, not one-line tweaks.
 
-If your harness supports subagents, these parallelize; otherwise apply them in one pass.
+If your harness supports subagents, these parallelize on full-capability subagents running the same model as this conversation; otherwise apply them in one pass.
 
 ## Apply
 
