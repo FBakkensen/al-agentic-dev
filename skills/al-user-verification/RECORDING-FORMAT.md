@@ -42,7 +42,7 @@ A recording guards regressions only if it greens on clean data every time. The r
 
 ## What stays out of a recording
 
-Look-and-feel, error-message tone, and accessibility encode in no assertion — they belong in an Exploration Charter. A recording that doubles a test a lower AL layer already runs is waste; the `Record:` flag was assigned at scope time and the walk honours it.
+Look-and-feel, error-message tone, and accessibility encode in no assertion — they belong in a Usability Review. A recording that doubles a test a lower AL layer already runs is waste; the `Record:` flag was assigned at scope time and the walk honours it.
 
 ---
 

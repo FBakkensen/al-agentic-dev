@@ -25,7 +25,7 @@ Skills parse these shapes, so field names and structure are exact.
 | `Deviations:` | technical | implementation absorbed an assumption inline |
 | `## Journey Examples` | verify | the slice is BC Web Client-facing |
 | `## Contract Examples` | verify | the slice is API or external-client-facing |
-| `## Exploration Charters` | verify | optional; earned by new workflows, changed workflows, and error-guidance changes |
+| `## Usability Review` | verify | optional; earned by new workflows, changed workflows, and error-guidance changes |
 | `Partial-run record:` | verify | a verification walk is in flight |
 | `Closeout:` | verify | the walk is complete |
 | `Last run:` | ops | the last run was red — one line naming what failed |
@@ -42,9 +42,9 @@ One coverage table per technical task, and `Covered By` holds AL test procedure 
 
 **`## AAA Cases`** — every `Unit` case, then every `Integration` case, ascending coverage ID inside each scope. `Unit` proves an isolated decision on the AL Runner; `Integration` proves BC runtime, database, event, page, posting, install, or permission wiring in a container. Each case carries exactly one `Scope:`, a `Covers:` naming `B#` or `R#` from the same body, and `Arrange:` / `Act:` / `Assert:` bullet blocks with at least one bullet each — business state first, one business action, observable outcomes including expected errors.
 
-**`## Journey Examples`** (`V1`, `V2`) and **`## Contract Examples`** (`C1`, `C2`) — the verify plan's acceptance checks. Scopes: `E2E` for a BC Web Client workflow, `Contract` for an API or external client, `Exploration` for a guided usability walk. `Record: yes` marks behaviour no AL test layer can automate (control add-in, canvas, web-client-only); every other Journey Example is `Record: no`. The first kind is recorded and replayed, the second walked. `Role`, `Action`, and `Observable Checks` apply to both — the checks are the grounded values the walk or the replay reads off the screen. A Contract example names its `Client:` instead of a `Role:`.
+**`## Journey Examples`** (`V1`, `V2`) and **`## Contract Examples`** (`C1`, `C2`) — the verify plan's acceptance checks. Scopes: `E2E` for a BC Web Client workflow, `Contract` for an API or external client, `Usability` for a guided usability walk. `Record: yes` marks behaviour no AL test layer can automate (control add-in, canvas, web-client-only); every other Journey Example is `Record: no`. The first kind is recorded and replayed, the second walked. `Role`, `Action`, and `Observable Checks` apply to both — the checks are the grounded values the walk or the replay reads off the screen. A Contract example names its `Client:` instead of a `Role:`.
 
-**`## Exploration Charters`** (`X1`, `X2`) — one charter sentence plus two to four prompts.
+**`## Usability Review`** (`U1`, `U2`) — each item carries `Scope: Usability`, one `Judge:` sentence, and a `Prompts:` block of two to four bullets.
 
 **`Deviations:`** — one line per assumption absorbed inline during implementation, appended, never edited away; the provenance that qualifies mutation sites.
 
@@ -157,11 +157,11 @@ Action:
 Observable Checks:
 - The warning clears without reopening the page.
 
-## Exploration Charters
+## Usability Review
 
-### X1 WarningTellsThePurchaseAgentWhatToFix
-Scope: Exploration
-Charter: Judge whether the release warning tells the Purchase Agent which line to move and by how much.
+### U1 WarningTellsThePurchaseAgentWhatToFix
+Scope: Usability
+Judge: whether the release warning tells the Purchase Agent which line to move and by how much.
 Prompts:
 - Is the late Purchase Line identifiable without opening another page?
 - Is the overdue amount expressed in a unit the agent acts on?

@@ -16,6 +16,6 @@ That is the whole trigger. Provision and breaking-change tasks are declined — 
 
 For a **technical** task: `New and Modified Objects` at signature level with bodies omitted, exactly one coverage table (`Expected Behaviors` or a `Decision Matrix`) where every row names the AL test procedure covering it, and one AAA case per test procedure — Unit cases first, then Integration. The proof is reported to `/al-routing`, which stamps the task refined.
 
-For a **verify** task: Journey Examples, Contract Examples, and Exploration Charters, each derived from the slice's observable user or API surface and quoting `event-model.md` vocabulary. The plan is reported to `/al-routing`, which stamps the task planned.
+For a **verify** task: Journey Examples, Contract Examples, and a Usability Review, each derived from the slice's observable user or API surface and quoting `event-model.md` vocabulary. The plan is reported to `/al-routing`, which stamps the task planned.
 
 Every Integration case, recorded journey, and Contract example sits above the cheapest layer that could hold the behaviour, so each one owes a `Contract notes:` line saying why the layer below cannot hold it. Those are the lines worth your attention when the skill hands back.

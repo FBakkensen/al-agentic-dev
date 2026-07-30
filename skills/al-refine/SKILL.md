@@ -36,7 +36,7 @@ Exactly one coverage table: `## Expected Behaviors` with IDs `B1`, `B2` for a gu
 
 Every check derives from the slice's observable user or API surface, never internal state, and title, description, and every Role / Action / Business Event / View / Status name quote `event-model.md`.
 
-Write only the sections the slice earns: `## Journey Examples` (`V1`, `V2`) for a BC Web Client slice, `## Contract Examples` (`C1`) for an API or external-client slice, `## Exploration Charters` (`X1`) for a new or changed workflow. A journey carries `Scope: E2E`, `Record:`, `Role:`, an `Action:` bullet block, and an `Observable Checks:` bullet block — those checks are the gating values the user reads off the screen, so every journey carries them. A charter is one charter sentence and two to four prompts.
+Write only the sections the slice earns: `## Journey Examples` (`V1`, `V2`) for a BC Web Client slice, `## Contract Examples` (`C1`) for an API or external-client slice, `## Usability Review` (`U1`) for a new or changed workflow. A journey carries `Scope: E2E`, `Record:`, `Role:`, an `Action:` bullet block, and an `Observable Checks:` bullet block — those checks are the gating values the user reads off the screen, so every journey carries them.
 
 `Record: yes` belongs only to behaviour no AL test layer can automate — a control add-in, canvas, rendering, web-client-only behaviour. Behaviour a Unit or Integration case pins is `Record: no` and gets walked instead.
 
