@@ -7,7 +7,7 @@ disable-model-invocation: true
 # /al-clone-bcapps — the platform source clone
 
 Symbols say whether a name exists; the clone shows how Microsoft implements it
-— a searchable W1 checkout of BCApps under `.bcapps/`, matched to the app's BC version.
+— a searchable W1 checkout of BCApps under `.bcapps/`, matched to the app's BC version. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 ## Precondition
 

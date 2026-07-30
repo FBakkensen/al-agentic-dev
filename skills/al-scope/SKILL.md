@@ -16,7 +16,7 @@ Every BC name you put in a task — table, field, procedure, event — comes fro
 
 ## The interview
 
-Ask one question per message, land each slice's files as that slice settles, and where a fork stands open, build out the affected slice's full task list per candidate, edges included, before asking. Ask in the reply itself, as plain text — a question tool strips the options and the recommendation.
+Ask one question per message, land each slice's files as that slice settles, and where a fork stands open, build out the affected slice's full task list per candidate, edges included, before asking. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 - **Where does one task end?** A task lands one behaviour with the tests that prove it. Two behaviours in one task hide one of them from its own red.
 - **Which slice ships first?** `event-model.md` timeline order — or `architecture.md` slice order, backend-only — is the default. Ask only where two slices are genuinely independent, because that answer decides what the user can exercise soonest.

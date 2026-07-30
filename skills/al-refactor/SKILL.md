@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Reshape while green
 
-The build is green before the first change. Reshaping against red is debugging — that belongs in /al-implement. Task-file state is `/al-routing`'s; this skill reshapes code. The knowledge pass below reads `.bcquality/` — missing → name `/al-clone-bcquality` and stop.
+The build is green before the first change. Reshaping against red is debugging — that belongs in /al-implement. Task-file state is `/al-routing`'s; this skill reshapes code. The knowledge pass below reads `.bcquality/` — missing → name `/al-clone-bcquality` and stop. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 ## The knowledge pass
 
@@ -34,7 +34,13 @@ One reshape at a time, committed under the owning task's `T-NNN` prefix, running
 - Rename freely what this branch introduced — `git log origin/main..HEAD` names it — and what is internal-only. A rename touching a public symbol that predates the branch is not a reshape; it follows the finding rule below.
 - `[HandlerFunctions('...')]` names a test procedure inside a string literal that symbol tools do not see: search the workspace for that literal before renaming a test procedure, and update the AAA case header and `Covered By` in the same change.
 
-A finding that would move observable behaviour, or that contradicts `architecture.md`, an ADR, or verified behaviour, is not a reshape. Write it yourself as a new open technical task in the same slice, per `/al-routing`'s schema.
+## Findings
+
+A defect needs no user decision: fix it in this run. A behavioural defect goes red first — write the missing case, watch it fail on a real assertion, then make it pass. A provably non-semantic defect lands directly.
+
+A change request would override a decision the user already made, or establish missing business or architecture intent. Interview every change request before implementing any ruling, one per message, highest impact first. Explain the impact, choice, consequences, and recommendation. Name modules, boundaries, public objects, interfaces, events, or other AL concepts when they make the current or proposed architecture legible; keep paths, line numbers, private procedures, code snippets, lookup mechanics, and knowledge-article details out unless the user asks. One answer settles only the request in front of the user.
+
+After every request is settled, apply its ruling: **Do it now** lands on the defect terms above; **Write a task** creates one per `/al-routing`'s schema; **Keep the current behaviour** records the ruling in the decision artifact. Create a task only when the user chose one. Technical evidence belongs in the resulting commit or task.
 
 ## Writing AL
 
@@ -46,6 +52,6 @@ Reach for the platform before writing code — a field plus a FlowField over a s
 
 ## Close
 
-Report the reshape at module, pattern, and seam altitude, naming the invariant that held and the dimensions and leaves that came back clean.
+Report the reshape and defects fixed at module, pattern, and seam altitude, naming the invariant that held and the dimensions and leaves that came back clean. Report each change request by impact, ruling, and outcome.
 
 Then `/al-routing`.

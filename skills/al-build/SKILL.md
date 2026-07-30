@@ -5,7 +5,7 @@ description: "Runs the scripted AL/Business Central toolchain: the compile-publi
 
 # al-build
 
-Every script below lives in this skill's `scripts/` folder and runs from the consumer repo root:
+Every script below lives in this skill's `scripts/` folder and runs from the consumer repo root. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 ```
 pwsh <path to this skill>/scripts/<name>.ps1

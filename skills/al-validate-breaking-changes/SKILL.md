@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Breaking-change gate
 
-The gate answers one question: did this feature break a released public API? It is the AppSource-style validation — per country, install and upgrade — run against the baseline release cached at provision time, and it catches breaks that the compile-time AppSourceCop pass inside the ordinary build gate never reaches.
+The gate answers one question: did this feature break a released public API? It is the AppSource-style validation — per country, install and upgrade — run against the baseline release cached at provision time, and it catches breaks that the compile-time AppSourceCop pass inside the ordinary build gate never reaches. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 ## Precondition
 

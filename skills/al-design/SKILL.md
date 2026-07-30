@@ -28,7 +28,7 @@ BCQuality is the rule set. `.bcquality/knowledge-index.json` carries one row per
 
 ## The interview
 
-Ask one question per message, with lettered options and the recommendation marked in its own option line. Ask in the reply itself, as plain text — a question tool strips the options and the recommendation. Each answer lands in `architecture.md` as it settles — batching an hour of settled decisions into one write at the close loses the hour.
+Ask one question per message, with lettered options and the recommendation marked in its own option line. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Each answer lands in `architecture.md` as it settles — batching an hour of settled decisions into one write at the close loses the hour.
 
 Strategic, and therefore asked: module ownership and dependency direction, where persisted data lives, seam placement, which existing behaviour the feature may change, the public surface it commits to, the boundary between pure decisions and BC runtime, the future change this architecture must keep cheap, and the binding constraint. The interview closes when each of those is settled or stopped on a named spike.
 

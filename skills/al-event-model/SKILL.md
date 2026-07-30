@@ -26,7 +26,7 @@ BCQuality is the rule set for the slots that carry BC mechanics. `.bcquality/kno
 
 ## The interview
 
-Ask one question per message, with lettered options and your recommendation marked. Ask in the reply itself, as plain text — a question tool strips the options and the recommendation. Put to the user what the design and the task breakdown will lock in; decide the rest and name it in one line — wording, the order of steps whose order carries no meaning. Look up a BC fact rather than asking it.
+Ask one question per message, with lettered options and your recommendation marked. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Put to the user what the design and the task breakdown will lock in; decide the rest and name it in one line — wording, the order of steps whose order carries no meaning. Look up a BC fact rather than asking it.
 
 - **Whose journey is this, and where does it start and end?** A second Role appearing mid-timeline is a handoff — name it. Two disjoint journeys are two features.
 - **What does an external observer see that says the step worked?** The View in the surface's own words, plus the Status flip where there is one. A step with no observable outcome is a step nobody can verify later.

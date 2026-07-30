@@ -15,8 +15,9 @@
     for the per-skill exemptions in $scriptExemptions, each an upstream tool a named skill
     runs inside a checkout it clones. Task
     state has one home: outside skills/al-routing, no skill body states a lifecycle field
-    (status:, phase:, blocked-on:, review:). Every /al-<name> skill reference resolves to
-    a folder under the skills root. Every violation is reported; any violation exits 1.
+    (status:, phase:, blocked-on:, review:). Every skill carries the shared plain-text
+    question rule. Every /al-<name> skill reference resolves to a folder under the skills
+    root. Every violation is reported; any violation exits 1.
 .EXAMPLE
     pwsh scripts/Validate-Skills.ps1
 #>
@@ -53,6 +54,7 @@ function Get-MarkdownLinkTarget {
 $violations = @()
 $root = (Resolve-Path -LiteralPath $SkillsRoot -ErrorAction Stop).Path
 $modelInvocable = @('al-build', 'al-grilling', 'al-next', 'al-routing', 'al-agentic-dev-overview')
+$questionRule = 'Ask every question in the reply itself, as plain text — never through a question or elicitation tool.'
 # Per-skill script exemptions, approved one at a time. The key is the skill folder; the
 # value is the exact script paths that skill may name. al-build is exempt wholesale
 # because it owns the substrate; every other entry is an upstream tool the skill runs
@@ -163,6 +165,9 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
                         break
                     }
                 }
+            }
+            if (-not $body.Contains($questionRule)) {
+                $violations += "${relative}: missing the required plain-text question rule"
             }
         }
 

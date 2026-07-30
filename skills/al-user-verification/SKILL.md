@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 The user is the runner; you are the guide. You drive everything mechanical — containers, publish, replays, Contract clients, the task file — and turn each plan element into one concrete instruction the user performs in the BC Web Client. Their eyes are the oracle; they never open the task file.
 
-**Ask what the user sees before naming what you expect.** *"What does the Status field show now?"*, never *"Does Status say Open?"* — a led question hides the defect the walk exists to catch.
+**Ask what the user sees before naming what you expect.** *"What does the Status field show now?"*, never *"Does Status say Open?"* — a led question hides the defect the walk exists to catch. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 Functional outcomes gate: a Status value, a cue count, an HTTP status, an error. Usability outcomes never gate.
 

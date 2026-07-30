@@ -5,7 +5,7 @@ description: "Use when a skill finishes work on a task and the outcome needs rec
 
 # al-routing — the state engine
 
-Task state has one home: this skill. Every other skill reports what happened in plain words and invokes `/al-routing`; the stamps, the derivations, and the next open moves are decided here.
+Task state has one home: this skill. Every other skill reports what happened in plain words and invokes `/al-routing`; the stamps, the derivations, and the next open moves are decided here. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 ## The frontmatter
 

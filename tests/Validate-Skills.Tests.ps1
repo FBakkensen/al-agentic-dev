@@ -26,10 +26,12 @@ BeforeAll {
         param(
             [string]$Name = 'demo',
             [string]$Body = 'Name the outcome.',
-            [switch]$ModelInvocable
+            [switch]$ModelInvocable,
+            [switch]$WithoutQuestionRule
         )
 
         $flagLine = if ($ModelInvocable) { '' } else { "disable-model-invocation: true`n" }
+        $questionLine = if ($WithoutQuestionRule) { '' } else { "Ask every question in the reply itself, as plain text — never through a question or elicitation tool.`n`n" }
         return @"
 ---
 name: $Name
@@ -38,6 +40,7 @@ $flagLine---
 
 # $Name
 
+$questionLine
 $Body
 "@
     }
@@ -88,6 +91,18 @@ Name the outcome, then /al-build.
 
         $result.ExitCode | Should -Be 1
         $result.Text | Should -Match 'demo: SKILL\.md is missing'
+    }
+
+    It 'fails when a skill omits the plain-text question rule' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'no-question-rule') -Files @{
+            'demo/SKILL.md'     = (New-SkillContent -WithoutQuestionRule)
+            'al-build/SKILL.md' = (New-SkillContent -Name 'al-build' -ModelInvocable)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'demo/SKILL\.md: missing the required plain-text question rule'
     }
 
     It 'fails when the frontmatter block does not parse' -TestCases @(

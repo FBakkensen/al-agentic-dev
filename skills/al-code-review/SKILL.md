@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # /al-code-review — the review gate
 
-Code still in flight belongs to `/al-implement`; this gate reviews what has landed.
+Code still in flight belongs to `/al-implement`; this gate reviews what has landed. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 ## Baseline
 
@@ -46,34 +46,37 @@ The second pass is yours — the dimensions below, which reach what no leaf can 
 
 ## Disposition
 
-Rank the survivors of both passes by the consequence of shipping the diff as it stands; rank orders the queue and chooses nothing. A leaf finding is a survivor like any other and carries its knowledge article as the baseline it cites. The other baselines are the task's Test Specification, `architecture.md`, `event-model.md`, `CONTEXT.md`, the ADRs, and behaviour the user has already verified.
+Rank the survivors of both passes by the consequence of shipping the diff as it stands; rank orders the queue and chooses nothing. A leaf finding is a survivor like any other. Decision evidence is the task's Test Specification, `architecture.md`, `event-model.md`, `CONTEXT.md`, the ADRs, behaviour the user already verified, and explicit rulings in this session.
 
-- **Rework** — resolving it restores the code's conformance to a baseline and changes no baseline. It lands in this run.
-- **Change request** — resolving it would contradict baselined content, or establish content no baseline yet holds. The user settles it.
-- A finding whose baseline you cannot name is asking you to write one: change request. The diff cannot authorize itself — a comment or document this diff wrote is no baseline for this diff.
+- **Defect** — a bug or implementation-quality problem whose correction needs no user decision. It lands in this run.
+- **Change request** — the proposed resolution would override a recorded user decision, or establish business or architecture intent nobody has decided. The user settles it.
+- Code, comments, the current diff, and a knowledge article are technical evidence, not user decisions.
 
-### Land the rework
+### Land the defects
 
-- Behaviour-changing rework goes red first: write the missing AAA case, watch it fail on a real assertion, then make it pass. Commit under the originating `T-NNN` prefix and re-run `/al-build`. Task-file state stays untouched — a repair is not a pipeline step.
-- Provably non-semantic rework — a comment, a local rename, formatting that moves no decision logic — lands directly, gates, and commits standalone. A red gate reverts it and it re-enters as behaviour-changing.
-- A behaviour-changing finding inside a slice the user has already walked is a change request, because an autonomous fix invalidates the walk. Non-semantic rework still lands.
-- Rework that cannot reach green reverts and joins the change requests, so the tree stays green.
+- A behavioural defect goes red first: write the missing AAA case, watch it fail on a real assertion, then make it pass. Commit under the originating `T-NNN` prefix and re-run `/al-build`. Task-file state stays untouched — a repair is not a pipeline step.
+- A provably non-semantic defect — a comment, local rename, dead code, or equivalent query shape — lands directly, gates, and commits standalone. A red gate reverts it and it re-enters as behavioural.
+- A fix that would overturn behaviour the user already verified is a change request. A defect that cannot reach green reverts and leaves the review red; difficulty does not turn it into a user decision.
 
-### Settle the change requests
+### Interview the change requests
 
-Talk them through in the live session, one conversation at a time worst-first, clustered by the baseline decision they contest. Each ends on one of three outcomes, and the user may close the remainder in one ruling:
+Interview every change request before implementing any ruling, one per message, highest impact first. State the impact, business or architecture choice, consequences, and recommendation. Name modules, boundaries, public objects, interfaces, events, or other AL concepts when they make the current or proposed architecture legible; keep paths, line numbers, private procedures, code snippets, lookup mechanics, and knowledge-article details out unless the user asks. One answer settles only the request in front of the user.
 
-- **Do it now** — the user reclassifies it as rework; it lands on the terms above.
-- **Write a task** — write it yourself as a new open technical task on the `slice:` whose baseline it contests, per `/al-routing`'s schema; the gate holds until it settles. In the repair scope there is no gate to hold: the task lands, and whether the paused walk resumes past it is the user's call.
-- **Keep the code** — the user rules the baseline wrong; the finding clears here and the baseline edit is separate work.
+After every request is settled, apply its ruling:
+
+- **Do it now** — record the ruling in its decision artifact and land the change on the defect terms above.
+- **Write a task** — create one on the `slice:` whose decision it changes, per `/al-routing`'s schema. Create it only because the user chose it.
+- **Keep the current behaviour** — record the ruling in its decision artifact, so the same request does not return.
+
+Technical evidence belongs in the resulting commit or task, not the interview.
 
 ## Re-review and close
 
 Re-review the updated diff exactly once, running both passes from scratch. A finding still standing after it is reported, not fixed again.
 
-A clean gate is no rework left and no open change request.
+A clean gate is no defect left and no open change request.
 
-Keep the pass churn out of chat. Report each survivor as `Finding:` / `Where:` / `Action:`, naming the knowledge article behind a leaf finding, name each rework commit, and name each change request with the outcome it reached.
+Keep the pass churn out of chat. Name each defect commit. Report each change request as `Impact:` / `Ruling:` / `Outcome:`.
 
-**Outcome:** the diff is reviewed, the rework has landed green, and every change request has a ruling.
+**Outcome:** the diff is reviewed, the defects have landed green, and every change request has a ruling.
 Then `/al-routing` on a slice or feature verdict; a repair verdict closes back into the paused walk.

@@ -5,6 +5,6 @@
 - Outcome first when finishing, detail after.
 - Keep responses focused and brief. Compress the framing; keep code, object and field names, commands, and error strings exact.
 - Show tool results; skip tool-call narration.
-- Ask one question per message, with lettered options and the recommendation marked. Ask in the reply itself, as plain text — a question tool strips the options and the recommendation.
+- Ask one question per message, with lettered options and the recommendation marked. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 - Written artifacts match the length the task needs, with no summary sections, recaps, or boilerplate headings.
 - Machine-read shapes — YAML frontmatter, task-file fields, JSON payloads — keep their exact structure; brevity never truncates them.

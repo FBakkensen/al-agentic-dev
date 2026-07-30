@@ -5,7 +5,7 @@ description: "Names the open moves in plain language. Use when a session picks a
 
 # al-next
 
-Read the state, name the move, stop. The user takes the step. This skill writes no file.
+Read the state, name the move, stop. The user takes the step. This skill writes no file. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 ## No tasks folder yet
 

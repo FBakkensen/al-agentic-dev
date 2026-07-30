@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 **Rebase, never merge** — the replay makes every surfacing collision this branch's to move.
 Start from a clean working tree on a branch that is not main. Uncommitted work →
-ask the user to commit or stash. Already on main → stop; nothing to sync.
+ask the user to commit or stash. Already on main → stop; nothing to sync. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 ## Sync
 
