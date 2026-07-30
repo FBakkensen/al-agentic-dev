@@ -1,11 +1,21 @@
 ---
 name: al-agentic-dev-overview
-description: Tour of the AL agentic-dev toolkit and where to start. Use when the user asks what these skills are, or when the user asks to install the reply-shape snippet at user level. Reads no repository state — mid-feature, /al-next names the next move from tasks/.
+description: Tour of the AL agentic-dev toolkit and where to start. Use when the user asks what these skills are, or when the user asks to install or update the reply-shape snippet at user level. Detects only the kind of place it runs in — mid-feature, /al-next names the open moves from tasks/.
 ---
 
 # AL agentic dev — the tour
 
 These skills carry a Business Central feature from a rough idea to a merged branch. You drive; nothing auto-chains. A skill that moves a task hands its outcome to `/al-routing`, which records it and presents the open moves. State lives on disk — `CONTEXT.md` and `docs/adr/` at repo root, `specs/<NNN>-<slug>/` and its `tasks/` folder on the feature branch — so every skill starts cold.
+
+## The tour
+
+Emit five sections in order, one screen in total; the skills table below is reference for follow-up questions, never emitted whole.
+
+1. One line naming what the toolkit is — the user drives, nothing auto-chains.
+2. **Pipeline** — the flow below.
+3. **Support skills** — one line: `/al-routing`, `/al-next`, `/al-build`, `/al-quiz`, `/al-grilling`, `/al-sync-main`.
+4. **Start here** — the line the detection picks. Search the tree for `app.json`; it is rarely at the repo root. Found beside a `specs/<NNN>-<slug>/` folder at repo root → mid-feature, run `/al-next`. Found without `specs/` → cold start, begin at `/al-grill-adr` — a crystallised idea may skip it, most gain from it. Not found → `cd` into the AL repo, then re-run. Detection names the kind of place only; the open moves belong to `/al-next`.
+5. **Snippet** — only when the check below finds a home missing or stale: the final paragraph, on its own, naming the stale homes and the words that run the install — "install the snippet".
 
 ## Pipeline
 
@@ -16,7 +26,7 @@ These skills carry a Business Central feature from a rough idea to a merged bran
    → /al-code-review → /al-user-verification → /al-validate-breaking-changes
 ```
 
-`/al-event-model` runs for user- or API-facing features only; backend-only features go straight to `/al-design`. `/al-refine` through `/al-mutate` runs once per task; `/al-code-review` and `/al-user-verification` run once per slice, with `/al-code-review` again across the whole feature before merge. `/al-quiz` and `/al-sync-main` run whenever you want them.
+`/al-event-model` runs for user- or API-facing features only; backend-only features go straight to `/al-design`. `/al-refine` through `/al-mutate` runs once per task; `/al-code-review` and `/al-user-verification` run once per slice, with `/al-code-review` again across the whole feature before merge. `/al-quiz` and `/al-sync-main` run whenever you want them. Whichever of `/al-event-model` or `/al-design` runs first creates the branch and the spec folder.
 
 ## The skills
 
@@ -44,19 +54,11 @@ These skills carry a Business Central feature from a rough idea to a merged bran
 | `/al-grilling` | Stress-tests one answer at a time; the interview skills escalate to it. |
 | `/al-sync-main` | Rebases the branch onto main and renumbers object and field collisions. |
 
-## Cold start — nothing written down yet
-
-From the default branch with no `specs/<NNN>-<slug>/` folder, start at `/al-grill-adr` and follow the pipeline above. Whichever of `/al-event-model` or `/al-design` runs first creates the branch and the spec folder. A crystallised idea may skip `/al-grill-adr`; most gain from it.
-
 ## The reply-shape snippet
 
-[AGENTS-SNIPPET.md](AGENTS-SNIPPET.md) holds the reply-shape rules these skills assume. Install it when the user asks, at user level only — keep it out of the repository being worked on.
+[AGENTS-SNIPPET.md](AGENTS-SNIPPET.md) holds the reply-shape rules these skills assume. The check behind the tour's Snippet section: `~/.agents/AGENTS.md` must equal the snippet file, and each mirror — `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.copilot/copilot-instructions.md` — must carry it verbatim between `<!-- al-agentic-dev:start -->` and `<!-- al-agentic-dev:end -->`; a home missing or differing is stale. The check gates the offer only — when the user asks, install regardless, at user level only, keeping it out of the repository being worked on.
 
 1. Write the snippet to `~/.agents/AGENTS.md`, the canonical home.
-2. Mirror it into `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, and `~/.copilot/copilot-instructions.md`, wrapped in `<!-- al-agentic-dev:start -->` and `<!-- al-agentic-dev:end -->`.
+2. Mirror it into the other three homes, wrapped in the two markers. A re-run replaces what sits between them and leaves the rest of each file as it was. Once a harness reads `~/.agents/AGENTS.md` directly, drop its mirror.
 
-A re-run replaces what sits between those two markers and leaves the rest of each file as it was. Once a harness reads `~/.agents/AGENTS.md` directly, drop its mirror.
-
-The user has the map and the entry point for the work in front of them.
-
-Then `/al-next`.
+The tour emitted is the outcome; its Start here line is the user's next move — mid-feature, `/al-next`.
