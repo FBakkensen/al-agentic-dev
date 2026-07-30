@@ -17,7 +17,7 @@ Every folder under `skills/` is an Agent Skill: a `SKILL.md` plus optional sibli
 5. Another skill is named, never linked.
    - Correct: `Run the gate with /al-build.`
    - Incorrect: `Run [al-build](../al-build/SKILL.md).`
-6. Scripts are run only by the skill that owns them. Outside `skills/al-build/`, flag any `.ps1` filename or `scripts/` path; the skill calls `/al-build` instead.
+6. Scripts are run only by the skill that owns them. Outside `skills/al-build/`, flag any `.ps1` filename or `scripts/` path; the skill calls `/al-build` instead. One skill at a time may be exempted for one named script that upstream owns and it runs inside a checkout it clones — today `al-clone-bcquality` and the BCQuality knowledge-index generator, listed in the validator. Flag a new exemption that arrives without that approval, and flag an exempted skill naming any other script.
 7. No harness-specific names. Flag environment variables such as `COPILOT_PLUGIN_ROOT`, custom agent names, model names such as `claude-opus-5` or `gpt-5`, MCP server ids, and `agent_type:`. The one exception is `al-agentic-dev-overview`'s snippet install, whose job is writing every harness's config home symmetrically.
 8. Tools are described by what they do.
    - Correct: `search the workspace for the object declaration`

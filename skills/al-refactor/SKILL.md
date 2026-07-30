@@ -6,7 +6,11 @@ disable-model-invocation: true
 
 # Reshape while green
 
-The build is green before the first change. Reshaping against red is debugging — that belongs in /al-implement. Task-file state is `/al-routing`'s; this skill reshapes code.
+The build is green before the first change. Reshaping against red is debugging — that belongs in /al-implement. Task-file state is `/al-routing`'s; this skill reshapes code. The knowledge pass below reads `.bcquality/` — missing → name `/al-clone-bcquality` and stop.
+
+## The knowledge pass
+
+`.bcquality/microsoft/skills/review/al-code-review.md` names one review leaf per knowledge domain in its `sub-skills:` frontmatter. Run every leaf it lists against the task's diff, each per its own instructions, resolving the paths inside those files against `.bcquality/`. Every leaf runs — each decides its own applicability, and pre-judging which ones have something to say is the documented way to make them underreport. A leaf that ends partial or failed leaves its domain unjudged: name it and stop. Its findings are reshape candidates like any other, cited by the article behind them.
 
 ## Improvement dimensions
 
@@ -42,6 +46,6 @@ Reach for the platform before writing code — a field plus a FlowField over a s
 
 ## Close
 
-Report the reshape at module, pattern, and seam altitude, naming the invariant that held and the dimensions that came back clean.
+Report the reshape at module, pattern, and seam altitude, naming the invariant that held and the dimensions and leaves that came back clean.
 
 Then `/al-routing`.

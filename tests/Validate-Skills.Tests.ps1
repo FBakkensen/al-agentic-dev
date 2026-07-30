@@ -435,6 +435,40 @@ Describe 'Validate-Skills script-path checks' {
         $result.Text | Should -Match 'demo/SKILL\.md: names a script outside al-build'
         $result.Text | Should -Not -Match 'al-build/SKILL\.md: names a script'
     }
+
+    It 'exempts the knowledge-index generator in al-clone-bcquality only' {
+        $body = 'Run pwsh .bcquality/tools/Build-KnowledgeIndex.ps1 from the clone root.'
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'script-named-exemption') -Files @{
+            'al-clone-bcquality/SKILL.md' = (New-SkillContent -Name 'al-clone-bcquality' -Body $body)
+            'demo/SKILL.md'               = (New-SkillContent -Body $body)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'demo/SKILL\.md: names a script outside al-build'
+        $result.Text | Should -Not -Match 'al-clone-bcquality/SKILL\.md: names a script'
+    }
+
+    It 'holds an exempted skill to its own approved script list' -TestCases @(
+        @{ Case = 'other-script'; Body = 'Run pwsh .bcquality/tools/Test-ReviewFixtures.ps1 as well.'; Expected = '\.bcquality/tools/Test-ReviewFixtures\.ps1' }
+        @{ Case = 'other-casing'; Body = 'Run pwsh .bcquality/tools/build-knowledgeindex.ps1 as well.'; Expected = '\.bcquality/tools/build-knowledgeindex\.ps1' }
+        @{ Case = 'other-folder'; Body = 'Run pwsh other/Build-KnowledgeIndex.ps1 as well.'; Expected = 'other/Build-KnowledgeIndex\.ps1' }
+        @{ Case = 'bare-name'; Body = 'Run pwsh Build-KnowledgeIndex.ps1 as well.'; Expected = 'Build-KnowledgeIndex\.ps1' }
+        @{ Case = 'scripts-smuggle'; Body = 'Run pwsh scripts/Build-KnowledgeIndex.ps1 as well.'; Expected = 'scripts/Build-KnowledgeIndex\.ps1' }
+        @{ Case = 'scripts-path'; Body = 'Entry points live in scripts/ for this skill.'; Expected = 'scripts/' }
+    ) {
+        param($Case, $Body, $Expected)
+
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive "script-exempt-$Case") -Files @{
+            'al-clone-bcquality/SKILL.md' = (New-SkillContent -Name 'al-clone-bcquality' -Body $Body)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "names a script outside al-build: $Expected"
+    }
 }
 
 Describe 'Validate-Skills state-home checks' {

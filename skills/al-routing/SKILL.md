@@ -20,7 +20,7 @@ depends_on: [T-004]  # hard edges onto the tasks this one must follow
 status: open | done  # the only two written states
 phase: refined | implemented | refactored | mutated   # technical stamps;
                      # on a verify task the stamps are planned | page-scripted;
-                     # on the provision task the single stamp is provisioned
+                     # on the provision task they are provisioned | bcapps-cloned
 review: clean        # the review gate's stamp — the slice's last task at slice-done,
                      # the breaking-change task at feature-done
 ```
@@ -41,7 +41,7 @@ Ready, blocked, and waiting are computed fresh at every read — no field mirror
 
 - `technical`, open — no phase → `/al-refine` · `refined` → `/al-implement` · `implemented` → `/al-refactor` · `refactored` → `/al-mutate`.
 - `verify`, open — no phase → `/al-refine` · `planned` with its `review: clean` stamp → `/al-user-verification` · `page-scripted` → `/al-user-verification` resumes the walk from the task body's `Partial-run record:`, or starts it when none exists.
-- `provision`, open — no phase → `/al-provision` · `provisioned` → `/al-clone-bcapps`. `breaking-change` → `/al-validate-breaking-changes`. Neither ops kind passes through `/al-refine`.
+- `provision`, open — no phase → `/al-provision` · `provisioned` → `/al-clone-bcapps` · `bcapps-cloned` → `/al-clone-bcquality`. `breaking-change` → `/al-validate-breaking-changes`. Neither ops kind passes through `/al-refine`.
 - `done` is settled at any phase; on a technical task short of `mutated` it is a deliberate early close, not a gap.
 
 ## Gates
@@ -66,7 +66,7 @@ One edit per stamped outcome; nothing else moves:
 | `/al-user-verification` finished the walk clean | `status: done` |
 | `/al-code-review` cleared the slice / the feature | `review: clean` on the slice's last task / on the breaking-change task |
 | `/al-provision` ran | green → `phase: provisioned`; red → one `Last run:` line in the task body naming what failed, frontmatter untouched |
-| `/al-clone-bcapps` or `/al-validate-breaking-changes` ran | green → `status: done`; red → one `Last run:` line in the task body naming what failed, frontmatter untouched |
+| `/al-clone-bcapps`, `/al-clone-bcquality`, or `/al-validate-breaking-changes` ran | green → `phase: bcapps-cloned` for the first, `status: done` for the other two; red → one `Last run:` line in the task body naming what failed, frontmatter untouched |
 | the user closes a task early | `status: done` |
 
 Four outcomes stamp nothing:

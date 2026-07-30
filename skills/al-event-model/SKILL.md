@@ -8,11 +8,13 @@ disable-model-invocation: true
 
 Settle the journey at the altitude of what an external observer sees, so the architecture can be designed without re-litigating the user-side picks.
 
-Preconditions: the `CONTEXT.md` terms and the domain ADRs are settled — run `/al-grill-adr` first, since a fuzzy domain term becomes a wrong Role name or an invented Business Event. And the feature has a human or API surface; a Job Queue, install/upgrade, or scheduled-task feature has no journey and goes straight to `/al-design`.
+Preconditions: the `CONTEXT.md` terms and the domain ADRs are settled — run `/al-grill-adr` first, since a fuzzy domain term becomes a wrong Role name or an invented Business Event. And the feature has a human or API surface; a Job Queue, install/upgrade, or scheduled-task feature has no journey and goes straight to `/al-design`. The journey is checked against BCQuality — `.bcquality/` missing → **stop.** Run `/al-clone-bcquality`.
 
 `event-model.md` lands in the feature's spec folder, `specs/<NNN>-<slug>/`, created if absent with `<NNN>` one past the highest spec folder present, together with a matching `<NNN>-<slug>` branch off the default branch. Where the file already exists for this feature, reshape it in place.
 
 Every BC name that lands in a slot — a persona, a BaseApp event, a table, a field, a page — comes from a lookup made this session: search the workspace, or read Microsoft's BC documentation. Recall is fiction. Where `.bcapps/` is present, search it explicitly for BaseApp's own events and code — default search skips gitignored folders.
+
+BCQuality is the rule set for the slots that carry BC mechanics. `.bcquality/knowledge-index.json` carries one row per article with its `domain` and `keywords` — walk `.bcquality/*/knowledge/<domain>/` directly when no index built. Narrow to the domains a step touches — events above all, plus ui and web services where the View sits there — and read those articles before settling the step. Where an article moved a decision, `event-model.md` names it on that step's line; elsewhere it stays silent.
 
 ## The five slots
 
