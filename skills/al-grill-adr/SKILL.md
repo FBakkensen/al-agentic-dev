@@ -12,7 +12,7 @@ Writes `CONTEXT.md` at the repo root and accepted ADRs under `docs/adr/`. Reads 
 
 ## The interview
 
-Ask one question per message: one line naming what the answer locks in, then the question, then lettered options of one line each, the recommendation first and marked.
+Ask one question per message: one line naming what the answer locks in, then the question, then lettered options of one line each, the recommendation first and marked. Ask in the reply itself, as plain text — a question tool strips the options and the recommendation.
 
 - **A fact is answered, not asked.** Search the workspace, read the official BC documentation, say what you found, move on.
 - **A strategic decision is asked.** Strategic means `CONTEXT.md` or an ADR locks it in and the next skill consumes it.

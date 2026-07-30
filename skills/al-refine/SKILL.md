@@ -20,7 +20,7 @@ The body is your write; the frontmatter is `/al-routing`'s. An open question thi
 
 Read `architecture.md`, `event-model.md` when present, `CONTEXT.md`, and the code the task lands on before the first question.
 
-A fact is looked up. A tactical call — AL test procedure names, case ordering, assertion phrasing — is decided and named in one chat line, which is what makes it overridable without asking. A strategic call is asked one question per message with lettered options, because downstream consumes it as settled: which behaviours this proof has to pin, which layer holds a behaviour when the cheapest one cannot reach it, any name landing on public surface — a shipped object, an API, a published event — that AppSource then holds for the life of the app, and what the user signs off by hand.
+A fact is looked up. A tactical call — AL test procedure names, case ordering, assertion phrasing — is decided and named in one chat line, which is what makes it overridable without asking. A strategic call is asked one question per message with lettered options, because downstream consumes it as settled: which behaviours this proof has to pin, which layer holds a behaviour when the cheapest one cannot reach it, any name landing on public surface — a shipped object, an API, a published event — that AppSource then holds for the life of the app, and what the user signs off by hand. Ask in the reply itself, as plain text — a question tool strips the options and the recommendation.
 
 Write each answer into the task file as it settles. Where an answer itself needs pressure — a requirement that shifts each time it is restated, a bound nobody wrote down — run `/al-grilling`.
 
