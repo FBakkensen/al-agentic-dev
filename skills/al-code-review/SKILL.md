@@ -60,7 +60,7 @@ Rank the survivors of both passes by the consequence of shipping the diff as it 
 
 ### Interview the change requests
 
-Interview every change request before implementing any ruling, one per message, highest impact first. State the impact, business or architecture choice, consequences, and recommendation. Name modules, boundaries, public objects, interfaces, events, or other AL concepts when they make the current or proposed architecture legible; keep paths, line numbers, private procedures, code snippets, lookup mechanics, and knowledge-article details out unless the user asks. One answer settles only the request in front of the user.
+Interview every change request before implementing any ruling, one per message, highest impact first. State the impact, business or architecture choice, consequences, and recommendation. On a slice or feature scope, `/al-visualize` may put the scoped diff in view — the architectural change drawn, the change requests as its open-decision cards — while each request is still settled here, one per message. Name modules, boundaries, public objects, interfaces, events, or other AL concepts when they make the current or proposed architecture legible; keep paths, line numbers, private procedures, code snippets, lookup mechanics, and knowledge-article details out unless the user asks. One answer settles only the request in front of the user.
 
 After every request is settled, apply its ruling:
 

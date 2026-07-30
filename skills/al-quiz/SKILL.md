@@ -16,7 +16,7 @@ Read the diff first, then the `Test Specification`, `Verification Plan`, and `Co
 
 ## Ask
 
-**One question per message, then wait for the answer.** The developer is a witness here, not a decision-maker: lettered options would hand over the answer before it is given. Ask open, take what comes back, then give the punchline.
+**One question per message, with lettered options, then wait for the answer.** Distractors are plausible wrongs — the seam the logic almost landed on, the guard that looks sufficient — and no option carries a recommendation: the witness gets no hint. Take the answer, then give the punchline. Where the scope's structure carries the questions, `/al-visualize` can put a component map of the scope in view; each question stays here, in chat.
 
 Ask where a wrong answer would cost something:
 

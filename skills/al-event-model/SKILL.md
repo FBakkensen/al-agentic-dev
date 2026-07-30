@@ -36,7 +36,7 @@ Ask one question per message, with lettered options and your recommendation mark
 
 An answer that shifts each time it is restated, or a preference with no reason under it, goes through `/al-grilling`; carry back what surfaces.
 
-Once everything is settled except one genuine fork, offer competing timelines on that fork — each complete, the same five slots end to end — and say which you would pick. A fork with one credible answer earns no alternatives.
+Once everything is settled except one genuine fork, offer competing timelines on that fork — each complete, the same five slots end to end — and say which you would pick. A fork with one credible answer earns no alternatives. Competing timelines, or the settled timeline put up for approval, may go to the user drawn as a decision surface through `/al-visualize`.
 
 ## The write
 

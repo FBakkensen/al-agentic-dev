@@ -8,8 +8,9 @@
     1-64 characters of lowercase a-z0-9 and single hyphens and equals the folder name
     exactly; description is a non-empty single-line value of at most 1024 characters,
     quoted whenever it contains a colon. Model invocation is the exception: every skill
-    carries disable-model-invocation: true, except the model-invocable five (al-build,
-    al-grilling, al-next, al-routing, al-agentic-dev-overview), which omit the key entirely.
+    carries disable-model-invocation: true, except the model-invocable six (al-build,
+    al-grilling, al-next, al-routing, al-agentic-dev-overview, al-visualize), which omit
+    the key entirely.
     Every relative Markdown link in the folder's .md files resolves to a file inside that
     same folder, and only skills/al-build may name a .ps1 file or a scripts/ path — save
     for the per-skill exemptions in $scriptExemptions, each an upstream tool a named skill
@@ -53,7 +54,7 @@ function Get-MarkdownLinkTarget {
 
 $violations = @()
 $root = (Resolve-Path -LiteralPath $SkillsRoot -ErrorAction Stop).Path
-$modelInvocable = @('al-build', 'al-grilling', 'al-next', 'al-routing', 'al-agentic-dev-overview')
+$modelInvocable = @('al-build', 'al-grilling', 'al-next', 'al-routing', 'al-agentic-dev-overview', 'al-visualize')
 $questionRule = 'Ask every question in the reply itself, as plain text — never through a question or elicitation tool.'
 # Per-skill script exemptions, approved one at a time. The key is the skill folder; the
 # value is the exact script paths that skill may name. al-build is exempt wholesale
@@ -98,7 +99,7 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
                     $violations += "$($skill.Name)/SKILL.md: $($skill.Name) is model-invocable; remove disable-model-invocation"
                 }
             } elseif ($flagMatch.Groups[1].Value.Trim() -cne 'true') {
-                $violations += "$($skill.Name)/SKILL.md: disable-model-invocation: true is required (model invocation is the exception; only al-build, al-grilling, al-next, al-agentic-dev-overview omit it)"
+                $violations += "$($skill.Name)/SKILL.md: disable-model-invocation: true is required (model invocation is the exception; only al-build, al-grilling, al-next, al-routing, al-agentic-dev-overview, al-visualize omit it)"
             }
 
             $name = [regex]::Match($frontmatter, '(?m)^name\s*:\s*(.+?)\s*$').Groups[1].Value.Trim("'", '"')

@@ -68,6 +68,7 @@ Name it instead of `'*'`. Every skill is self-contained, so that works — `/al-
 | [`/al-provision`](docs/al-provision.md) | Runs the feature's first task, refreshing compiler, symbols, and baseline. |
 | [`/al-validate-breaking-changes`](docs/al-validate-breaking-changes.md) | Runs the feature's last task, validating the shipped surface against that baseline. |
 | [`/al-quiz`](docs/al-quiz.md) | Quizzes you on what just landed, one question at a time. |
+| `/al-visualize` | Renders a decision or a landed change as a read-only HTML decision surface you read beside the chat interview. |
 | [`/al-sync-main`](docs/al-sync-main.md) | Rebases the branch onto main and renumbers object and field collisions. |
 
 ## The pipeline
