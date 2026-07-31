@@ -20,6 +20,8 @@ Read `architecture.md` and name the seam in BC vocabulary — the procedure to e
 
 Every BC object, table, field, procedure, event, and enum value name comes from a lookup run in this session — search the workspace source and symbols, or read the official BC documentation. Recall is fiction. `.bcapps/` is the pattern library, not a name oracle: before shaping a procedure, read how its precedent implements the behaviour — the `Precedent` verdict the task or `architecture.md` carries, or the nearest System Application neighbour — and take its signature shape, error style, and event placement; default search skips gitignored folders. A `reused:` verdict binds: the implementation calls the Microsoft object, and writing a parallel one is a stop below. A name you mint earns a zero-hit collision lookup first: objects against workspace declarations, fields against the target table and its extensions, procedures against the target object.
 
+BCQuality is the rule set. `.bcquality/knowledge-index.json` carries one row per article with its `domain` and `keywords`; missing → name `/al-clone-bcquality` and stop. Before the first case, narrow to the domains the task touches and read those articles. The corpus is written for the container runtime — AL Runner is a non-Microsoft unit runner it does not document — so this skill's runner semantics and test codeunit contract override a colliding article. An article that moved a decision lands as a `Researched:` bullet in `Contract notes`; elsewhere it stays silent.
+
 BC vocabulary: Insert not create, Modify not update, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, codeunit not class, procedure not method. TDD, red/green, and AAA keep their own names.
 
 Production thrift: reach for the platform before writing code — a FlowField over a setup table, a table relation or permission entry over validation code, an enum over a hand-rolled status. An `interface` arrives with its second implementation, not before. A deliberate shortcut carries a one-line comment naming its ceiling and the upgrade path. Trust-boundary validation, posting and ledger correctness, and permission checks stay at full strength.
@@ -44,7 +46,7 @@ Where current code is too tangled for the Unit seam the case needs, anchor today
 
 ## Test codeunit contract
 
-`Subtype = Test`, `TestPermissions = Disabled`, `Access = Internal`. Every `[Test]` calls `Initialize()` as its first statement — that reset is what makes a case portable between AL Runner and the container. Handlers live on the test codeunit naming them; `[HandlerFunctions('…')]` binds by string literal, so renaming a handler is a text search first. Assertions are `Library Assert` only, `AreNearlyEqual` where `Round()` leaves a residual. Add `[TransactionModel(TransactionModel::AutoCommit)]` only when the code under test calls `Commit()`, with a comment naming which one; under the default that `Commit()` fails and every side effect vanishes into a false green.
+`Subtype = Test`, `TestPermissions = Disabled`, `Access = Internal`. Every `[Test]` calls `Initialize()` as its first statement — that reset is what makes a case portable between AL Runner and the container. `AreNearlyEqual` where `Round()` leaves a residual. A `[TransactionModel]` attribute carries a comment naming the `Commit()` it exists for. Handler wiring, assertion choice, and transaction-model selection follow the corpus's `testing` articles.
 
 One short PascalCase procedure per case, BaseApp style: `RuleSetWithBlockedRecordThrowsError`. Test-data literals carry UPPER_SNAKE role tokens (`CLONE_BASE_SRC`), distinct across procedures and inside the target field's width.
 
@@ -67,7 +69,7 @@ Commit at green under the task's `T-NNN` prefix — the slice review selects its
 
 Apply and continue: build scaffolding, a permission-set entry, an object ID, a caption, a local rename, a field on an object the task already names, reusing a seam a sibling task established. Where one rests on an assumption nobody blessed, append one line to the task body's `Deviations:` block — never edited away.
 
-Stop when the work makes a new decision: a new table, a new event publisher, a genuinely new seam, a `.bcapps/` find that Microsoft already ships what the task is building, a production object the assertions require that `New and Modified Objects` never named, a public-surface rename, a code path that needs its own case rather than an appended assertion, or a task that no longer matches the feature Goal. Name the decision in chat and leave the task file untouched; the user re-runs once it settles.
+Stop when the work makes a new decision: a new table, a new event publisher, a genuinely new seam, a `.bcapps/` find that Microsoft already ships what the task is building, a BCQuality rule the task's named surface violates, a production object the assertions require that `New and Modified Objects` never named, a public-surface rename, a code path that needs its own case rather than an appended assertion, or a task that no longer matches the feature Goal. Name the decision in chat and leave the task file untouched; the user re-runs once it settles.
 
 ## Close
 

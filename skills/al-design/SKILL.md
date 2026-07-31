@@ -13,7 +13,7 @@ Settle the feature-level architecture through an interview and write it into `ar
 - Sharpened intent comes first — `CONTEXT.md` vocabulary plus the domain ADRs. Without it, domain confusion is indistinguishable from architectural choice. **Stop.** Run `/al-grill-adr`.
 - A user/API-facing feature needs `event-model.md` in the spec folder. Missing → ask whether the feature is backend-only (no human, no API consumer) or whether `/al-event-model` was skipped, and **stop** unless the user confirms backend-only.
 - The module map's `Precedent` verdicts are read from `.bcapps/`. Clone missing → **stop.** Run `/al-clone-bcapps`.
-- Architectural decisions are checked against BCQuality. `.bcquality/` missing → **stop.** Run `/al-clone-bcquality`.
+- Architectural decisions are checked against BCQuality. `.bcquality/knowledge-index.json` missing → **stop.** Run `/al-clone-bcquality`.
 - An existing `architecture.md` is reshaped whole by this run, never edited surgically. Say so before starting.
 
 ## Grounding and AL voice
@@ -24,7 +24,7 @@ BC vocabulary throughout: Insert not create, Modify not update, Post not submit,
 
 Production-AL thrift: reach for the platform before code — a field plus a FlowField beats a setup table plus a management codeunit, an enum beats a hand-rolled status pattern. An AL `interface` arrives with its second implementation, not in anticipation of one. A deliberate shortcut carries a one-line comment naming its ceiling and the upgrade path.
 
-BCQuality is the rule set. `.bcquality/knowledge-index.json` carries one row per article with its `domain` and `keywords` — walk `.bcquality/*/knowledge/<domain>/` directly when no index built. Narrow to the domains the decision in front of you touches — data modeling, events, interfaces, upgrade, whatever it is — and read those articles before settling it. Where an article moved a decision, `architecture.md` names it on that decision's line, so a later reviewer sees the rule and not just the choice. Elsewhere it stays silent; this is a citation, never a bibliography.
+BCQuality is the rule set. `.bcquality/knowledge-index.json` carries one row per article with its `domain` and `keywords`. Narrow to the domains the decision in front of you touches — data modeling, events, interfaces, upgrade, whatever it is — and read those articles before settling it. Where an article moved a decision, `architecture.md` names it on that decision's line, so a later reviewer sees the rule and not just the choice. Elsewhere it stays silent; this is a citation, never a bibliography.
 
 ## The interview
 

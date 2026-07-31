@@ -44,16 +44,15 @@ pwsh .bcquality/tools/Build-KnowledgeIndex.ps1
 
 The generator writes `.bcquality/knowledge-index.json`, one row per article carrying
 the path, layer, domain, frontmatter dimensions and keywords a consumer selects on —
-discovery acceleration, not content. Consumers that find no index walk the domain
-folders instead, slower and correct; an index that would not build is named in the
-outcome and is no red on its own.
+discovery acceleration, not content. Every consumer selects on that index, so an index
+that would not build is a red run like any other.
 
 The repo's `.gitignore` carries a `.bcquality/` line — add it when missing.
 
 Green when the tree sits on the head fetched this run, `.bcquality/microsoft/knowledge/`
 holds articles, `.bcquality/microsoft/skills/review/al-code-review.md` is present with
-the review leaves it lists, and the index — where it built — carries a row for every
-article under a `knowledge/` folder on disk.
+the review leaves it lists, and the index carries a row for every article under a
+`knowledge/` folder on disk.
 
 ## Close
 
