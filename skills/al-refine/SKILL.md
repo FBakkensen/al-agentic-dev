@@ -50,6 +50,6 @@ A technical task's behaviour answers to a `Precedent` verdict in `architecture.m
 
 ## Close
 
-Name the task and what this run left on it — the proof written, the open question that stopped it, or the decline and the skill it names.
+Name the task and what this run left on it — the proof written, the open question that stopped it, or the decline and the skill it names. Every exit commits the task file under its `T-NNN` prefix — the written proof, or on a stop whatever settled before the question.
 
 Then `/al-routing` on a written proof. A stop ends in chat and the user re-runs once the question settles; a decline ends naming the owning skill.

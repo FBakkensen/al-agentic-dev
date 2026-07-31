@@ -34,7 +34,7 @@ Write the page to disk and open it in the browser through whatever browser capab
 
 ## Persist or discard
 
-A design-time surface the user approved is saved as `specs/<branch>/visuals/<topic>.html`, so a later session can read the HTML source as the approved picture and reopen it on demand. A review-side surface — a change diff, a quiz anchor — is a session artifact and leaves nothing behind.
+A design-time surface the user approved is saved as `specs/<branch>/visuals/<topic>.html` and committed with a plain descriptive message, so a later session can read the HTML source as the approved picture and reopen it on demand. A review-side surface — a change diff, a quiz anchor — is a session artifact and leaves nothing behind.
 
 ## Close
 

@@ -53,4 +53,5 @@ Lede first: the BC site — object, procedure, field — plus the invariant the 
 ## Close
 
 Name what landed: the slices, the task and verify-task counts (or *none, backend-only*), whether the dependency shape is linear or branching, and the Goal in user terms.
+Commit the `tasks/` folder with a plain descriptive message; a write stopped on a gap commits the slices already landed the same way.
 Then `/al-routing` presents the opening move.

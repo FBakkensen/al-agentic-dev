@@ -35,7 +35,7 @@ Scale the number of questions to the scope and stop once the answers show a soun
 
 A sound model → name the answers that demonstrated it. Gaps → name each decision held incorrectly, each with its one-line correction. Misses clustered on one object are worth naming as an area to re-read together.
 
-Where the misses land on shipped behaviour rather than on how it was built and a feature's `tasks/` folder owns the area, offer a follow-up task in its slice — on the user's yes, write it yourself as a new open technical task per `/al-routing`'s schema. Outside any feature, the gap stays a named correction in chat.
+Where the misses land on shipped behaviour rather than on how it was built and a feature's `tasks/` folder owns the area, offer a follow-up task in its slice — on the user's yes, write it yourself as a new open technical task per `/al-routing`'s schema and commit it under its own `T-NNN` prefix. Outside any feature, the gap stays a named correction in chat.
 
 Outcome: the developer's model of the landed change, tested in chat and corrected where it was wrong.
 

@@ -49,4 +49,5 @@ Accepted lands as `docs/adr/NNNN-slug.md`, taking the lowest number unused on th
 ## Close
 
 Name what settled: the terms now in `CONTEXT.md`, and any ADR accepted.
+Commit what this run wrote — `CONTEXT.md` and any accepted ADR — with a plain descriptive message; a stop mid-interview commits what settled the same way.
 Then continue in this session with /al-event-model — backend-only features go straight to /al-design.

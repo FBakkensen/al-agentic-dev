@@ -56,4 +56,6 @@ A contested decision carries its reason inline where the decision lands — one 
 
 `architecture.md` carries the module map, every slice's AL realisation named slot by slot with its `new` / `extends` marker, the brownfield touchpoint inventory, and where decision logic stays reachable by unit tests.
 
+Commit `architecture.md` with a plain descriptive message; a stop mid-interview commits what settled the same way.
+
 Then continue in this session with `/al-scope`.

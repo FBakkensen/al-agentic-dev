@@ -14,25 +14,18 @@ Every task file in `specs/<NNN>-<slug>/tasks/` — `000-feature.md`, the prose G
 ```yaml
 task: T-007          # stable id, unique across the folder, never reused or renumbered
 kind: technical | verify | provision | breaking-change
-slice: <slug>        # an event-model.md timeline step or architecture.md slice;
-                     # ops tasks sit on the reserved slugs provision / breaking-change
+slice: <slug>        # an event-model.md timeline step or architecture.md slice; ops tasks sit on the reserved slugs provision / breaking-change
 depends_on: [T-004]  # hard edges onto the tasks this one must follow
 status: open | done  # the only two written states
-phase: refined | implemented | refactored | mutated   # technical stamps;
-                     # on a verify task the stamps are planned | page-scripted;
-                     # on the provision task they are provisioned | bcapps-cloned
-review: clean        # the review gate's stamp — the slice's last task at slice-done,
-                     # the breaking-change task at feature-done
+phase: refined | implemented | refactored | mutated   # technical stamps; on a verify task planned | page-scripted; on the provision task provisioned | bcapps-cloned
+review: clean        # the review gate's stamp — the slice's last task at slice-done, the breaking-change task at feature-done
 ```
 
 Creation writes the structural fields plus `status: open` and no `phase:` — `/al-scope` at scoping, or the skill that finds new work mid-pipeline, naming the edges its find must wait on. A finder task takes a free `NNN` below the slice's verify task where one exists, so the verify task stays the slice's tail; a backend-only slice appends at the tail. The breaking-change task never carries `phase:`. Every later write is a stamp this skill makes when a run's outcome arrives.
 
 ## Derived, never written
 
-Ready, blocked, and waiting are computed fresh at every read — no field mirrors them, so none can go stale:
-
-- A task is **runnable** when `status: open`, every `depends_on` entry is satisfied, and no gate below holds it.
-- A task **waits** otherwise; presenting it names the open edge or the holding gate.
+- Ready, blocked, and waiting are computed fresh at every read — no field mirrors them, so none can go stale. A task is **runnable** when `status: open`, every `depends_on` entry is satisfied, and no gate below holds it; it **waits** otherwise, and presenting it names the open edge or the holding gate.
 - An edge inside a slice is satisfied by `done`. An edge that crosses slices also needs the target slice reviewed — its last task carrying `review: clean` — so a task appended at a backend-only slice's tail re-holds the slices that build on it until the re-review lands.
 
 ## The ladder
@@ -54,7 +47,7 @@ Ready, blocked, and waiting are computed fresh at every read — no field mirror
 
 ## Outcome → stamp
 
-One edit per stamped outcome; nothing else moves:
+One edit per stamped outcome, committed as it lands under the owning task's `T-NNN` prefix — the red-path `Last run:` lines included; nothing else moves:
 
 | The reported outcome | Stamp |
 |---|---|
@@ -77,6 +70,10 @@ Four outcomes stamp nothing:
 - A run that stopped on an open question or declined its task → the stop line in chat is the whole record; the user re-runs once it settles.
 
 Any other unmatched outcome goes back to the reporter as one question rather than being guessed into a stamp.
+
+## Leave the tree clean
+
+After recording — stamp or no stamp — a dirty tree is put to the user: summarize what the leftover changes do, intent rather than a file list — the user reads the chat, not the diff — deduce the task they belong to and suggest its `T-NNN`, listing each candidate with its reason when several fit, and ask whether to commit them too. Yes → one separate commit prefixed with the chosen `T-NNN`, or a plain descriptive message when no task owns them, never folded into another commit. No → they stay uncommitted, named as the record.
 
 ## Present the moves
 

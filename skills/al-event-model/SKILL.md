@@ -52,4 +52,6 @@ Document shape and a worked example: [EVENT-MODEL-FORMAT.md](EVENT-MODEL-FORMAT.
 
 `event-model.md` holds one timeline in which every step names its Role, its Action, its Business Event, its View, and the Status it flips or `—`, and every branch the interview surfaced has its own section.
 
+Commit `event-model.md` with a plain descriptive message; a stop mid-interview commits what settled the same way.
+
 Then continue in this session with `/al-design`.
