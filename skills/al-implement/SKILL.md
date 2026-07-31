@@ -24,6 +24,8 @@ BC vocabulary: Insert not create, Modify not update, Post not submit, Validate n
 
 Production thrift: reach for the platform before writing code — a FlowField over a setup table, a table relation or permission entry over validation code, an enum over a hand-rolled status. An `interface` arrives with its second implementation, not before. A deliberate shortcut carries a one-line comment naming its ceiling and the upgrade path. Trust-boundary validation, posting and ledger correctness, and permission checks stay at full strength.
 
+Any `#pragma`, temporary or permanent, requires explicit user approval before it enters the diff.
+
 ## One AAA case at a time
 
 Work the cases in the specification's order: every `Unit` case first, then every `Integration` case, ascending coverage ID within each scope. One case reaches green before the next begins.
