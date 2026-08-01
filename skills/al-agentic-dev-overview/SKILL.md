@@ -1,6 +1,6 @@
 ---
 name: al-agentic-dev-overview
-description: Tour of the AL agentic-dev toolkit and where to start. Use when the user asks what these skills are, or when the user asks to install or update the reply-shape snippet at user level. Detects only the kind of place it runs in — mid-feature, /al-next names the open moves from tasks/.
+description: Tour of the AL agentic-dev toolkit and where to start. Use when the user asks what these skills are, or when the user asks to install or update the reply-shape snippet at user level.
 ---
 
 # AL agentic dev — the tour

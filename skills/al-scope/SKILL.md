@@ -12,7 +12,7 @@ disable-model-invocation: true
 
 The branch matches `^\d{3}-` and `specs/<branch>/architecture.md` exists; missing either, say which one and name `/al-design`. An `event-model.md` beside it means the feature is user/API-facing; `architecture.md` alone means backend-only.
 
-Every BC name you put in a task — table, field, procedure, event — comes from a lookup in this session rather than recall.
+Every BC name you put in a task — table, field, procedure, event — comes from a lookup in this session rather than recall. BC vocabulary in every line you write: Insert not create, Modify not update, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, codeunit not class, procedure not method.
 
 ## The interview
 
@@ -53,5 +53,6 @@ Lede first: the BC site — object, procedure, field — plus the invariant the 
 ## Close
 
 Name what landed: the slices, the task and verify-task counts (or *none, backend-only*), whether the dependency shape is linear or branching, and the Goal in user terms.
+A fully scoped folder goes up drawn through `/al-visualize` — the slice and task dependency graph.
 Commit the `tasks/` folder with a plain descriptive message; a write stopped on a gap commits the slices already landed the same way.
 Then `/al-routing` presents the opening move.

@@ -22,7 +22,7 @@ Every BC object, table, field, procedure, event, and enum value name comes from 
 
 BCQuality is the rule set. `.bcquality/knowledge-index.json` carries one row per article with its `domain` and `keywords`; missing → name `/al-clone-bcquality` and stop. Before the first case, narrow to the domains the task touches and read those articles. The corpus is written for the container runtime — AL Runner is a non-Microsoft unit runner it does not document — so this skill's runner semantics and test codeunit contract override a colliding article. An article that moved a decision lands as a `Researched:` bullet in `Contract notes`; elsewhere it stays silent.
 
-BC vocabulary: Insert not create, Modify not update, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, codeunit not class, procedure not method. TDD, red/green, and AAA keep their own names.
+BC vocabulary, in code and in every line written to the task file: Insert not create, Modify not update, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, codeunit not class, procedure not method. TDD, red/green, and AAA keep their own names.
 
 Production thrift: reach for the platform before writing code — a FlowField over a setup table, a table relation or permission entry over validation code, an enum over a hand-rolled status. An `interface` arrives with its second implementation, not before. A deliberate shortcut carries a one-line comment naming its ceiling and the upgrade path. Trust-boundary validation, posting and ledger correctness, and permission checks stay at full strength.
 
@@ -73,6 +73,6 @@ Stop when the work makes a new decision: a new table, a new event publisher, a g
 
 ## Close
 
-Name the task green and the behaviour it now proves — one line, no build counts; those live in the commit and the task file.
+Name the task green and the behaviour it now proves — one line, no build counts; those live in the commit and the task file. Put the landed change in view through `/al-visualize` — the component diff of what this task added and modified, `Deviations:` among its risks; a repair green draws its fix diff the same way before rejoining its episode.
 
 Then `/al-routing`; a repair green stays inside its episode, following the repair path above.

@@ -76,7 +76,7 @@ Re-review the updated diff exactly once, running both passes from scratch. A fin
 
 A clean gate is no defect left and no open change request.
 
-Keep the pass churn out of chat. Name each defect commit. Report each change request as `Impact:` / `Ruling:` / `Outcome:`.
+Keep the pass churn out of chat. Name each defect commit. Report each change request as `Impact:` / `Ruling:` / `Outcome:`. A slice or feature verdict that landed defects or settled change requests also goes up drawn through `/al-visualize` — the reviewed diff with each ruling on it; a clean gate and a repair verdict close plain.
 
 **Outcome:** the diff is reviewed, the defects have landed green, and every change request has a ruling.
 Then `/al-routing` on a slice or feature verdict; a repair verdict closes back into the paused walk.

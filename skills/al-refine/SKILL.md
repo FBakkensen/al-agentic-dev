@@ -46,12 +46,12 @@ Write only the sections the slice earns: `## Journey Examples` (`V1`, `V2`) for 
 
 Every `Integration` case, `Record: yes` journey, and `Contract` example sits above the cheapest layer that could hold the behaviour. Each owes a `Contract notes:` bullet naming why the layer below cannot hold it and what reaching it would cost — a named seam, or the wall that makes it impossible. Say the same in chat: the spec is written, and nothing is implemented until the user takes the next step — the handoff is their review point.
 
-Every exact BC name written into the task — object, table, field, procedure, event, enum value — comes from a workspace or documentation lookup made this session; recall is not evidence. A minted name earns a zero-hit collision lookup first: objects against workspace declarations, fields against the target table and its extensions, procedures against the target object.
+Every exact BC name written into the task — object, table, field, procedure, event, enum value — comes from a workspace or documentation lookup made this session; recall is not evidence. A minted name earns a zero-hit collision lookup first: objects against workspace declarations, fields against the target table and its extensions, procedures against the target object. BC vocabulary in every line the body takes: Insert not create, Modify not update, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, codeunit not class, procedure not method — TDD, red/green, and AAA keep their own names.
 
 A technical task's behaviour answers to a `Precedent` verdict in `architecture.md`'s module map. A behaviour no verdict covers gets its own `.bcapps/` read — clone missing → stop, naming `/al-clone-bcapps` — and the verdict lands as a `Precedent:` line in `Contract notes:`; a verdict that already covers the behaviour is consumed, never copied down. A read contradicting the map — Microsoft ships what a module builds — is a strategic finding: stop the run and name it in chat, because it reopens the architecture, not the task.
 
 ## Close
 
-Name the task and what this run left on it — the proof written, the open question that stopped it, or the decline and the skill it names. Every exit commits the task file under its `T-NNN` prefix — the written proof, or on a stop whatever settled before the question.
+Name the task and what this run left on it — the proof written, the open question that stopped it, or the decline and the skill it names. A written proof goes up drawn through `/al-visualize` — its behaviours mapped to the cases and layers that pin them. Every exit commits the task file under its `T-NNN` prefix — the written proof, or on a stop whatever settled before the question.
 
 Then `/al-routing` on a written proof. A stop ends in chat and the user re-runs once the question settles; a decline ends naming the owning skill.

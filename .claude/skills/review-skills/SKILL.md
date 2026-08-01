@@ -14,7 +14,7 @@ Two passes.
 **Cross-skill.** One reviewer with all descriptions, every `/al-*` handoff, and every task-frontmatter value list side by side. It checks closure:
 
 - Every state a skill emits — a `phase:`/`status:` value it writes, a `/al-x` it hands to, a condition it leaves the feature in — is claimed by a model-invocable skill's trigger or an `/al-next` routing branch. An emitted state nothing claims is the stall class; rank it top.
-- The task-frontmatter value lists are complete and identical in every skill that reads or writes a task file (rule 29 names the lists).
+- The task-frontmatter value lists are complete and identical in every skill that reads or writes a task file (rule 30 names the lists).
 - No two descriptions claim the same state (rule 10, applied across the model-invocable four).
 
 **Merge.** Dedupe overlapping findings, drop any whose quoted line does not exist in the file, rank by blast radius: pipeline stalls, then misrouting, then density and phrasing.

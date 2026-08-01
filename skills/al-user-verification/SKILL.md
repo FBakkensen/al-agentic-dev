@@ -78,6 +78,6 @@ Append one line per completed example to a `Partial-run record:` block in the ta
 
 **Every functional check passing and the pre-flight green** → collapse `Partial-run record:` into `Closeout:` — one line per example with its outcome, replay-confirmed scenarios included — and write each usability finding as a new open technical task in the same slice per `/al-routing`'s schema.
 
-The slice is verified — every pass ruled by the user's eyes or the user's ruling — and the next slice is open, or the walk is paused on a named functional failure, with `/al-implement` as the user's next move.
+The slice is verified — every pass ruled by the user's eyes or the user's ruling — and the next slice is open, or the walk is paused on a named functional failure, with `/al-implement` as the user's next move. A clean walk goes up drawn through `/al-visualize` — the slice's journey with each scenario's outcome pinned.
 
 Then `/al-routing` on a clean walk; a paused walk stays inside its episode.

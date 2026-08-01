@@ -1,6 +1,6 @@
 ---
 name: al-visualize
-description: "Render a decision or a landed change as a read-only HTML decision surface the user reads beside the chat interview. Use when a pipeline skill puts a decision to the user that turns on a picture — structure, lifecycle, flow, data shape, or delivery order — or when a settled slice or feature needs to be understood without reading the code."
+description: "Render a decision or a landed change as a read-only HTML decision surface the user reads beside the chat interview. Use when a pipeline skill puts a decision to the user that turns on a picture — structure, lifecycle, flow, data shape, or delivery order — or when a pipeline skill closes and its settled artifact or landed change goes to the user drawn."
 ---
 
 # al-visualize — the decision surface
@@ -26,15 +26,15 @@ Nothing on the menu fits → compose an ad-hoc visual, and the page's first card
 
 Every BC object, table, field, procedure, event, enum value, or file a node names is confirmed by a lookup in the current session, never recalled. A claim about code names the object and procedure behind it. A node nobody can trace to something real is decoration and gets cut.
 
-The page's content splits three ways: locked context — what is already agreed; open decisions — the questions the caller sent, each with lettered options and one recommendation marked; evidence — scope, risks, the diagram itself.
+The page's content splits three ways: locked context — what is already agreed; open decisions — the questions the caller sent, each with lettered options and one recommendation marked; evidence — scope, risks, the diagram itself. A close surface presenting a settled artifact or landed change carries no open decisions — locked context and evidence hold the whole page — unless the close is itself an unresolved call, which keeps that one open card.
 
 ## Present and settle
 
-Write the page to disk and open it in the browser through whatever browser capability the harness offers; without one, give the user the path to open themselves. Then interview the open decisions in chat, one question per message, each naming its card's stable ID and its lettered options. As each answer lands, update the page — the open card becomes a locked card carrying the pick — and reload it, so the user answers every remaining question with the current truth in view and the page closes as the approved picture.
+Write the page to `.output/visuals/<branch>/<topic>.html` and open it in the browser through whatever browser capability the harness offers; without one, give the user the path to open themselves. The repo's `.gitignore` carries an `.output/` line — add it when missing — so no run leaves dirt behind. Then interview the open decisions in chat, one question per message, each naming its card's stable ID and its lettered options. As each answer lands, update the page — the open card becomes a locked card carrying the pick — and reload it, so the user answers every remaining question with the current truth in view and the page closes as the approved picture.
 
 ## Persist or discard
 
-A design-time surface the user approved is saved as `specs/<branch>/visuals/<topic>.html` and committed with a plain descriptive message, so a later session can read the HTML source as the approved picture and reopen it on demand. A review-side surface — a change diff, a quiz anchor — is a session artifact and leaves nothing behind.
+A surface is a session artifact where it was born and leaves nothing behind — close surfaces, change diffs, and quiz anchors included. Approval is promotion: a design-time surface the user approved is copied to `specs/<branch>/visuals/<topic>.html` and committed with a plain descriptive message, so a later session can read the HTML source as the approved picture and reopen it on demand.
 
 ## Close
 

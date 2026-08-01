@@ -33,7 +33,7 @@ Scale the number of questions to the scope and stop once the answers show a soun
 
 ## Close
 
-A sound model → name the answers that demonstrated it. Gaps → name each decision held incorrectly, each with its one-line correction. Misses clustered on one object are worth naming as an area to re-read together.
+A sound model → name the answers that demonstrated it. Gaps → name each decision held incorrectly, each with its one-line correction. Misses clustered on one object are worth naming as an area to re-read together. Put the verdict in view through `/al-visualize` — the scope's component map with each miss and its correction pinned, clean where the model held.
 
 Where the misses land on shipped behaviour rather than on how it was built and a feature's `tasks/` folder owns the area, offer a follow-up task in its slice — on the user's yes, write it yourself as a new open technical task per `/al-routing`'s schema and commit it under its own `T-NNN` prefix. Outside any feature, the gap stays a named correction in chat.
 

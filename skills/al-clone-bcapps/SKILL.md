@@ -13,11 +13,8 @@ Symbols say whether a name exists; the clone shows how Microsoft implements it
 
 The one dependency is the symbol cache: `symbols.lock.json` must exist for this
 app, meaning a `/al-provision` run has landed at least once. Missing → stop and
-name `/al-provision` as the step that produces it.
-
-Beyond that, run it anytime — as the provision task's second step when routed
-there, or ad hoc whenever `.bcapps/` is missing, broken, or suspect. Task-file
-state is `/al-routing`'s.
+name `/al-provision` as the step that produces it. Task-file state is
+`/al-routing`'s.
 
 ## Target
 
