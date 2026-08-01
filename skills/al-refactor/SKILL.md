@@ -19,7 +19,7 @@ Read the whole diff — a task's full diff, once per task — through each of th
 - **Simplification** — duplication, dead code, pass-through procedures, generality nothing asked for.
 - **BC platform** — code reinventing what BaseApp, the System Application, or the platform already does.
 - **Structure** — decision logic separated from the reads and writes around it, so the decisions are testable without a database; depth over indirection; coupling weakened, or localised in one module where it cannot be.
-- **Terminology** — object, procedure, and field names agreeing with `CONTEXT.md`, the ADRs, `architecture.md`, `event-model.md`, and the task's `New and Modified Objects`.
+- **Terminology** — every introduced name tracing to a `CONTEXT.md` term, the BC baseline, or an `event-model.md` Action, Business Event, or Status, its verb to BC's own set — an untraceable name is a finding — and names agreeing with the ADRs, `architecture.md`, and the task's `New and Modified Objects`; artifact prose the diff touched (task bodies, `architecture.md`) answers to the same vocabulary as the code.
 - **Performance shape** — a lookup hoisted out of a loop, a filtered read replacing a scan, fields loaded selectively. The structural kind, not one-line tweaks.
 
 If your harness supports subagents, these parallelize on full-capability subagents running the same model as this conversation; otherwise apply them in one pass.
@@ -46,7 +46,7 @@ After every request is settled, apply its ruling: **Do it now** lands on the def
 
 Every BC object, table, field, procedure, event, and enum value name comes from a lookup in this session — search the workspace, or read the symbols. Recall is not evidence. `.bcapps/` is the pattern library: read how the nearest System Application or `src/Apps/W1` code shapes what you are reshaping toward, and lift that shape — default search skips gitignored folders.
 
-Use BC vocabulary: Insert not create, Modify not update, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, procedure not method, codeunit not class.
+Use BC vocabulary: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, the record or the API body not the payload, procedure not method, codeunit not class — and a codeunit is named for the behaviour it owns, never a Manager or Handler.
 
 Reach for the platform before writing code — a field plus a FlowField over a setup table and a management codeunit, a table relation over validation code, an enum over a hand-rolled status. An AL `interface` arrives with its second implementing codeunit, never in anticipation of one. A shortcut with a known limit carries a one-line comment naming the ceiling and the upgrade path.
 

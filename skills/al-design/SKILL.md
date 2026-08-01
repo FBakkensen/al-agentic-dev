@@ -20,7 +20,9 @@ Settle the feature-level architecture through an interview and write it into `ar
 
 Every BC object, table, field, procedure, event, and enum value name comes from a lookup run this session — a workspace symbol search, or official BC documentation read and quoted. Recall is stale fiction. `.bcapps/` is the pattern library: read how Microsoft implements the nearest analogous behaviour before shaping your own — default search skips gitignored folders. System Application, Business Foundation, and the apps under `src/Apps/W1` are the design authority; BaseApp binds for integration points — its events, its tables, its posting routines — but its internal shape is legacy, not a pattern to lift. A name carried in from `event-model.md` counts once a search of that file returns it this session; a name being minted needs a zero-hit collision search first.
 
-BC vocabulary throughout: Insert not create, Modify not update, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, codeunit not class, procedure not method.
+BC vocabulary throughout: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, the record or the API body not the payload, codeunit not class, procedure not method — and a codeunit is named for the behaviour it owns, never a Manager or Handler.
+
+Naming is derivation, not invention — in BC the ubiquitous language is the object model. A minted name takes its noun from a `CONTEXT.md` term, the BC baseline, or an `event-model.md` Action, Business Event, or Status, and its verb from BC's own set, confirmed in `.bcapps/` where the clone is present. A term no source names is a vocabulary gap: settle it as one question, land it in `CONTEXT.md` per its format, then derive. Where a term plus the app's object-name prefix outgrows AL's 30-character object names, settle the short form once and record it on the term's `CONTEXT.md` entry as `_As name_`.
 
 Production-AL thrift: reach for the platform before code — a field plus a FlowField beats a setup table plus a management codeunit, an enum beats a hand-rolled status pattern. An AL `interface` arrives with its second implementation, not in anticipation of one. A deliberate shortcut carries a one-line comment naming its ceiling and the upgrade path.
 
@@ -56,8 +58,8 @@ A contested decision carries its reason inline where the decision lands — one 
 
 `architecture.md` carries the module map, every slice's AL realisation named slot by slot with its `new` / `extends` marker, the brownfield touchpoint inventory, and where decision logic stays reachable by unit tests.
 
-A settled architecture goes up drawn through `/al-visualize` — the module map, each slice's realisation on it.
+A settled architecture goes up drawn through `/al-visualize` — the module map, each slice's realisation on it, each minted name beside the term or `event-model.md` slot it derives from, so the user can spot a name worth reopening.
 
-Commit `architecture.md` with a plain descriptive message; a stop mid-interview commits what settled the same way.
+Commit `architecture.md` and any `CONTEXT.md` term this run settled with a plain descriptive message; a stop mid-interview commits what settled the same way.
 
 Then continue in this session with `/al-scope`.

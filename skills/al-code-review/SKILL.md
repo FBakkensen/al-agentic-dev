@@ -23,7 +23,7 @@ Mixed state, a squash that hides the `T-NNN` prefixes, or an ambiguous range is 
 ## Ground every AL judgment
 
 - Every BC object, table, field, procedure, event, or enum value you name in a finding or write in a fix comes from a lookup you run this session — search the workspace, read the symbol packages, or quote the docs. Recall is not evidence. `.bcapps/` is the pattern library: read how Microsoft implements the behaviour a finding touches before judging it — default search skips gitignored folders.
-- Write BC vocabulary: Insert not create, Modify not update, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, procedure not method, codeunit not class.
+- Write BC vocabulary: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, the record or the API body not the payload, procedure not method, codeunit not class.
 - Hold production code to AL thrift: reach for the platform before writing code, keep no `interface` with a single implementation, and let a deliberate shortcut carry a one-line comment naming its ceiling and its upgrade path.
 - Thrift governs production code only. Test thoroughness, trust-boundary validation, posting and ledger correctness, and permission checks stay at full strength.
 
@@ -40,7 +40,7 @@ The second pass is yours — the dimensions below, which reach what no leaf can 
 - **Precedent** — new code paralleling behaviour Microsoft ships in `.bcapps/` where the module's `Precedent` verdict in `architecture.md` is missing or says `none`; a `reused:` verdict the code quietly walked away from.
 - **Public surface** *(feature scope)* — a new table field or page action added without the user having chosen to lock a promise `AS0011` and `AS0007` will not let you unmake; base-app modification where an event subscriber, table extension, or interface implementation intercepts instead.
 - **Structure** — a procedure mixing decision logic with I/O splits along that line; a procedure that both writes a record and returns a computed value; feature envy, primitive obsession, and a `case` chain duplicated where an enum or dispatcher belongs.
-- **Naming and compliance** — every introduced name against BC vocabulary and the project's own terminology in `CONTEXT.md`, the ADRs, `architecture.md`, and `event-model.md`; a decision that contradicts a settled ADR or crosses a stated module boundary; diff behaviour traceable to no `Expected Behaviors` row, `Decision Matrix` row, or AAA case.
+- **Naming and compliance** — every introduced name traces to a `CONTEXT.md` term, the BC baseline, or an `event-model.md` Action, Business Event, or Status, its verb to BC's own set — an untraceable name (a `Mutate`, a `Manager`, a noun no source names) is a finding — and artifact prose in the diff (task bodies, `architecture.md`) answers to the same vocabulary; a decision that contradicts a settled ADR or crosses a stated module boundary; diff behaviour traceable to no `Expected Behaviors` row, `Decision Matrix` row, or AAA case.
 - **Comments and history** — a change that breaks an invariant a modified file's comment states, or that undoes a fix the commit history names.
 - **Simplification** — duplication, dead code, redundant procedures, and speculative generality. Run the deletion test on every shallow object in the diff: what is lost if it goes away.
 

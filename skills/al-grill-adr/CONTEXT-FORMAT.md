@@ -16,6 +16,8 @@ _Avoid_: payment batch, export run
 
 Group terms under `###` subheadings when natural clusters emerge (`### Settlement`, `### Reconciliation`). A single cohesive area keeps a flat list.
 
+A term is also the noun of every AL name that carries it — later skills derive object, field, and procedure names from these entries rather than inventing technical ones. When a term plus the app's object-name prefix outgrows AL's 30-character object names, the design interview settles the sanctioned short form once and records it on the entry as `_As name_: Stlmt. Batch` — the one AL-shape fact an entry carries.
+
 ## Relationships
 
 Each relationship between two bold project terms, with cardinality where it is obvious. Standard BC relationships (Customer → Sales Header → Sales Line) stay out.

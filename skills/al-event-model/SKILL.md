@@ -16,6 +16,8 @@ Every BC name that lands in a slot — a persona, a BaseApp event, a table, a fi
 
 BCQuality is the rule set for the slots that carry BC mechanics. `.bcquality/knowledge-index.json` carries one row per article with its `domain` and `keywords`. Narrow to the domains a step touches — events above all, plus ui and web services where the View sits there — and read those articles before settling the step. Where an article moved a decision, `event-model.md` names it on that step's line; elsewhere it stays silent.
 
+The timeline is a naming authority: downstream skills derive procedure, event publisher, and enum value names from its Actions, Business Events, and Statuses. A concept entering one of those three slots with no `CONTEXT.md` term and no BC baseline term behind it is a vocabulary gap: settle it as one question, land the term in `CONTEXT.md` per its format, and name the slot from it — Roles and Views stay in the user's own words.
+
 ## The five slots
 
 - **Role** — the acting persona: a human business role (a standard BC persona such as Order Processor or Accountant where one fits), an external API consumer or publisher, or a BC system actor such as the Posting Engine. A plain business role name carries the slot when no standard persona matches.
@@ -54,6 +56,6 @@ Document shape and a worked example: [EVENT-MODEL-FORMAT.md](EVENT-MODEL-FORMAT.
 
 A settled timeline goes up drawn through `/al-visualize` — the five slots end to end, swimlanes where Roles hand off.
 
-Commit `event-model.md` with a plain descriptive message; a stop mid-interview commits what settled the same way.
+Commit `event-model.md` and any `CONTEXT.md` term this run settled with a plain descriptive message; a stop mid-interview commits what settled the same way.
 
 Then continue in this session with `/al-design`.

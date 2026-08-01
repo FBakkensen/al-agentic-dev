@@ -27,7 +27,7 @@ Ask one question per message: one line naming what the answer locks in, then the
 - **What is the user not asking because they don't know to ask it?** Name the adjacent BC behaviour or standard pattern they show no sign of having considered, and let them decide whether it matters. An unclaimed one is where the implementation guesses later.
 - **Where does the stated behaviour disagree with the code?** Read the code where it can answer; ask the user what code cannot tell — intent, direction, why a constraint exists. Name the conflict and leave the resolution to them.
 
-Speak BC throughout: Insert not create, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, No. not ID. Every object, table, field, procedure, event, or enum name landing in `CONTEXT.md` or an ADR comes from a lookup made in this session — recall is not evidence.
+Speak BC throughout: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, No. not ID. Every object, table, field, procedure, event, or enum name landing in `CONTEXT.md` or an ADR comes from a lookup made in this session — recall is not evidence. Downstream, each term becomes the AL names themselves — the noun of every table, field, and procedure that carries the concept — and its `_Avoid_` line is the list of names no later skill may mint.
 
 The thread is done when nothing is left to decide: every question it surfaced is answered in `CONTEXT.md` or an ADR, explicitly parked, or ruled out of scope — and the user confirms it.
 
