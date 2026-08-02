@@ -1,65 +1,90 @@
 # SURFACE.md — the decision-surface page contract
 
-Every surface is one self-contained, read-only HTML file: it captures no input — no form
-controls, no comment boxes, no submit action. Answers happen in chat. The only permissible
-external asset is a pinned diagram-library import (for example
-`https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs`); hand-drawn inline SVG
-is equally welcome and often better — prefer it for swimlanes, journeys, heatmaps, and
-anything whose nodes need individual identity for navigation.
+Every surface is one self-contained, read-only HTML file: no input capture — no form
+controls, no comment boxes, no submit action — and no external assets. Answers happen
+in chat. Two moods share one skeleton: a **decision surface** carries open cards; a
+**close or ruling surface** carries none — its rail leads with the settled outcome.
 
-## Page anatomy
+## Read in layers
 
-`<h1>` title, a one-line thesis in muted color, and one hint line telling the reader how
-this works: read here, answer in chat, each card named by its ID. Then the two-pane split.
+The page discloses top-down, one layer per glance; the reader stops when satisfied.
+Each zone opens with a header — a numbered pill, an uppercase name, and a payoff
+phrase telling the reader what the zone gives them:
 
-**Layout rule (hard): the diagram never leaves the screen while deciding.** On wide
-viewports (the page may use the full width, up to ~1720px): the centerpiece diagram in a
-left pane with `position: sticky; top: 0` (its own scroll when taller than the viewport),
-and a right rail (~380–460px) that scrolls the locked cards and open decisions. Card-only
-sections that belong to the diagram — a transition table, a risk list — may sit under it
-in the left pane. Below ~1000px viewport width, fall back to a stacked layout.
+1. **Verdict** — `<h1>`, one thesis line naming what is open (or that nothing is),
+   and 3–5 stat tiles: mono numerals, semantic color, uppercase micro-label. The
+   page answers "what do you need from me?" here, within two seconds.
+2. **The picture** — the centerpiece diagram (below).
+3. **One-liners** — one row per change or argument step: glyph · name · one-line
+   gist · ID. Prose detail lives behind a `<details>` expander on the row, never
+   inline.
+4. **Your call** — the open decision cards, in the rail. On a settled surface this
+   zone is the ruling card instead.
+5. **Proof / evidence** — gate numbers, audit tables, groundings; skimmable,
+   collapsible where large.
+6. **Already settled** — LOCKED context as quiet collapsed rows.
+
+**One loud thing (hard):** exactly one element class is visually loudest — the open
+decision cards (blue ring), or on a settled surface the ruling card (green). All
+else stays quiet; a squint shows only what needs the reader.
+
+## Layout
+
+Two-pane grid on wide viewports (page up to ~1560px): content left, rail
+(~400px, `position: sticky`) right holding zones 4–6. Below ~1100px, stack.
 
 ## Visual identity
 
 ```css
 :root {
-  --bg:#f7f7f5; --card:#ffffff; --ink:#1a1a1a; --muted:#6b6b6b;
-  /* Okabe-Ito derived, colorblind-safe */
-  --accent:#0072b2; --accent-soft:#e5f1f8;   /* blue: new / added / primary */
-  --warn:#e69f00;  --warn-soft:#fdf3e0;      /* orange: modified / attention */
-  --danger:#d55e00; --danger-soft:#fbe9e0;   /* vermillion: blocker / removed */
-  --ok:#009e73;    --ok-soft:#e2f5ef;        /* bluish green: accepted / ok */
-  --line:#e2e2de; --locked:#64748b; --radius:10px;
+  --bg:#0b0d12; --surface:#12151c; --surface2:#181c25; --line:#252b36; --line-soft:#1d222b;
+  --ink:#e9edf3; --muted:#9aa4b2; --faint:#606a77;
+  /* GitHub-Primer-dark semantic hues; every hue rides with a glyph */
+  --green:#3fb950; --green-em:#2ea043;  /* added / gate green / ruled */
+  --amber:#d29922;                      /* modified / duplicated */
+  --red:#f85149; --red-soft:#ffb3ae;    /* fix / dissolves / misplaced */
+  --blue:#58a6ff;                       /* open decision — the one loud accent */
+  --mono:"Cascadia Code", ui-monospace, SFMono-Regular, Consolas, monospace;
 }
-body { font-family:"Segoe UI",system-ui,sans-serif; background:var(--bg);
-       color:var(--ink); line-height:1.5; }
+body { background:var(--bg); color:var(--ink);
+  font:15px/1.55 "Segoe UI Variable Text","Segoe UI",-apple-system,system-ui,sans-serif; }
 ```
 
-Cards: `background:var(--card); border:1px solid var(--line); border-radius:var(--radius);`.
+Mono is reserved for identifiers, numerals, and IDs; running text stays sans. Tinted
+node backgrounds stay near the surface tone (e.g. `#0f1f17` for green, `#201113` for
+red) — washed-out pastels and full-strength fills are both defects.
+
+## Diagrams are HTML (hard)
+
+The picture is built from HTML boxes laid out with CSS grid — stage containers
+(dashed border, uppercase micro-label) holding node cards (glyph column + title +
+one-line gist), with flow carried by glyph cells (`→`, `↓`) between grid tracks.
+Text in an HTML box wraps; it can never clip or overlap. SVG appears only for
+connector lines that grid adjacency cannot express — never for text layout. A claim
+an arrow would carry may instead sit on the node as a labeled chip
+(`belongs in stage 1 — beside B8/B9/B10`).
 
 **Colorblind rule (hard): color never carries a meaning alone.** Every semantic
-distinction — added/modified/unchanged, blocker/should-fix/follow-up, command/event/
-read-model, friction — is also encoded as a glyph (`+` / `~` / `=` / `⚠`), a shape, a
-border style (solid/dashed/dotted), or a label, so the page reads correctly in grayscale.
-Legends show the color and the redundant cue together.
+distinction also rides a glyph (`+ ~ = − ⚠ ✓`), a border style, or a label, so the
+page reads correctly in grayscale. Legends show color and glyph together.
 
 ## Cards and IDs
 
-1. **Stable IDs.** Every addressable element — diagram node, card, decision, claim —
-   carries `data-id="…"`: short, stable, human-readable (`D2`, `N-DISPOSITION`, `R1`),
-   shown subtly on the element. These are what the chat interview and the user's answers
-   point at.
-2. **Locked cards.** Already-agreed context under a `LOCKED` badge (`var(--locked)`).
-   A decision settled in chat becomes a locked card naming the chosen option.
-3. **Open decisions.** Cards listing 2–4 lettered options, exactly one carrying a
-   `RECOMMENDED` mark — displayed for reading; the pick is given in chat.
-4. **Navigation only.** Clicking a diagram node scrolls to and flashes its rail card and
-   vice versa where a linkage exists; hover tooltips may name the files behind a node.
-   No interaction stores or transmits anything.
+1. **Stable IDs.** Every addressable element — node, row, card, decision — carries
+   `data-id` (`D1`, `N-DFS`, `L2`), shown subtly on the element; chat answers point
+   at these.
+2. **Open decisions.** 2–4 lettered options; exactly one carries `RECOMMENDED`; each
+   option names its worst property on a second line; the card ends with the literal
+   reply shape: `Reply in chat: D1: A (or B, or ask).`
+3. **Locked context.** Collapsed rows under a muted `LOCKED` tag. A decision settled
+   in chat becomes a locked or ruled card naming the pick; the page is updated and
+   reloaded so every remaining question is answered with current truth in view.
+4. **Navigation only.** Clicking a diagram node may scroll to and flash its row;
+   no interaction stores or transmits anything.
 
 ## Density
 
-A surface is a working document, not a poster: realistic names, exact signatures where a
-decision turns on one, honest trade-off wording including each option's worst property.
-The page must answer "what do you need from me?" within two seconds of opening — the
-open decisions are visually loudest, locked context and evidence quieter.
+A surface is a working document: realistic names, exact signatures where a decision
+turns on one, honest trade-off wording. Every item earns one line in its zone;
+everything longer collapses. The verdict strip carries the whole story for the
+reader who reads nothing else.
