@@ -1,6 +1,6 @@
 ---
 name: al-user-verification
-description: Walk one slice's Verification Plan with the user in the BC Web Client — record and replay the framework-limited scenarios, then walk the rest guided (the user drives) or annotated (you drive and narrate, the user rules per scenario). Run it when al-next names a verify task ready for verification.
+description: Walk one slice's Verification Plan with the user in the BC Web Client, guided or annotated — recordings replay first. Run it on the slice's verify task.
 disable-model-invocation: true
 ---
 
@@ -42,13 +42,13 @@ Replay each on a fresh container through /al-build and read any red per RECORDIN
 
 ## Pre-flight the batch
 
-Fresh container and publish through /al-build, then replay every recording in one batch — this slice's and every prior slice's, so a cross-slice collision surfaces before the user is invited in. No recordings → skip it. Red → stop and read it per RECORDING-FORMAT.md: brittleness re-records, faithful wrong behaviour takes the repair episode above — a human's time is not worth spending against a red build.
+Fresh container and publish through /al-build, then replay every recording in one batch — this slice's and every prior slice's, so a cross-slice collision surfaces before the user is invited in. No recordings → skip it. Red → stop and classify it per the replay step above — a human's time is not worth spending against a red build.
 
 ## Walk the scenarios
 
 Fresh container and publish through /al-build first — a later spawn kills the session mid-walk. Run the Contract Examples yourself against their named client and keep the request and response verbatim.
 
-Open with what the user is in for: task id, slice slug and its `event-model.md` step, the mode choice, how many scenarios, how many the replay already confirmed, a time estimate, that container work runs minutes rather than seconds, and that Usability Reviews are the user's keyboard in either mode. Guided: hand over the URL, the credentials, and a deep link to the starting page — `http://<container>/BC/?page=<id>`, the page ID read from the page AL.
+Open with what the user is in for: task id, slice slug and its `event-model.md` step, the mode choice, how many scenarios, how many the replay already confirmed, a time estimate, that container work runs minutes rather than seconds, and that Usability Reviews are the user's keyboard in either mode. Guided: add a deep link to the starting page — `http://<container>/BC/?page=<id>`, the page ID read from the page AL.
 
 **Guided** — one scenario open at a time. Each `Record: no` Journey Example becomes one card — punchline, Do bullets, then its checks one at a time:
 

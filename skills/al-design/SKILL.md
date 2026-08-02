@@ -34,13 +34,13 @@ Ask one question per message, with lettered options and the recommendation marke
 
 Strategic, and therefore asked: module ownership and dependency direction, where persisted data lives, seam placement, which existing behaviour the feature may change, the public surface it commits to, the boundary between pure decisions and BC runtime, the future change this architecture must keep cheap, and the binding constraint. The interview closes when each of those is settled or stopped on a named spike.
 
-Module ownership takes the delete test: delete the module in imagination — complexity that vanishes was a pass-through, complexity that reappears across callers earned its keep. Name modules in the project's own vocabulary — "the Settlement intake module", never "the FooBarHandler". Each module row closes with its `Precedent` verdict from the `.bcapps/` read — the Microsoft object reused, the pattern lifted and where it differs, or `none in System App / apps`, a claim only the search can earn.
+Module ownership takes the delete test: delete the module in imagination — complexity that vanishes was a pass-through, complexity that reappears across callers earned its keep. Name modules in the project's own vocabulary — "the Settlement intake module", never "the FooBarHandler". Each module row closes with its `Precedent` verdict from the `.bcapps/` read.
 
 Tactical — object and file names, which of two equivalent patterns carries a module, the order sections land in — is decided and named in one line; naming it is what makes it overridable. A fact is never asked: search the workspace, or read the documentation. Escalate to `/al-grilling` when an answer itself needs pressure — a requirement that shifts each time it is restated, a preference with no reason under it.
 
 ## Candidates
 
-Multi-module designs, brownfield refactors, and novel pattern selection earn candidates. Diverge only once the strategic inventory is settled apart from the fork they turn on; earlier, the user is choosing between guesses. Propose how many are worth building and which one you would pick, and let the user set the count. If your harness supports subagents, these parallelize on full-capability subagents running the same model as this conversation; otherwise build them in one pass.
+Multi-module designs, brownfield refactors, and novel pattern selection earn candidates. Diverge only once the strategic inventory is settled apart from the fork they turn on; earlier, the user is choosing between guesses. Propose how many are worth building and which one you would pick, and let the user set the count. If your harness supports subagents, these parallelize; otherwise build them in one pass.
 
 Each candidate is self-contained under **Constraint**, **Shape**, **Flow**, **Seams**, **Trade-offs**, and carries the same settled decisions marked as settled so none reopens one. Present them in sequence, compare along depth, locality, and seam placement, recommend one or a hybrid opinionatedly, and put the pick to the user as one lettered question.
 
@@ -58,8 +58,8 @@ A contested decision carries its reason inline where the decision lands — one 
 
 `architecture.md` carries the module map, every slice's AL realisation named slot by slot with its `new` / `extends` marker, the brownfield touchpoint inventory, and where decision logic stays reachable by unit tests.
 
+A settled architecture first goes blind through `/al-spec-review` — the file, its sources, and the interview's settled answers as locked constraints; its findings land per that skill's disposition before anything commits.
+
 A settled architecture goes up drawn through `/al-visualize` — the module map, each slice's realisation on it, each minted name beside the term or `event-model.md` slot it derives from, so the user can spot a name worth reopening.
 
-Commit `architecture.md` and any `CONTEXT.md` term this run settled with a plain descriptive message; a stop mid-interview commits what settled the same way.
-
-Then continue in this session with `/al-scope`.
+Commit `architecture.md` and any `CONTEXT.md` term this run settled with a plain descriptive message; a stop mid-interview commits what settled the same way. Then continue in this session with `/al-scope`.

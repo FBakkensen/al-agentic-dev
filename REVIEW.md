@@ -9,7 +9,7 @@ Every folder under `skills/` is an Agent Skill: a `SKILL.md` plus optional sibli
 ## Portability — one skill, every harness
 
 1. Frontmatter has at most three keys: `name`, `description`, `disable-model-invocation`. Flag `allowed-tools`, `model`, `tools`, `mcp-servers`, `user-invocable`.
-2. Model invocation is the exception. Every skill carries `disable-model-invocation: true` unless something must load it without a slash command — another skill invokes it mid-run (`al-build`; `al-grilling`, invoked mid-interview by `al-grill-adr`, `al-event-model`, `al-design`, `al-refine`; `al-routing`, invoked at close by every skill that moves task state and loaded by `al-next` and any skill needing its schema; `al-visualize`, invoked mid-run by `al-design`, `al-event-model`, `al-refine`, `al-scope`, `al-code-review`, `al-quiz` and at close by every pipeline skill that presents its outcome drawn per rule 24), it is the plain-language navigator (`al-next`), or it exists for discovery by someone who doesn't know the commands (`al-agentic-dev-overview`). Flag a skill missing the flag, and flag a new exception that doesn't name who invokes it.
+2. Model invocation is the exception. Every skill carries `disable-model-invocation: true` unless something must load it without a slash command — another skill invokes it mid-run (`al-build`; `al-grilling`, invoked mid-interview by `al-grill-adr`, `al-event-model`, `al-design`, `al-refine`; `al-routing`, invoked at close by every skill that moves task state and loaded by `al-next` and any skill needing its schema; `al-visualize`, invoked mid-run by `al-design`, `al-event-model`, `al-refine`, `al-scope`, `al-code-review`, `al-quiz` and at close by every pipeline skill that presents its outcome drawn per rule 24; `al-spec-review`, invoked at close by `al-design`, `al-event-model`, `al-scope`, and `al-refine` to read a just-written spec artifact blind), it is the plain-language navigator (`al-next`), or it exists for discovery by someone who doesn't know the commands (`al-agentic-dev-overview`). Flag a skill missing the flag, and flag a new exception that doesn't name who invokes it.
 3. The folder name equals `name`.
 4. No relative link leaves the skill folder. Flag `](../`, `](/`, and any absolute path.
    - Correct: `See [TASK-FORMAT.md](TASK-FORMAT.md).`
@@ -25,17 +25,17 @@ Every folder under `skills/` is an Agent Skill: a `SKILL.md` plus optional sibli
 
 ## The description: router on the model-invocable skills, menu line on the rest
 
-9. On the model-invocable six (`al-build`, `al-grilling`, `al-next`, `al-routing`, `al-agentic-dev-overview`, `al-visualize`) the description says what the skill does and the state that should trigger it, in terms the model can match against the work in front of it: `Use when a pipeline skill finishes work on a task and the outcome needs recording`.
-10. On those six, one trigger per distinct branch. Flag synonyms that rename a single branch.
-11. On those six, flag identity restated from the body. The description spends its budget on triggers.
+9. On the model-invocable seven (`al-build`, `al-grilling`, `al-next`, `al-routing`, `al-agentic-dev-overview`, `al-visualize`, `al-spec-review`) the description says what the skill does and the state that should trigger it, in terms the model can match against the work in front of it: `Use when a pipeline skill finishes work on a task and the outcome needs recording`.
+10. On those seven, one trigger per distinct branch. Flag synonyms that rename a single branch.
+11. On those seven, flag identity restated from the body. The description spends its budget on triggers.
 12. On a `disable-model-invocation: true` skill the description is one line for the human scanning the `/` menu — what it does and when to reach for it, in plain words. Flag state grammar and trigger syntax there; the model never reads it.
 
 ## Length and density
 
-13. A `SKILL.md` body is at most 60 lines — 80 for `al-implement`, `al-code-review`, `al-user-verification`, `al-build`, `al-routing`. Flag anything longer and name what to cut.
+13. A `SKILL.md` body is at most 60 lines — 80 for `al-implement`, `al-code-review`, `al-user-verification`, `al-build`, `al-routing`, `al-spec-review`. Flag anything longer and name what to cut.
 14. Flag any sentence the model already obeys without it. "Be thorough", "think carefully", "read the file before editing" change nothing and cost tokens.
 15. Flag one meaning stated in two places inside a skill. Each rule has one authoritative home.
-16. Flag verification scaffolding: "verify your work", "double-check", "re-read before responding", "use a subagent to confirm". Models self-verify; the instruction produces over-verification and wasted tokens.
+16. Flag verification scaffolding: "verify your work", "double-check", "re-read before responding", "use a subagent to confirm". Models self-verify; the instruction produces over-verification and wasted tokens. The one sanctioned gate is `/al-spec-review`: a blind read of a just-written spec artifact against its sources in fresh context is not scaffolding.
 17. Flag a phase restated three ways where one familiar word carries it. Prefer a compact word the model already holds over a spelled-out triad.
 18. Flag stale layers — a rule about a file, agent, or step that no longer exists.
 
@@ -48,7 +48,7 @@ Every folder under `skills/` is an Agent Skill: a `SKILL.md` plus optional sibli
 
 ## Ceremony and contract
 
-20. A status flip or routing rule earns its place only by surviving a session boundary. Work that completes inside one session carries no ceremony: no flip written to be immediately unwritten, no handoff for what the current skill can finish. Flag choreography whose only reader is documentation.
+20. A status flip or routing rule earns its place only by surviving a session boundary. Work that completes inside one session carries no ceremony: no flip written to be immediately unwritten, no handoff for what the current skill can finish. The reader is a model in a live conversation, not an automaton — an interview branch settles in the conversation that raised it and needs no routing rule for an answer the interviewer absorbs; an unclaimed state is a defect only when it survives a session boundary unclaimed. Flag choreography whose only reader is documentation.
 21. A skill's steps stay inside its own declared contract. Flag a step that requires an action the skill forbids itself, and flag an imperative whose actor is unnamed.
 
 ## Finishing
@@ -56,7 +56,7 @@ Every folder under `skills/` is an Agent Skill: a `SKILL.md` plus optional sibli
 22. Each step ends on a condition that can be checked, and where it matters, an exhaustive one.
     - Correct: `every modified object appears in the change list`
     - Incorrect: `produce a change list`
-23. A skill that moved or created task state closes by naming its outcome, then `/al-routing` — one line each; `/al-routing` records the state and presents the open moves. A skill that wrote no task state closes naming its outcome, then `/al-next`. Flag a table of conditional exits. The exceptions: the entry chain (`al-grill-adr`, `al-event-model`, `al-design`) runs in one sitting, so each closes naming its successor and that the session continues, and `al-scope` is where closes hand to `/al-routing`; `al-build` closes on its verdict, `al-grilling` on the shared understanding, `al-routing` on the state recorded and the moves named, and `al-next` on the moves named — the user takes the step; a run that stopped on an open question or a mid-episode helper run (the repair review scope, a walk paused on a defect) closes back into the flow it serves, routing nowhere.
+23. A skill that moved or created task state closes by naming its outcome, then `/al-routing` — one line each; `/al-routing` records the state and presents the open moves. A skill that wrote no task state closes naming its outcome, then `/al-next`. Flag a table of conditional exits. The exceptions: the entry chain (`al-grill-adr`, `al-event-model`, `al-design`) runs in one sitting, so each closes naming its successor and that the session continues, and `al-scope` is where closes hand to `/al-routing`; `al-build` closes on its verdict, `al-grilling` on the shared understanding, `al-routing` on the state recorded and the moves named, `al-spec-review` on the findings returned to its caller, and `al-next` on the moves named — the user takes the step; a run that stopped on an open question or a mid-episode helper run (the repair review scope, a walk paused on a defect) closes back into the flow it serves, routing nowhere.
 24. Before its route, a pipeline close puts its outcome in view through `/al-visualize` — the settled artifact or landed change drawn: `al-grill-adr`, `al-event-model`, `al-design`, `al-scope`, `al-refine`, `al-implement`, `al-user-verification`, and `al-quiz` on every completed run; `al-refactor`, `al-code-review`, and `al-validate-breaking-changes` only when the run changed or found something — a clean one closes plain. `al-implement`'s repair green also draws its fix diff before rejoining its episode; `al-mutate` carries no close surface. Flag a close surface missing where one is due, and flag one added to a stop, a decline, or a mid-episode exit other than that repair green.
 
 ## Reply shape a skill asks for
@@ -67,7 +67,7 @@ Every folder under `skills/` is an Agent Skill: a `SKILL.md` plus optional sibli
 
 ## Delegation
 
-28. Delegation is for large, genuinely independent work. Flag a skill that spawns a subagent for work finishable in a few tool calls, or that spawns one to check its own output.
+28. Delegation is for large, genuinely independent work. Flag a skill that spawns a subagent for work finishable in a few tool calls, or that spawns one to check its own output — `/al-spec-review`'s blind spec gate is the sanctioned exception; a writing skill invoking it at close is not a finding.
 29. Where fan-out is optional, one sentence covers it: `If your harness supports subagents, these parallelize; otherwise apply them in one pass.`
 
 ## Task-file state has one home

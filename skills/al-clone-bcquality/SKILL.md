@@ -47,7 +47,7 @@ the path, layer, domain, frontmatter dimensions and keywords a consumer selects 
 discovery acceleration, not content. Every consumer selects on that index, so an index
 that would not build is a red run like any other.
 
-The repo's `.gitignore` carries a `.bcquality/` line — add it when missing.
+The repo's `.gitignore` carries a `.bcquality/` line — add it when missing, committing the edit with a plain descriptive message.
 
 Green when the tree sits on the head fetched this run, `.bcquality/microsoft/knowledge/`
 holds articles, `.bcquality/microsoft/skills/review/al-code-review.md` is present with

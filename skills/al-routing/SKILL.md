@@ -18,7 +18,7 @@ slice: <slug>        # an event-model.md timeline step or architecture.md slice;
 depends_on: [T-004]  # hard edges onto the tasks this one must follow
 status: open | done  # the only two written states
 phase: refined | implemented | refactored | mutated   # technical stamps; on a verify task planned | page-scripted; on the provision task provisioned | bcapps-cloned
-review: clean        # the review gate's stamp — the slice's last task at slice-done, the breaking-change task at feature-done
+review: clean        # the review gate's stamp
 ```
 
 Creation writes the structural fields plus `status: open` and no `phase:` — `/al-scope` at scoping, or the skill that finds new work mid-pipeline, naming the edges its find must wait on. A finder task takes a free `NNN` below the slice's verify task where one exists, so the verify task stays the slice's tail; a backend-only slice appends at the tail. The breaking-change task never carries `phase:`. Every later write is a stamp this skill makes when a run's outcome arrives.
@@ -40,6 +40,7 @@ Creation writes the structural fields plus `status: open` and no `phase:` — `/
 ## Gates
 
 - **Scoping** — no breaking-change task in `tasks/` means the folder is half-scoped: `/al-scope` finishes the write before anything routes.
+- **Re-scope** — `architecture.md` reshaped since the folder settled: `/al-scope` reconciles before anything routes.
 - **Provisioning** — while the provision task is not `done`, its ladder step is the only move.
 - **Slice-done** — every technical task in a feature slice `done` (the reserved ops slugs never gate) and the slice's last task lacking `review: clean` → `/al-code-review` on the slice.
 - **Feature-done** — every task `done` except the breaking-change task, which lacks `review: clean` → `/al-code-review` across the feature; its stamp is what opens the breaking-change task.

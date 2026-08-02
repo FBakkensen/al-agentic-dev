@@ -40,7 +40,7 @@ Work the cases in the specification's order: every `Unit` case first, then every
 
 AL Runner runs your own tables, fields, triggers, and AL logic for real in-memory, so record behaviour is unit-provable as written — assign fields directly and keep `Library - Sales` and its siblings out of unit tests. Everything inside an `.app` dependency auto-stubs instead: `Sales-Post` executes as a no-op, `GetResponseOrDefault` returns `false`. Where an assertion's truth rides on what a stubbed object really returns, that case is `Integration` — reclassify it rather than wrapping a BaseApp routine in a 1:1 interface built only to stub it. An observable `Commit()` is `Integration` too.
 
-A case that moves to `Integration` mid-cycle earns one `Contract notes` line: what `Unit` could not hold, and the seam that would push it back down. A wrong expected value is a different animal — that changes the `Test Specification` contract, so stop: name the contested value in chat, write nothing to the task file, and the user settles the contract before a re-run.
+A case that moves to `Integration` mid-cycle earns one `Contract notes` line: what `Unit` could not hold, and the seam that would push it back down. A wrong expected value is a different animal — that changes the `Test Specification` contract: ask the user in chat and wait, then write the settled value into the specification and continue the cycle.
 
 Where current code is too tangled for the Unit seam the case needs, anchor today's behaviour in an Integration characterization test first, extract the seam, then add the Unit case.
 
@@ -65,11 +65,11 @@ At full green, the handoff certifies that the task file matches what landed. Bef
 
 Commit at green under the task's `T-NNN` prefix — the slice review selects its diff by those prefixes — so the tree is clean for what comes next.
 
-## Apply a decision, or stop on a new one
+## Apply a decision, or ask on a new one
 
 Apply and continue: build scaffolding, a permission-set entry, an object ID, a caption, a local rename, a field on an object the task already names, reusing a seam a sibling task established. Where one rests on an assumption nobody blessed, append one line to the task body's `Deviations:` block — never edited away.
 
-Stop when the work makes a new decision: a new table, a new event publisher, a genuinely new seam, a `.bcapps/` find that Microsoft already ships what the task is building, a BCQuality rule the task's named surface violates, a production object the assertions require that `New and Modified Objects` never named, a public-surface rename, a code path that needs its own case rather than an appended assertion, or a task that no longer matches the feature Goal. Name the decision in chat and leave the task file untouched; the user re-runs once it settles.
+A new decision pauses the cycle: ask it in chat as one question and wait. An answer that keeps the task's contract — a production object the assertions require that `New and Modified Objects` never named, a code path that needs its own case rather than an appended assertion, a public-surface rename — lands in the `Test Specification` by this run, and the cycle continues. An answer that reopens the architecture — a new table, a new event publisher, a genuinely new seam, a `.bcapps/` find that Microsoft already ships what the task is building, a BCQuality rule the task's named surface violates, a task that no longer matches the feature Goal — ends the run: roll the working tree back to the last commit and name the owning skill; holding work uncommitted until green is what keeps that rollback clean.
 
 ## Close
 

@@ -50,9 +50,9 @@ git -C .bcapps/<checkout> config core.longpaths true
 git -C .bcapps/<checkout> sparse-checkout set <its folders>
 ```
 
-Either way, the repo's `.gitignore` carries a `.bcapps/` line — add it when
-missing. Green when `.bcapps/release` sits on the target branch and every
-wanted folder is populated in exactly one checkout.
+Either way, the repo's `.gitignore` carries a `.bcapps/` line — add it when missing,
+committing the edit with a plain descriptive message. Green when `.bcapps/release`
+sits on the target branch and every wanted folder is populated in exactly one checkout.
 
 ## Close
 

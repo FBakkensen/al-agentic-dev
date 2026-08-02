@@ -22,7 +22,7 @@ Read the whole diff — a task's full diff, once per task — through each of th
 - **Terminology** — every introduced name tracing to a `CONTEXT.md` term, the BC baseline, or an `event-model.md` Action, Business Event, or Status, its verb to BC's own set — an untraceable name is a finding — and names agreeing with the ADRs, `architecture.md`, and the task's `New and Modified Objects`; artifact prose the diff touched (task bodies, `architecture.md`) answers to the same vocabulary as the code.
 - **Performance shape** — a lookup hoisted out of a loop, a filtered read replacing a scan, fields loaded selectively. The structural kind, not one-line tweaks.
 
-If your harness supports subagents, these parallelize on full-capability subagents running the same model as this conversation; otherwise apply them in one pass.
+If your harness supports subagents, these parallelize; otherwise apply them in one pass.
 
 ## Apply
 
@@ -40,7 +40,7 @@ A defect needs no user decision: fix it in this run. A behavioural defect goes r
 
 A change request would override a decision the user already made, or establish missing business or architecture intent. Interview every change request before implementing any ruling, one per message, highest impact first. Explain the impact, choice, consequences, and recommendation. Name modules, boundaries, public objects, interfaces, events, or other AL concepts when they make the current or proposed architecture legible; keep paths, line numbers, private procedures, code snippets, lookup mechanics, and knowledge-article details out unless the user asks. One answer settles only the request in front of the user.
 
-After every request is settled, apply its ruling: **Do it now** lands on the defect terms above; **Write a task** creates one per `/al-routing`'s schema; **Keep the current behaviour** records the ruling in the decision artifact. Create a task only when the user chose one. Technical evidence belongs in the resulting commit or task.
+After every request is settled, apply its ruling: **Do it now** lands on the defect terms above; **Write a task** creates one per `/al-routing`'s schema; **Keep the current behaviour** records the ruling in the decision artifact. Create a task only when the user chose one. Each ruling commits as it lands: a created task under its own `T-NNN` prefix, an artifact ruling with a plain descriptive message. Technical evidence belongs in the resulting commit or task.
 
 ## Writing AL
 

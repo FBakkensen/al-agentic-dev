@@ -54,6 +54,8 @@ Document shape and a worked example: [EVENT-MODEL-FORMAT.md](EVENT-MODEL-FORMAT.
 
 `event-model.md` holds one timeline in which every step names its Role, its Action, its Business Event, its View, and the Status it flips or `—`, and every branch the interview surfaced has its own section.
 
+A settled timeline first goes blind through `/al-spec-review` — the file, its sources, and the interview's settled answers as locked constraints; its findings land per that skill's disposition before anything commits.
+
 A settled timeline goes up drawn through `/al-visualize` — the five slots end to end, swimlanes where Roles hand off.
 
 Commit `event-model.md` and any `CONTEXT.md` term this run settled with a plain descriptive message; a stop mid-interview commits what settled the same way.

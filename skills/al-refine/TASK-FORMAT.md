@@ -12,7 +12,7 @@ Skills parse these shapes, so field names and structure are exact.
 4. Sections appear in the order the table below declares.
 5. A case header carries the handle other sections reference: the AL test procedure name in `AAA Cases`, which `Covered By` cells name; the ID plus a short name in the verify sections, which `Closeout:` and `Partial-run record:` name.
 6. Inside a case, `Scope:` comes first, then the remaining scalar fields, then the bullet blocks in execution order.
-7. `; ` separates multiple values in a field. Rationale that needs writing down lands in `Contract notes:`, never as an inline comment. A `Contract notes:` bullet may carry a lede naming its kind: `Researched:` for a grounding citation, `Precedent:` for a `.bcapps/` verdict on behaviour the `architecture.md` module map does not cover.
+7. `; ` separates multiple values in a field. Rationale that needs writing down lands in `Contract notes:`, never as an inline comment. A `Contract notes:` bullet may carry a lede naming its kind: `Researched:` for a grounding citation, `Precedent:` for a `.bcapps/` verdict.
 
 ## Section order
 
@@ -38,7 +38,7 @@ Skills parse these shapes, so field names and structure are exact.
 
 **`## Decision Matrix`** — first column `Case` with IDs `R1`, `R2`, `R3`, last column `Covered By`, domain columns between. The coverage table for a branching rule, policy, calculation, or status combination. Domain columns prefer project language and BC display labels; exact AL names enter where ambiguity matters. A row landing in BC state, page behaviour, or a public procedure needs an integration procedure proving the wiring, unless another row's integration procedure already covers that path.
 
-One coverage table per technical task, and `Covered By` holds AL test procedure names only. Two unrelated behaviour groups mean a low-cohesion task: split it.
+One coverage table per technical task, and `Covered By` holds AL test procedure names only.
 
 **`## AAA Cases`** — every `Unit` case, then every `Integration` case, ascending coverage ID inside each scope. `Unit` proves an isolated decision on the AL Runner; `Integration` proves BC runtime, database, event, page, posting, install, or permission wiring in a container. Each case carries exactly one `Scope:`, a `Covers:` naming `B#` or `R#` from the same body, and `Arrange:` / `Act:` / `Assert:` bullet blocks with at least one bullet each — business state first, one business action, observable outcomes including expected errors.
 

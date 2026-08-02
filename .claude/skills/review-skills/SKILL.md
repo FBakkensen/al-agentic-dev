@@ -13,7 +13,7 @@ Two passes.
 
 **Cross-skill.** One reviewer with all descriptions, every `/al-*` handoff, and every task-frontmatter value list side by side. It checks closure:
 
-- Every state a skill emits — a `phase:`/`status:` value it writes, a `/al-x` it hands to, a condition it leaves the feature in — is claimed by a model-invocable skill's trigger or an `/al-next` routing branch. An emitted state nothing claims is the stall class; rank it top.
+- Every state a skill emits — a `phase:`/`status:` value it writes, a `/al-x` it hands to, a condition it leaves the feature in — is claimed by a model-invocable skill's trigger or an `/al-next` routing branch. An emitted state nothing claims is the stall class; rank it top. A branch that settles inside a live interview is not an emitted state — only what crosses a session boundary unclaimed counts.
 - The task-frontmatter value lists are complete and identical in every skill that reads or writes a task file (rule 30 names the lists).
 - No two descriptions claim the same state (rule 10, applied across the model-invocable four).
 

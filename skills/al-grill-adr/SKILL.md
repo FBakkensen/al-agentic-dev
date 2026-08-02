@@ -22,12 +22,12 @@ Ask one question per message: one line naming what the answer locks in, then the
 
 ## What to ask
 
-- **Which term here means two things?** Standard Microsoft names — Sales Header, Posting Date, Ledger Entry — are the baseline and stay out of `CONTEXT.md`. Record what this project narrows, extends, renames, or names that Microsoft doesn't: one sentence on what it *is*, plus the aliases it displaces.
+- **Which term here means two things?** Record what this project narrows, extends, renames, or names that Microsoft doesn't: one sentence on what it *is*, plus the aliases it displaces.
 - **Which concrete BC scenario forces a boundary to be precise?** Partial posting, reversal, correction, dimension inheritance, multi-company, an AppSource constraint.
 - **What is the user not asking because they don't know to ask it?** Name the adjacent BC behaviour or standard pattern they show no sign of having considered, and let them decide whether it matters. An unclaimed one is where the implementation guesses later.
 - **Where does the stated behaviour disagree with the code?** Read the code where it can answer; ask the user what code cannot tell — intent, direction, why a constraint exists. Name the conflict and leave the resolution to them.
 
-Speak BC throughout: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, No. not ID. Every object, table, field, procedure, event, or enum name landing in `CONTEXT.md` or an ADR comes from a lookup made in this session — recall is not evidence. Downstream, each term becomes the AL names themselves — the noun of every table, field, and procedure that carries the concept — and its `_Avoid_` line is the list of names no later skill may mint.
+Speak BC throughout: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, No. not ID. Every object, table, field, procedure, event, or enum name landing in `CONTEXT.md` or an ADR comes from a lookup made in this session — recall is not evidence.
 
 The thread is done when nothing is left to decide: every question it surfaced is answered in `CONTEXT.md` or an ADR, explicitly parked, or ruled out of scope — and the user confirms it.
 
@@ -44,7 +44,7 @@ Three of four earns none: say so in one line and keep going. A question that fee
 
 Where the fork is genuinely open, build out one complete ADR candidate per option and present them together for the user to pick.
 
-Accepted lands as `docs/adr/NNNN-slug.md`, taking the lowest number unused on this branch and on main. An ADR is a title plus one paragraph: the decision and the hinge of why; a consequence that binds later work joins that paragraph as one line. The full shapes are [ADR-FORMAT.md](ADR-FORMAT.md) and [CONTEXT-FORMAT.md](CONTEXT-FORMAT.md).
+Accepted lands as `docs/adr/NNNN-slug.md`, taking the lowest number unused on this branch and on main. The shapes are [ADR-FORMAT.md](ADR-FORMAT.md) and [CONTEXT-FORMAT.md](CONTEXT-FORMAT.md).
 
 ## Close
 

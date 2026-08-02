@@ -3,7 +3,8 @@
 Every surface is one self-contained, read-only HTML file: no input capture — no form
 controls, no comment boxes, no submit action — and no external assets. Answers happen
 in chat. Two moods share one skeleton: a **decision surface** carries open cards; a
-**close or ruling surface** carries none — its rail leads with the settled outcome.
+**close or ruling surface** carries none — its rail leads with the settled outcome —
+unless the close is itself an unresolved call, which keeps that one open card.
 
 ## Read in layers
 
@@ -13,7 +14,11 @@ phrase telling the reader what the zone gives them:
 
 1. **Verdict** — `<h1>`, one thesis line naming what is open (or that nothing is),
    and 3–5 stat tiles: mono numerals, semantic color, uppercase micro-label. The
-   page answers "what do you need from me?" here, within two seconds.
+   zone opens with the situation before the thesis: one short block in domain
+   terms — the scenario the artifact serves, who hits it, what goes wrong — that
+   a reader returning cold follows before any implementation name appears. The
+   page answers "what is this about?" and "what do you need from me?" here,
+   within two seconds.
 2. **The picture** — the centerpiece diagram (below).
 3. **One-liners** — one row per change or argument step: glyph · name · one-line
    gist · ID. Prose detail lives behind a `<details>` expander on the row, never
@@ -68,6 +73,11 @@ an arrow would carry may instead sit on the node as a labeled chip
 distinction also rides a glyph (`+ ~ = − ⚠ ✓`), a border style, or a label, so the
 page reads correctly in grayscale. Legends show color and glyph together.
 
+**Self-contained (hard): an identifier never stands alone.** The reader does not
+hold the mapping behind a `T-NNN`, a `B#`/`R#` row, a case or object name — every
+identifier carries its plain-language meaning at point of use, and the page assumes
+the reader remembers nothing from chat.
+
 ## Cards and IDs
 
 1. **Stable IDs.** Every addressable element — node, row, card, decision — carries
@@ -77,8 +87,7 @@ page reads correctly in grayscale. Legends show color and glyph together.
    option names its worst property on a second line; the card ends with the literal
    reply shape: `Reply in chat: D1: A (or B, or ask).`
 3. **Locked context.** Collapsed rows under a muted `LOCKED` tag. A decision settled
-   in chat becomes a locked or ruled card naming the pick; the page is updated and
-   reloaded so every remaining question is answered with current truth in view.
+   in chat becomes a locked or ruled card naming the pick.
 4. **Navigation only.** Clicking a diagram node may scroll to and flash its row;
    no interaction stores or transmits anything.
 

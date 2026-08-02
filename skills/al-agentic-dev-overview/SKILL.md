@@ -12,7 +12,7 @@ These skills carry a Business Central feature from a rough idea to a merged bran
 Emit [TOUR.md](TOUR.md) exactly as written, filling its two slots; the skills table below is reference for follow-up questions, never emitted whole.
 
 - **Start here** — no `app.json` anywhere in the tree (it is rarely at the repo root) → the not-an-AL-repo line. Present, but `.bcapps/` or `.bcquality/` missing at repo root → the provision-first line; the three provision skills run ad hoc, no task file needed. Provisioned, no `specs/<NNN>-<slug>/` at repo root → the cold-start line; whichever of `/al-event-model` or `/al-design` runs first creates the branch and the spec folder. `specs/` present → the mid-feature line. Detection names the kind of place only; the open moves belong to `/al-next`.
-- **Snippet** — the section appears only when the check below finds a home missing or stale, naming which; all four current → omit the section.
+- **Snippet** — the section appears only when the check below finds a home missing or stale, naming which.
 
 ## The skills
 
@@ -30,6 +30,8 @@ Emit [TOUR.md](TOUR.md) exactly as written, filling its two slots; the skills ta
 | `/al-refactor` | Reshapes production and test code while the gate stays green. |
 | `/al-mutate` | Injects one mutation at a time to prove the tests bite. |
 | `/al-code-review` | Reviews at slice-done and before merge, splitting rework from change requests. |
+| `/al-spec-review` | Blind-reads a just-written spec artifact against its sources before it commits; the writing skills invoke it at close. |
+| `/al-visualize` | Draws a decision or a landed change as an HTML page beside the chat — the pipeline skills invoke it at decisions and closes. |
 | `/al-user-verification` | Walks a slice's verify task with you, one scenario at a time, recordings included. |
 | `/al-build` | Compiles, publishes, runs the tests — the gate every other skill reaches through. |
 | `/al-provision` | Runs the provision task's first step, refreshing compiler, symbols, and baseline. |

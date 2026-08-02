@@ -28,7 +28,7 @@ A gap `architecture.md` cannot answer — a missing module, a pattern conflict, 
 ## What lands in tasks/
 
 - `000-feature.md` — the Goal in user terms, lifted from the `event-model.md` journey or the `architecture.md` trigger source. Prose only — state and order live in the task files.
-- `NNN-T-MMM-<slug>.md`, one per task. `NNN` is the execution-order prefix, gapped by 10 (`010`, `020`, `030`) and the sole encoding of order — insert between two tasks by taking a gap. `T-MMM` is monotonic, never reused, never renumbered, so it stays a stable locator as order shifts.
+- `NNN-T-MMM-<slug>.md`, one per task. `NNN` is the execution-order prefix, gapped by 10 (`010`, `020`, `030`) and the sole encoding of order — insert between two tasks by taking a gap.
 
 A task file is frontmatter, an H1 title, then a description paragraph — that is your whole write; existing objects, pages, events, APIs, and fields may be named as source context. The body belongs to `/al-refine`, whose format file governs its shape.
 
@@ -40,7 +40,7 @@ Load `/al-routing` — it owns the task-state schema. Your write sets the struct
 
 A slice is a vertical slice the user can exercise end-to-end. One task in it crosses the slice's trigger and the others compose into that one; inside the slice, decision logic comes first, BC wiring second, page or API surface last, the verify task after all of them. A component two slices need belongs to the first slice that needs it.
 
-Bracket the feature with both ops tasks every time: `T-001` `kind: provision` `slice: provision` first, `kind: breaking-change` `slice: breaking-change` last and depending on the final feature task. Emit the breaking-change task even where detection is off, and write its file last of all — its presence is what marks the folder fully scoped. Each carries its description and stops there.
+Bracket the feature with both ops tasks every time: `T-001` `kind: provision` `slice: provision` first, `kind: breaking-change` `slice: breaking-change` last and depending on the final feature task. Emit the breaking-change task even where detection is off, and write its file last of all. Each carries its description and stops there.
 
 When `event-model.md` is present, every slice closes with one `kind: verify` task on that `slice:`, `depends_on:` every technical task in the slice, and slice N+1's first technical task depends on slice N's verify task. Backend-only, that cross-slice edge points at slice N's last technical task.
 
@@ -50,8 +50,13 @@ The write ends when every `event-model.md` timeline step — or, backend-only, e
 
 Lede first: the BC site — object, procedure, field — plus the invariant the task preserves or the contract it ships. Cite an ADR by id, `ADR-0007`, never by path. A verify task's description names the slice's user-facing outcome in `event-model.md` vocabulary — Role, Action, Business Event, View, Status — and leaves AL names to the technical tasks it depends on.
 
+## Re-entry on a scoped folder
+
+A folder already fully scoped means the architecture was reshaped over settled tasks: reconcile instead of create. Re-source every `depends_on:` edge against the reshaped `architecture.md`, write the new tasks the new map needs, and put to the user, one question each: an open task whose module the map no longer carries is deleted from `tasks/` on their yes — git history is the archive — and a `done` task the new map contradicts takes their ruling: the landed work stays as it is, or a new task per the schema unwinds or reworks it.
+
 ## Close
 
+A fully scoped folder first goes blind through `/al-spec-review` — the folder, `architecture.md`, `event-model.md` when present, and the interview's settled answers as locked constraints; its findings land per that skill's disposition before the commit.
 Name what landed: the slices, the task and verify-task counts (or *none, backend-only*), whether the dependency shape is linear or branching, and the Goal in user terms.
 A fully scoped folder goes up drawn through `/al-visualize` — the slice and task dependency graph.
 Commit the `tasks/` folder with a plain descriptive message; a write stopped on a gap commits the slices already landed the same way.

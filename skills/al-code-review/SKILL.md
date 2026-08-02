@@ -29,7 +29,7 @@ Mixed state, a squash that hides the `T-NNN` prefixes, or an ambiguous range is 
 
 ## The review passes
 
-Two passes over the scoped diff. The first is BCQuality's: `.bcquality/microsoft/skills/review/al-code-review.md` names one review leaf per knowledge domain in its `sub-skills:` frontmatter — run every leaf it lists against the diff, each per its own instructions, resolving the paths inside those files against `.bcquality/`. Every leaf runs: each decides its own applicability, and pre-judging which ones have something to say is the documented way to make them underreport. A leaf that ends partial or failed leaves its domain unjudged — name it and stop, rather than counting silence as clean. If your harness supports subagents, one leaf per subagent holds each context to a single domain — full-capability subagents running the same model as this conversation; otherwise run them one at a time.
+Two passes over the scoped diff. The first is BCQuality's: `.bcquality/microsoft/skills/review/al-code-review.md` names one review leaf per knowledge domain in its `sub-skills:` frontmatter — run every leaf it lists against the diff, each per its own instructions, resolving the paths inside those files against `.bcquality/`. Every leaf runs: each decides its own applicability, and pre-judging which ones have something to say is the documented way to make them underreport. A leaf that ends partial or failed leaves its domain unjudged — name it and stop, rather than counting silence as clean. If your harness supports subagents, one leaf per subagent holds each context to a single domain; otherwise run them one at a time.
 
 The second pass is yours — the dimensions below, which reach what no leaf can see: the task's proof, the project's baselines, the shape of the code. If your harness supports subagents, these parallelize under the same subagent rule; otherwise apply them in one pass.
 
@@ -56,7 +56,7 @@ Rank the survivors of both passes by the consequence of shipping the diff as it 
 
 - A behavioural defect goes red first: write the missing AAA case, watch it fail on a real assertion, then make it pass. Commit under the originating `T-NNN` prefix and re-run `/al-build`. Task-file state stays untouched — a repair is not a pipeline step.
 - A provably non-semantic defect — a comment, local rename, dead code, or equivalent query shape — lands directly, gates, and commits standalone. A red gate reverts it and it re-enters as behavioural.
-- A fix that would overturn behaviour the user already verified is a change request. A defect that cannot reach green reverts and leaves the review red; difficulty does not turn it into a user decision.
+- A fix that would overturn behaviour the user already verified is a change request. A defect whose fix exceeds this run reverts, and the close puts it to the user as one proposed technical task — created on their yes per `/al-routing`'s schema on the owning slice, carrying the failing case this review wrote as its red. Declining the task rules that the behaviour stands: the finding re-enters as a change request, settled and recorded in the artifact whose expectation it overturns. Difficulty reclassifies nothing — a hard fix is a task, never a lesser defect.
 
 ### Interview the change requests
 
@@ -68,7 +68,7 @@ After every request is settled, apply its ruling:
 - **Write a task** — create one on the `slice:` whose decision it changes, per `/al-routing`'s schema. Create it only because the user chose it.
 - **Keep the current behaviour** — record the ruling in its decision artifact, so the same request does not return.
 
-Technical evidence belongs in the resulting commit or task, not the interview.
+Each ruling commits as it lands: a created task under its own `T-NNN` prefix, a ruling recorded in a decision artifact with a plain descriptive message, apart from the defect commits. Technical evidence belongs in the resulting commit or task, not the interview.
 
 ## Re-review and close
 
@@ -78,5 +78,5 @@ A clean gate is no defect left and no open change request.
 
 Keep the pass churn out of chat. Name each defect commit. Report each change request as `Impact:` / `Ruling:` / `Outcome:`. A slice or feature verdict that landed defects or settled change requests also goes up drawn through `/al-visualize` — the reviewed diff with each ruling on it; a clean gate and a repair verdict close plain.
 
-**Outcome:** the diff is reviewed, the defects have landed green, and every change request has a ruling.
+**Outcome:** the diff is reviewed, every defect has landed green or become a task the user accepted, and every change request has a ruling.
 Then `/al-routing` on a slice or feature verdict; a repair verdict closes back into the paused walk.

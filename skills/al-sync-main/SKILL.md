@@ -60,6 +60,5 @@ branch stay matched; name the stale remote branch for the user to delete.
 ## Close
 
 Name the outcome — the branch replayed onto main, gates green, pushed, and each
-renumber as old → new; the rollback and what broke; or the open decision.
-
-Then `/al-next`.
+renumber as old → new; or the rollback and what broke — then `/al-next`. A run
+stopped on an open decision ends in chat awaiting the answer, routing nowhere.
