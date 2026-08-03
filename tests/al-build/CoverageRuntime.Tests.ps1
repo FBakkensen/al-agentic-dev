@@ -58,6 +58,102 @@ BeforeAll {
         } | ConvertTo-Json -Depth 5 |
             Set-Content -LiteralPath (Join-Path $Path 'manifest.json')
     }
+
+    function New-TestRunnerPageFixture {
+        param(
+            [object[]]$Responses,
+            [int]$ActionDelayMilliseconds = 0
+        )
+
+        $root = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+        $moduleRoot = Join-Path $root 'BcContainerHelper'
+        $appHandlingRoot = Join-Path $moduleRoot 'AppHandling'
+        $runPath = Join-Path $root 'run'
+        $serviceRoot = Join-Path $root 'service'
+        $null = New-Item -ItemType Directory -Path $appHandlingRoot, $runPath, $serviceRoot -Force
+
+        @'
+param(
+    [string]$newtonSoftDllPath,
+    [string]$clientDllPath,
+    [string]$clientContextScriptPath
+)
+function Disable-SslVerification {}
+function New-ClientContext {
+    param($serviceUrl, $auth, $credential)
+    $global:CoverageRuntimeClientContext
+}
+'@ | Set-Content -LiteralPath (Join-Path $appHandlingRoot 'PsTestFunctions.ps1')
+        '' | Set-Content -LiteralPath (Join-Path $appHandlingRoot 'ClientContext.ps1')
+        @'
+<configuration>
+  <appSettings>
+    <add key="PublicWebBaseUrl" value="https://localhost:7049/BC" />
+    <add key="ClientServicesCredentialType" value="NavUserPassword" />
+  </appSettings>
+</configuration>
+'@ | Set-Content -LiteralPath (Join-Path $serviceRoot 'CustomSettings.config')
+
+        $state = [pscustomobject]@{
+            Responses = @($Responses)
+            ResponseIndex = 0
+            Current = $null
+            ActionDelayMilliseconds = $ActionDelayMilliseconds
+            OpenFormCount = 0
+            CloseFormCount = 0
+            DisposeCount = 0
+        }
+        $clientContext = [pscustomobject]@{}
+        $clientContext | Add-Member ScriptMethod OpenForm {
+            param([int]$PageId)
+            $global:CoverageRuntimePageState.OpenFormCount++
+            [pscustomobject]@{ Id = $PageId }
+        }
+        $clientContext | Add-Member ScriptMethod SaveValue {
+            param($Control, $Value)
+        }
+        $clientContext | Add-Member ScriptMethod GetActionByName {
+            param($Form, [string]$Name)
+            [pscustomobject]@{ Name = $Name }
+        }
+        $clientContext | Add-Member ScriptMethod InvokeAction {
+            param($Action)
+            if ($global:CoverageRuntimePageState.ActionDelayMilliseconds -gt 0) {
+               Start-Sleep -Milliseconds $global:CoverageRuntimePageState.ActionDelayMilliseconds
+            }
+            $index = $global:CoverageRuntimePageState.ResponseIndex
+            $global:CoverageRuntimePageState.Current =
+               $global:CoverageRuntimePageState.Responses[$index]
+            $global:CoverageRuntimePageState.ResponseIndex++
+        }
+        $clientContext | Add-Member ScriptMethod GetControlByName {
+            param($Form, [string]$Name)
+            $current = $global:CoverageRuntimePageState.Current
+            $value = if ($Name -eq 'CCInfo') {
+               $current.Info
+            } elseif ($Name -eq 'CCResultsCSVText') {
+               $current.Payload
+            } else {
+               ''
+            }
+            [pscustomobject]@{ StringValue = $value }
+        }
+        $clientContext | Add-Member ScriptMethod CloseForm {
+            param($Form)
+            $global:CoverageRuntimePageState.CloseFormCount++
+        }
+        $clientContext | Add-Member ScriptMethod Dispose {
+            $global:CoverageRuntimePageState.DisposeCount++
+        }
+
+        [pscustomobject]@{
+            Module = [pscustomobject]@{ ModuleBase = $moduleRoot }
+            RunPath = $runPath
+            ServiceRoot = $serviceRoot
+            State = $state
+            ClientContext = $clientContext
+        }
+    }
 }
 
 Describe 'Coverage helper contract' {
@@ -324,6 +420,146 @@ Describe 'JUnit completion evidence' {
     }
 }
 
+Describe 'Test Runner page drain session' {
+    AfterEach {
+        Remove-Variable CoverageRuntimeClientContext -Scope Global -ErrorAction SilentlyContinue
+        Remove-Variable CoverageRuntimePageState -Scope Global -ErrorAction SilentlyContinue
+    }
+
+    It 'drains multiple payloads and two Done responses in one container invocation' {
+        $fixture = New-TestRunnerPageFixture -Responses @(
+            [pscustomobject]@{ Info = '70000,FirstTest'; Payload = 'first' }
+            [pscustomobject]@{ Info = 'Done.'; Payload = '' }
+            [pscustomobject]@{ Info = '70001,SecondTest'; Payload = 'second' }
+            [pscustomobject]@{ Info = 'Done.'; Payload = '' }
+            [pscustomobject]@{ Info = 'Done.'; Payload = '' }
+        )
+
+        InModuleScope coverage-runtime -Parameters @{
+            Credential = $script:Credential
+            Fixture = $fixture
+        } {
+            param($Credential, $Fixture)
+            $global:CoverageRuntimeClientContext = $Fixture.ClientContext
+            $global:CoverageRuntimePageState = $Fixture.State
+            Mock Import-BCContainerHelper {}
+            Mock Get-Module { $Fixture.Module } -ParameterFilter { $Name -eq 'BcContainerHelper' }
+            Mock Get-BcContainerPath { $path }
+            Mock Test-Path { $true } -ParameterFilter { $Path -like '*Newtonsoft.Json.dll' }
+            Mock Get-Item {
+                if ($Path -like '*Newtonsoft.Json.dll') {
+                    [pscustomobject]@{ FullName = 'C:\fake\Newtonsoft.Json.dll' }
+                } else {
+                    [pscustomobject]@{ FullName = $Fixture.ServiceRoot }
+                }
+            } -ParameterFilter { $Path -like 'C:\Program Files\Microsoft Dynamics NAV\*' }
+            Mock Invoke-ScriptInBcContainer {
+                & $scriptBlock @argumentList
+            }
+
+            $responses = @(
+                Invoke-BcTestRunnerPage -Operation Drain -ContainerName 'bc' `
+                    -Tenant 'default' -Credential $Credential `
+                    -SharedRunPath $Fixture.RunPath -TestAppName 'tests'
+            )
+
+            $responses | Should -HaveCount 5
+            $responses[0].Info | Should -Be '70000,FirstTest'
+            $responses[1].Info | Should -Be 'Done.'
+            $responses[2].Payload | Should -Be 'second'
+            $responses[3].Info | Should -Be 'Done.'
+            $responses[4].Info | Should -Be 'Done.'
+            $Fixture.State.ResponseIndex | Should -Be 5
+            $Fixture.State.OpenFormCount | Should -Be 1
+            $Fixture.State.CloseFormCount | Should -Be 1
+            $Fixture.State.DisposeCount | Should -Be 1
+            Should -Invoke Invoke-ScriptInBcContainer -Times 1 -Exactly
+        }
+    }
+
+    It 'enforces the response limit inside the single container invocation' {
+        $fixture = New-TestRunnerPageFixture -Responses @(
+            [pscustomobject]@{ Info = '70000,FirstTest'; Payload = 'first' }
+            [pscustomobject]@{ Info = '70001,SecondTest'; Payload = 'second' }
+            [pscustomobject]@{ Info = '70002,ThirdTest'; Payload = 'third' }
+        )
+
+        InModuleScope coverage-runtime -Parameters @{
+            Credential = $script:Credential
+            Fixture = $fixture
+        } {
+            param($Credential, $Fixture)
+            $global:CoverageRuntimeClientContext = $Fixture.ClientContext
+            $global:CoverageRuntimePageState = $Fixture.State
+            Mock Import-BCContainerHelper {}
+            Mock Get-Module { $Fixture.Module } -ParameterFilter { $Name -eq 'BcContainerHelper' }
+            Mock Get-BcContainerPath { $path }
+            Mock Test-Path { $true } -ParameterFilter { $Path -like '*Newtonsoft.Json.dll' }
+            Mock Get-Item {
+                if ($Path -like '*Newtonsoft.Json.dll') {
+                    [pscustomobject]@{ FullName = 'C:\fake\Newtonsoft.Json.dll' }
+                } else {
+                    [pscustomobject]@{ FullName = $Fixture.ServiceRoot }
+                }
+            } -ParameterFilter { $Path -like 'C:\Program Files\Microsoft Dynamics NAV\*' }
+            Mock Invoke-ScriptInBcContainer {
+                & $scriptBlock @argumentList
+            }
+
+            {
+                Invoke-BcTestRunnerPage -Operation Drain -ContainerName 'bc' `
+                    -Tenant 'default' -Credential $Credential `
+                    -SharedRunPath $Fixture.RunPath -TestAppName 'tests' `
+                    -MaxDrainResponses 3
+            } | Should -Throw "*exceeded the maximum of 3 responses*received 3 responses and 3 payloads*"
+            $Fixture.State.ResponseIndex | Should -Be 3
+            $Fixture.State.CloseFormCount | Should -Be 1
+            $Fixture.State.DisposeCount | Should -Be 1
+            Should -Invoke Invoke-ScriptInBcContainer -Times 1 -Exactly
+        }
+    }
+
+    It 'enforces the wall-clock timeout inside the single container invocation' {
+        $fixture = New-TestRunnerPageFixture -Responses @(
+            [pscustomobject]@{ Info = '70000,SlowTest'; Payload = 'slow' }
+        ) -ActionDelayMilliseconds 100
+
+        InModuleScope coverage-runtime -Parameters @{
+            Credential = $script:Credential
+            Fixture = $fixture
+        } {
+            param($Credential, $Fixture)
+            $global:CoverageRuntimeClientContext = $Fixture.ClientContext
+            $global:CoverageRuntimePageState = $Fixture.State
+            Mock Import-BCContainerHelper {}
+            Mock Get-Module { $Fixture.Module } -ParameterFilter { $Name -eq 'BcContainerHelper' }
+            Mock Get-BcContainerPath { $path }
+            Mock Test-Path { $true } -ParameterFilter { $Path -like '*Newtonsoft.Json.dll' }
+            Mock Get-Item {
+                if ($Path -like '*Newtonsoft.Json.dll') {
+                    [pscustomobject]@{ FullName = 'C:\fake\Newtonsoft.Json.dll' }
+                } else {
+                    [pscustomobject]@{ FullName = $Fixture.ServiceRoot }
+                }
+            } -ParameterFilter { $Path -like 'C:\Program Files\Microsoft Dynamics NAV\*' }
+            Mock Invoke-ScriptInBcContainer {
+                & $scriptBlock @argumentList
+            }
+
+            {
+                Invoke-BcTestRunnerPage -Operation Drain -ContainerName 'bc' `
+                    -Tenant 'default' -Credential $Credential `
+                    -SharedRunPath $Fixture.RunPath -TestAppName 'tests' `
+                    -DrainTimeoutSeconds 0.01
+            } | Should -Throw "*exceeded the 0.01-second timeout*received 1 responses and 1 payloads*"
+            $Fixture.State.ResponseIndex | Should -Be 1
+            $Fixture.State.CloseFormCount | Should -Be 1
+            $Fixture.State.DisposeCount | Should -Be 1
+            Should -Invoke Invoke-ScriptInBcContainer -Times 1 -Exactly
+        }
+    }
+}
+
 Describe 'Coverage drain' {
     It 'requires two consecutive Done responses and writes exact sequential identities' {
         $runPath = Join-Path $TestDrive 'drain'
@@ -345,11 +581,8 @@ Describe 'Coverage drain' {
                 [pscustomobject]@{ Info = 'Done.'; Payload = '' }
                 [pscustomobject]@{ Info = 'Done.'; Payload = '' }
             )
-            $script:responseIndex = 0
             Mock Invoke-BcTestRunnerPage {
-                $response = $script:responses[$script:responseIndex]
-                $script:responseIndex++
-                $response
+                $script:responses
             }
 
             $path = Receive-BcTestCoverage -ContainerName 'bc' -Tenant 'default' `
@@ -366,7 +599,12 @@ Describe 'Coverage drain' {
             $manifest.payloads[0].testCodeunitId | Should -Be 70000
             $manifest.payloads[0].testMethod | Should -Be 'PassingTest'
             $manifest.payloads[1].file | Should -Be 'payload-0002.xml'
-            $script:responseIndex | Should -Be 5
+            Should -Invoke Invoke-BcTestRunnerPage -Times 1 -Exactly -ParameterFilter {
+                $Operation -eq 'Drain' -and
+                $MaxDrainResponses -eq 10000 -and
+                $DrainTimeoutSeconds -eq 600 -and
+                $TestAppName -eq 'tests-a'
+            }
             $bytes = [System.IO.File]::ReadAllBytes(
                 (Join-Path $path 'payload-0001.xml')
             )
@@ -398,27 +636,31 @@ Describe 'Coverage drain' {
         }
     }
 
-    It 'bounds a drain that never reaches the sentinel' {
+    It 'passes response and timeout bounds to the single drain invocation' {
         $runPath = Join-Path $TestDrive 'bounded-drain'
         New-Item -ItemType Directory -Path $runPath | Out-Null
-        $payload = New-CoveragePayload 'loop'
 
         InModuleScope coverage-runtime -Parameters @{
             Credential = $script:Credential
             RunPath = $runPath
-            Payload = $payload
         } {
-            param($Credential, $RunPath, $Payload)
+            param($Credential, $RunPath)
             Mock Invoke-BcTestRunnerPage {
-                [pscustomobject]@{ Info = '70000,LoopingTest'; Payload = $Payload }
+                throw "Coverage drain for 'tests' exceeded the maximum of 3 responses."
             }
 
             {
                 Receive-BcTestCoverage -ContainerName 'bc' -Tenant 'default' `
                     -Credential $Credential -SharedRunPath $RunPath -TestAppName 'tests' `
-                    -JUnitTestCount 10 -MaxDrainResponses 3
-            } | Should -Throw "*did not reach two consecutive 'Done.'*received 3 responses and 3 payloads*"
-            Should -Invoke Invoke-BcTestRunnerPage -Times 3 -Exactly
+                    -JUnitTestCount 10 -MaxDrainResponses 3 `
+                    -DrainTimeout ([timespan]::FromSeconds(4))
+            } | Should -Throw "*exceeded the maximum of 3 responses*"
+            Should -Invoke Invoke-BcTestRunnerPage -Times 1 -Exactly -ParameterFilter {
+                $Operation -eq 'Drain' -and
+                $MaxDrainResponses -eq 3 -and
+                $DrainTimeoutSeconds -eq 4 -and
+                $TestAppName -eq 'tests'
+            }
         }
     }
 
@@ -453,7 +695,10 @@ Describe 'Coverage drain' {
         } {
             param($Credential, $RunPath)
             Mock Invoke-BcTestRunnerPage {
-                [pscustomobject]@{ Info = 'Done.'; Payload = '' }
+                @(
+                    [pscustomobject]@{ Info = 'Done.'; Payload = '' }
+                    [pscustomobject]@{ Info = 'Done.'; Payload = '' }
+                )
             }
 
             {
@@ -461,7 +706,7 @@ Describe 'Coverage drain' {
                     -Credential $Credential -SharedRunPath $RunPath -TestAppName 'tests' `
                     -JUnitTestCount 1
             } | Should -Throw "*contains zero payloads for executed test app 'tests'*"
-            Should -Invoke Invoke-BcTestRunnerPage -Times 2 -Exactly
+            Should -Invoke Invoke-BcTestRunnerPage -Times 1 -Exactly
         }
     }
 

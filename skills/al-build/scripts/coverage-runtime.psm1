@@ -118,8 +118,26 @@ function Invoke-BcTestRunnerPage {
         [Parameter(Mandatory)]
         [string]$SharedRunPath,
 
-        [int]$ExporterId
+        [int]$ExporterId,
+
+        [int]$MaxDrainResponses = 10000,
+
+        [double]$DrainTimeoutSeconds = 600,
+
+        [string]$TestAppName
     )
+
+    if ($Operation -eq 'Drain') {
+        if ($MaxDrainResponses -le 0) {
+            throw 'Coverage drain response limit must be greater than zero.'
+        }
+        if ($DrainTimeoutSeconds -le 0) {
+            throw 'Coverage drain timeout must be greater than zero.'
+        }
+        if ([string]::IsNullOrWhiteSpace($TestAppName)) {
+            throw 'Coverage drain test app name is required.'
+        }
+    }
 
     Import-BCContainerHelper
 
@@ -153,7 +171,10 @@ function Invoke-BcTestRunnerPage {
             [string]$ClientContextPath,
             [int]$ExporterId,
             [int]$TestRunnerPageId,
-            $PageContract
+            $PageContract,
+            [int]$MaxDrainResponses,
+            [double]$DrainTimeoutSeconds,
+            [string]$TestAppName
         )
 
         $newtonSoftDllPath = 'C:\Program Files\Microsoft Dynamics NAV\*\Service\Management\Newtonsoft.Json.dll'
@@ -245,15 +266,50 @@ function Invoke-BcTestRunnerPage {
                 return [pscustomobject]@{ Tracking = 'PerTest' }
             }
 
-            $clientContext.InvokeAction(
-                (Get-RequiredAction $clientContext $form $PageContract.DrainAction)
-            )
-            $info = (Get-RequiredControl $clientContext $form $PageContract.InfoControl).StringValue
-            $payload = (Get-RequiredControl $clientContext $form $PageContract.PayloadControl).StringValue
-            [pscustomobject]@{
-                Info    = [string]$info
-                Payload = [string]$payload
+            $responses = [System.Collections.Generic.List[object]]::new()
+            $doneCount = 0
+            $payloadCount = 0
+            $stopwatch = [diagnostics.stopwatch]::StartNew()
+
+            while ($doneCount -lt 2) {
+                if ($responses.Count -ge $MaxDrainResponses) {
+                    throw "Coverage drain for '$TestAppName' exceeded the maximum of $MaxDrainResponses responses before two consecutive '$($PageContract.DoneValue)' responses; received $($responses.Count) responses and $payloadCount payloads."
+                }
+                if ($stopwatch.Elapsed.TotalSeconds -ge $DrainTimeoutSeconds) {
+                    throw "Coverage drain for '$TestAppName' exceeded the $DrainTimeoutSeconds-second timeout before two consecutive '$($PageContract.DoneValue)' responses; received $($responses.Count) responses and $payloadCount payloads."
+                }
+
+                $clientContext.InvokeAction(
+                    (Get-RequiredAction $clientContext $form $PageContract.DrainAction)
+                )
+                $info = [string](
+                    Get-RequiredControl $clientContext $form $PageContract.InfoControl
+                ).StringValue
+                $payload = [string](
+                    Get-RequiredControl $clientContext $form $PageContract.PayloadControl
+                ).StringValue
+
+                if ($info -eq $PageContract.DoneValue) {
+                    $doneCount++
+                } else {
+                    $doneCount = 0
+                    $identity = [regex]::Match($info, '^\s*(?<id>\d+)\s*,\s*(?<method>.+?)\s*$')
+                    if (-not $identity.Success) {
+                        throw "Coverage drain for '$TestAppName' returned unexpected response '$info'; expected '<test codeunit ID>,<test method>' or exact sentinel '$($PageContract.DoneValue)'."
+                    }
+                    if ([string]::IsNullOrWhiteSpace($payload)) {
+                        throw "Coverage payload for '$info' is empty."
+                    }
+                    $payloadCount++
+                }
+
+                $responses.Add([pscustomobject]@{
+                    Info    = $info
+                    Payload = $payload
+                })
             }
+
+            $responses.ToArray()
         } finally {
             if ($form -and $clientContext) {
                 $clientContext.CloseForm($form)
@@ -270,7 +326,10 @@ function Invoke-BcTestRunnerPage {
         $containerClientContextPath,
         $ExporterId,
         $script:TestRunnerPageId,
-        $pageContract
+        $pageContract,
+        $MaxDrainResponses,
+        $DrainTimeoutSeconds,
+        $TestAppName
     )
 }
 
@@ -525,20 +584,18 @@ function Receive-BcTestCoverage {
     New-Item -ItemType Directory -Path $collectionPath -Force | Out-Null
 
     $payloads = [System.Collections.Generic.List[object]]::new()
-    $doneCount = 0
     $order = 0
     $doneValue = (Get-BcCoveragePageContract).DoneValue
-    $responseCount = 0
-    $stopwatch = [diagnostics.stopwatch]::StartNew()
+    $responses = @(
+        Invoke-BcTestRunnerPage -Operation Drain -ContainerName $ContainerName `
+            -Tenant $Tenant -Credential $Credential -SharedRunPath $SharedRunPath `
+            -MaxDrainResponses $MaxDrainResponses `
+            -DrainTimeoutSeconds $DrainTimeout.TotalSeconds `
+            -TestAppName $TestAppName
+    )
+    $doneCount = 0
 
-    while ($doneCount -lt 2) {
-        if ($responseCount -ge $MaxDrainResponses -or $stopwatch.Elapsed -ge $DrainTimeout) {
-            throw "Coverage drain for '$TestAppName' did not reach two consecutive '$doneValue' responses within $MaxDrainResponses responses or $($DrainTimeout.TotalSeconds) seconds; received $responseCount responses and $order payloads."
-        }
-
-        $response = Invoke-BcTestRunnerPage -Operation Drain -ContainerName $ContainerName `
-            -Tenant $Tenant -Credential $Credential -SharedRunPath $SharedRunPath
-        $responseCount++
+    foreach ($response in $responses) {
         $info = [string]$response.Info
 
         if ($info -eq $doneValue) {
@@ -569,13 +626,17 @@ function Receive-BcTestCoverage {
         })
     }
 
+    if ($doneCount -ne 2) {
+        throw "Coverage drain for '$TestAppName' did not return two consecutive '$doneValue' responses."
+    }
+
     $manifestPath = Join-Path $collectionPath 'manifest.json'
     [ordered]@{
         schemaVersion      = 1
         testApp            = $TestAppName
         junitTestCount     = $JUnitTestCount
         payloadCount       = $payloads.Count
-        drainResponseCount = $responseCount
+        drainResponseCount = $responses.Count
         terminalDoneCount  = $doneCount
         doneValue          = $doneValue
         payloads           = @($payloads)
