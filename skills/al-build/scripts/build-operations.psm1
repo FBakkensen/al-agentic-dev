@@ -13,7 +13,7 @@
     - Test execution
 
 .NOTES
-    Import this module alongside common.psm1 for full functionality.
+    Import this module alongside common.psm1 and coverage-runtime.psm1 for full functionality.
     All functions use Write-BuildMessage for consistent output.
 #>
 
@@ -1179,7 +1179,13 @@ function Invoke-ALTest {
         [string]$TestDir,
 
         [Parameter(Mandatory)]
-        [string]$OutputDir
+        [string]$OutputDir,
+
+        [switch]$Coverage,
+
+        [string]$CoverageStagingRoot,
+
+        $CoverageContract
     )
 
     $config = Get-BuildConfig
@@ -1188,6 +1194,7 @@ function Invoke-ALTest {
     if (-not $appJson) {
         throw "app.json not found in '$TestDir'"
     }
+    $dirName = Split-Path $TestDir -Leaf
 
     Write-BuildHeader "AL Test Execution"
     Write-BuildMessage -Type Step -Message "Running tests: $($appJson.name)"
@@ -1209,23 +1216,8 @@ function Invoke-ALTest {
     # Import BcContainerHelper
     Import-BCContainerHelper
 
-    # Get shared folder from container
-    $sharedFolders = Get-BcContainerSharedFolders -containerName $config.ContainerName
-    $sharedBaseFolder = $sharedFolders.Keys | Where-Object { $_ -like "*$($config.ContainerName)*" } | Select-Object -First 1
-    if (-not $sharedBaseFolder) {
-        $sharedBaseFolder = $sharedFolders.Keys | Where-Object { $_ -like '*ProgramData*' } | Select-Object -First 1
-    }
-    if (-not $sharedBaseFolder) {
-        $sharedBaseFolder = $sharedFolders.Keys | Select-Object -First 1
-    }
-    if (-not $sharedBaseFolder) {
-        throw "No shared folders found for container $($config.ContainerName)"
-    }
-
-    $sharedResultsPath = Join-Path $sharedBaseFolder 'TestResults'
-    Ensure-Directory -Path $sharedResultsPath
-    $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-    $sharedResultFile = Join-Path $sharedResultsPath "test-results-$timestamp.xml"
+    $sharedRunPath = New-BcSharedTestRunDirectory -ContainerName $config.ContainerName
+    $sharedResultFile = Join-Path $sharedRunPath 'last.xml'
 
     # Get credentials
     $credential = Get-BCCredential -Username $config.ContainerUsername -Password $config.ContainerPassword
@@ -1240,14 +1232,85 @@ function Invoke-ALTest {
         returnTrueIfAllPassed = $true
     }
 
-    # Run tests
-    $testsPassed = Run-TestsInBcContainer @testParams
-
-    # Copy results to output dir
     $resultFile = Join-Path $OutputDir 'last.xml'
-    if (Test-Path -LiteralPath $sharedResultFile) {
-        Copy-Item -LiteralPath $sharedResultFile -Destination $resultFile -Force
-        Write-BuildMessage -Type Success -Message "Results saved: $resultFile"
+    $primaryError = $null
+    try {
+        $exporterId = 0
+        if ($Coverage) {
+            if (-not $CoverageContract) {
+                throw 'Coverage helper contract is required when coverage is enabled.'
+            }
+            if (-not $CoverageStagingRoot) {
+                throw 'Coverage staging root is required when coverage is enabled.'
+            }
+            $exporterId = [int]$CoverageContract.ExporterId
+        }
+
+        $execution = Invoke-BcTestRunWithCoverage -ContainerName $config.ContainerName `
+            -Tenant $config.Tenant -Credential $credential -SharedRunPath $sharedRunPath `
+            -JUnitPath $sharedResultFile -TestAppName $dirName -Coverage:$Coverage `
+            -ExporterId $exporterId -RunTests {
+                Run-TestsInBcContainer @testParams
+            }
+
+        if ($Coverage) {
+            $appCoverageStage = Join-Path $CoverageStagingRoot $dirName
+            if (Test-Path -LiteralPath $appCoverageStage) {
+                Remove-Item -LiteralPath $appCoverageStage -Recurse -Force -Confirm:$false
+            }
+            Copy-Item -LiteralPath $execution.CoveragePath -Destination $appCoverageStage -Recurse
+            Test-BcCoverageCollection -Path $appCoverageStage -ExpectedTestApp $dirName | Out-Null
+        }
+
+        $testsPassed = $execution.TestsPassed
+    } catch {
+        $primaryError = $_
+    }
+
+    $transportErrors = [System.Collections.Generic.List[object]]::new()
+    try {
+        if (Test-Path -LiteralPath $sharedResultFile) {
+            Copy-Item -LiteralPath $sharedResultFile -Destination $resultFile -Force
+            Write-BuildMessage -Type Success -Message "Results saved: $resultFile"
+        }
+    } catch {
+        $transportErrors.Add([pscustomobject]@{
+            Operation = 'copy JUnit result'
+            Error = $_
+        })
+    }
+
+    try {
+        if (Test-Path -LiteralPath $sharedRunPath) {
+            Remove-Item -LiteralPath $sharedRunPath -Recurse -Force -Confirm:$false
+        }
+    } catch {
+        $transportErrors.Add([pscustomobject]@{
+            Operation = 'remove shared test run'
+            Error = $_
+        })
+    }
+
+    if ($primaryError) {
+        foreach ($transportError in $transportErrors) {
+            try {
+                Write-BuildMessage -Type Warning -Message "Secondary failure while attempting to $($transportError.Operation): $($transportError.Error.Exception.Message)"
+            } catch {
+                # Preserve the active runner or coverage failure.
+            }
+        }
+        throw $primaryError
+    }
+
+    if ($transportErrors.Count -gt 0) {
+        for ($index = 1; $index -lt $transportErrors.Count; $index++) {
+            try {
+                Write-BuildMessage -Type Warning -Message "Secondary failure while attempting to $($transportErrors[$index].Operation): $($transportErrors[$index].Error.Exception.Message)"
+            } catch {
+                # Preserve the first transport failure.
+            }
+        }
+        throw $transportErrors[0].Error
     }
 
     # Parse authoritative counts from the JUnit result — never derived from console lines

@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "bcArtifactUrl": "https://bcartifacts-exdbf9fwegejdqak.b02.azurefd.net/onprem/28.3.52162.52222/w1",
+  "bcVersion": "28.3.52162.52222",
+  "bcContainerHelperVersion": "6.1.15",
+  "helperAppId": "6a7912dd-91be-4a75-a9d3-8f3b5d4e7501",
+  "helperAppVersion": "1.0.0.0",
+  "rawXmlSchemaVersion": 1,
+  "lineNumberBase": 1,
+  "lineMatches": [
+    {
+      "objectId": 74100,
+      "sourceLine": "Result := 40;",
+      "returnedLineNumber": 9,
+      "physicalOneBasedLine": 9
+    },
+    {
+      "objectId": 74100,
+      "sourceLine": "Result := 99;",
+      "returnedLineNumber": 11,
+      "physicalOneBasedLine": 11
+    },
+    {
+      "objectId": 74100,
+      "sourceLine": "Result := 100;",
+      "returnedLineNumber": 20,
+      "physicalOneBasedLine": 20
+    }
+  ],
+  "capturedAtUtc": "2026-08-03T13:59:53.3985848Z",
+  "sanitization": {
+    "rule": "Only SourceLine values belonging to objects outside the generated fixture apps are replaced.",
+    "replacement": "[sanitized]",
+    "sanitizedForeignSourceLineCount": 3238,
+    "runtimeRawWasModified": false
+  },
+  "generatedObjectIds": [
+    74100,
+    74101,
+    74102
+  ],
+  "testApps": [
+    "test-pass",
+    "test-fail"
+  ],
+  "expectedJUnitVerdict": "red",
+  "terminalDrain": {
+    "sentinel": "Done.",
+    "requiredConsecutiveResponses": 2
+  }
+}

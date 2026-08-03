@@ -1,0 +1,23 @@
+{
+  "id": "a558165e-c71e-4e69-8360-b6ec7dc7d7f1",
+  "name": "Issue 75 Coverage Main",
+  "publisher": "Issue 75 Live Proof",
+  "version": "1.0.0.0",
+  "brief": "Throwaway live coverage proof app.",
+  "description": "Generated only for the issue 75 live throwaway proof.",
+  "platform": "1.0.0.0",
+  "application": "1.0.0.0",
+  "runtime": "15.0",
+  "idRanges": [
+    {
+      "from": 74100,
+      "to": 74100
+    }
+  ],
+  "dependencies": [],
+  "resourceExposurePolicy": {
+    "allowDebugging": true,
+    "allowDownloadingSource": true,
+    "includeSourceInSymbolFile": true
+  }
+}

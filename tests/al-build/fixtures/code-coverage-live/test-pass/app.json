@@ -1,0 +1,30 @@
+{
+  "id": "e28df8f1-527c-4ce3-8a71-66a4bb327b39",
+  "name": "Issue 75 Coverage Pass Tests",
+  "publisher": "Issue 75 Live Proof",
+  "version": "1.0.0.0",
+  "brief": "Throwaway live coverage proof app.",
+  "description": "Generated only for the issue 75 live throwaway proof.",
+  "platform": "1.0.0.0",
+  "application": "1.0.0.0",
+  "runtime": "15.0",
+  "idRanges": [
+    {
+      "from": 74101,
+      "to": 74101
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "a558165e-c71e-4e69-8360-b6ec7dc7d7f1",
+      "name": "Issue 75 Coverage Main",
+      "publisher": "Issue 75 Live Proof",
+      "version": "1.0.0.0"
+    }
+  ],
+  "resourceExposurePolicy": {
+    "allowDebugging": true,
+    "allowDownloadingSource": true,
+    "includeSourceInSymbolFile": true
+  }
+}
