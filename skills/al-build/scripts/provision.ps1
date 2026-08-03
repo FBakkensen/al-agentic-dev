@@ -1,11 +1,13 @@
-#requires -Version 7.2
+#Requires -Version 7.2
 
 <#
 .SYNOPSIS
-    Per-feature setup: install both AL compiler channels and download symbol packages.
+    Per-feature setup: refresh BcContainerHelper, install AL compiler channels, and download symbols.
 
 .DESCRIPTION
     Runs provisioning for main app and all configured test apps:
+    - Installs PSGallery's newest BcContainerHelper version every run. Older installed
+      versions are left in place for side-by-side use.
     - Installs both AL compiler channels (stable + prerelease) side-by-side under the
       tool cache, refreshed to latest every run. The global 'al' dotnet tool is the
       user's own and is left untouched; the build picks a channel per app.json runtime.
@@ -32,31 +34,66 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $InformationPreference = 'Continue'
 
+function Install-LatestBcContainerHelper {
+    Write-BuildMessage -Type Step -Message 'Refreshing BcContainerHelper from PSGallery...'
+
+    try {
+        $latestModule = Find-Module `
+            -Name 'BcContainerHelper' `
+            -Repository 'PSGallery' `
+            -ErrorAction Stop |
+            Select-Object -First 1
+
+        if (-not $latestModule.Version) {
+            throw 'PSGallery returned no BcContainerHelper version.'
+        }
+
+        Install-Module `
+            -Name 'BcContainerHelper' `
+            -Repository 'PSGallery' `
+            -RequiredVersion $latestModule.Version `
+            -Scope CurrentUser `
+            -Force `
+            -AllowClobber `
+            -ErrorAction Stop
+    } catch {
+        throw "BcContainerHelper refresh failed: $($_.Exception.Message)"
+    }
+
+    Write-BuildMessage -Type Success -Message "BcContainerHelper $($latestModule.Version) is installed"
+}
+
 # Import modules
-Import-Module "$PSScriptRoot/common.psm1" -Force -DisableNameChecking
-Import-Module "$PSScriptRoot/build-operations.psm1" -Force -DisableNameChecking
+$commonModule = Join-Path $PSScriptRoot 'common.psm1'
+$buildOperationsModule = Join-Path $PSScriptRoot 'build-operations.psm1'
+Import-Module $commonModule -Force -DisableNameChecking
+Import-Module $buildOperationsModule -Force -DisableNameChecking
 
 # Load configuration
 $config = Get-BuildConfig
 Set-BuildEnvironment -Config $config
 
-Write-BuildHeader 'Provision: One-Time Setup'
+Write-BuildHeader 'Provision: Environment Setup'
 
 Write-BuildMessage -Type Info -Message "Configuration:"
 Write-BuildMessage -Type Detail -Message "App Directory: $($config.AppDir)"
 Write-BuildMessage -Type Detail -Message "Test Apps: $($config.TestApps -join ', ')"
 
-# Step 1: Ensure compiler
+# Step 1: Refresh BcContainerHelper
+Install-LatestBcContainerHelper
+
+# Step 2: Ensure compiler
 Install-ALCompiler -Update:$UpdateCompiler
 
-# Step 1b: Ensure AL Runner (if unitTestApp is configured)
+# Step 2b: Ensure AL Runner (if unitTestApp is configured)
 if ($config.UnitTestApp) {
     Install-ALRunner -Update:$UpdateCompiler
 }
 
-# Step 2: Download symbols for main app
+# Step 3: Download symbols for main app
+$downloadSymbolsScript = Join-Path $PSScriptRoot 'download-symbols.ps1'
 if (Test-Path $config.AppDir) {
-    & "$PSScriptRoot/download-symbols.ps1" -AppDir $config.AppDir
+    & $downloadSymbolsScript -AppDir $config.AppDir
     if ($LASTEXITCODE -ne 0) {
         throw "Symbol download failed for $($config.AppDir)"
     }
@@ -64,10 +101,10 @@ if (Test-Path $config.AppDir) {
     Write-BuildMessage -Type Warning -Message "App directory not found: $($config.AppDir)"
 }
 
-# Step 3: Download symbols for each test app
+# Step 4: Download symbols for each test app
 foreach ($testAppDir in $config.TestApps) {
     if (Test-Path $testAppDir) {
-        & "$PSScriptRoot/download-symbols.ps1" -AppDir $testAppDir
+        & $downloadSymbolsScript -AppDir $testAppDir
         if ($LASTEXITCODE -ne 0) {
             throw "Symbol download failed for $testAppDir"
         }
@@ -77,23 +114,24 @@ foreach ($testAppDir in $config.TestApps) {
     }
 }
 
-# Step 4: Download symbols for unitTestApp (if not already covered by testApps)
+# Step 5: Download symbols for unitTestApp (if not already covered by testApps)
 if ($config.UnitTestApp -and (Test-Path $config.UnitTestApp)) {
     $alreadyCovered = $config.TestApps | Where-Object {
         [IO.Path]::GetFullPath($_) -eq [IO.Path]::GetFullPath($config.UnitTestApp)
     }
     if (-not $alreadyCovered) {
-        & "$PSScriptRoot/download-symbols.ps1" -AppDir $config.UnitTestApp
+        & $downloadSymbolsScript -AppDir $config.UnitTestApp
         if ($LASTEXITCODE -ne 0) {
             throw "Symbol download failed for unit test app: $($config.UnitTestApp)"
         }
     }
 }
 
-# Step 5: Refresh the breaking-change baseline (when enabled). Cache the previous
+# Step 6: Refresh the breaking-change baseline (when enabled). Cache the previous
 # release + deps and point AppSourceCop at them, so AS00xx surfaces at compile.
 if ($config.BreakingChangeEnabled) {
-    & "$PSScriptRoot/download-baseline.ps1"
+    $downloadBaselineScript = Join-Path $PSScriptRoot 'download-baseline.ps1'
+    & $downloadBaselineScript
     if ($LASTEXITCODE -ne 0) {
         throw "Breaking-change baseline refresh failed"
     }

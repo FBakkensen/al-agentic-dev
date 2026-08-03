@@ -1,0 +1,22 @@
+{
+  "id": "6a7912dd-91be-4a75-a9d3-8f3b5d4e7501",
+  "name": "AL Build Code Coverage Helper",
+  "publisher": "bc-agentic-dev-tools",
+  "version": "1.0.0.0",
+  "brief": "Exports the raw Code Coverage record supplied by the Test Runner.",
+  "description": "Exports complete, versioned raw code coverage XML without filtering or normalization.",
+  "platform": "1.0.0.0",
+  "application": "1.0.0.0",
+  "runtime": "15.0",
+  "idRanges": [
+    {
+      "from": 74075,
+      "to": 74075
+    }
+  ],
+  "resourceExposurePolicy": {
+    "allowDebugging": false,
+    "allowDownloadingSource": false,
+    "includeSourceInSymbolFile": false
+  }
+}

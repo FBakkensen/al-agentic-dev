@@ -1,0 +1,112 @@
+name: BcContainerHelper Compatibility Canary
+
+on:
+  schedule:
+    - cron: '0 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: bccontainerhelper-compatibility-canary
+  cancel-in-progress: false
+
+jobs:
+  compatibility:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install newest BcContainerHelper
+        id: helper
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $logPath = Join-Path $PWD '.bccontainerhelper-canary.log'
+          try {
+            Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+            $latest = Find-Module -Name BcContainerHelper -Repository PSGallery -ErrorAction Stop
+            "version=$($latest.Version)" >> $env:GITHUB_OUTPUT
+            Install-Module `
+              -Name BcContainerHelper `
+              -Repository PSGallery `
+              -RequiredVersion $latest.Version `
+              -Scope CurrentUser `
+              -Force `
+              -AllowClobber `
+              -ErrorAction Stop
+            "Installed BcContainerHelper $($latest.Version)" |
+              Tee-Object -FilePath $logPath
+          } catch {
+            $_ | Out-String | Tee-Object -FilePath $logPath -Append
+            throw
+          }
+
+      - name: Run static and unit compatibility checks
+        id: checks
+        if: steps.helper.outcome == 'success'
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $logPath = Join-Path $PWD '.bccontainerhelper-canary.log'
+          try {
+            ./scripts/Validate-PowerShell.ps1 *>&1 |
+              Tee-Object -FilePath $logPath -Append
+            if ($LASTEXITCODE -ne 0) {
+              throw "PowerShell validation exited $LASTEXITCODE."
+            }
+
+            ./scripts/Test-BcContainerHelperCompatibility.ps1 `
+              -RequiredVersion '${{ steps.helper.outputs.version }}' *>&1 |
+              Tee-Object -FilePath $logPath -Append
+
+            if (-not (Get-Module -ListAvailable Pester |
+                Where-Object Version -GE ([version]'5.0.0'))) {
+              Install-Module Pester -MinimumVersion 5.0.0 -Force -Scope CurrentUser
+            }
+            $result = Invoke-Pester -Path tests\al-build -Output Detailed -PassThru
+            if ($result.FailedCount -gt 0) {
+              throw "$($result.FailedCount) Pester test(s) failed."
+            }
+          } catch {
+            $_ | Out-String | Tee-Object -FilePath $logPath -Append
+            throw
+          }
+
+      - name: Update compatibility issue
+        if: always()
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HELPER_VERSION: ${{ steps.helper.outputs.version || 'unknown' }}
+          WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          $failed = '${{ steps.helper.outcome }}' -ne 'success' -or
+            '${{ steps.checks.outcome }}' -ne 'success'
+          $conclusion = if ($failed) { 'Failure' } else { 'Success' }
+          $logPath = Join-Path $PWD '.bccontainerhelper-canary.log'
+          $failure = if ($failed -and (Test-Path -LiteralPath $logPath)) {
+            Get-Content -LiteralPath $logPath -Raw
+          } elseif ($failed) {
+            'The canary failed before output was captured.'
+          } else {
+            ''
+          }
+
+          ./scripts/Update-BcContainerHelperCanaryIssue.ps1 `
+            -Conclusion $conclusion `
+            -Version $env:HELPER_VERSION `
+            -Failure $failure `
+            -WorkflowUrl $env:WORKFLOW_URL `
+            -Repository '${{ github.repository }}'
+
+      - name: Fail failed canary
+        if: always() && (steps.helper.outcome != 'success' || steps.checks.outcome != 'success')
+        shell: pwsh
+        run: throw 'BcContainerHelper compatibility canary failed.'

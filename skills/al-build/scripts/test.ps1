@@ -27,6 +27,9 @@
     Compile every app through the analyzer gate, then run AL Runner unit tests.
     Skips container publish and container tests. Requires unitTestApp configured.
 
+.PARAMETER Coverage
+    Collect complete per-test raw coverage for every configured container test app.
+
 .EXAMPLE
     pwsh -File test.ps1
     # Run all tests (unit + container)
@@ -38,17 +41,26 @@
 .EXAMPLE
     pwsh -File test.ps1 -Force
     # Force republish and run all tests
+
+.EXAMPLE
+    pwsh -File test.ps1 -Coverage
+    # Run container tests and retain complete per-test raw coverage
 #>
 
 [CmdletBinding()]
 param(
     [switch]$Force,
-    [switch]$UnitTestOnly
+    [switch]$UnitTestOnly,
+    [switch]$Coverage
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $InformationPreference = 'Continue'
+
+if ($Coverage -and $UnitTestOnly) {
+    throw '-Coverage cannot be combined with -UnitTestOnly.'
+}
 
 # Track timing
 $script:BuildStartTime = [Diagnostics.Stopwatch]::StartNew()
@@ -67,8 +79,9 @@ function Stop-Step {
 }
 
 # Import modules
-Import-Module "$PSScriptRoot/common.psm1" -Force -DisableNameChecking
-Import-Module "$PSScriptRoot/build-operations.psm1" -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot 'common.psm1') -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot 'coverage-runtime.psm1') -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot 'build-operations.psm1') -Force -DisableNameChecking
 
 function ConvertTo-RunRecord {
     param($Result)
@@ -168,6 +181,9 @@ if (-not $UnitTestOnly) {
 $repoRoot = Get-GitRepoRoot
 $baseResultsPath = Join-Path $repoRoot '.output' 'TestResults'
 $testResults = @()
+$coverageContract = $null
+$coverageStagingRoot = $null
+$coveragePublished = -not $Coverage
 
 # Gate metrics: outcome defaults to 'error' and is only upgraded at the
 # verdict points below — any throw (compile, publish, container) keeps it.
@@ -272,6 +288,17 @@ Start-Step 'ensure-container'
 Ensure-BCAgentContainer -ContainerName $config.ContainerName
 Stop-Step 'ensure-container'
 
+# Coverage preflight is read-only and must precede every consumer-app mutation.
+if ($Coverage) {
+    Start-Step 'coverage-preflight'
+    $coverageContract = Get-CoverageHelperContract
+    $coverageCredential = Get-BCCredential -Username $config.ContainerUsername******
+    Test-BcCoveragePreflight -ContainerName $config.ContainerName -Tenant $config.Tenant `
+        -Credential $coverageCredential -Contract $coverageContract
+    $coverageStagingRoot = New-CoverageGateStaging -BaseResultsPath $baseResultsPath
+    Stop-Step 'coverage-preflight'
+}
+
 # Step 5: Check if main app needs publish
 $appJson = Get-AppJsonObject $config.AppDir
 $mainAppNeedsPublish = Test-AppNeedsPublish -AppDir $config.AppDir -AppJson $appJson -ContainerName $config.ContainerName -Force:$Force
@@ -329,12 +356,20 @@ foreach ($testAppDir in $config.TestApps) {
     $dirName = Split-Path $testAppDir -Leaf
     Start-Step "test-$dirName"
     $outputDir = Join-Path $baseResultsPath $dirName
-    $result = Invoke-ALTest -TestDir $testAppDir -OutputDir $outputDir
+    $result = Invoke-ALTest -TestDir $testAppDir -OutputDir $outputDir -Coverage:$Coverage `
+        -CoverageStagingRoot $coverageStagingRoot -CoverageContract $coverageContract
     $testResults += $result
     Stop-Step "test-$dirName"
 
     # Emit JSONL run record
     Write-Host (ConvertTo-RunRecord $result | ConvertTo-Json -Compress -Depth 4)
+}
+
+if ($Coverage) {
+    $coverageApps = @($config.TestApps | ForEach-Object { Split-Path $_ -Leaf })
+    Publish-CoverageGateStaging -StagePath $coverageStagingRoot `
+        -BaseResultsPath $baseResultsPath -ExpectedTestApps $coverageApps | Out-Null
+    $coveragePublished = $true
 }
 
 # Write summary.json
@@ -362,6 +397,11 @@ Write-BuildMessage -Type Success -Message "All tests passed with zero warnings a
 $gateOutcome = 'passed'
 
 } finally {
+    if ($Coverage -and -not $coveragePublished) {
+        Remove-CoverageGateStaging -StagePath $coverageStagingRoot `
+            -BaseResultsPath $baseResultsPath -RemovePublished
+    }
+
     # One timing entry per gate, on every exit path: pass, fail, and throw.
     # PowerShell runs finally on `exit`, so the AL Runner fail-fast path and
     # compile/publish throws land here too.
