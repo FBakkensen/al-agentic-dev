@@ -7,9 +7,112 @@ BeforeAll {
     Import-Module (Join-Path $script:ScriptsDir 'common.psm1') -Force -DisableNameChecking
     Import-Module $script:RuntimeModule -Force -DisableNameChecking
     Import-Module (Join-Path $script:ScriptsDir 'build-operations.psm1') -Force -DisableNameChecking
+    $script:CoverageRuntimeModuleInfo = Get-Module coverage-runtime -ErrorAction Stop
+    $script:TestRunnerPageDrainState = $null
 
     $securePassword = ConvertTo-SecureString 'test' -AsPlainText -Force
     $script:Credential = [pscredential]::new('test', $securePassword)
+
+    function Get-TestRunnerPageDrainState {
+        $autoLoadingPreference = Get-Variable PSModuleAutoLoadingPreference `
+            -Scope Global -ErrorAction SilentlyContinue
+        $autoLoadingPreferenceExists = $null -ne $autoLoadingPreference
+        $autoLoadingPreferenceValue = if ($autoLoadingPreferenceExists) {
+            $autoLoadingPreference.Value
+        } else {
+            $null
+        }
+        $modules = @(Get-Module -Name BcContainerHelper)
+        $hostCommands = @{}
+
+        try {
+            Set-Variable PSModuleAutoLoadingPreference -Scope Global -Value 'None'
+            foreach ($commandName in @('Get-BcContainerPath', 'Invoke-ScriptInBcContainer')) {
+                $hostCommands[$commandName] = @(
+                    Get-Command $commandName -All -ErrorAction SilentlyContinue |
+                        ForEach-Object {
+                            "$($_.CommandType)|$($_.Name)|$($_.ModuleName)|$($_.Source)"
+                        } |
+                        Sort-Object
+                ) -join "`n"
+            }
+        } finally {
+            if ($autoLoadingPreferenceExists) {
+                Set-Variable PSModuleAutoLoadingPreference -Scope Global `
+                    -Value $autoLoadingPreferenceValue
+            } else {
+                Remove-Variable PSModuleAutoLoadingPreference -Scope Global `
+                    -ErrorAction SilentlyContinue
+            }
+        }
+
+        $fallbackFunctions = & $script:CoverageRuntimeModuleInfo {
+            $state = @{}
+            foreach ($commandName in @('Get-BcContainerPath', 'Invoke-ScriptInBcContainer')) {
+                $function = Get-Item -LiteralPath "Function:\$commandName" `
+                    -ErrorAction SilentlyContinue
+                $state[$commandName] = [pscustomobject]@{
+                    Exists = $null -ne $function
+                    ScriptBlock = if ($function) { $function.ScriptBlock } else { $null }
+                }
+            }
+            $state
+        }
+
+        [pscustomobject]@{
+            AutoLoadingPreferenceExists = $autoLoadingPreferenceExists
+            AutoLoadingPreferenceValue = $autoLoadingPreferenceValue
+            BcContainerHelperModules = $modules
+            BcContainerHelperModuleState = @(
+                $modules |
+                    ForEach-Object { "$($_.Name)|$($_.Version)|$($_.Path)" } |
+                    Sort-Object
+            ) -join "`n"
+            HostCommands = $hostCommands
+            FallbackFunctions = $fallbackFunctions
+        }
+    }
+
+    function Restore-TestRunnerPageDrainState {
+        param([Parameter(Mandatory)]$State)
+
+        try {
+            try {
+                & $script:CoverageRuntimeModuleInfo {
+                    param($FallbackFunctions)
+
+                    foreach ($commandName in $FallbackFunctions.Keys) {
+                        Remove-Item -LiteralPath "Function:\$commandName" -Force `
+                            -ErrorAction SilentlyContinue
+                        $fallback = $FallbackFunctions[$commandName]
+                        if ($fallback.Exists) {
+                            Set-Item -LiteralPath "Function:\$commandName" `
+                                -Value $fallback.ScriptBlock -Force -ErrorAction Stop
+                        }
+                    }
+                } $State.FallbackFunctions
+            } finally {
+                $initialModuleIdentities = @(
+                    $State.BcContainerHelperModules |
+                        ForEach-Object { "$($_.Name)|$($_.Version)|$($_.Path)" }
+                )
+                foreach ($module in @(Get-Module -Name BcContainerHelper)) {
+                    $identity = "$($module.Name)|$($module.Version)|$($module.Path)"
+                    if ($identity -notin $initialModuleIdentities) {
+                        Remove-Module -ModuleInfo $module -Force -ErrorAction Stop
+                    }
+                }
+            }
+        } finally {
+            if ($State.AutoLoadingPreferenceExists) {
+                Set-Variable PSModuleAutoLoadingPreference -Scope Global `
+                    -Value $State.AutoLoadingPreferenceValue
+            } else {
+                Remove-Variable PSModuleAutoLoadingPreference -Scope Global `
+                    -ErrorAction SilentlyContinue
+            }
+        }
+    }
 
     function New-CoveragePayload {
         param([string]$Value = 'line')
@@ -421,9 +524,54 @@ Describe 'JUnit completion evidence' {
 }
 
 Describe 'Test Runner page drain session' {
+    BeforeAll {
+        $script:TestRunnerPageDrainState = Get-TestRunnerPageDrainState
+        try {
+            Set-Variable PSModuleAutoLoadingPreference -Scope Global -Value 'None'
+            & $script:CoverageRuntimeModuleInfo {
+                function script:Get-BcContainerPath {
+                    param([string]$containerName, [string]$path)
+                }
+                function script:Invoke-ScriptInBcContainer {
+                    param(
+                        [string]$containerName,
+                        [scriptblock]$scriptBlock,
+                        [object[]]$argumentList
+                    )
+                }
+            }
+        } catch {
+            $setupError = $_
+            Restore-TestRunnerPageDrainState -State $script:TestRunnerPageDrainState
+            throw $setupError
+        }
+    }
+
     AfterEach {
         Remove-Variable CoverageRuntimeClientContext -Scope Global -ErrorAction SilentlyContinue
         Remove-Variable CoverageRuntimePageState -Scope Global -ErrorAction SilentlyContinue
+    }
+
+    AfterAll {
+        Restore-TestRunnerPageDrainState -State $script:TestRunnerPageDrainState
+    }
+
+    It 'registers every BcContainerHelper host boundary without loading its module' {
+        foreach ($commandName in @('Get-BcContainerPath', 'Invoke-ScriptInBcContainer')) {
+            $fallback = & $script:CoverageRuntimeModuleInfo {
+                param($Name)
+                Get-Item -LiteralPath "Function:\$Name" -ErrorAction SilentlyContinue
+            } $commandName
+            $fallback | Should -Not -BeNullOrEmpty
+        }
+
+        $currentModules = @(
+            Get-Module -Name BcContainerHelper |
+                ForEach-Object { "$($_.Name)|$($_.Version)|$($_.Path)" } |
+                Sort-Object
+        ) -join "`n"
+        $currentModules |
+            Should -BeExactly $script:TestRunnerPageDrainState.BcContainerHelperModuleState
     }
 
     It 'drains multiple payloads and two Done responses in one container invocation' {
@@ -556,6 +704,41 @@ Describe 'Test Runner page drain session' {
             $Fixture.State.CloseFormCount | Should -Be 1
             $Fixture.State.DisposeCount | Should -Be 1
             Should -Invoke Invoke-ScriptInBcContainer -Times 1 -Exactly
+        }
+    }
+}
+
+Describe 'Test Runner page drain session cleanup' {
+    BeforeAll {
+        if ($null -eq $script:TestRunnerPageDrainState) {
+            $script:TestRunnerPageDrainState = Get-TestRunnerPageDrainState
+        }
+        $script:PostCleanupTestRunnerPageDrainState = Get-TestRunnerPageDrainState
+    }
+
+    It 'restores host boundaries and process state' {
+        foreach ($commandName in @('Get-BcContainerPath', 'Invoke-ScriptInBcContainer')) {
+            $script:PostCleanupTestRunnerPageDrainState.HostCommands[$commandName] |
+                Should -BeExactly $script:TestRunnerPageDrainState.HostCommands[$commandName]
+
+            $expectedFallback = $script:TestRunnerPageDrainState.FallbackFunctions[$commandName]
+            $actualFallback =
+                $script:PostCleanupTestRunnerPageDrainState.FallbackFunctions[$commandName]
+            $actualFallback.Exists | Should -Be $expectedFallback.Exists
+            if ($expectedFallback.Exists) {
+                $actualFallback.ScriptBlock.ToString() |
+                    Should -BeExactly $expectedFallback.ScriptBlock.ToString()
+            }
+        }
+
+        $script:PostCleanupTestRunnerPageDrainState.BcContainerHelperModuleState |
+            Should -BeExactly $script:TestRunnerPageDrainState.BcContainerHelperModuleState
+
+        $script:PostCleanupTestRunnerPageDrainState.AutoLoadingPreferenceExists |
+            Should -Be $script:TestRunnerPageDrainState.AutoLoadingPreferenceExists
+        if ($script:TestRunnerPageDrainState.AutoLoadingPreferenceExists) {
+            $script:PostCleanupTestRunnerPageDrainState.AutoLoadingPreferenceValue |
+                Should -BeExactly $script:TestRunnerPageDrainState.AutoLoadingPreferenceValue
         }
     }
 }

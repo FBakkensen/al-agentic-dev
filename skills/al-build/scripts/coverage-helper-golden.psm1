@@ -48,13 +48,20 @@ function Assert-CodeCoverageHelperIdentity {
     )
 
     $matchingApps = @($InstalledApps | Where-Object {
-        $_.AppId -and ([guid]$_.AppId -eq $Manifest.Id)
+        $installedId = if ($_.PSObject.Properties['AppId']) {
+            $_.AppId
+        } elseif ($_.PSObject.Properties['Id']) {
+            $_.Id
+        }
+        $installedId -and ([guid]$installedId -eq $Manifest.Id)
     })
     if ($matchingApps.Count -ne 1) {
         throw "Code coverage helper $($Manifest.Id) is not installed exactly once."
     }
 
-    $installedVersion = [version]$matchingApps[0].Version
+    $installedVersion = if ($matchingApps[0].PSObject.Properties['Version']) {
+        [version]$matchingApps[0].Version
+    }
     if ($installedVersion -ne $Manifest.Version) {
         throw "Code coverage helper $($Manifest.Id) version mismatch. Expected $($Manifest.Version), installed $installedVersion."
     }

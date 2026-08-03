@@ -49,6 +49,34 @@ Describe 'Bundled code coverage helper identity' {
         $actual | Should -Be $installed
     }
 
+    It 'accepts the exact installed identity exposed through Id' {
+        $installed = [PSCustomObject]@{
+            Id = $script:Manifest.Id
+            Version = $script:Manifest.Version
+        }
+
+        $actual = Assert-CodeCoverageHelperIdentity -Manifest $script:Manifest -InstalledApps @($installed)
+
+        $actual | Should -Be $installed
+    }
+
+    It 'ignores unrelated objects without an app identifier' {
+        $installed = [PSCustomObject]@{
+            AppId = $script:Manifest.Id
+            Version = $script:Manifest.Version
+        }
+        $unrelated = [PSCustomObject]@{
+            Name = 'Unrelated App'
+            Version = [version]'1.0.0.0'
+        }
+
+        $actual = Assert-CodeCoverageHelperIdentity `
+            -Manifest $script:Manifest `
+            -InstalledApps @($unrelated, $installed)
+
+        $actual | Should -Be $installed
+    }
+
     It 'fails when the helper is missing' {
         {
             Assert-CodeCoverageHelperIdentity -Manifest $script:Manifest -InstalledApps @()
@@ -64,6 +92,16 @@ Describe 'Bundled code coverage helper identity' {
         {
             Assert-CodeCoverageHelperIdentity -Manifest $script:Manifest -InstalledApps @($installed)
         } | Should -Throw '*version mismatch*'
+    }
+
+    It 'reports a version mismatch when the installed version is absent' {
+        $installed = [PSCustomObject]@{
+            AppId = $script:Manifest.Id
+        }
+
+        {
+            Assert-CodeCoverageHelperIdentity -Manifest $script:Manifest -InstalledApps @($installed)
+        } | Should -Throw "Code coverage helper $($script:Manifest.Id) version mismatch. Expected $($script:Manifest.Version), installed ."
     }
 }
 
