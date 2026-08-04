@@ -649,6 +649,468 @@ function Get-HitSortKey {
         [int]$Record.hitCount
 }
 
+function Get-AlAppManifestName {
+    param(
+        [Parameter(Mandatory)]
+        [string]$AppPath
+    )
+
+    $appManifestPath = Join-Path $AppPath 'app.json'
+    if (-not (Test-Path -LiteralPath $appManifestPath -PathType Leaf)) {
+        throw "App '$AppPath' has no app.json."
+    }
+
+    try {
+        $manifest = Get-Content -LiteralPath $appManifestPath -Raw | ConvertFrom-Json
+    } catch {
+        throw "App manifest '$appManifestPath' is invalid: $($_.Exception.Message)"
+    }
+
+    if (-not $manifest.PSObject.Properties['name'] -or [string]::IsNullOrWhiteSpace([string]$manifest.name)) {
+        throw "App manifest '$appManifestPath' has no 'name' value."
+    }
+
+    [string]$manifest.name
+}
+
+function Resolve-CoverageAppCollectionPaths {
+    param(
+        [Parameter(Mandatory)]
+        [string]$RawCollectionRoot,
+
+        [Parameter(Mandatory)]
+        [string[]]$AppLeafNames
+    )
+
+    if (-not (Test-Path -LiteralPath $RawCollectionRoot -PathType Container)) {
+        throw "Coverage raw collection root '$RawCollectionRoot' does not exist."
+    }
+
+    $availableDirs = @(
+        Get-ChildItem -LiteralPath $RawCollectionRoot -Directory |
+            Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'manifest.json') -PathType Leaf } |
+            Sort-Object Name
+    )
+    $availableByLeaf = @{}
+    foreach ($dir in $availableDirs) {
+        $availableByLeaf[$dir.Name] = $dir.FullName
+    }
+
+    $missing = @($AppLeafNames | Where-Object { -not $availableByLeaf.ContainsKey($_) } | Sort-Object)
+    if ($missing.Count -gt 0) {
+        throw "Coverage raw collection root '$RawCollectionRoot' is missing collection folder(s) for test app(s) [$($missing -join ', ')]."
+    }
+
+    $extra = @($availableByLeaf.Keys | Where-Object { $AppLeafNames -notcontains $_ } | Sort-Object)
+    if ($extra.Count -gt 0) {
+        throw "Coverage raw collection root '$RawCollectionRoot' has unconfigured collection folder(s) [$($extra -join ', ')] with no matching configured test app."
+    }
+
+    $result = @{}
+    foreach ($leaf in $AppLeafNames) {
+        $result[$leaf] = $availableByLeaf[$leaf]
+    }
+    $result
+}
+
+function Get-CoverageAppUniverseAndHits {
+    param(
+        [Parameter(Mandatory)]
+        [hashtable]$MainIndex,
+
+        [Parameter(Mandatory)]
+        [hashtable]$TestIndex,
+
+        [Parameter(Mandatory)]
+        $Collection,
+
+        [Parameter(Mandatory)]
+        [string]$TestAppNameForHits,
+
+        [System.Collections.Generic.HashSet[string]]$GlobalTestIdentities
+    )
+
+    $appUniverse = $null
+    $appBaselinePayloadPath = $null
+    $hitRecords = [System.Collections.Generic.List[object]]::new()
+
+    foreach ($payloadEntry in @($Collection.Payloads | Sort-Object order)) {
+        $payloadPath = Join-Path $Collection.CollectionPath $payloadEntry.file
+        $identity = '{0}|{1}|{2}' -f $TestAppNameForHits, [int]$payloadEntry.testCodeunitId, [string]$payloadEntry.testMethod
+        if (-not $GlobalTestIdentities.Add($identity)) {
+            throw "Coverage aggregation contains duplicate test identity '$identity' across the configured test apps."
+        }
+
+        $rows = Read-CoveragePayloadRows -PayloadPath $payloadPath
+
+        $testCodeunitKey = '{0}|{1}' -f (
+            Get-CoverageObjectTypeCodeForDeclaration -DeclarationType 'codeunit'
+        ), [int]$payloadEntry.testCodeunitId
+        if (-not $TestIndex.ContainsKey($testCodeunitKey)) {
+            throw "Coverage collection '$($Collection.CollectionPath)' cannot resolve test codeunit ID $([int]$payloadEntry.testCodeunitId)."
+        }
+        $testCodeunit = $TestIndex[$testCodeunitKey]
+        $payloadUniverse = @{}
+
+        foreach ($row in $rows) {
+            $mainObjectKey = '{0}|{1}' -f $row.ObjectTypeCode, $row.ObjectId
+            if (-not $MainIndex.ContainsKey($mainObjectKey)) {
+                continue
+            }
+
+            $mainObject = $MainIndex[$mainObjectKey]
+            Assert-IndexedSourceLine -Row $row -IndexedObject $mainObject -PayloadPath $payloadPath
+
+            if ($row.LineTypeCode -ne 3) {
+                continue
+            }
+
+            $universeKey = "$mainObjectKey|$($row.LineNumber)"
+            $payloadUniverse[$universeKey] = [pscustomobject]@{
+                sourcePath = $mainObject.SourcePath
+                objectType = $mainObject.ObjectType
+                objectName = $mainObject.ObjectName
+                lineNumber = [int]$row.LineNumber
+            }
+
+            if ($row.HitCount -gt 0) {
+                $hitRecords.Add([ordered]@{
+                    schemaVersion    = 1
+                    recordType       = 'hit'
+                    sourcePath       = $mainObject.SourcePath
+                    objectType       = $mainObject.ObjectType
+                    objectName       = $mainObject.ObjectName
+                    lineNumber       = [int]$row.LineNumber
+                    testApp          = $TestAppNameForHits
+                    testCodeunitId   = [int]$payloadEntry.testCodeunitId
+                    testCodeunitName = $testCodeunit.ObjectName
+                    testProcedure    = [string]$payloadEntry.testMethod
+                    hitCount         = [int]$row.HitCount
+                })
+            }
+        }
+
+        if ($payloadUniverse.Count -eq 0) {
+            throw "Coverage payload '$payloadPath' contains no main-app code rows after foreign-object filtering."
+        }
+
+        if (-not $appUniverse) {
+            $appUniverse = $payloadUniverse
+            $appBaselinePayloadPath = $payloadPath
+        } else {
+            Compare-CoverageUniverses -Baseline $appUniverse -Current $payloadUniverse `
+                -BaselinePayloadPath $appBaselinePayloadPath -CurrentPayloadPath $payloadPath
+        }
+    }
+
+    [pscustomobject]@{
+        Universe            = $appUniverse
+        BaselinePayloadPath = $appBaselinePayloadPath
+        HitRecords          = $hitRecords
+    }
+}
+
+function Format-CoverageRate {
+    param(
+        [Parameter(Mandatory)]
+        [int]$Covered,
+
+        [Parameter(Mandatory)]
+        [int]$Valid
+    )
+
+    if ($Valid -le 0) {
+        return '0.000000'
+    }
+
+    ([double]$Covered / [double]$Valid).ToString('F6', [System.Globalization.CultureInfo]::InvariantCulture)
+}
+
+function New-BcCoverageCoberturaDocument {
+    param(
+        [Parameter(Mandatory)]
+        [string]$MainAppName,
+
+        [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
+        [object[]]$SourceRecords,
+
+        [Parameter(Mandatory)]
+        [hashtable]$LineHitTotals
+    )
+
+    $linesValid = $SourceRecords.Count
+    $linesCovered = 0
+    foreach ($record in $SourceRecords) {
+        $key = '{0}|{1}' -f $record.sourcePath, $record.lineNumber
+        $hits = if ($LineHitTotals.ContainsKey($key)) { [Int64]$LineHitTotals[$key] } else { [Int64]0 }
+        if ($hits -gt 0) {
+            $linesCovered++
+        }
+    }
+    $rootRate = Format-CoverageRate -Covered $linesCovered -Valid $linesValid
+
+    $classOrder = [System.Collections.Generic.List[string]]::new()
+    $classGroups = @{}
+    foreach ($record in $SourceRecords) {
+        $classKey = '{0}|{1}' -f $record.objectType, $record.objectName
+        if (-not $classGroups.ContainsKey($classKey)) {
+            $classGroups[$classKey] = [pscustomobject]@{
+                ObjectType = $record.objectType
+                ObjectName = $record.objectName
+                SourcePath = $record.sourcePath
+                Lines      = [System.Collections.Generic.List[object]]::new()
+            }
+            $classOrder.Add($classKey)
+        }
+        $classGroups[$classKey].Lines.Add($record)
+    }
+
+    $memoryStream = [System.IO.MemoryStream]::new()
+    $settings = [System.Xml.XmlWriterSettings]::new()
+    $settings.Encoding = [System.Text.UTF8Encoding]::new($false)
+    $settings.Indent = $true
+    $settings.IndentChars = '  '
+    $settings.NewLineChars = "`n"
+    $settings.NewLineHandling = [System.Xml.NewLineHandling]::Replace
+    $settings.OmitXmlDeclaration = $false
+
+    $writer = [System.Xml.XmlWriter]::Create($memoryStream, $settings)
+    try {
+        $writer.WriteStartDocument()
+        $writer.WriteStartElement('coverage')
+        $writer.WriteAttributeString('line-rate', $rootRate)
+        $writer.WriteAttributeString('branch-rate', '0.000000')
+        $writer.WriteAttributeString('lines-covered', [string]$linesCovered)
+        $writer.WriteAttributeString('lines-valid', [string]$linesValid)
+        $writer.WriteAttributeString('branches-covered', '0')
+        $writer.WriteAttributeString('branches-valid', '0')
+        $writer.WriteAttributeString('complexity', '0')
+        $writer.WriteAttributeString('timestamp', '0')
+
+        $writer.WriteStartElement('sources')
+        $writer.WriteElementString('source', '.')
+        $writer.WriteEndElement()
+
+        $writer.WriteStartElement('packages')
+        $writer.WriteStartElement('package')
+        $writer.WriteAttributeString('name', "app=$MainAppName")
+        $writer.WriteAttributeString('line-rate', $rootRate)
+        $writer.WriteAttributeString('branch-rate', '0.000000')
+        $writer.WriteAttributeString('complexity', '0')
+        $writer.WriteAttributeString('lines-valid', [string]$linesValid)
+        $writer.WriteAttributeString('lines-covered', [string]$linesCovered)
+
+        $writer.WriteStartElement('classes')
+        foreach ($classKey in $classOrder) {
+            $classInfo = $classGroups[$classKey]
+            $classLines = @($classInfo.Lines | Sort-Object lineNumber)
+            $classValid = $classLines.Count
+            $classCovered = 0
+            $lineHitPairs = [System.Collections.Generic.List[object]]::new()
+            foreach ($lineRecord in $classLines) {
+                $key = '{0}|{1}' -f $lineRecord.sourcePath, $lineRecord.lineNumber
+                $hits = if ($LineHitTotals.ContainsKey($key)) { [Int64]$LineHitTotals[$key] } else { [Int64]0 }
+                if ($hits -gt 0) {
+                    $classCovered++
+                }
+                $lineHitPairs.Add([pscustomobject]@{ LineNumber = $lineRecord.lineNumber; Hits = $hits })
+            }
+            $classRate = Format-CoverageRate -Covered $classCovered -Valid $classValid
+
+            $writer.WriteStartElement('class')
+            $writer.WriteAttributeString('name', "type=$($classInfo.ObjectType);name=$($classInfo.ObjectName)")
+            $writer.WriteAttributeString('filename', $classInfo.SourcePath)
+            $writer.WriteAttributeString('line-rate', $classRate)
+            $writer.WriteAttributeString('branch-rate', '0.000000')
+            $writer.WriteAttributeString('complexity', '0')
+            $writer.WriteAttributeString('lines-valid', [string]$classValid)
+            $writer.WriteAttributeString('lines-covered', [string]$classCovered)
+
+            $writer.WriteStartElement('methods')
+            $writer.WriteEndElement()
+
+            $writer.WriteStartElement('lines')
+            foreach ($linePair in $lineHitPairs) {
+                $writer.WriteStartElement('line')
+                $writer.WriteAttributeString('number', [string]$linePair.LineNumber)
+                $writer.WriteAttributeString('hits', [string]$linePair.Hits)
+                $writer.WriteAttributeString('branch', 'false')
+                $writer.WriteEndElement()
+            }
+            $writer.WriteEndElement()
+            $writer.WriteEndElement()
+        }
+        $writer.WriteEndElement()
+        $writer.WriteEndElement()
+        $writer.WriteEndElement()
+        $writer.WriteEndElement()
+        $writer.WriteEndDocument()
+        $writer.Flush()
+    } finally {
+        $writer.Close()
+    }
+
+    $bytes = $memoryStream.ToArray()
+    $memoryStream.Dispose()
+
+    try {
+        $validation = [System.Xml.XmlDocument]::new()
+        $validation.LoadXml([System.Text.Encoding]::UTF8.GetString($bytes))
+    } catch {
+        throw "Generated Cobertura XML failed validation: $($_.Exception.Message)"
+    }
+
+    [pscustomobject]@{
+        Bytes        = $bytes
+        LinesValid   = $linesValid
+        LinesCovered = $linesCovered
+        LineRate     = [double]$rootRate
+    }
+}
+
+function Write-BcCoverageArtifacts {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$RepoRoot,
+
+        [Parameter(Mandatory)]
+        [string]$MainAppPath,
+
+        [Parameter(Mandatory)]
+        [string[]]$TestAppPaths,
+
+        [Parameter(Mandatory)]
+        [string]$RawCollectionPath,
+
+        [Parameter(Mandatory)]
+        [string]$OutputDirectory
+    )
+
+    $testAppPathList = @($TestAppPaths)
+    if ($testAppPathList.Count -eq 0) {
+        throw 'Write-BcCoverageArtifacts requires at least one configured test app path.'
+    }
+
+    $resolvedRepoRoot = (Resolve-Path -LiteralPath $RepoRoot).Path
+    $resolvedMainAppPath = (Resolve-Path -LiteralPath $MainAppPath).Path
+    $resolvedRawCollectionPath = (Resolve-Path -LiteralPath $RawCollectionPath).Path
+    $resolvedTestAppPaths = @($testAppPathList | ForEach-Object { (Resolve-Path -LiteralPath $_).Path })
+
+    $leafNames = @($resolvedTestAppPaths | ForEach-Object { Split-Path -Path $_ -Leaf })
+    $seenLeaves = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($leaf in $leafNames) {
+        if (-not $seenLeaves.Add($leaf)) {
+            throw "Configured test app paths contain duplicate directory leaf '$leaf'."
+        }
+    }
+
+    $collectionsByLeaf = Resolve-CoverageAppCollectionPaths -RawCollectionRoot $resolvedRawCollectionPath -AppLeafNames $leafNames
+
+    $mainIndex = Get-AlObjectIndex -RepoRoot $resolvedRepoRoot -AppPath $resolvedMainAppPath -Label 'Main app'
+    $mainAppName = Get-AlAppManifestName -AppPath $resolvedMainAppPath
+
+    $globalUniverse = $null
+    $globalBaselinePayloadPath = $null
+    $globalIdentities = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    $allHitRecords = [System.Collections.Generic.List[object]]::new()
+
+    for ($appIndex = 0; $appIndex -lt $resolvedTestAppPaths.Count; $appIndex++) {
+        $testAppPath = $resolvedTestAppPaths[$appIndex]
+        $leaf = $leafNames[$appIndex]
+        $collectionPath = $collectionsByLeaf[$leaf]
+
+        $testIndex = Get-AlObjectIndex -RepoRoot $resolvedRepoRoot -AppPath $testAppPath -Label 'Test app'
+        $appName = Get-AlAppManifestName -AppPath $testAppPath
+
+        $collection = Read-CoverageCollectionManifest -CollectionPath $collectionPath
+        if ($collection.TestApp -ne $leaf) {
+            throw "Coverage manifest '$($collection.ManifestPath)' testApp '$($collection.TestApp)' does not match test app directory leaf '$leaf'."
+        }
+
+        $appResult = Get-CoverageAppUniverseAndHits -MainIndex $mainIndex -TestIndex $testIndex `
+            -Collection $collection -TestAppNameForHits $appName -GlobalTestIdentities $globalIdentities
+
+        if (-not $globalUniverse) {
+            $globalUniverse = $appResult.Universe
+            $globalBaselinePayloadPath = $appResult.BaselinePayloadPath
+        } else {
+            Compare-CoverageUniverses -Baseline $globalUniverse -Current $appResult.Universe `
+                -BaselinePayloadPath $globalBaselinePayloadPath -CurrentPayloadPath $appResult.BaselinePayloadPath
+        }
+
+        $allHitRecords.AddRange($appResult.HitRecords)
+    }
+
+    $sourceRecords = @($globalUniverse.Values | Sort-Object { Get-SourceSortKey -Record $_ } | ForEach-Object {
+        [ordered]@{
+            schemaVersion = 1
+            recordType    = 'source'
+            sourcePath    = $_.sourcePath
+            objectType    = $_.objectType
+            objectName    = $_.objectName
+            lineNumber    = [int]$_.lineNumber
+        }
+    })
+
+    $orderedHitRecords = @($allHitRecords | Sort-Object { Get-HitSortKey -Record $_ })
+
+    $jsonLines = @(foreach ($record in (@($sourceRecords) + @($orderedHitRecords))) {
+        ($record | ConvertTo-Json -Compress)
+    })
+    $jsonlContent = ($jsonLines -join "`n") + "`n"
+
+    $lineHitTotals = @{}
+    foreach ($hit in $orderedHitRecords) {
+        $key = '{0}|{1}' -f $hit.sourcePath, $hit.lineNumber
+        $current = if ($lineHitTotals.ContainsKey($key)) { [Int64]$lineHitTotals[$key] } else { [Int64]0 }
+        $lineHitTotals[$key] = $current + [Int64]$hit.hitCount
+    }
+
+    $cobertura = New-BcCoverageCoberturaDocument -MainAppName $mainAppName -SourceRecords $sourceRecords -LineHitTotals $lineHitTotals
+
+    New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
+    $resolvedOutputDirectory = (Resolve-Path -LiteralPath $OutputDirectory).Path
+
+    $perTestPath = Join-Path $resolvedOutputDirectory 'per-test.jsonl'
+    $coberturaPath = Join-Path $resolvedOutputDirectory 'cobertura.xml'
+    $perTestTemp = Join-Path $resolvedOutputDirectory ('per-test.jsonl.{0}.tmp' -f [guid]::NewGuid().ToString('N'))
+    $coberturaTemp = Join-Path $resolvedOutputDirectory ('cobertura.xml.{0}.tmp' -f [guid]::NewGuid().ToString('N'))
+
+    try {
+        [System.IO.File]::WriteAllText($perTestTemp, $jsonlContent, [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllBytes($coberturaTemp, $cobertura.Bytes)
+
+        if (Test-Path -LiteralPath $perTestPath -PathType Leaf) {
+            [System.IO.File]::Replace($perTestTemp, $perTestPath, $null)
+        } else {
+            [System.IO.File]::Move($perTestTemp, $perTestPath)
+        }
+
+        if (Test-Path -LiteralPath $coberturaPath -PathType Leaf) {
+            [System.IO.File]::Replace($coberturaTemp, $coberturaPath, $null)
+        } else {
+            [System.IO.File]::Move($coberturaTemp, $coberturaPath)
+        }
+    } finally {
+        foreach ($tempFile in @($perTestTemp, $coberturaTemp)) {
+            if (Test-Path -LiteralPath $tempFile) {
+                Remove-Item -LiteralPath $tempFile -Force -Confirm:$false
+            }
+        }
+    }
+
+    [pscustomobject]@{
+        TrackingMode  = 'PerTest'
+        LinesValid    = $cobertura.LinesValid
+        LinesCovered  = $cobertura.LinesCovered
+        LineRate      = $cobertura.LineRate
+        PerTestPath   = $perTestPath
+        CoberturaPath = $coberturaPath
+    }
+}
+
 function Write-BcCoveragePerTestJsonl {
     [CmdletBinding()]
     param(
@@ -808,5 +1270,6 @@ function Write-BcCoveragePerTestJsonl {
 }
 
 Export-ModuleMember -Function @(
-    'Write-BcCoveragePerTestJsonl'
+    'Write-BcCoveragePerTestJsonl',
+    'Write-BcCoverageArtifacts'
 )

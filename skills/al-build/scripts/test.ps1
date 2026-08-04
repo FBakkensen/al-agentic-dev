@@ -58,16 +58,15 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $InformationPreference = 'Continue'
 
-if ($Coverage -and $UnitTestOnly) {
-    throw '-Coverage cannot be combined with -UnitTestOnly.'
-}
-
 # Track timing
 $script:BuildStartTime = [Diagnostics.Stopwatch]::StartNew()
 $script:StepTimings = @{}
+$script:CurrentStage = $null
+$script:LastErrorMessage = $null
 
 function Start-Step {
     param([string]$Name)
+    $script:CurrentStage = $Name
     $script:StepTimings[$Name] = [Diagnostics.Stopwatch]::StartNew()
 }
 
@@ -82,6 +81,28 @@ function Stop-Step {
 Import-Module (Join-Path $PSScriptRoot 'common.psm1') -Force -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot 'coverage-runtime.psm1') -Force -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot 'build-operations.psm1') -Force -DisableNameChecking
+
+# ---------------------------------------------------------------------------
+# Startup cleanup — runs for every invocation (disabled, -UnitTestOnly, full,
+# compile-only, and even a run that goes on to fail on a malformed config)
+# and always precedes configuration loading, so a run never inherits stale
+# JUnit or coverage artifacts left behind by a previous run.
+# ---------------------------------------------------------------------------
+$repoRoot = Get-GitRepoRoot
+$baseResultsPath = Join-Path $repoRoot '.output' 'TestResults'
+if (Test-Path -LiteralPath $baseResultsPath) {
+    try {
+        Remove-Item -LiteralPath $baseResultsPath -Recurse -Force -Confirm:$false
+    } catch {
+        Write-BuildMessage -Type Error -Message "Failed to remove stale test results tree: $baseResultsPath. $_"
+        exit 1
+    }
+}
+New-Item -ItemType Directory -Path $baseResultsPath -Force | Out-Null
+
+if ($Coverage -and $UnitTestOnly) {
+    throw '-Coverage cannot be combined with -UnitTestOnly.'
+}
 
 function ConvertTo-RunRecord {
     param($Result)
@@ -121,17 +142,37 @@ function Get-RunnerTotals {
     return $totals
 }
 
+function ConvertTo-RepoRelativePath {
+    <#
+    .SYNOPSIS
+        Format a path repo-relative with forward slashes for summary.json.
+    #>
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [Parameter(Mandatory)][string]$Path
+    )
+    $resolvedRoot = (Resolve-Path -LiteralPath $RepoRoot).Path
+    $resolvedPath = (Resolve-Path -LiteralPath $Path).Path
+    ([System.IO.Path]::GetRelativePath($resolvedRoot, $resolvedPath)) -replace '\\', '/'
+}
+
 function Write-TestSummary {
     param(
         [string]$Gate,
         $Results,
+        [Parameter(Mandatory)]
+        $CoverageBlock,
+        $ErrorBlock,
         [string]$Path
     )
-    [ordered]@{
-        gate   = $Gate
-        totals = Get-RunnerTotals $Results
-        runs   = @($Results | ForEach-Object { ConvertTo-RunRecord $_ })
-    } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $Path -Force
+    $summary = [ordered]@{
+        gate     = $Gate
+        totals   = Get-RunnerTotals $Results
+        runs     = @($Results | ForEach-Object { ConvertTo-RunRecord $_ })
+        coverage = $CoverageBlock
+    }
+    if ($ErrorBlock) { $summary.error = $ErrorBlock }
+    $summary | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $Path -Force
 }
 
 function Show-RunnerTotals {
@@ -148,51 +189,30 @@ function Show-RunnerTotals {
     }
 }
 
-# Load configuration
+# Load configuration — malformed config throws here, outside the gate's
+# try/finally, so no summary.json is written (startup cleanup already left
+# an empty TestResults tree).
 $config = Get-BuildConfig
 Set-BuildEnvironment -Config $config
 
-# Validate -UnitTestOnly requires unitTestApp
-if ($UnitTestOnly -and -not $config.UnitTestApp) {
-    Write-BuildMessage -Type Error -Message "unitTestApp not configured in al-build.json. Cannot run -UnitTestOnly."
-    exit 1
-}
-
-$coverageTestAppPath = $null
-if ($Coverage) {
-    if ($config.TestApps.Count -ne 1) {
-        throw "-Coverage currently supports exactly one configured container test app. Found $($config.TestApps.Count). Issue 77 is the aggregation boundary for multi-app normalization."
-    }
-
-    $coverageTestAppPath = $config.TestApps[0]
-}
-
-# Validate unitTestApp path exists when configured
-if ($config.UnitTestApp -and -not (Test-Path $config.UnitTestApp)) {
-    Write-BuildMessage -Type Error -Message "unitTestApp directory not found: $($config.UnitTestApp)"
-    exit 1
-}
-
-$modeName = if ($UnitTestOnly) { 'Unit Test Only' } else { 'Build & Test Gate' }
-Write-BuildHeader "Test: $modeName"
-
-Write-BuildMessage -Type Info -Message "Configuration:"
-Write-BuildMessage -Type Detail -Message "App Directory: $($config.AppDir)"
-Write-BuildMessage -Type Detail -Message "Test Apps: $($config.TestApps -join ', ')"
-if ($config.UnitTestApp) {
-    Write-BuildMessage -Type Detail -Message "Unit Test App: $($config.UnitTestApp)"
-}
-if (-not $UnitTestOnly) {
-    Write-BuildMessage -Type Detail -Message "Container: $($config.ContainerName)"
-}
-
-# Initialize results path early (needed for both AL Runner and container)
-$repoRoot = Get-GitRepoRoot
-$baseResultsPath = Join-Path $repoRoot '.output' 'TestResults'
 $testResults = @()
 $coverageContract = $null
 $coverageStagingRoot = $null
 $coveragePublished = -not $Coverage
+
+# Coverage lifecycle tracking — read only in the finally block below to
+# build summary.json's coverage object. Coverage-disabled runs never touch
+# any of these beyond their initial values.
+$coverageEnabled = [bool]$Coverage
+$coverageContainerTestEntered = $false
+$coverageContainerTestCompleted = $false
+$coverageComplete = $false
+$coverageFailureMessage = $null
+$coveragePerTestJsonlRelPath = $null
+$coverageCoberturaRelPath = $null
+$coverageLineRate = $null
+$coverageLinesValid = $null
+$coverageLinesCovered = $null
 
 # Gate metrics: outcome defaults to 'error' and is only upgraded at the
 # verdict points below — any throw (compile, publish, container) keeps it.
@@ -218,6 +238,39 @@ $dirtyCounts = Get-DirtyFileCounts -AppDir $config.AppDir -TestDirs $dirtyDirs
 $requiredRuntimeMajor = Get-RequiredRuntimeMajor -Config $config
 
 try {
+
+# Validate -UnitTestOnly requires unitTestApp, coverage requires at least one
+# configured container test app, and unitTestApp path — after valid config
+# resolution, so every exit from here on (including these validation
+# failures) leaves a current summary.json.
+Start-Step 'validate-config'
+if ($UnitTestOnly -and -not $config.UnitTestApp) {
+    Write-BuildMessage -Type Error -Message "unitTestApp not configured in al-build.json. Cannot run -UnitTestOnly."
+    exit 1
+}
+
+if ($Coverage -and $config.TestApps.Count -eq 0) {
+    throw '-Coverage requires at least one configured container test app.'
+}
+
+if ($config.UnitTestApp -and -not (Test-Path $config.UnitTestApp)) {
+    Write-BuildMessage -Type Error -Message "unitTestApp directory not found: $($config.UnitTestApp)"
+    exit 1
+}
+Stop-Step 'validate-config'
+
+$modeName = if ($UnitTestOnly) { 'Unit Test Only' } else { 'Build & Test Gate' }
+Write-BuildHeader "Test: $modeName"
+
+Write-BuildMessage -Type Info -Message "Configuration:"
+Write-BuildMessage -Type Detail -Message "App Directory: $($config.AppDir)"
+Write-BuildMessage -Type Detail -Message "Test Apps: $($config.TestApps -join ', ')"
+if ($config.UnitTestApp) {
+    Write-BuildMessage -Type Detail -Message "Unit Test App: $($config.UnitTestApp)"
+}
+if (-not $UnitTestOnly) {
+    Write-BuildMessage -Type Detail -Message "Container: $($config.ContainerName)"
+}
 
 # Step 1: Build main app
 Start-Step 'build'
@@ -265,10 +318,10 @@ if ($config.UnitTestApp) {
     Write-Host (ConvertTo-RunRecord $unitResult | ConvertTo-Json -Compress -Depth 4)
 
     if (-not $unitResult.Passed) {
-        # Unit tests failed — write summary and fail fast
-        $summaryPath = Join-Path $baseResultsPath 'summary.json'
-        Write-TestSummary -Gate $gateName -Results $testResults -Path $summaryPath
-
+        # Unit tests failed — fail fast; the finally block writes summary.json
+        if ($coverageEnabled) {
+            $coverageFailureMessage = "Unit tests failed: $($unitResult.AppName)"
+        }
         Write-BuildHeader 'Test FAILED (AL Runner)'
         Show-RunnerTotals $testResults
         Write-BuildMessage -Type Error -Message "Unit tests failed: $($unitResult.AppName)"
@@ -278,10 +331,7 @@ if ($config.UnitTestApp) {
     }
 
     if ($UnitTestOnly) {
-        # Unit tests passed — write summary and exit
-        $summaryPath = Join-Path $baseResultsPath 'summary.json'
-        Write-TestSummary -Gate 'unit' -Results $testResults -Path $summaryPath
-
+        # Unit tests passed — exit; the finally block writes summary.json
         Write-BuildHeader 'Unit Test Complete'
         Show-RunnerTotals $testResults
         Write-BuildMessage -Type Success -Message "All unit tests passed"
@@ -301,7 +351,7 @@ Stop-Step 'ensure-container'
 if ($Coverage) {
     Start-Step 'coverage-preflight'
     $coverageContract = Get-CoverageHelperContract
-    $coverageCredential = Get-BCCredential -Username $config.ContainerUsername******
+    $coverageCredential = Get-BCCredential -Username $config.ContainerUsername -Password $config.ContainerPassword
     Test-BcCoveragePreflight -ContainerName $config.ContainerName -Tenant $config.Tenant `
         -Credential $coverageCredential -Contract $coverageContract
     $coverageStagingRoot = New-CoverageGateStaging -BaseResultsPath $baseResultsPath
@@ -361,6 +411,7 @@ Wait-BCAppsSynced -ContainerName $config.ContainerName -AppNames $publishedAppNa
 Stop-Step 'wait-apps-synced'
 
 # Step 8c: Run tests for each test app, now against committed metadata
+if ($Coverage) { $coverageContainerTestEntered = $true }
 foreach ($testAppDir in $config.TestApps) {
     $dirName = Split-Path $testAppDir -Leaf
     Start-Step "test-$dirName"
@@ -373,26 +424,50 @@ foreach ($testAppDir in $config.TestApps) {
     # Emit JSONL run record
     Write-Host (ConvertTo-RunRecord $result | ConvertTo-Json -Compress -Depth 4)
 }
+if ($Coverage) { $coverageContainerTestCompleted = $true }
 
 if ($Coverage) {
+    Start-Step 'coverage-collection'
     $coverageApps = @($config.TestApps | ForEach-Object { Split-Path $_ -Leaf })
     $publishedCoveragePath = Publish-CoverageGateStaging -StagePath $coverageStagingRoot `
         -BaseResultsPath $baseResultsPath -ExpectedTestApps $coverageApps
     $coveragePublished = $true
+    Stop-Step 'coverage-collection'
 
+    Start-Step 'coverage-aggregation'
+    # Combines every configured test app's published raw coverage into one
+    # deterministic per-test JSONL and Cobertura XML pair. The two artifacts
+    # are written together only after every app's coverage universe resolves
+    # and cross-checks clean, so a thrown error here (an app's collection
+    # folder is missing, or its universe conflicts with another app's) leaves
+    # neither artifact behind — the published raw collection stays in place
+    # for diagnosis (see the aggregation-failure branch in the finally block).
     Import-Module (Join-Path $PSScriptRoot 'coverage-normalizer.psm1') -Force -DisableNameChecking
-    $coverageOutputPath = Join-Path (Join-Path $baseResultsPath 'coverage') 'per-test.jsonl'
-    Write-BcCoveragePerTestJsonl -RepoRoot $repoRoot -MainAppPath $config.AppDir `
-        -TestAppPath $coverageTestAppPath -RawCollectionPath $publishedCoveragePath `
-        -OutputPath $coverageOutputPath | Out-Null
+    $coverageOutputDirectory = Join-Path $baseResultsPath 'coverage'
+    $coverageArtifacts = Write-BcCoverageArtifacts -RepoRoot $repoRoot -MainAppPath $config.AppDir `
+        -TestAppPaths $config.TestApps -RawCollectionPath $publishedCoveragePath `
+        -OutputDirectory $coverageOutputDirectory
+    Stop-Step 'coverage-aggregation'
+
+    Start-Step 'coverage-publication'
+    $coverageLineRate = $coverageArtifacts.LineRate
+    $coverageLinesValid = $coverageArtifacts.LinesValid
+    $coverageLinesCovered = $coverageArtifacts.LinesCovered
+    $coveragePerTestJsonlRelPath = ConvertTo-RepoRelativePath -RepoRoot $repoRoot -Path $coverageArtifacts.PerTestPath
+    $coverageCoberturaRelPath = ConvertTo-RepoRelativePath -RepoRoot $repoRoot -Path $coverageArtifacts.CoberturaPath
+    $coverageComplete = $true
+
+    # Success: the published raw per-test payloads are no longer needed once
+    # the aggregate JSONL/Cobertura exist — the final coverage directory
+    # keeps only per-test.jsonl and cobertura.xml.
+    if (Test-Path -LiteralPath $publishedCoveragePath) {
+        Remove-Item -LiteralPath $publishedCoveragePath -Recurse -Force -Confirm:$false
+    }
+    Stop-Step 'coverage-publication'
 }
 
-# Write summary.json
-$summaryPath = Join-Path $baseResultsPath 'summary.json'
-Write-TestSummary -Gate 'full' -Results $testResults -Path $summaryPath
-Write-BuildMessage -Type Info -Message "Summary written: $summaryPath"
-
-# Final pass/fail determination
+# Final pass/fail determination — summary.json is written by the finally
+# block below regardless of outcome.
 $failedRuns = $testResults | Where-Object { -not $_.Passed }
 
 if ($failedRuns) {
@@ -411,6 +486,11 @@ Show-RunnerTotals $testResults
 Write-BuildMessage -Type Success -Message "All tests passed with zero warnings and zero errors"
 $gateOutcome = 'passed'
 
+} catch {
+    # Preserve the original diagnostics and nonzero exit; capture where we
+    # were so the finally block below can attribute the failure.
+    $script:LastErrorMessage = $_.Exception.Message
+    throw
 } finally {
     if ($Coverage -and -not $coveragePublished) {
         Remove-CoverageGateStaging -StagePath $coverageStagingRoot `
@@ -436,6 +516,84 @@ $gateOutcome = 'passed'
             $testsByRunner[$runnerName] = $runnerTotals[$runnerName].tests
         }
     }
+
+    # Build the coverage summary block — always present, schemaVersion 1.
+    if (-not $coverageEnabled) {
+        $coverageBlock = [ordered]@{
+            schemaVersion = 1
+            enabled       = $false
+            status        = 'disabled'
+            complete      = $false
+        }
+    } elseif ($coverageComplete) {
+        $coverageBlock = [ordered]@{
+            schemaVersion    = 1
+            enabled          = $true
+            status           = 'complete'
+            complete         = $true
+            trackingMode     = 'PerTest'
+            lineRate         = $coverageLineRate
+            linesValid       = $coverageLinesValid
+            linesCovered     = $coverageLinesCovered
+            perTestJsonlPath = $coveragePerTestJsonlRelPath
+            coberturaXmlPath = $coverageCoberturaRelPath
+        }
+    } elseif ($coverageContainerTestEntered -and -not $coverageContainerTestCompleted) {
+        # The selected container test run started but did not finish.
+        $stage = $script:CurrentStage
+        $message = if ($coverageFailureMessage) { $coverageFailureMessage }
+            elseif ($script:LastErrorMessage) { $script:LastErrorMessage }
+            else { 'Container coverage run did not complete.' }
+        $coverageBlock = [ordered]@{
+            schemaVersion = 1
+            enabled       = $true
+            status        = 'aborted'
+            complete      = $false
+            failure       = [ordered]@{ stage = $stage; message = $message }
+        }
+    } elseif (-not $coverageContainerTestEntered) {
+        # Stopped before container coverage execution ever started.
+        $stage = $script:CurrentStage
+        $message = if ($coverageFailureMessage) { $coverageFailureMessage }
+            elseif ($script:LastErrorMessage) { $script:LastErrorMessage }
+            else { "Gate stopped before container coverage execution (stage: $stage)." }
+        $coverageBlock = [ordered]@{
+            schemaVersion = 1
+            enabled       = $true
+            status        = 'not-run'
+            complete      = $false
+            failure       = [ordered]@{ stage = $stage; message = $message }
+        }
+    } else {
+        # Container run completed, but collection, aggregation, or
+        # publication did not — includes a completed red test run.
+        $stage = $script:CurrentStage
+        $message = if ($coverageFailureMessage) { $coverageFailureMessage }
+            elseif ($script:LastErrorMessage) { $script:LastErrorMessage }
+            else { 'Coverage collection, aggregation, or publication failed.' }
+        $coverageBlock = [ordered]@{
+            schemaVersion = 1
+            enabled       = $true
+            status        = 'failed'
+            complete      = $false
+            failure       = [ordered]@{ stage = $stage; message = $message }
+        }
+    }
+
+    # Agent-useful top-level error context — only present when the gate
+    # never reached an explicit passed/failed verdict (an unhandled throw).
+    $errorBlock = $null
+    if ($gateOutcome -eq 'error') {
+        $errorBlock = [ordered]@{
+            stage   = $script:CurrentStage
+            message = if ($script:LastErrorMessage) { $script:LastErrorMessage } else { 'Gate did not complete.' }
+        }
+    }
+
+    $summaryPath = Join-Path $baseResultsPath 'summary.json'
+    Write-TestSummary -Gate $gateName -Results $testResults -CoverageBlock $coverageBlock `
+        -ErrorBlock $errorBlock -Path $summaryPath
+    Write-BuildMessage -Type Info -Message "Summary written: $summaryPath"
 
     $timingTask = if ($UnitTestOnly) { 'unit-test' } else { 'test' }
     $saveArgs = @{

@@ -1199,19 +1199,10 @@ function Invoke-ALTest {
     Write-BuildHeader "AL Test Execution"
     Write-BuildMessage -Type Step -Message "Running tests: $($appJson.name)"
 
-    # Setup output directory
+    # Setup output directory. The top-level test.ps1 gate already removed
+    # and recreated the whole .output/TestResults tree before this run
+    # started, so no per-run local JUnit cleanup happens here.
     Ensure-Directory -Path $OutputDir
-
-    Write-BuildMessage -Type Step -Message "Cleaning test results in $OutputDir"
-    $localResultFile = Join-Path $OutputDir 'last.xml'
-    if (Test-Path -LiteralPath $localResultFile) {
-        try {
-            Remove-Item -LiteralPath $localResultFile -Force
-            Write-BuildMessage -Type Detail -Message "Removed previous result: $localResultFile"
-        } catch {
-            Write-BuildMessage -Type Warning -Message "Failed to remove previous result: $localResultFile. $_"
-        }
-    }
 
     # Import BcContainerHelper
     Import-BCContainerHelper
@@ -1387,15 +1378,14 @@ function Invoke-ALRunnerTest {
     Write-BuildHeader 'AL Runner Unit Test'
     Write-BuildMessage -Type Step -Message "Running unit tests: $($appJson.name)"
 
-    # Setup output directory and clean stale results.
-    # AL Runner owns al-runner.xml; the container run owns last.xml in the same
-    # directory — separate files so a full gate never overwrites the unit result.
+    # Setup output directory. The top-level test.ps1 gate already removed
+    # and recreated the whole .output/TestResults tree before this run
+    # started, so no per-run local JUnit cleanup happens here.
+    # AL Runner owns al-runner.xml; the container run owns last.xml in the
+    # same directory — separate files so a full gate never overwrites the
+    # unit result.
     Ensure-Directory -Path $OutputDir
     $resultFile = Join-Path $OutputDir 'al-runner.xml'
-    if (Test-Path -LiteralPath $resultFile) {
-        Remove-Item -LiteralPath $resultFile -Force
-        Write-BuildMessage -Type Detail -Message "Removed previous result: $resultFile"
-    }
 
     # Resolve symbol package path for the test app
     $packageCachePath = $null
