@@ -207,7 +207,6 @@ $coverageEnabled = [bool]$Coverage
 $coverageContainerTestEntered = $false
 $coverageContainerTestCompleted = $false
 $coverageComplete = $false
-$coverageFailureStage = $null
 $coverageFailureMessage = $null
 $coveragePerTestJsonlRelPath = $null
 $coverageCoberturaRelPath = $null
@@ -541,7 +540,7 @@ $gateOutcome = 'passed'
         }
     } elseif ($coverageContainerTestEntered -and -not $coverageContainerTestCompleted) {
         # The selected container test run started but did not finish.
-        $stage = if ($coverageFailureStage) { $coverageFailureStage } else { $script:CurrentStage }
+        $stage = $script:CurrentStage
         $message = if ($coverageFailureMessage) { $coverageFailureMessage }
             elseif ($script:LastErrorMessage) { $script:LastErrorMessage }
             else { 'Container coverage run did not complete.' }
@@ -554,7 +553,7 @@ $gateOutcome = 'passed'
         }
     } elseif (-not $coverageContainerTestEntered) {
         # Stopped before container coverage execution ever started.
-        $stage = if ($coverageFailureStage) { $coverageFailureStage } else { $script:CurrentStage }
+        $stage = $script:CurrentStage
         $message = if ($coverageFailureMessage) { $coverageFailureMessage }
             elseif ($script:LastErrorMessage) { $script:LastErrorMessage }
             else { "Gate stopped before container coverage execution (stage: $stage)." }
@@ -568,7 +567,7 @@ $gateOutcome = 'passed'
     } else {
         # Container run completed, but collection, aggregation, or
         # publication did not — includes a completed red test run.
-        $stage = if ($coverageFailureStage) { $coverageFailureStage } else { $script:CurrentStage }
+        $stage = $script:CurrentStage
         $message = if ($coverageFailureMessage) { $coverageFailureMessage }
             elseif ($script:LastErrorMessage) { $script:LastErrorMessage }
             else { 'Coverage collection, aggregation, or publication failed.' }
