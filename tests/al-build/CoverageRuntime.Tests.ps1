@@ -263,7 +263,13 @@ function New-ClientContext {
             [string[]]$TestAppNames = @('test'),
             [string]$UnitTestAppName = '',
             [switch]$FailContainerRun,
-            [switch]$ThrowNormalizer
+            [switch]$ThrowNormalizer,
+            [switch]$ConfigThrows,
+            [switch]$FailBuild,
+            [switch]$FailUnitTest,
+            [switch]$FailPreflight,
+            [switch]$AbortContainerTest,
+            [switch]$FailRawPublication
         )
 
         $root = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
@@ -286,12 +292,18 @@ function New-ClientContext {
 
         $scenarioPath = Join-Path $root 'scenario.json'
         [ordered]@{
-            RepoRoot         = $root
-            AppDir           = $appRoot
-            TestApps         = $testAppPaths
-            UnitTestApp      = $unitTestAppPath
-            TestOutcome      = if ($FailContainerRun) { 'failed' } else { 'passed' }
-            NormalizerThrows = [bool]$ThrowNormalizer
+            RepoRoot           = $root
+            AppDir             = $appRoot
+            TestApps           = $testAppPaths
+            UnitTestApp        = $unitTestAppPath
+            TestOutcome        = if ($FailContainerRun) { 'failed' } else { 'passed' }
+            NormalizerThrows   = [bool]$ThrowNormalizer
+            ConfigThrows       = [bool]$ConfigThrows
+            FailBuild          = [bool]$FailBuild
+            UnitTestOutcome    = if ($FailUnitTest) { 'failed' } else { 'passed' }
+            FailPreflight      = [bool]$FailPreflight
+            AbortContainerTest = [bool]$AbortContainerTest
+            FailRawPublication = [bool]$FailRawPublication
         } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $scenarioPath
 
         Copy-Item -LiteralPath (Join-Path $script:ScriptsDir 'test.ps1') `
@@ -391,6 +403,9 @@ function Add-HarnessEvent {
 
 function Get-BuildConfig {
     $scenario = Get-HarnessScenario
+    if ($scenario.ConfigThrows) {
+        throw 'malformed config boom'
+    }
     [pscustomobject]@{
         AppDir = $scenario.AppDir
         TestApps = @($scenario.TestApps)
@@ -413,6 +428,9 @@ function Get-RequiredRuntimeMajor {
 function Invoke-ALBuild {
     param([string]$AppDir, [bool]$WarnAsError, [int]$RequiredRuntimeMajor)
     Add-HarnessEvent -Name 'Invoke-ALBuild' -Data @{ AppDir = $AppDir }
+    if ((Get-HarnessScenario).FailBuild) {
+        throw 'build failed boom'
+    }
 }
 
 function Get-CompileTargets {
@@ -440,16 +458,17 @@ function Invoke-ALRunnerTest {
     Add-HarnessEvent -Name 'Invoke-ALRunnerTest' -Data @{ TestDir = $TestDir }
     New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
     '<testsuite />' | Set-Content -LiteralPath (Join-Path $OutputDir 'al-runner.xml')
+    $passed = (Get-HarnessScenario).UnitTestOutcome -ne 'failed'
     [pscustomobject]@{
         Runner = 'al-runner'
         AppName = Split-Path $TestDir -Leaf
         TestDir = $TestDir
-        Passed = $true
+        Passed = $passed
         Counts = [ordered]@{
             testCodeunits = 1
             tests = 1
-            testsPassed = 1
-            testsFailed = 0
+            testsPassed = if ($passed) { 1 } else { 0 }
+            testsFailed = if ($passed) { 0 } else { 1 }
             testsSkipped = 0
         }
         ResultFile = Join-Path $OutputDir 'al-runner.xml'
@@ -507,6 +526,10 @@ function Invoke-ALTest {
         CoverageStagingRoot = $CoverageStagingRoot
     }
 
+    if ($scenario.AbortContainerTest) {
+        throw 'container test aborted boom'
+    }
+
     New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
     '<testsuite />' | Set-Content -LiteralPath (Join-Path $OutputDir 'last.xml')
 
@@ -546,6 +569,10 @@ Export-ModuleMember -Function @(
         @'
 Set-StrictMode -Version Latest
 
+function Get-HarnessScenario {
+    Get-Content -LiteralPath $env:TEST_PS1_SCENARIO_PATH -Raw | ConvertFrom-Json
+}
+
 function Add-HarnessEvent {
     param([string]$Name, [hashtable]$Data = @{})
     ([ordered]@{ Name = $Name; Data = $Data } | ConvertTo-Json -Compress -Depth 8) |
@@ -567,6 +594,9 @@ function Test-BcCoveragePreflight {
         ContainerName = $ContainerName
         Tenant = $Tenant
     }
+    if ((Get-HarnessScenario).FailPreflight) {
+        throw 'preflight failed boom'
+    }
 }
 
 function New-CoverageGateStaging {
@@ -582,9 +612,17 @@ function New-CoverageGateStaging {
 
 function Publish-CoverageGateStaging {
     param([string]$StagePath, [string]$BaseResultsPath, [string[]]$ExpectedTestApps)
+    if ((Get-HarnessScenario).FailRawPublication) {
+        throw 'raw publication failed boom'
+    }
     $destination = Join-Path (Join-Path $BaseResultsPath 'coverage') 'raw'
     New-Item -ItemType Directory -Path $destination -Force | Out-Null
     'raw' | Set-Content -LiteralPath (Join-Path $destination 'marker.txt')
+    # Mirrors the real function's Move-Item: the staging directory does not
+    # survive publication, so no raw-stage leftover lingers in coverage/.
+    if (Test-Path -LiteralPath $StagePath) {
+        Remove-Item -LiteralPath $StagePath -Recurse -Force -Confirm:$false
+    }
     Add-HarnessEvent -Name 'Publish-CoverageGateStaging' -Data @{
         StagePath = $StagePath
         BaseResultsPath = $BaseResultsPath
@@ -634,21 +672,21 @@ function Add-HarnessEvent {
         Add-Content -LiteralPath $env:TEST_PS1_STATE_PATH
 }
 
-function Write-BcCoveragePerTestJsonl {
+function Write-BcCoverageArtifacts {
     param(
         [string]$RepoRoot,
         [string]$MainAppPath,
-        [string]$TestAppPath,
+        [string[]]$TestAppPaths,
         [string]$RawCollectionPath,
-        [string]$OutputPath
+        [string]$OutputDirectory
     )
 
-    Add-HarnessEvent -Name 'Write-BcCoveragePerTestJsonl' -Data @{
+    Add-HarnessEvent -Name 'Write-BcCoverageArtifacts' -Data @{
         RepoRoot = $RepoRoot
         MainAppPath = $MainAppPath
-        TestAppPath = $TestAppPath
+        TestAppPaths = @($TestAppPaths)
         RawCollectionPath = $RawCollectionPath
-        OutputPath = $OutputPath
+        OutputDirectory = $OutputDirectory
     }
 
     $scenario = Get-HarnessScenario
@@ -656,11 +694,31 @@ function Write-BcCoveragePerTestJsonl {
         throw 'normalizer failed'
     }
 
-    New-Item -ItemType Directory -Path (Split-Path $OutputPath -Parent) -Force | Out-Null
-    '{"schemaVersion":1}' | Set-Content -LiteralPath $OutputPath
+    # The real Write-BcCoverageArtifacts writes per-test.jsonl and
+    # cobertura.xml together only after every configured app's coverage
+    # resolves cleanly — this stub mirrors that pairing: it either produces
+    # both artifacts or (above) throws before producing either.
+    New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
+    $perTestPath = Join-Path $OutputDirectory 'per-test.jsonl'
+    $coberturaPath = Join-Path $OutputDirectory 'cobertura.xml'
+    @(
+        '{"schemaVersion":1,"recordType":"source","sourcePath":"src/Main.al","objectType":"Codeunit","objectName":"Main","lineNumber":10}'
+        '{"schemaVersion":1,"recordType":"source","sourcePath":"src/Main.al","objectType":"Codeunit","objectName":"Main","lineNumber":20}'
+        '{"schemaVersion":1,"recordType":"hit","sourcePath":"src/Main.al","objectType":"Codeunit","objectName":"Main","lineNumber":10,"testApp":"container-tests","testCodeunitId":1,"testCodeunitName":"Test","testProcedure":"Proc","hitCount":1}'
+    ) -join "`n" | Set-Content -LiteralPath $perTestPath
+    '<coverage />' | Set-Content -LiteralPath $coberturaPath
+
+    [pscustomobject]@{
+        TrackingMode = 'PerTest'
+        LinesValid = 2
+        LinesCovered = 1
+        LineRate = 0.5
+        PerTestPath = $perTestPath
+        CoberturaPath = $coberturaPath
+    }
 }
 
-Export-ModuleMember -Function 'Write-BcCoveragePerTestJsonl'
+Export-ModuleMember -Function 'Write-BcCoverageArtifacts'
 '@ | Set-Content -LiteralPath (Join-Path $scriptsRoot 'coverage-normalizer.psm1')
 
         [pscustomobject]@{
@@ -671,9 +729,17 @@ Export-ModuleMember -Function 'Write-BcCoveragePerTestJsonl'
             BaseResultsPath = Join-Path (Join-Path $root '.output') 'TestResults'
             RawPath = Join-Path (Join-Path (Join-Path $root '.output' 'TestResults') 'coverage') 'raw'
             PerTestPath = Join-Path (Join-Path (Join-Path $root '.output' 'TestResults') 'coverage') 'per-test.jsonl'
+            CoberturaPath = Join-Path (Join-Path (Join-Path $root '.output' 'TestResults') 'coverage') 'cobertura.xml'
+            SummaryPath = Join-Path (Join-Path $root '.output' 'TestResults') 'summary.json'
             AppDir = $appRoot
             TestAppPaths = $testAppPaths
         }
+    }
+
+    function Add-StaleResultsMarker {
+        param($Harness)
+        New-Item -ItemType Directory -Path $Harness.BaseResultsPath -Force | Out-Null
+        'stale' | Set-Content -LiteralPath (Join-Path $Harness.BaseResultsPath 'stale-marker.txt')
     }
 
     function Invoke-TestPs1Harness {
@@ -681,7 +747,8 @@ Export-ModuleMember -Function 'Write-BcCoveragePerTestJsonl'
             [Parameter(Mandatory)]
             $Harness,
 
-            [switch]$Coverage
+            [switch]$Coverage,
+            [switch]$UnitTestOnly
         )
 
         $oldScenarioPath = [Environment]::GetEnvironmentVariable('TEST_PS1_SCENARIO_PATH', 'Process')
@@ -693,7 +760,8 @@ Export-ModuleMember -Function 'Write-BcCoveragePerTestJsonl'
 
             $pwsh = Join-Path $PSHOME 'pwsh.exe'
             $coverageArg = if ($Coverage) { ' -Coverage' } else { '' }
-            $output = & $pwsh -NoProfile -Command "Set-Location '$($Harness.Root)'; & '$($Harness.TestScript)'$coverageArg" 2>&1
+            $unitTestOnlyArg = if ($UnitTestOnly) { ' -UnitTestOnly' } else { '' }
+            $output = & $pwsh -NoProfile -Command "Set-Location '$($Harness.Root)'; & '$($Harness.TestScript)'$coverageArg$unitTestOnlyArg" 2>&1
             $events = @()
             if (Test-Path -LiteralPath $Harness.StatePath) {
                 $events = @(
@@ -1956,6 +2024,12 @@ Describe 'test.ps1 coverage integration' {
         $firstMutation | Should -BeGreaterThan $preflight
     }
 
+    It 'passes both the container username and password to Get-BCCredential with no stray token' {
+        $testScript = Get-Content -LiteralPath (Join-Path $script:ScriptsDir 'test.ps1') -Raw
+        $testScript | Should -Match '(?m)^\s*\$coverageCredential = Get-BCCredential -Username \$config\.ContainerUsername -Password \$config\.ContainerPassword\s*$'
+        $testScript | Should -Not -Match '\*{2,}'
+    }
+
     It 'contains one unchanged public container runner call for both modes' {
         $operations = Get-Content -LiteralPath (Join-Path $script:ScriptsDir 'build-operations.psm1') -Raw
         [regex]::Matches(
@@ -1965,47 +2039,66 @@ Describe 'test.ps1 coverage integration' {
         $operations | Should -Match 'Invoke-BcTestRunWithCoverage'
     }
 
-    It 'fails coverage cardinality before container mutation and cites issue 77' {
-        $result = Invoke-TestPs1Harness (
-            New-TestPs1Harness -TestAppNames @('tests-a', 'tests-b') -UnitTestAppName 'unit-tests'
-        ) -Coverage
+    It 'runs coverage across every configured test app in a single aggregate call' {
+        $harness = New-TestPs1Harness -TestAppNames @('tests-a', 'tests-b') -UnitTestAppName 'unit-tests'
+        $result = Invoke-TestPs1Harness $harness -Coverage
         $eventNames = @($result.Events | ForEach-Object { $_.Name })
+        $aggregateCalls = @($result.Events | Where-Object Name -eq 'Write-BcCoverageArtifacts')
 
-        $result.ExitCode | Should -Not -Be 0
-        ($result.Output -join "`n") |
-            Should -Match 'exactly one configured container test app'
-        ($result.Output -join "`n") | Should -Match 'Issue 77'
-        $eventNames | Should -Not -Contain 'Invoke-ALBuild'
-        $eventNames | Should -Not -Contain 'Copy-ALSymbolToCache'
-        $eventNames | Should -Not -Contain 'Invoke-ALRunnerTest'
-        $eventNames | Should -Not -Contain 'Ensure-BCAgentContainer'
-        $eventNames | Should -Not -Contain 'Test-BcCoveragePreflight'
-        $eventNames | Should -Not -Contain 'Invoke-ALPublish'
-        $eventNames | Should -Not -Contain 'Invoke-ALTest'
-        $eventNames | Should -Not -Contain 'Write-BcCoveragePerTestJsonl'
+        $result.ExitCode | Should -Be 0
+        $eventNames | Should -Contain 'Invoke-ALBuild'
+        $eventNames | Should -Contain 'Ensure-BCAgentContainer'
+        $eventNames | Should -Contain 'Test-BcCoveragePreflight'
+        (@($eventNames | Where-Object { $_ -eq 'Invoke-ALTest' })).Count | Should -Be 2
+        $aggregateCalls.Count | Should -Be 1
+        $aggregateCalls[0].Data.TestAppPaths | Should -Be @($harness.TestAppPaths[0], $harness.TestAppPaths[1])
     }
 
-    It 'imports the normalizer with Join-Path and calls it with the published raw path' {
+    It 'passes configured test app paths through in configuration order regardless of app order' {
+        $forwardHarness = New-TestPs1Harness -TestAppNames @('tests-a', 'tests-b')
+        $reverseHarness = New-TestPs1Harness -TestAppNames @('tests-b', 'tests-a')
+
+        $forwardResult = Invoke-TestPs1Harness $forwardHarness -Coverage
+        $reverseResult = Invoke-TestPs1Harness $reverseHarness -Coverage
+
+        $forwardCall = $forwardResult.Events | Where-Object Name -eq 'Write-BcCoverageArtifacts' | Select-Object -First 1
+        $reverseCall = $reverseResult.Events | Where-Object Name -eq 'Write-BcCoverageArtifacts' | Select-Object -First 1
+
+        $forwardResult.ExitCode | Should -Be 0
+        $reverseResult.ExitCode | Should -Be 0
+        $forwardCall.Data.TestAppPaths | Should -Be @($forwardHarness.TestAppPaths[0], $forwardHarness.TestAppPaths[1])
+        $reverseCall.Data.TestAppPaths | Should -Be @($reverseHarness.TestAppPaths[0], $reverseHarness.TestAppPaths[1])
+
+        $forwardSummary = Get-Content -LiteralPath $forwardHarness.SummaryPath -Raw | ConvertFrom-Json
+        $reverseSummary = Get-Content -LiteralPath $reverseHarness.SummaryPath -Raw | ConvertFrom-Json
+        $forwardSummary.coverage.status | Should -Be $reverseSummary.coverage.status
+        $forwardSummary.coverage.lineRate | Should -Be $reverseSummary.coverage.lineRate
+        $forwardSummary.coverage.linesValid | Should -Be $reverseSummary.coverage.linesValid
+        $forwardSummary.coverage.linesCovered | Should -Be $reverseSummary.coverage.linesCovered
+    }
+
+    It 'imports the normalizer with Join-Path and calls it with the published raw root and staging output' {
         $testScript = Get-Content -LiteralPath (Join-Path $script:ScriptsDir 'test.ps1') -Raw
         $harness = New-TestPs1Harness -TestAppNames @('container-tests')
         $result = Invoke-TestPs1Harness $harness -Coverage
         $eventNames = @($result.Events | ForEach-Object { $_.Name })
         $normalizerCall = $result.Events |
-            Where-Object Name -eq 'Write-BcCoveragePerTestJsonl' |
+            Where-Object Name -eq 'Write-BcCoverageArtifacts' |
             Select-Object -First 1
 
         $testScript | Should -Match 'Import-Module \(Join-Path \$PSScriptRoot ''coverage-normalizer\.psm1''\) -Force -DisableNameChecking'
+        $testScript | Should -Not -Match 'Write-BcCoveragePerTestJsonl'
         $result.ExitCode | Should -Be 0
         [array]::IndexOf($eventNames, 'Publish-CoverageGateStaging') |
-            Should -BeLessThan ([array]::IndexOf($eventNames, 'Write-BcCoveragePerTestJsonl'))
+            Should -BeLessThan ([array]::IndexOf($eventNames, 'Write-BcCoverageArtifacts'))
         $normalizerCall.Data.RepoRoot | Should -Be $harness.Root
         $normalizerCall.Data.MainAppPath | Should -Be $harness.AppDir
-        $normalizerCall.Data.TestAppPath | Should -Be $harness.TestAppPaths[0]
+        $normalizerCall.Data.TestAppPaths | Should -Be @($harness.TestAppPaths[0])
         $normalizerCall.Data.RawCollectionPath | Should -Be $harness.RawPath
-        $normalizerCall.Data.OutputPath | Should -Be $harness.PerTestPath
+        $normalizerCall.Data.OutputDirectory | Should -Be (Split-Path $harness.PerTestPath -Parent)
     }
 
-    It 'normalizes after complete raw publication even when container tests fail' {
+    It 'reports coverage complete using the returned metrics and artifact paths, retains them and removes raw, even when container test assertions fail' {
         $harness = New-TestPs1Harness -TestAppNames @('container-tests') -FailContainerRun
         $result = Invoke-TestPs1Harness $harness -Coverage
         $eventNames = @($result.Events | ForEach-Object { $_.Name })
@@ -2016,18 +2109,40 @@ Describe 'test.ps1 coverage integration' {
         $result.ExitCode | Should -Not -Be 0
         $finalHeader.Data.Message | Should -Be 'Test FAILED'
         [array]::IndexOf($eventNames, 'Publish-CoverageGateStaging') |
-            Should -BeLessThan ([array]::IndexOf($eventNames, 'Write-BcCoveragePerTestJsonl'))
-        Test-Path -LiteralPath $harness.RawPath | Should -BeTrue
+            Should -BeLessThan ([array]::IndexOf($eventNames, 'Write-BcCoverageArtifacts'))
+        Test-Path -LiteralPath $harness.SummaryPath | Should -BeTrue
+
+        # Coverage completeness is independent of the test verdict: complete
+        # artifacts are retained and the now-unneeded raw collection is gone.
         Test-Path -LiteralPath $harness.PerTestPath | Should -BeTrue
-        Test-Path -LiteralPath (Join-Path $harness.BaseResultsPath 'summary.json') |
-            Should -BeTrue
+        Test-Path -LiteralPath $harness.CoberturaPath | Should -BeTrue
+        Test-Path -LiteralPath $harness.RawPath | Should -BeFalse
+
+        # Current-run JUnit (the container test's last.xml) is preserved.
+        $junitPath = Join-Path (Join-Path $harness.BaseResultsPath 'container-tests') 'last.xml'
+        Test-Path -LiteralPath $junitPath | Should -BeTrue
+
+        $summary = Get-Content -LiteralPath $harness.SummaryPath -Raw | ConvertFrom-Json
+        $summary.coverage.schemaVersion | Should -Be 1
+        $summary.coverage.enabled | Should -BeTrue
+        $summary.coverage.status | Should -Be 'complete'
+        $summary.coverage.complete | Should -BeTrue
+        $summary.coverage.trackingMode | Should -Be 'PerTest'
+        $summary.coverage.lineRate | Should -Be 0.5
+        $summary.coverage.linesValid | Should -Be 2
+        $summary.coverage.linesCovered | Should -Be 1
+        $summary.coverage.perTestJsonlPath | Should -Match '/'
+        $summary.coverage.perTestJsonlPath | Should -Not -Match '\\'
+        $summary.coverage.coberturaXmlPath | Should -Match '/'
+        $summary.coverage.coberturaXmlPath | Should -Not -Match '\\'
+        # The test run itself failed — totals/runs still reflect the real
+        # (red) outcome; coverage completeness is independent of test verdict.
+        $summary.gate | Should -Be 'full'
+        ($summary.runs | Where-Object { $_.runner -eq 'container' }).passed | Should -Be $false
     }
 
-    It 'propagates normalization failure while preserving published raw coverage' {
+    It 'writes a failed coverage summary, retains raw for diagnosis, and retains current-run JUnit after aggregation failure' {
         $harness = New-TestPs1Harness -TestAppNames @('container-tests') -ThrowNormalizer
-        $coverageRoot = Split-Path $harness.PerTestPath -Parent
-        $null = New-Item -ItemType Directory -Path $coverageRoot -Force
-        'existing-artifact' | Set-Content -LiteralPath $harness.PerTestPath
 
         $result = Invoke-TestPs1Harness $harness -Coverage
         $eventNames = @($result.Events | ForEach-Object { $_.Name })
@@ -2035,12 +2150,254 @@ Describe 'test.ps1 coverage integration' {
         $result.ExitCode | Should -Not -Be 0
         ($result.Output -join "`n") | Should -Match 'normalizer failed'
         $eventNames | Should -Contain 'Publish-CoverageGateStaging'
-        $eventNames | Should -Contain 'Write-BcCoveragePerTestJsonl'
+        $eventNames | Should -Contain 'Write-BcCoverageArtifacts'
         $eventNames | Should -Not -Contain 'Remove-CoverageGateStaging'
+
+        # The raw collection is retained for aggregation-failure diagnosis.
         Test-Path -LiteralPath $harness.RawPath | Should -BeTrue
-        Get-Content -LiteralPath $harness.PerTestPath -Raw |
-            Should -Be "existing-artifact`r`n"
-        Test-Path -LiteralPath (Join-Path $harness.BaseResultsPath 'summary.json') |
-            Should -BeFalse
+
+        # The normalizer threw before writing either artifact — no new (nor
+        # stale, since startup cleanup wiped any prior run) file exists.
+        Test-Path -LiteralPath $harness.PerTestPath | Should -BeFalse
+        Test-Path -LiteralPath $harness.CoberturaPath | Should -BeFalse
+
+        # Current-run JUnit (the container test's last.xml) is untouched by
+        # the downstream aggregation failure.
+        $junitPath = Join-Path (Join-Path $harness.BaseResultsPath 'container-tests') 'last.xml'
+        Test-Path -LiteralPath $junitPath | Should -BeTrue
+
+        Test-Path -LiteralPath $harness.SummaryPath | Should -BeTrue
+        $summary = Get-Content -LiteralPath $harness.SummaryPath -Raw | ConvertFrom-Json
+        $summary.coverage.status | Should -Be 'failed'
+        $summary.coverage.complete | Should -BeFalse
+        $summary.coverage.failure.stage | Should -Be 'coverage-aggregation'
+        $summary.error.stage | Should -Be 'coverage-aggregation'
+        $summary.error.message | Should -Match 'normalizer failed'
+    }
+}
+
+Describe 'test.ps1 startup cleanup' {
+    It 'removes a stale TestResults tree before a disabled (no -Coverage) run' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests')
+        Add-StaleResultsMarker -Harness $harness
+
+        $result = Invoke-TestPs1Harness $harness
+
+        $result.ExitCode | Should -Be 0
+        Test-Path -LiteralPath (Join-Path $harness.BaseResultsPath 'stale-marker.txt') | Should -BeFalse
+        Test-Path -LiteralPath $harness.BaseResultsPath | Should -BeTrue
+    }
+
+    It 'removes a stale TestResults tree before a -UnitTestOnly run' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests') -UnitTestAppName 'unit-tests'
+        Add-StaleResultsMarker -Harness $harness
+
+        $result = Invoke-TestPs1Harness $harness -UnitTestOnly
+
+        $result.ExitCode | Should -Be 0
+        Test-Path -LiteralPath (Join-Path $harness.BaseResultsPath 'stale-marker.txt') | Should -BeFalse
+        Test-Path -LiteralPath $harness.BaseResultsPath | Should -BeTrue
+    }
+
+    It 'removes a stale TestResults tree before a full -Coverage run' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests')
+        Add-StaleResultsMarker -Harness $harness
+
+        $result = Invoke-TestPs1Harness $harness -Coverage
+
+        $result.ExitCode | Should -Be 0
+        Test-Path -LiteralPath (Join-Path $harness.BaseResultsPath 'stale-marker.txt') | Should -BeFalse
+        Test-Path -LiteralPath $harness.BaseResultsPath | Should -BeTrue
+    }
+
+    It 'removes a stale TestResults tree before a compile-only run (no test apps configured)' {
+        $harness = New-TestPs1Harness -TestAppNames @()
+        Add-StaleResultsMarker -Harness $harness
+
+        $result = Invoke-TestPs1Harness $harness
+
+        $result.ExitCode | Should -Be 0
+        Test-Path -LiteralPath (Join-Path $harness.BaseResultsPath 'stale-marker.txt') | Should -BeFalse
+        Test-Path -LiteralPath $harness.BaseResultsPath | Should -BeTrue
+    }
+
+    It 'exits nonzero and reports the failure when the stale tree cannot be removed' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests')
+        New-Item -ItemType Directory -Path $harness.BaseResultsPath -Force | Out-Null
+        $lockedFile = Join-Path $harness.BaseResultsPath 'locked.bin'
+        'locked' | Set-Content -LiteralPath $lockedFile
+        $stream = [System.IO.File]::Open($lockedFile, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::None)
+
+        try {
+            $result = Invoke-TestPs1Harness $harness
+
+            $result.ExitCode | Should -Not -Be 0
+            $eventNames = @($result.Events | ForEach-Object { $_.Name })
+            $failureMessage = $result.Events |
+                Where-Object { $_.Name -eq 'Write-BuildMessage' -and $_.Data.Message -match 'Failed to remove' } |
+                Select-Object -First 1
+            $failureMessage | Should -Not -BeNullOrEmpty
+            $eventNames | Should -Not -Contain 'Invoke-ALBuild'
+        } finally {
+            $stream.Close()
+        }
+    }
+}
+
+Describe 'test.ps1 malformed config ordering' {
+    It 'still runs startup cleanup but writes no summary.json when config fails to load' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests') -ConfigThrows
+        Add-StaleResultsMarker -Harness $harness
+
+        $result = Invoke-TestPs1Harness $harness
+
+        $result.ExitCode | Should -Not -Be 0
+        ($result.Output -join "`n") | Should -Match 'malformed config boom'
+        Test-Path -LiteralPath (Join-Path $harness.BaseResultsPath 'stale-marker.txt') | Should -BeFalse
+        Test-Path -LiteralPath $harness.BaseResultsPath | Should -BeTrue
+        Test-Path -LiteralPath $harness.SummaryPath | Should -BeFalse
+    }
+}
+
+Describe 'build-operations.psm1 no longer performs local per-run JUnit cleanup' {
+    It 'contains no per-run "Removed previous result" cleanup message' {
+        $operations = Get-Content -LiteralPath (Join-Path $script:ScriptsDir 'build-operations.psm1') -Raw
+        $operations | Should -Not -Match 'Removed previous result'
+        $operations | Should -Not -Match 'Cleaning test results'
+    }
+}
+
+Describe 'test.ps1 coverage summary lifecycle' {
+    It 'writes a disabled coverage block when -Coverage is not specified' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests')
+
+        $result = Invoke-TestPs1Harness $harness
+
+        $result.ExitCode | Should -Be 0
+        $summary = Get-Content -LiteralPath $harness.SummaryPath -Raw | ConvertFrom-Json
+        $summary.coverage.schemaVersion | Should -Be 1
+        $summary.coverage.enabled | Should -BeFalse
+        $summary.coverage.status | Should -Be 'disabled'
+        $summary.coverage.complete | Should -BeFalse
+    }
+
+    It 'reports coverage not-run when an enabled run fails before container coverage execution (unit test failure)' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests') -UnitTestAppName 'unit-tests' -FailUnitTest
+
+        $result = Invoke-TestPs1Harness $harness -Coverage
+
+        $result.ExitCode | Should -Not -Be 0
+        Test-Path -LiteralPath $harness.SummaryPath | Should -BeTrue
+        $summary = Get-Content -LiteralPath $harness.SummaryPath -Raw | ConvertFrom-Json
+        $summary.coverage.schemaVersion | Should -Be 1
+        $summary.coverage.enabled | Should -BeTrue
+        $summary.coverage.status | Should -Be 'not-run'
+        $summary.coverage.complete | Should -BeFalse
+        $summary.coverage.failure.stage | Should -Not -BeNullOrEmpty
+        $summary.coverage.failure.message | Should -Not -BeNullOrEmpty
+    }
+
+    It 'reports coverage not-run when an enabled run fails before container coverage execution (build failure)' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests') -FailBuild
+
+        $result = Invoke-TestPs1Harness $harness -Coverage
+
+        $result.ExitCode | Should -Not -Be 0
+        $summary = Get-Content -LiteralPath $harness.SummaryPath -Raw | ConvertFrom-Json
+        $summary.coverage.status | Should -Be 'not-run'
+        $summary.coverage.complete | Should -BeFalse
+        $summary.coverage.failure.stage | Should -Be 'build'
+        $summary.error.stage | Should -Be 'build'
+        $summary.error.message | Should -Match 'build failed boom'
+    }
+
+    It 'reports coverage aborted and leaves no final coverage artifacts when the selected container test run does not complete' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests') -AbortContainerTest
+
+        $result = Invoke-TestPs1Harness $harness -Coverage
+
+        $result.ExitCode | Should -Not -Be 0
+        $summary = Get-Content -LiteralPath $harness.SummaryPath -Raw | ConvertFrom-Json
+        $summary.coverage.status | Should -Be 'aborted'
+        $summary.coverage.complete | Should -BeFalse
+        $summary.coverage.failure.stage | Should -Not -BeNullOrEmpty
+        $summary.error.message | Should -Match 'container test aborted boom'
+        Test-Path -LiteralPath $harness.RawPath | Should -BeFalse
+        Test-Path -LiteralPath $harness.PerTestPath | Should -BeFalse
+        Test-Path -LiteralPath $harness.CoberturaPath | Should -BeFalse
+    }
+
+    It 'reports coverage failed when collection (raw publication) fails after the container run completes' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests') -FailRawPublication
+
+        $result = Invoke-TestPs1Harness $harness -Coverage
+
+        $result.ExitCode | Should -Not -Be 0
+        $summary = Get-Content -LiteralPath $harness.SummaryPath -Raw | ConvertFrom-Json
+        $summary.coverage.status | Should -Be 'failed'
+        $summary.coverage.complete | Should -BeFalse
+        $summary.coverage.failure.stage | Should -Be 'coverage-collection'
+        $summary.error.stage | Should -Be 'coverage-collection'
+        $summary.error.message | Should -Match 'raw publication failed boom'
+    }
+
+    It 'reports coverage complete for a fully green run and removes the raw collection' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests')
+
+        $result = Invoke-TestPs1Harness $harness -Coverage
+
+        $result.ExitCode | Should -Be 0
+        $summary = Get-Content -LiteralPath $harness.SummaryPath -Raw | ConvertFrom-Json
+        $summary.coverage.status | Should -Be 'complete'
+        $summary.coverage.complete | Should -BeTrue
+        $summary.coverage.enabled | Should -BeTrue
+        $summary.coverage.trackingMode | Should -Be 'PerTest'
+        $summary.coverage.lineRate | Should -Be 0.5
+        $summary.coverage.linesValid | Should -Be 2
+        $summary.coverage.linesCovered | Should -Be 1
+        Test-Path -LiteralPath $harness.PerTestPath | Should -BeTrue
+        Test-Path -LiteralPath $harness.CoberturaPath | Should -BeTrue
+
+        # On success the raw per-test payloads and staging work are gone —
+        # the final coverage directory keeps only the two published reports.
+        Test-Path -LiteralPath $harness.RawPath | Should -BeFalse
+        (Get-ChildItem -LiteralPath (Split-Path $harness.PerTestPath -Parent) -Name) |
+            Sort-Object | Should -Be @('cobertura.xml', 'per-test.jsonl')
+    }
+
+    It 'does not resurrect a stale complete coverage state from a previous run' {
+        # Seed a previous run's final coverage artifacts directly in the
+        # results tree. Startup cleanup must remove them before this run
+        # begins, so a run whose own aggregation fails cannot inherit a
+        # stale 'complete' verdict from a prior run's leftovers.
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests') -ThrowNormalizer
+        $coverageDir = Split-Path $harness.PerTestPath -Parent
+        New-Item -ItemType Directory -Path $coverageDir -Force | Out-Null
+        '{"schemaVersion":1,"recordType":"source","sourcePath":"src/Main.al","lineNumber":1}' |
+            Set-Content -LiteralPath $harness.PerTestPath
+        '<coverage />' | Set-Content -LiteralPath $harness.CoberturaPath
+
+        $result = Invoke-TestPs1Harness $harness -Coverage
+
+        $result.ExitCode | Should -Not -Be 0
+        Test-Path -LiteralPath $harness.PerTestPath | Should -BeFalse
+        Test-Path -LiteralPath $harness.CoberturaPath | Should -BeFalse
+        $summary = Get-Content -LiteralPath $harness.SummaryPath -Raw | ConvertFrom-Json
+        $summary.coverage.status | Should -Be 'failed'
+        $summary.coverage.complete | Should -BeFalse
+    }
+
+    It 'leaves totals and per-runner run records unchanged in shape for a disabled run' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests') -UnitTestAppName 'unit-tests'
+
+        $result = Invoke-TestPs1Harness $harness
+
+        $result.ExitCode | Should -Be 0
+        $summary = Get-Content -LiteralPath $harness.SummaryPath -Raw | ConvertFrom-Json
+        $summary.gate | Should -Be 'full'
+        $summary.totals.container.tests | Should -Be 1
+        $summary.totals.container.testsPassed | Should -Be 1
+        ($summary.runs | Where-Object { $_.runner -eq 'container' }).appName | Should -Be 'container-tests'
+        ($summary.runs | Where-Object { $_.runner -eq 'al-runner' }).appName | Should -Be 'unit-tests'
     }
 }
