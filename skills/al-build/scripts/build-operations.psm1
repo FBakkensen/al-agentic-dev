@@ -140,6 +140,22 @@ function Get-BuildConfig {
         return $Default
     }
 
+    function Resolve-CoverageValue {
+        param([string]$Key, [string]$OverrideKey, [string]$EnvVar, $Default)
+        if ($Overrides.ContainsKey($OverrideKey) -and $null -ne $Overrides[$OverrideKey]) {
+            return $Overrides[$OverrideKey]
+        }
+        $envVal = [Environment]::GetEnvironmentVariable($EnvVar)
+        if ($null -ne $envVal) {
+            return ConvertFrom-EnvironmentBoolean -Name $EnvVar -Value $envVal
+        }
+        if ($defaults.ContainsKey('coverage') -and $defaults['coverage'] -is [hashtable]) {
+            $coverage = $defaults['coverage']
+            if ($coverage.ContainsKey($Key) -and $null -ne $coverage[$Key]) { return $coverage[$Key] }
+        }
+        return $Default
+    }
+
     # Resolve unitTestApp (single string, empty = disabled)
     $unitTestAppRaw = Resolve-Value 'unitTestApp' 'ALBT_UNIT_TEST_APP' ''
     $unitTestApp = ''
@@ -172,11 +188,42 @@ function Get-BuildConfig {
         Tenant                              = Resolve-Value 'tenant' 'ALBT_BC_TENANT' 'default'
         ValidateCurrent                     = Resolve-Value 'validateCurrent' 'ALBT_VALIDATE_CURRENT' '1'
         ApplicationInsightsConnectionString = Resolve-Value 'applicationInsightsConnectionString' 'ALBT_APPLICATION_INSIGHTS_CONNECTION_STRING' ''
+        CoverageEnabled                     = ConvertTo-Boolean (Resolve-CoverageValue 'enabled' 'coverageEnabled' 'ALBT_COVERAGE_ENABLED' $false)
         BreakingChangeEnabled               = ConvertTo-Boolean (Resolve-BreakingChangeValue 'enabled' 'ALBT_BREAKING_CHANGE_ENABLED' $false)
         BaselinePackageCachePath            = Resolve-BreakingChangeValue 'baselinePackageCachePath' 'ALBT_BASELINE_CACHE_PATH' '.output/baseline-cache'
     }
 
     return $config
+}
+
+function Resolve-CoverageEnabled {
+    <#
+    .SYNOPSIS
+        Resolve effective coverage at the test invocation boundary.
+    .DESCRIPTION
+        An explicit -Coverage enable wins over configured coverage. Unit-only
+        runs ignore configured coverage but reject the explicit contradiction.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [PSCustomObject]$Config,
+
+        [switch]$Coverage,
+
+        [switch]$UnitTestOnly
+    )
+
+    if ($Coverage -and $UnitTestOnly) {
+        throw '-Coverage cannot be combined with -UnitTestOnly.'
+    }
+    if ($UnitTestOnly) {
+        return $false
+    }
+    if ($Coverage) {
+        return $true
+    }
+    return [bool]$Config.CoverageEnabled
 }
 
 function Get-CompileTargets {
@@ -1162,6 +1209,40 @@ function Format-TestCountSummary {
     "$($Counts.tests) tests in $($Counts.testCodeunits) test codeunits - $($Counts.testsPassed) passed, $($Counts.testsFailed) failed, $($Counts.testsSkipped) skipped"
 }
 
+function Get-BcTestExecutionVerdict {
+    [CmdletBinding()]
+    param(
+        $Execution,
+
+        [Parameter(Mandatory)]
+        [string]$TestAppName,
+
+        [switch]$Coverage
+    )
+
+    if (-not $Execution -or
+        -not $Execution.PSObject.Properties['TestRunnerCompleted'] -or
+        $Execution.TestRunnerCompleted -ne $true) {
+        throw "Test execution for '$TestAppName' did not return explicit Test Runner completion evidence."
+    }
+    if ($Coverage -and
+        (-not $Execution.PSObject.Properties['CollectorCompleted'] -or
+            $Execution.CollectorCompleted -ne $true)) {
+        throw "Coverage execution for '$TestAppName' did not return explicit collector completion evidence."
+    }
+    if (-not $Execution.PSObject.Properties['CompletionStatus']) {
+        throw "Test execution for '$TestAppName' did not return an explicit completion status."
+    }
+
+    switch ($Execution.CompletionStatus) {
+        'completed-green' { return $true }
+        'completed-red' { return $false }
+        default {
+            throw "Test execution for '$TestAppName' returned unsupported completion status '$($Execution.CompletionStatus)'."
+        }
+    }
+}
+
 function Invoke-ALTest {
     <#
     .SYNOPSIS
@@ -1244,6 +1325,17 @@ function Invoke-ALTest {
                 Run-TestsInBcContainer @testParams
             }
 
+        if ($execution.PSObject.Properties['PostCompletionRunnerError'] -and
+            $execution.PostCompletionRunnerError) {
+            Write-BuildMessage -Type Warning -Message (
+                "Test Runner reported a non-fatal error after completed JUnit evidence " +
+                "for '$dirName': $($execution.PostCompletionRunnerError.Exception.Message)"
+            )
+        }
+
+        $testsPassed = Get-BcTestExecutionVerdict -Execution $execution `
+            -TestAppName $dirName -Coverage:$Coverage
+
         if ($Coverage) {
             $appCoverageStage = Join-Path $CoverageStagingRoot $dirName
             if (Test-Path -LiteralPath $appCoverageStage) {
@@ -1253,7 +1345,6 @@ function Invoke-ALTest {
             Test-BcCoverageCollection -Path $appCoverageStage -ExpectedTestApp $dirName | Out-Null
         }
 
-        $testsPassed = $execution.TestsPassed
     } catch {
         $primaryError = $_
     }
@@ -1540,6 +1631,32 @@ function Copy-ALSymbolToCache {
 # Boolean Conversion
 # =============================================================================
 
+function ConvertFrom-EnvironmentBoolean {
+    <#
+    .SYNOPSIS
+        Parse a boolean environment override without truthy-string coercion.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Name,
+
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string]$Value
+    )
+
+    switch ($Value.ToLowerInvariant()) {
+        'true' { return $true }
+        '1' { return $true }
+        'false' { return $false }
+        '0' { return $false }
+        default {
+            throw "Environment variable $Name must be one of: true, false, 1, 0. Received: '$Value'."
+        }
+    }
+}
+
 function ConvertTo-Boolean {
     <#
     .SYNOPSIS
@@ -1675,6 +1792,7 @@ function Get-AlValidationVerdict {
 Export-ModuleMember -Function @(
     # Configuration
     'Get-BuildConfig'
+    'Resolve-CoverageEnabled'
     'Get-CompileTargets'
     'Set-BuildEnvironment'
     'ConvertTo-Boolean'
