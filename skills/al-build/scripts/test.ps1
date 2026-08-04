@@ -384,7 +384,7 @@ if ($Coverage) {
     $coverageOutputPath = Join-Path (Join-Path $baseResultsPath 'coverage') 'per-test.jsonl'
     Write-BcCoveragePerTestJsonl -RepoRoot $repoRoot -MainAppPath $config.AppDir `
         -TestAppPath $coverageTestAppPath -RawCollectionPath $publishedCoveragePath `
-        -OutputPath $coverageOutputPath
+        -OutputPath $coverageOutputPath | Out-Null
 }
 
 # Write summary.json
