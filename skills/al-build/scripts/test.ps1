@@ -158,6 +158,15 @@ if ($UnitTestOnly -and -not $config.UnitTestApp) {
     exit 1
 }
 
+$coverageTestAppPath = $null
+if ($Coverage) {
+    if ($config.TestApps.Count -ne 1) {
+        throw "-Coverage currently supports exactly one configured container test app. Found $($config.TestApps.Count). Issue 77 is the aggregation boundary for multi-app normalization."
+    }
+
+    $coverageTestAppPath = $config.TestApps[0]
+}
+
 # Validate unitTestApp path exists when configured
 if ($config.UnitTestApp -and -not (Test-Path $config.UnitTestApp)) {
     Write-BuildMessage -Type Error -Message "unitTestApp directory not found: $($config.UnitTestApp)"
@@ -367,9 +376,15 @@ foreach ($testAppDir in $config.TestApps) {
 
 if ($Coverage) {
     $coverageApps = @($config.TestApps | ForEach-Object { Split-Path $_ -Leaf })
-    Publish-CoverageGateStaging -StagePath $coverageStagingRoot `
-        -BaseResultsPath $baseResultsPath -ExpectedTestApps $coverageApps | Out-Null
+    $publishedCoveragePath = Publish-CoverageGateStaging -StagePath $coverageStagingRoot `
+        -BaseResultsPath $baseResultsPath -ExpectedTestApps $coverageApps
     $coveragePublished = $true
+
+    Import-Module (Join-Path $PSScriptRoot 'coverage-normalizer.psm1') -Force -DisableNameChecking
+    $coverageOutputPath = Join-Path (Join-Path $baseResultsPath 'coverage') 'per-test.jsonl'
+    Write-BcCoveragePerTestJsonl -RepoRoot $repoRoot -MainAppPath $config.AppDir `
+        -TestAppPath $coverageTestAppPath -RawCollectionPath $publishedCoveragePath `
+        -OutputPath $coverageOutputPath | Out-Null
 }
 
 # Write summary.json
