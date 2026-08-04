@@ -3,25 +3,10 @@
 Set-StrictMode -Version Latest
 
 $script:TestRunnerPageId = 130455
-$script:CoverageExporterId = 74075
+Import-Module (Join-Path $PSScriptRoot 'coverage-preflight.psm1') -Force -DisableNameChecking
 
 function Get-BcCoveragePageContract {
-    [pscustomobject]@{
-        SuiteControl       = 'CurrentSuiteName'
-        SuiteName          = 'DEFAULT'
-        TrackingControl    = 'CCTrackingType'
-        AllSessionsControl = 'CCTrackAllSessions'
-        ExporterControl    = 'CCExporterID'
-        MapControl         = 'CCMap'
-        PayloadControl     = 'CCResultsCSVText'
-        InfoControl        = 'CCInfo'
-        ClearAction        = 'ClearCodeCoverage'
-        DrainAction        = 'GetCodeCoverage'
-        DisabledValue      = 0
-        PerTestValue       = 3
-        MapDisabledValue   = 0
-        DoneValue          = 'Done.'
-    }
+    Get-CoveragePreflightPageContract
 }
 
 function Get-CoverageHelperContract {
@@ -30,32 +15,7 @@ function Get-CoverageHelperContract {
         [string]$AppJsonPath = (Join-Path (Split-Path $PSScriptRoot -Parent) 'code-coverage-helper' 'app.json')
     )
 
-    if (-not (Test-Path -LiteralPath $AppJsonPath -PathType Leaf)) {
-        throw "Coverage helper contract not found at '$AppJsonPath'. Rebuild the golden image after bundling the coverage helper."
-    }
-
-    try {
-        $appJson = Get-Content -LiteralPath $AppJsonPath -Raw | ConvertFrom-Json
-    } catch {
-        throw "Coverage helper app.json is invalid at '$AppJsonPath': $($_.Exception.Message)"
-    }
-
-    $idProperty = $appJson.PSObject.Properties['id']
-    $versionProperty = $appJson.PSObject.Properties['version']
-    $nameProperty = $appJson.PSObject.Properties['name']
-    if (-not $idProperty -or -not $idProperty.Value -or
-        -not $versionProperty -or -not $versionProperty.Value -or
-        -not $nameProperty -or -not $nameProperty.Value) {
-        throw "Coverage helper app.json must declare id and version: '$AppJsonPath'."
-    }
-
-    [pscustomobject]@{
-        AppId              = [guid]$idProperty.Value
-        AppVersion         = [version]$versionProperty.Value
-        AppName            = [string]$nameProperty.Value
-        ExporterId         = $script:CoverageExporterId
-        AppJsonPath        = $AppJsonPath
-    }
+    Get-CoveragePreflightHelperContract -AppJsonPath $AppJsonPath
 }
 
 function Get-BcSharedTestBasePath {
@@ -349,39 +309,23 @@ function Test-BcCoveragePreflight {
         $Contract
     )
 
-    Import-BCContainerHelper
-    $runPath = $null
+    $state = [pscustomobject]@{ RunPath = $null }
     try {
-        $installed = @(
-            Get-BcContainerAppInfo -containerName $ContainerName -tenant $Tenant -installedOnly |
-                Where-Object {
-                    $installedId = if ($_.PSObject.Properties['AppId']) {
-                        $_.AppId
-                    } elseif ($_.PSObject.Properties['Id']) {
-                        $_.Id
-                    }
-                    $installedId -and ([guid]$installedId -eq [guid]$Contract.AppId)
-                }
-        )
-
-        $exact = @(
-            $installed |
-                Where-Object { [version]$_.Version -eq [version]$Contract.AppVersion }
-        )
-        if ($exact.Count -ne 1) {
-            $foundVersions = @($installed | ForEach-Object { $_.Version.ToString() }) -join ', '
-            if (-not $foundVersions) { $foundVersions = 'not installed' }
-            throw "Coverage helper $($Contract.AppId) must be installed at version $($Contract.AppVersion); found $foundVersions."
+        $getInstalledApps = {
+            Import-BCContainerHelper
+            Get-BcContainerAppInfo -containerName $ContainerName -tenant $Tenant -installedOnly
+        }
+        $probeTestRunner = {
+            $state.RunPath = New-BcSharedTestRunDirectory -ContainerName $ContainerName
+            Invoke-BcTestRunnerPage -Operation Probe -ContainerName $ContainerName -Tenant $Tenant `
+                -Credential $Credential -SharedRunPath $state.RunPath | Out-Null
         }
 
-        $runPath = New-BcSharedTestRunDirectory -ContainerName $ContainerName
-        Invoke-BcTestRunnerPage -Operation Probe -ContainerName $ContainerName -Tenant $Tenant `
-            -Credential $Credential -SharedRunPath $runPath | Out-Null
-    } catch {
-        throw "Coverage preflight failed before app mutation: $($_.Exception.Message) Rebuild the golden image and retry."
+        Invoke-CoveragePreflightChecks -Contract $Contract `
+            -GetInstalledApps $getInstalledApps -ProbeTestRunner $probeTestRunner
     } finally {
-        if ($runPath -and (Test-Path -LiteralPath $runPath)) {
-            Remove-Item -LiteralPath $runPath -Recurse -Force -Confirm:$false
+        if ($state.RunPath -and (Test-Path -LiteralPath $state.RunPath)) {
+            Remove-Item -LiteralPath $state.RunPath -Recurse -Force -Confirm:$false
         }
     }
 }
@@ -448,6 +392,9 @@ function Get-JUnitResultEvidence {
     }
 
     $declaredTests = 0
+    $failures = 0
+    $errors = 0
+    $skipped = 0
     $testCases = [System.Collections.Generic.List[object]]::new()
     foreach ($suite in $suites) {
         $suiteTests = 0
@@ -455,7 +402,26 @@ function Get-JUnitResultEvidence {
             $suiteTests -lt 0) {
             return $null
         }
+
+        $suiteOutcomeCounts = @{}
+        foreach ($attributeName in @('failures', 'errors', 'skipped')) {
+            $attributeValue = $suite.GetAttribute($attributeName)
+            $count = 0
+            if ($attributeValue -and
+                (-not [int]::TryParse($attributeValue, [ref]$count) -or $count -lt 0)) {
+                return $null
+            }
+            $suiteOutcomeCounts[$attributeName] = $count
+        }
+        if (($suiteOutcomeCounts.failures + $suiteOutcomeCounts.errors +
+                $suiteOutcomeCounts.skipped) -gt $suiteTests) {
+            return $null
+        }
+
         $declaredTests += $suiteTests
+        $failures += $suiteOutcomeCounts.failures
+        $errors += $suiteOutcomeCounts.errors
+        $skipped += $suiteOutcomeCounts.skipped
         foreach ($testCase in @($suite.ChildNodes | Where-Object { $_.LocalName -eq 'testcase' })) {
             if ([string]::IsNullOrWhiteSpace($testCase.GetAttribute('name'))) {
                 return $null
@@ -468,9 +434,15 @@ function Get-JUnitResultEvidence {
         return $null
     }
 
+    $failedTests = $failures + $errors
+    $passedTests = $declaredTests - $failedTests - $skipped
     [pscustomobject]@{
         DeclaredTests = $declaredTests
         TestCaseCount = $testCases.Count
+        PassedTests = $passedTests
+        FailedTests = $failedTests
+        SkippedTests = $skipped
+        TestsPassed = ($failedTests -eq 0)
     }
 }
 
@@ -773,22 +745,41 @@ function Invoke-BcTestRunWithCoverage {
         -Credential $Credential -SharedRunPath $SharedRunPath -Enabled:$Coverage `
         -ExporterId $ExporterId
 
-    $testsPassed = & $RunTests
+    $runnerError = $null
+    try {
+        $null = & $RunTests
+    } catch {
+        $runnerError = $_
+    }
+
+    $junitEvidence = Get-JUnitResultEvidence -Path $JUnitPath
+    if (-not $junitEvidence) {
+        if ($runnerError) {
+            throw $runnerError
+        }
+        throw "Test run aborted because JUnit result '$JUnitPath' is missing or incomplete."
+    }
 
     $coveragePath = $null
     if ($Coverage) {
-        $junitEvidence = Get-JUnitResultEvidence -Path $JUnitPath
-        if (-not $junitEvidence) {
-            throw "Coverage collection aborted because JUnit result '$JUnitPath' is missing or incomplete."
-        }
         $coveragePath = Receive-BcTestCoverage -ContainerName $ContainerName -Tenant $Tenant `
             -Credential $Credential -SharedRunPath $SharedRunPath -TestAppName $TestAppName `
             -JUnitTestCount $junitEvidence.DeclaredTests
     }
 
+    $completionStatus = if ($junitEvidence.TestsPassed) {
+        'completed-green'
+    } else {
+        'completed-red'
+    }
     [pscustomobject]@{
-        TestsPassed = [bool]$testsPassed
+        CompletionStatus = $completionStatus
+        TestRunnerCompleted = $true
+        CollectorCompleted = [bool]$Coverage
+        TestsPassed = [bool]$junitEvidence.TestsPassed
+        JUnitEvidence = $junitEvidence
         CoveragePath = $coveragePath
+        PostCompletionRunnerError = $runnerError
     }
 }
 

@@ -5,6 +5,10 @@
   "appDir": "app",
   "testApps": ["test"],
 
+  "coverage": {
+    "enabled": false
+  },
+
   "warnAsError": false,
   "rulesetPath": "al.ruleset.json",
 

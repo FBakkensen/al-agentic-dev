@@ -269,7 +269,10 @@ function New-ClientContext {
             [switch]$FailUnitTest,
             [switch]$FailPreflight,
             [switch]$AbortContainerTest,
-            [switch]$FailRawPublication
+            [switch]$FailCollector,
+            [switch]$FailRawPublication,
+            [switch]$FailCoverageCleanup,
+            [switch]$ConfiguredCoverage
         )
 
         $root = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
@@ -303,7 +306,10 @@ function New-ClientContext {
             UnitTestOutcome    = if ($FailUnitTest) { 'failed' } else { 'passed' }
             FailPreflight      = [bool]$FailPreflight
             AbortContainerTest = [bool]$AbortContainerTest
+            FailCollector      = [bool]$FailCollector
             FailRawPublication = [bool]$FailRawPublication
+            FailCoverageCleanup = [bool]$FailCoverageCleanup
+            CoverageEnabled    = [bool]$ConfiguredCoverage
         } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $scenarioPath
 
         Copy-Item -LiteralPath (Join-Path $script:ScriptsDir 'test.ps1') `
@@ -375,6 +381,24 @@ function Show-BuildTimingHistory {
     Add-HarnessEvent -Name 'Show-BuildTimingHistory' -Data @{ Count = $Count }
 }
 
+function Remove-Item {
+    param(
+        [string]$LiteralPath,
+        [switch]$Recurse,
+        [switch]$Force,
+        [switch]$Confirm
+    )
+
+    $scenario = Get-HarnessScenario
+    $coverageRoot = Join-Path (Join-Path $scenario.RepoRoot '.output' 'TestResults') 'coverage'
+    if ($scenario.FailCoverageCleanup -and $LiteralPath -eq $coverageRoot) {
+        throw 'coverage cleanup failed boom'
+    }
+
+    Microsoft.PowerShell.Management\Remove-Item -LiteralPath $LiteralPath `
+        -Recurse:$Recurse -Force:$Force -Confirm:$Confirm -ErrorAction Stop
+}
+
 Export-ModuleMember -Function @(
     'Set-BuildEnvironment'
     'Write-BuildHeader'
@@ -385,6 +409,7 @@ Export-ModuleMember -Function @(
     'Get-BCCredential'
     'Save-BuildTimingEntry'
     'Show-BuildTimingHistory'
+    'Remove-Item'
 )
 '@ | Set-Content -LiteralPath (Join-Path $scriptsRoot 'common.psm1')
 
@@ -402,6 +427,7 @@ function Add-HarnessEvent {
 }
 
 function Get-BuildConfig {
+    param([hashtable]$Overrides = @{})
     $scenario = Get-HarnessScenario
     if ($scenario.ConfigThrows) {
         throw 'malformed config boom'
@@ -412,12 +438,35 @@ function Get-BuildConfig {
         UnitTestApp = $scenario.UnitTestApp
         UnitTestInitEvents = $false
         WarnAsError = $false
+        CoverageEnabled = if ($Overrides.ContainsKey('coverageEnabled')) {
+            [bool]$Overrides.coverageEnabled
+        } else {
+            [bool]$scenario.CoverageEnabled
+        }
         ContainerName = 'stub-container'
         ContainerUsername = 'admin'
         ContainerPassword = 'password'
         ContainerAuth = 'UserPassword'
         Tenant = 'default'
     }
+}
+
+function Resolve-CoverageEnabled {
+    param(
+        [pscustomobject]$Config,
+        [switch]$Coverage,
+        [switch]$UnitTestOnly
+    )
+    if ($Coverage -and $UnitTestOnly) {
+        throw '-Coverage cannot be combined with -UnitTestOnly.'
+    }
+    if ($UnitTestOnly) {
+        return $false
+    }
+    if ($Coverage) {
+        return $true
+    }
+    [bool]$Config.CoverageEnabled
 }
 
 function Get-RequiredRuntimeMajor {
@@ -527,11 +576,30 @@ function Invoke-ALTest {
     }
 
     if ($scenario.AbortContainerTest) {
+        $coverageRoot = Split-Path $CoverageStagingRoot -Parent
+        $partialRaw = Join-Path $CoverageStagingRoot 'partial.xml'
+        $partialPublished = Join-Path $coverageRoot 'raw'
+        $partialTemp = Join-Path $coverageRoot 'conversion.tmp'
+        New-Item -ItemType Directory -Path $partialPublished -Force | Out-Null
+        'partial' | Set-Content -LiteralPath $partialRaw
+        'partial' | Set-Content -LiteralPath (Join-Path $partialPublished 'partial.xml')
+        'partial' | Set-Content -LiteralPath $partialTemp
         throw 'container test aborted boom'
     }
 
     New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
     '<testsuite />' | Set-Content -LiteralPath (Join-Path $OutputDir 'last.xml')
+
+    if ($scenario.FailCollector) {
+        $coverageRoot = Split-Path $CoverageStagingRoot -Parent
+        $partialApp = Join-Path $CoverageStagingRoot (Split-Path $TestDir -Leaf)
+        $partialPublished = Join-Path $coverageRoot 'raw'
+        New-Item -ItemType Directory -Path $partialApp, $partialPublished -Force | Out-Null
+        'partial' | Set-Content -LiteralPath (Join-Path $partialApp 'payload-0001.xml')
+        'partial' | Set-Content -LiteralPath (Join-Path $partialPublished 'partial.xml')
+        'partial' | Set-Content -LiteralPath (Join-Path $coverageRoot 'collector.tmp')
+        throw 'collector failed boom'
+    }
 
     $passed = $scenario.TestOutcome -ne 'failed'
     [pscustomobject]@{
@@ -552,6 +620,7 @@ function Invoke-ALTest {
 
 Export-ModuleMember -Function @(
     'Get-BuildConfig'
+    'Resolve-CoverageEnabled'
     'Get-RequiredRuntimeMajor'
     'Invoke-ALBuild'
     'Get-CompileTargets'
@@ -613,6 +682,11 @@ function New-CoverageGateStaging {
 function Publish-CoverageGateStaging {
     param([string]$StagePath, [string]$BaseResultsPath, [string[]]$ExpectedTestApps)
     if ((Get-HarnessScenario).FailRawPublication) {
+        $coverageRoot = Join-Path $BaseResultsPath 'coverage'
+        $destination = Join-Path $coverageRoot 'raw'
+        New-Item -ItemType Directory -Path $destination -Force | Out-Null
+        'partial' | Set-Content -LiteralPath (Join-Path $destination 'partial.xml')
+        'partial' | Set-Content -LiteralPath (Join-Path $coverageRoot 'publication.tmp')
         throw 'raw publication failed boom'
     }
     $destination = Join-Path (Join-Path $BaseResultsPath 'coverage') 'raw'
@@ -691,6 +765,9 @@ function Write-BcCoverageArtifacts {
 
     $scenario = Get-HarnessScenario
     if ($scenario.NormalizerThrows) {
+        New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
+        'partial' | Set-Content -LiteralPath (Join-Path $OutputDirectory 'per-test.jsonl')
+        'partial' | Set-Content -LiteralPath (Join-Path $OutputDirectory 'cobertura.xml.tmp')
         throw 'normalizer failed'
     }
 
@@ -740,6 +817,34 @@ Export-ModuleMember -Function 'Write-BcCoverageArtifacts'
         param($Harness)
         New-Item -ItemType Directory -Path $Harness.BaseResultsPath -Force | Out-Null
         'stale' | Set-Content -LiteralPath (Join-Path $Harness.BaseResultsPath 'stale-marker.txt')
+    }
+
+    function Assert-CoverageSummaryArtifactConsistency {
+        param(
+            [Parameter(Mandatory)]
+            $Harness,
+
+            [Parameter(Mandatory)]
+            $Summary
+        )
+
+        $coverageRoot = Split-Path $Harness.PerTestPath -Parent
+        if ($Summary.coverage.complete) {
+            $Summary.coverage.status | Should -Be 'complete'
+            foreach ($propertyName in @('perTestJsonlPath', 'coberturaXmlPath')) {
+                $relativePath = [string]$Summary.coverage.$propertyName
+                $relativePath | Should -Not -BeNullOrEmpty
+                $artifactPath = Join-Path $Harness.Root ($relativePath -replace '/', '\')
+                Test-Path -LiteralPath $artifactPath -PathType Leaf | Should -BeTrue
+            }
+            (Get-ChildItem -LiteralPath $coverageRoot -Name | Sort-Object) |
+                Should -Be @('cobertura.xml', 'per-test.jsonl')
+            return
+        }
+
+        $Summary.coverage.PSObject.Properties.Name | Should -Not -Contain 'perTestJsonlPath'
+        $Summary.coverage.PSObject.Properties.Name | Should -Not -Contain 'coberturaXmlPath'
+        Test-Path -LiteralPath $coverageRoot | Should -BeFalse
     }
 
     function Invoke-TestPs1Harness {
@@ -968,6 +1073,10 @@ Describe 'JUnit completion evidence' {
 
         $evidence.DeclaredTests | Should -Be 2
         $evidence.TestCaseCount | Should -Be 2
+        $evidence.PassedTests | Should -Be 1
+        $evidence.FailedTests | Should -Be 1
+        $evidence.SkippedTests | Should -Be 0
+        $evidence.TestsPassed | Should -BeFalse
         Test-JUnitResultComplete -Path $path | Should -BeTrue
     }
 
@@ -1039,6 +1148,19 @@ Describe 'JUnit completion evidence' {
   </testsuite>
   <testsuite name="B" tests="1">
     <testcase name="B1" />
+  </testsuite>
+</testsuites>
+'@ | Set-Content -LiteralPath $path
+
+        Test-JUnitResultComplete -Path $path | Should -BeFalse
+    }
+
+    It 'rejects outcome totals that exceed the declared test count' {
+        $path = Join-Path $TestDrive 'invalid-outcome-counts.xml'
+        @'
+<testsuites>
+  <testsuite name="Tests" tests="1" failures="1" errors="1">
+    <testcase name="BrokenTest" />
   </testsuite>
 </testsuites>
 '@ | Set-Content -LiteralPath $path
@@ -1449,7 +1571,7 @@ Describe 'Coverage drain' {
 }
 
 Describe 'Shared runner semantics' {
-    It 'configures, runs once, then drains even when assertions fail' {
+    It 'classifies completed red from JUnit and drains even when the runner callback reports success' {
         $junitPath = Join-Path $TestDrive 'red.xml'
         $runPath = Join-Path $TestDrive 'red-run'
         New-Item -ItemType Directory -Path $runPath | Out-Null
@@ -1473,11 +1595,77 @@ Describe 'Shared runner semantics' {
                     $script:order.Add('runner')
                     '<testsuites><testsuite tests="1" failures="1"><testcase name="Fails" /></testsuite></testsuites>' |
                         Set-Content -LiteralPath $JUnitPath
+                    $true
+                }
+
+            $result.CompletionStatus | Should -Be 'completed-red'
+            $result.TestRunnerCompleted | Should -BeTrue
+            $result.CollectorCompleted | Should -BeTrue
+            $result.TestsPassed | Should -BeFalse
+            $result.JUnitEvidence.FailedTests | Should -Be 1
+            $result.PostCompletionRunnerError | Should -BeNullOrEmpty
+            $script:order | Should -Be @('configure', 'runner', 'drain')
+            Should -Invoke Receive-BcTestCoverage -Times 1 -Exactly
+        }
+    }
+
+    It 'drains and returns completed-red when the runner throws after writing complete red JUnit' {
+        $junitPath = Join-Path $TestDrive 'red-runner-error.xml'
+        $runPath = Join-Path $TestDrive 'red-runner-error-run'
+        New-Item -ItemType Directory -Path $runPath | Out-Null
+
+        InModuleScope coverage-runtime -Parameters @{
+            Credential = $script:Credential
+            JUnitPath = $junitPath
+            RunPath = $runPath
+        } {
+            param($Credential, $JUnitPath, $RunPath)
+            Mock Set-BcTestRunnerCoverageState {}
+            Mock Receive-BcTestCoverage { Join-Path $RunPath 'coverage' }
+
+            $result = Invoke-BcTestRunWithCoverage -ContainerName 'bc' -Tenant 'default' `
+                -Credential $Credential -SharedRunPath $RunPath -JUnitPath $JUnitPath `
+                -TestAppName 'tests' -Coverage -ExporterId 70999 -RunTests {
+                    '<testsuites><testsuite tests="1" failures="1"><testcase name="Fails" /></testsuite></testsuites>' |
+                        Set-Content -LiteralPath $JUnitPath
+                    throw 'runner transport closed after completion'
+                }
+
+            $result.CompletionStatus | Should -Be 'completed-red'
+            $result.TestRunnerCompleted | Should -BeTrue
+            $result.CollectorCompleted | Should -BeTrue
+            $result.PostCompletionRunnerError.Exception.Message |
+                Should -Be 'runner transport closed after completion'
+            Should -Invoke Receive-BcTestCoverage -Times 1 -Exactly
+        }
+    }
+
+    It 'classifies completed green from JUnit and collector evidence despite a false runner callback' {
+        $junitPath = Join-Path $TestDrive 'green.xml'
+        $runPath = Join-Path $TestDrive 'green-run'
+        New-Item -ItemType Directory -Path $runPath | Out-Null
+
+        InModuleScope coverage-runtime -Parameters @{
+            Credential = $script:Credential
+            JUnitPath = $junitPath
+            RunPath = $runPath
+        } {
+            param($Credential, $JUnitPath, $RunPath)
+            Mock Set-BcTestRunnerCoverageState {}
+            Mock Receive-BcTestCoverage { Join-Path $RunPath 'coverage' }
+
+            $result = Invoke-BcTestRunWithCoverage -ContainerName 'bc' -Tenant 'default' `
+                -Credential $Credential -SharedRunPath $RunPath -JUnitPath $JUnitPath `
+                -TestAppName 'tests' -Coverage -ExporterId 70999 -RunTests {
+                    '<testsuites><testsuite tests="1"><testcase name="Passes" /></testsuite></testsuites>' |
+                        Set-Content -LiteralPath $JUnitPath
                     $false
                 }
 
-            $result.TestsPassed | Should -BeFalse
-            $script:order | Should -Be @('configure', 'runner', 'drain')
+            $result.CompletionStatus | Should -Be 'completed-green'
+            $result.TestRunnerCompleted | Should -BeTrue
+            $result.CollectorCompleted | Should -BeTrue
+            $result.TestsPassed | Should -BeTrue
             Should -Invoke Receive-BcTestCoverage -Times 1 -Exactly
         }
     }
@@ -1506,7 +1694,7 @@ Describe 'Shared runner semantics' {
         }
     }
 
-    It 'rejects incomplete JUnit before draining' {
+    It 'preserves a runner error with incomplete JUnit and does not drain' {
         $junitPath = Join-Path $TestDrive 'incomplete.xml'
         $runPath = Join-Path $TestDrive 'incomplete-run'
         New-Item -ItemType Directory -Path $runPath | Out-Null
@@ -1526,14 +1714,41 @@ Describe 'Shared runner semantics' {
                     -TestAppName 'tests' -Coverage -ExporterId 70999 `
                     -RunTests {
                         '<testsuites><testsuite>' | Set-Content -LiteralPath $JUnitPath
-                        $false
+                        throw 'runner failed after partial JUnit'
                     }
-            } | Should -Throw '*missing or incomplete*'
+            } | Should -Throw '*runner failed after partial JUnit*'
             Should -Invoke Receive-BcTestCoverage -Times 0 -Exactly
         }
     }
 
-    It 'uses the same runner callback without a coverage drain when disabled' {
+    It 'treats collector failure as incomplete after a completed Test Runner result' {
+        $junitPath = Join-Path $TestDrive 'collector-failure.xml'
+        $runPath = Join-Path $TestDrive 'collector-failure-run'
+        New-Item -ItemType Directory -Path $runPath | Out-Null
+
+        InModuleScope coverage-runtime -Parameters @{
+            Credential = $script:Credential
+            JUnitPath = $junitPath
+            RunPath = $runPath
+        } {
+            param($Credential, $JUnitPath, $RunPath)
+            Mock Set-BcTestRunnerCoverageState {}
+            Mock Receive-BcTestCoverage { throw 'collector transport lost' }
+
+            {
+                Invoke-BcTestRunWithCoverage -ContainerName 'bc' -Tenant 'default' `
+                    -Credential $Credential -SharedRunPath $RunPath -JUnitPath $JUnitPath `
+                    -TestAppName 'tests' -Coverage -ExporterId 70999 -RunTests {
+                        '<testsuites><testsuite tests="1" failures="1"><testcase name="Fails" /></testsuite></testsuites>' |
+                            Set-Content -LiteralPath $JUnitPath
+                        $false
+                    }
+            } | Should -Throw '*collector transport lost*'
+            Should -Invoke Receive-BcTestCoverage -Times 1 -Exactly
+        }
+    }
+
+    It 'uses JUnit completion and verdict without a coverage drain when disabled' {
         $junitPath = Join-Path $TestDrive 'normal.xml'
         $runPath = Join-Path $TestDrive 'normal-run'
         New-Item -ItemType Directory -Path $runPath | Out-Null
@@ -1549,13 +1764,79 @@ Describe 'Shared runner semantics' {
 
             $result = Invoke-BcTestRunWithCoverage -ContainerName 'bc' -Tenant 'default' `
                 -Credential $Credential -SharedRunPath $RunPath -JUnitPath $JUnitPath `
-                -TestAppName 'tests' -RunTests { $true }
+                -TestAppName 'tests' -RunTests {
+                    '<testsuites><testsuite tests="1"><testcase name="Passes" /></testsuite></testsuites>' |
+                        Set-Content -LiteralPath $JUnitPath
+                    $false
+                }
 
+            $result.CompletionStatus | Should -Be 'completed-green'
+            $result.TestRunnerCompleted | Should -BeTrue
+            $result.CollectorCompleted | Should -BeFalse
             $result.TestsPassed | Should -BeTrue
             Should -Invoke Set-BcTestRunnerCoverageState -Times 1 -Exactly -ParameterFilter {
                 -not $Enabled
             }
             Should -Invoke Receive-BcTestCoverage -Times 0 -Exactly
+        }
+    }
+}
+
+Describe 'Explicit container completion contract' {
+    It 'classifies green and red from completion status instead of the legacy Boolean' {
+        InModuleScope build-operations {
+            $green = [pscustomobject]@{
+                CompletionStatus = 'completed-green'
+                TestRunnerCompleted = $true
+                CollectorCompleted = $true
+                TestsPassed = $false
+            }
+            $red = [pscustomobject]@{
+                CompletionStatus = 'completed-red'
+                TestRunnerCompleted = $true
+                CollectorCompleted = $true
+                TestsPassed = $true
+            }
+
+            Get-BcTestExecutionVerdict -Execution $green -TestAppName 'tests' -Coverage |
+                Should -BeTrue
+            Get-BcTestExecutionVerdict -Execution $red -TestAppName 'tests' -Coverage |
+                Should -BeFalse
+        }
+    }
+
+    It 'rejects missing Test Runner completion evidence' {
+        InModuleScope build-operations {
+            {
+                Get-BcTestExecutionVerdict -Execution ([pscustomobject]@{
+                    CompletionStatus = 'completed-green'
+                    CollectorCompleted = $true
+                }) -TestAppName 'tests' -Coverage
+            } | Should -Throw '*explicit Test Runner completion evidence*'
+        }
+    }
+
+    It 'rejects missing collector completion evidence when coverage is enabled' {
+        InModuleScope build-operations {
+            {
+                Get-BcTestExecutionVerdict -Execution ([pscustomobject]@{
+                    CompletionStatus = 'completed-red'
+                    TestRunnerCompleted = $true
+                    CollectorCompleted = $false
+                }) -TestAppName 'tests' -Coverage
+            } | Should -Throw '*explicit collector completion evidence*'
+        }
+    }
+
+    It 'rejects an unsupported completion status' {
+        InModuleScope build-operations {
+            {
+                Get-BcTestExecutionVerdict -Execution ([pscustomobject]@{
+                    CompletionStatus = 'aborted'
+                    TestRunnerCompleted = $true
+                    CollectorCompleted = $true
+                }) -TestAppName 'tests' -Coverage
+            } | Should -Throw "*unsupported completion status 'aborted'*"
         }
     }
 }
@@ -1574,7 +1855,7 @@ Describe 'Invoke-ALTest transport and failure preservation' {
         }
     }
 
-    It 'copies validated per-app coverage into hidden gate staging' {
+    It 'preserves completed-red JUnit and coverage using explicit completion evidence' {
         $testDir = Join-Path $TestDrive 'tests-a'
         $outputDir = Join-Path $TestDrive 'output-a'
         $stageRoot = Join-Path $TestDrive 'stage-a'
@@ -1628,24 +1909,37 @@ Describe 'Invoke-ALTest transport and failure preservation' {
             Mock New-BcSharedTestRunDirectory { $script:invokeSharedRun }
             Mock Get-BCCredential { $Credential }
             Mock Invoke-BcTestRunWithCoverage {
-                '<testsuites><testsuite tests="1" failures="0" /></testsuites>' |
+                '<testsuites><testsuite tests="1" failures="1"><testcase name="Fails" /></testsuite></testsuites>' |
                     Set-Content -LiteralPath $JUnitPath
                 [pscustomobject]@{
+                    CompletionStatus = 'completed-red'
+                    TestRunnerCompleted = $true
+                    CollectorCompleted = $true
                     TestsPassed = $true
                     CoveragePath = $script:invokeSharedCoverage
+                    PostCompletionRunnerError = [pscustomobject]@{
+                        Exception = [System.InvalidOperationException]::new(
+                            'runner transport closed after completion'
+                        )
+                    }
                 }
             }
 
             $result = Invoke-ALTest -TestDir $TestDir -OutputDir $OutputDir -Coverage `
                 -CoverageStagingRoot $StageRoot -CoverageContract $Contract
 
-            $result.Passed | Should -BeTrue
+            $result.Passed | Should -BeFalse
+            $result.Counts.testsFailed | Should -Be 1
             Test-Path -LiteralPath (Join-Path $StageRoot 'tests-a' 'manifest.json') |
                 Should -BeTrue
             Test-Path -LiteralPath (Join-Path $OutputDir 'last.xml') | Should -BeTrue
             Test-Path -LiteralPath $SharedRun | Should -BeFalse
             Should -Invoke Invoke-BcTestRunWithCoverage -Times 1 -Exactly -ParameterFilter {
                 $Coverage -and $ExporterId -eq 74075
+            }
+            Should -Invoke Write-BuildMessage -Times 1 -Exactly -ParameterFilter {
+                $Type -eq 'Warning' -and
+                $Message -like '*non-fatal error*runner transport closed after completion*'
             }
         }
     }
@@ -1748,7 +2042,13 @@ Describe 'Invoke-ALTest transport and failure preservation' {
             Mock Invoke-BcTestRunWithCoverage {
                 '<testsuites><testsuite tests="1"><testcase name="Pass" /></testsuite></testsuites>' |
                     Set-Content -LiteralPath $JUnitPath
-                [pscustomobject]@{ TestsPassed = $true; CoveragePath = $null }
+                [pscustomobject]@{
+                    CompletionStatus = 'completed-green'
+                    TestRunnerCompleted = $true
+                    CollectorCompleted = $false
+                    TestsPassed = $true
+                    CoveragePath = $null
+                }
             }
             Mock Copy-Item { throw 'JUnit copy failed' }
 
@@ -2024,6 +2324,91 @@ Describe 'test.ps1 coverage integration' {
         $firstMutation | Should -BeGreaterThan $preflight
     }
 
+    It 'runs enabled preflight before AL Runner or consumer app publication' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests') `
+            -UnitTestAppName 'unit-tests' -ConfiguredCoverage
+
+        $result = Invoke-TestPs1Harness $harness
+        $eventNames = @($result.Events | ForEach-Object { $_.Name })
+        $preflightIndex = [array]::IndexOf($eventNames, 'Test-BcCoveragePreflight')
+
+        $result.ExitCode | Should -Be 0
+        $preflightIndex | Should -BeGreaterThan ([array]::IndexOf($eventNames, 'Ensure-BCAgentContainer'))
+        $preflightIndex | Should -BeLessThan ([array]::IndexOf($eventNames, 'Invoke-ALRunnerTest'))
+        $preflightIndex | Should -BeLessThan ([array]::IndexOf($eventNames, 'Invoke-ALPublish'))
+    }
+
+    It 'stops a failed preflight before AL Runner, consumer publication, or container tests' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests') `
+            -UnitTestAppName 'unit-tests' -FailPreflight
+
+        $result = Invoke-TestPs1Harness $harness -Coverage
+        $eventNames = @($result.Events | ForEach-Object { $_.Name })
+        $summary = Get-Content -LiteralPath $harness.SummaryPath -Raw | ConvertFrom-Json
+
+        $result.ExitCode | Should -Not -Be 0
+        ($result.Output -join "`n") | Should -Match 'preflight failed boom'
+        [array]::IndexOf($eventNames, 'Test-BcCoveragePreflight') |
+            Should -BeGreaterThan ([array]::IndexOf($eventNames, 'Ensure-BCAgentContainer'))
+        $eventNames | Should -Not -Contain 'Invoke-ALRunnerTest'
+        $eventNames | Should -Not -Contain 'Invoke-ALPublish'
+        $eventNames | Should -Not -Contain 'Invoke-ALTest'
+        $summary.coverage.status | Should -Be 'not-run'
+        $summary.coverage.failure.stage | Should -Be 'coverage-preflight'
+        Assert-CoverageSummaryArtifactConsistency -Harness $harness -Summary $summary
+    }
+
+    It 'uses configured coverage for a full gate without the explicit switch' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests') -ConfiguredCoverage
+
+        $result = Invoke-TestPs1Harness $harness
+        $containerCall = $result.Events |
+            Where-Object Name -eq 'Invoke-ALTest' |
+            Select-Object -First 1
+        $summary = Get-Content -LiteralPath $harness.SummaryPath -Raw | ConvertFrom-Json
+
+        $result.ExitCode | Should -Be 0
+        $containerCall.Data.Coverage | Should -BeTrue
+        $summary.coverage.status | Should -Be 'complete'
+        $summary.coverage.complete | Should -BeTrue
+        Assert-CoverageSummaryArtifactConsistency -Harness $harness -Summary $summary
+    }
+
+    It 'ignores configured coverage for UnitTestOnly' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests') `
+            -UnitTestAppName 'unit-tests' -ConfiguredCoverage
+
+        $result = Invoke-TestPs1Harness $harness -UnitTestOnly
+        $eventNames = @($result.Events | ForEach-Object { $_.Name })
+        $summary = Get-Content -LiteralPath $harness.SummaryPath -Raw | ConvertFrom-Json
+
+        $result.ExitCode | Should -Be 0
+        $eventNames | Should -Not -Contain 'Ensure-BCAgentContainer'
+        $eventNames | Should -Not -Contain 'Test-BcCoveragePreflight'
+        $eventNames | Should -Not -Contain 'Invoke-ALTest'
+        $summary.coverage.status | Should -Be 'disabled'
+        Assert-CoverageSummaryArtifactConsistency -Harness $harness -Summary $summary
+    }
+
+    It 'rejects configured coverage with no test apps before compilation or tests' {
+        $harness = New-TestPs1Harness -TestAppNames @() -ConfiguredCoverage
+
+        $result = Invoke-TestPs1Harness $harness
+        $eventNames = @($result.Events | ForEach-Object { $_.Name })
+        $summary = Get-Content -LiteralPath $harness.SummaryPath -Raw | ConvertFrom-Json
+
+        $result.ExitCode | Should -Not -Be 0
+        ($result.Output -join "`n") | Should -Match 'Coverage requires at least one configured container test app'
+        $eventNames | Should -Not -Contain 'Invoke-ALBuild'
+        $eventNames | Should -Not -Contain 'Invoke-ALRunnerTest'
+        $eventNames | Should -Not -Contain 'Invoke-ALTest'
+        $summary.coverage.status | Should -Be 'not-run'
+        $summary.coverage.complete | Should -BeFalse
+        $summary.coverage.PSObject.Properties.Name | Should -Not -Contain 'perTestJsonlPath'
+        $summary.coverage.PSObject.Properties.Name | Should -Not -Contain 'coberturaXmlPath'
+        Assert-CoverageSummaryArtifactConsistency -Harness $harness -Summary $summary
+    }
+
     It 'passes both the container username and password to Get-BCCredential with no stray token' {
         $testScript = Get-Content -LiteralPath (Join-Path $script:ScriptsDir 'test.ps1') -Raw
         $testScript | Should -Match '(?m)^\s*\$coverageCredential = Get-BCCredential -Username \$config\.ContainerUsername -Password \$config\.ContainerPassword\s*$'
@@ -2139,9 +2524,10 @@ Describe 'test.ps1 coverage integration' {
         # (red) outcome; coverage completeness is independent of test verdict.
         $summary.gate | Should -Be 'full'
         ($summary.runs | Where-Object { $_.runner -eq 'container' }).passed | Should -Be $false
+        Assert-CoverageSummaryArtifactConsistency -Harness $harness -Summary $summary
     }
 
-    It 'writes a failed coverage summary, retains raw for diagnosis, and retains current-run JUnit after aggregation failure' {
+    It 'writes a failed coverage summary, removes incomplete coverage, and retains current-run JUnit after aggregation failure' {
         $harness = New-TestPs1Harness -TestAppNames @('container-tests') -ThrowNormalizer
 
         $result = Invoke-TestPs1Harness $harness -Coverage
@@ -2151,15 +2537,13 @@ Describe 'test.ps1 coverage integration' {
         ($result.Output -join "`n") | Should -Match 'normalizer failed'
         $eventNames | Should -Contain 'Publish-CoverageGateStaging'
         $eventNames | Should -Contain 'Write-BcCoverageArtifacts'
-        $eventNames | Should -Not -Contain 'Remove-CoverageGateStaging'
-
-        # The raw collection is retained for aggregation-failure diagnosis.
-        Test-Path -LiteralPath $harness.RawPath | Should -BeTrue
+        Test-Path -LiteralPath $harness.RawPath | Should -BeFalse
 
         # The normalizer threw before writing either artifact — no new (nor
         # stale, since startup cleanup wiped any prior run) file exists.
         Test-Path -LiteralPath $harness.PerTestPath | Should -BeFalse
         Test-Path -LiteralPath $harness.CoberturaPath | Should -BeFalse
+        Test-Path -LiteralPath (Split-Path $harness.RawPath -Parent) | Should -BeFalse
 
         # Current-run JUnit (the container test's last.xml) is untouched by
         # the downstream aggregation failure.
@@ -2170,13 +2554,32 @@ Describe 'test.ps1 coverage integration' {
         $summary = Get-Content -LiteralPath $harness.SummaryPath -Raw | ConvertFrom-Json
         $summary.coverage.status | Should -Be 'failed'
         $summary.coverage.complete | Should -BeFalse
+        $summary.coverage.PSObject.Properties.Name | Should -Not -Contain 'perTestJsonlPath'
+        $summary.coverage.PSObject.Properties.Name | Should -Not -Contain 'coberturaXmlPath'
         $summary.coverage.failure.stage | Should -Be 'coverage-aggregation'
         $summary.error.stage | Should -Be 'coverage-aggregation'
         $summary.error.message | Should -Match 'normalizer failed'
+        Assert-CoverageSummaryArtifactConsistency -Harness $harness -Summary $summary
     }
 }
 
 Describe 'test.ps1 startup cleanup' {
+    It 'clears stale final, raw, and temporary coverage artifacts on a disabled invocation' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests')
+        $coverageRoot = Split-Path $harness.RawPath -Parent
+        $rawTemp = Join-Path $coverageRoot 'raw-stale'
+        New-Item -ItemType Directory -Path $harness.RawPath, $rawTemp -Force | Out-Null
+        'stale' | Set-Content -LiteralPath (Join-Path $coverageRoot 'per-test.jsonl')
+        'stale' | Set-Content -LiteralPath (Join-Path $coverageRoot 'cobertura.xml')
+        'stale' | Set-Content -LiteralPath (Join-Path $harness.RawPath 'manifest.json')
+        'stale' | Set-Content -LiteralPath (Join-Path $rawTemp 'partial.xml')
+
+        $result = Invoke-TestPs1Harness $harness
+
+        $result.ExitCode | Should -Be 0
+        Test-Path -LiteralPath $coverageRoot | Should -BeFalse
+    }
+
     It 'removes a stale TestResults tree before a disabled (no -Coverage) run' {
         $harness = New-TestPs1Harness -TestAppNames @('container-tests')
         Add-StaleResultsMarker -Harness $harness
@@ -2279,6 +2682,7 @@ Describe 'test.ps1 coverage summary lifecycle' {
         $summary.coverage.enabled | Should -BeFalse
         $summary.coverage.status | Should -Be 'disabled'
         $summary.coverage.complete | Should -BeFalse
+        Assert-CoverageSummaryArtifactConsistency -Harness $harness -Summary $summary
     }
 
     It 'reports coverage not-run when an enabled run fails before container coverage execution (unit test failure)' {
@@ -2295,6 +2699,7 @@ Describe 'test.ps1 coverage summary lifecycle' {
         $summary.coverage.complete | Should -BeFalse
         $summary.coverage.failure.stage | Should -Not -BeNullOrEmpty
         $summary.coverage.failure.message | Should -Not -BeNullOrEmpty
+        Assert-CoverageSummaryArtifactConsistency -Harness $harness -Summary $summary
     }
 
     It 'reports coverage not-run when an enabled run fails before container coverage execution (build failure)' {
@@ -2309,6 +2714,7 @@ Describe 'test.ps1 coverage summary lifecycle' {
         $summary.coverage.failure.stage | Should -Be 'build'
         $summary.error.stage | Should -Be 'build'
         $summary.error.message | Should -Match 'build failed boom'
+        Assert-CoverageSummaryArtifactConsistency -Harness $harness -Summary $summary
     }
 
     It 'reports coverage aborted and leaves no final coverage artifacts when the selected container test run does not complete' {
@@ -2322,9 +2728,42 @@ Describe 'test.ps1 coverage summary lifecycle' {
         $summary.coverage.complete | Should -BeFalse
         $summary.coverage.failure.stage | Should -Not -BeNullOrEmpty
         $summary.error.message | Should -Match 'container test aborted boom'
-        Test-Path -LiteralPath $harness.RawPath | Should -BeFalse
-        Test-Path -LiteralPath $harness.PerTestPath | Should -BeFalse
-        Test-Path -LiteralPath $harness.CoberturaPath | Should -BeFalse
+        Assert-CoverageSummaryArtifactConsistency -Harness $harness -Summary $summary
+    }
+
+    It 'writes summary and timing while preserving the primary error when coverage cleanup fails' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests') `
+            -AbortContainerTest -FailCoverageCleanup
+
+        $result = Invoke-TestPs1Harness $harness -Coverage
+
+        $result.ExitCode | Should -Not -Be 0
+        ($result.Output -join "`n") | Should -Match 'container test aborted boom'
+        Test-Path -LiteralPath $harness.SummaryPath -PathType Leaf | Should -BeTrue
+        $summary = Get-Content -LiteralPath $harness.SummaryPath -Raw | ConvertFrom-Json
+        $summary.error.message | Should -Be 'container test aborted boom'
+        $summary.coverage.status | Should -Be 'aborted'
+        $summary.coverage.complete | Should -BeFalse
+        $summary.coverage.failure.message | Should -Match 'container test aborted boom'
+        $summary.coverage.failure.message | Should -Match 'coverage cleanup failed boom'
+        @($result.Events | Where-Object { $_.Name -eq 'Save-BuildTimingEntry' }).Count |
+            Should -Be 1
+    }
+
+    It 'reports a collector failure as aborted, retains JUnit, and deletes partial coverage' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests') -FailCollector
+
+        $result = Invoke-TestPs1Harness $harness -Coverage
+        $summary = Get-Content -LiteralPath $harness.SummaryPath -Raw | ConvertFrom-Json
+        $junitPath = Join-Path (Join-Path $harness.BaseResultsPath 'container-tests') 'last.xml'
+
+        $result.ExitCode | Should -Not -Be 0
+        ($result.Output -join "`n") | Should -Match 'collector failed boom'
+        $summary.coverage.status | Should -Be 'aborted'
+        $summary.coverage.complete | Should -BeFalse
+        $summary.coverage.failure.stage | Should -Be 'test-container-tests'
+        Test-Path -LiteralPath $junitPath -PathType Leaf | Should -BeTrue
+        Assert-CoverageSummaryArtifactConsistency -Harness $harness -Summary $summary
     }
 
     It 'reports coverage failed when collection (raw publication) fails after the container run completes' {
@@ -2339,6 +2778,9 @@ Describe 'test.ps1 coverage summary lifecycle' {
         $summary.coverage.failure.stage | Should -Be 'coverage-collection'
         $summary.error.stage | Should -Be 'coverage-collection'
         $summary.error.message | Should -Match 'raw publication failed boom'
+        $junitPath = Join-Path (Join-Path $harness.BaseResultsPath 'container-tests') 'last.xml'
+        Test-Path -LiteralPath $junitPath -PathType Leaf | Should -BeTrue
+        Assert-CoverageSummaryArtifactConsistency -Harness $harness -Summary $summary
     }
 
     It 'reports coverage complete for a fully green run and removes the raw collection' {
@@ -2363,6 +2805,7 @@ Describe 'test.ps1 coverage summary lifecycle' {
         Test-Path -LiteralPath $harness.RawPath | Should -BeFalse
         (Get-ChildItem -LiteralPath (Split-Path $harness.PerTestPath -Parent) -Name) |
             Sort-Object | Should -Be @('cobertura.xml', 'per-test.jsonl')
+        Assert-CoverageSummaryArtifactConsistency -Harness $harness -Summary $summary
     }
 
     It 'does not resurrect a stale complete coverage state from a previous run' {
@@ -2385,6 +2828,7 @@ Describe 'test.ps1 coverage summary lifecycle' {
         $summary = Get-Content -LiteralPath $harness.SummaryPath -Raw | ConvertFrom-Json
         $summary.coverage.status | Should -Be 'failed'
         $summary.coverage.complete | Should -BeFalse
+        Assert-CoverageSummaryArtifactConsistency -Harness $harness -Summary $summary
     }
 
     It 'leaves totals and per-runner run records unchanged in shape for a disabled run' {

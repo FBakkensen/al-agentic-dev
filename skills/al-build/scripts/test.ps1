@@ -192,18 +192,23 @@ function Show-RunnerTotals {
 # Load configuration — malformed config throws here, outside the gate's
 # try/finally, so no summary.json is written (startup cleanup already left
 # an empty TestResults tree).
-$config = Get-BuildConfig
+$configOverrides = @{}
+if ($Coverage) {
+    $configOverrides.coverageEnabled = $true
+} elseif ($UnitTestOnly) {
+    $configOverrides.coverageEnabled = $false
+}
+$config = Get-BuildConfig -Overrides $configOverrides
 Set-BuildEnvironment -Config $config
+$coverageEnabled = Resolve-CoverageEnabled -Config $config -Coverage:$Coverage -UnitTestOnly:$UnitTestOnly
 
 $testResults = @()
 $coverageContract = $null
 $coverageStagingRoot = $null
-$coveragePublished = -not $Coverage
 
 # Coverage lifecycle tracking — read only in the finally block below to
 # build summary.json's coverage object. Coverage-disabled runs never touch
 # any of these beyond their initial values.
-$coverageEnabled = [bool]$Coverage
 $coverageContainerTestEntered = $false
 $coverageContainerTestCompleted = $false
 $coverageComplete = $false
@@ -213,6 +218,7 @@ $coverageCoberturaRelPath = $null
 $coverageLineRate = $null
 $coverageLinesValid = $null
 $coverageLinesCovered = $null
+$coverageCleanupFailureMessage = $null
 
 # Gate metrics: outcome defaults to 'error' and is only upgraded at the
 # verdict points below — any throw (compile, publish, container) keeps it.
@@ -249,8 +255,8 @@ if ($UnitTestOnly -and -not $config.UnitTestApp) {
     exit 1
 }
 
-if ($Coverage -and $config.TestApps.Count -eq 0) {
-    throw '-Coverage requires at least one configured container test app.'
+if ($coverageEnabled -and $config.TestApps.Count -eq 0) {
+    throw 'Coverage requires at least one configured container test app.'
 }
 
 if ($config.UnitTestApp -and -not (Test-Path $config.UnitTestApp)) {
@@ -304,6 +310,22 @@ foreach ($target in (Get-CompileTargets -Config $config -UnitTestOnly:$UnitTestO
     Stop-Step "build-$($target.Role)-$dirName"
 }
 
+# Enabled coverage infrastructure is mandatory and is proven before any test
+# execution or consumer-app publication mutates the container.
+if ($coverageEnabled) {
+    Start-Step 'ensure-container'
+    Ensure-BCAgentContainer -ContainerName $config.ContainerName
+    Stop-Step 'ensure-container'
+
+    Start-Step 'coverage-preflight'
+    $coverageContract = Get-CoverageHelperContract
+    $coverageCredential = Get-BCCredential -Username $config.ContainerUsername -Password $config.ContainerPassword
+    Test-BcCoveragePreflight -ContainerName $config.ContainerName -Tenant $config.Tenant `
+        -Credential $coverageCredential -Contract $coverageContract
+    $coverageStagingRoot = New-CoverageGateStaging -BaseResultsPath $baseResultsPath
+    Stop-Step 'coverage-preflight'
+}
+
 # Step 3: AL Runner unit tests (fast gate, before container)
 if ($config.UnitTestApp) {
     $unitDirName = Split-Path $config.UnitTestApp -Leaf
@@ -342,20 +364,11 @@ if ($config.UnitTestApp) {
     Write-BuildMessage -Type Success -Message "AL Runner gate passed — proceeding to container tests"
 }
 
-# Step 4: Ensure agent container is running
-Start-Step 'ensure-container'
-Ensure-BCAgentContainer -ContainerName $config.ContainerName
-Stop-Step 'ensure-container'
-
-# Coverage preflight is read-only and must precede every consumer-app mutation.
-if ($Coverage) {
-    Start-Step 'coverage-preflight'
-    $coverageContract = Get-CoverageHelperContract
-    $coverageCredential = Get-BCCredential -Username $config.ContainerUsername -Password $config.ContainerPassword
-    Test-BcCoveragePreflight -ContainerName $config.ContainerName -Tenant $config.Tenant `
-        -Credential $coverageCredential -Contract $coverageContract
-    $coverageStagingRoot = New-CoverageGateStaging -BaseResultsPath $baseResultsPath
-    Stop-Step 'coverage-preflight'
+# Step 4: Disabled full gates still need the agent container before publication.
+if (-not $coverageEnabled) {
+    Start-Step 'ensure-container'
+    Ensure-BCAgentContainer -ContainerName $config.ContainerName
+    Stop-Step 'ensure-container'
 }
 
 # Step 5: Check if main app needs publish
@@ -411,12 +424,12 @@ Wait-BCAppsSynced -ContainerName $config.ContainerName -AppNames $publishedAppNa
 Stop-Step 'wait-apps-synced'
 
 # Step 8c: Run tests for each test app, now against committed metadata
-if ($Coverage) { $coverageContainerTestEntered = $true }
+if ($coverageEnabled) { $coverageContainerTestEntered = $true }
 foreach ($testAppDir in $config.TestApps) {
     $dirName = Split-Path $testAppDir -Leaf
     Start-Step "test-$dirName"
     $outputDir = Join-Path $baseResultsPath $dirName
-    $result = Invoke-ALTest -TestDir $testAppDir -OutputDir $outputDir -Coverage:$Coverage `
+    $result = Invoke-ALTest -TestDir $testAppDir -OutputDir $outputDir -Coverage:$coverageEnabled `
         -CoverageStagingRoot $coverageStagingRoot -CoverageContract $coverageContract
     $testResults += $result
     Stop-Step "test-$dirName"
@@ -424,14 +437,13 @@ foreach ($testAppDir in $config.TestApps) {
     # Emit JSONL run record
     Write-Host (ConvertTo-RunRecord $result | ConvertTo-Json -Compress -Depth 4)
 }
-if ($Coverage) { $coverageContainerTestCompleted = $true }
+if ($coverageEnabled) { $coverageContainerTestCompleted = $true }
 
-if ($Coverage) {
+if ($coverageEnabled) {
     Start-Step 'coverage-collection'
     $coverageApps = @($config.TestApps | ForEach-Object { Split-Path $_ -Leaf })
     $publishedCoveragePath = Publish-CoverageGateStaging -StagePath $coverageStagingRoot `
         -BaseResultsPath $baseResultsPath -ExpectedTestApps $coverageApps
-    $coveragePublished = $true
     Stop-Step 'coverage-collection'
 
     Start-Step 'coverage-aggregation'
@@ -440,8 +452,8 @@ if ($Coverage) {
     # are written together only after every app's coverage universe resolves
     # and cross-checks clean, so a thrown error here (an app's collection
     # folder is missing, or its universe conflicts with another app's) leaves
-    # neither artifact behind — the published raw collection stays in place
-    # for diagnosis (see the aggregation-failure branch in the finally block).
+    # neither artifact behind. The finally block removes every incomplete raw,
+    # temporary, or final coverage artifact while preserving test results.
     Import-Module (Join-Path $PSScriptRoot 'coverage-normalizer.psm1') -Force -DisableNameChecking
     $coverageOutputDirectory = Join-Path $baseResultsPath 'coverage'
     $coverageArtifacts = Write-BcCoverageArtifacts -RepoRoot $repoRoot -MainAppPath $config.AppDir `
@@ -455,14 +467,13 @@ if ($Coverage) {
     $coverageLinesCovered = $coverageArtifacts.LinesCovered
     $coveragePerTestJsonlRelPath = ConvertTo-RepoRelativePath -RepoRoot $repoRoot -Path $coverageArtifacts.PerTestPath
     $coverageCoberturaRelPath = ConvertTo-RepoRelativePath -RepoRoot $repoRoot -Path $coverageArtifacts.CoberturaPath
-    $coverageComplete = $true
-
     # Success: the published raw per-test payloads are no longer needed once
     # the aggregate JSONL/Cobertura exist — the final coverage directory
     # keeps only per-test.jsonl and cobertura.xml.
     if (Test-Path -LiteralPath $publishedCoveragePath) {
         Remove-Item -LiteralPath $publishedCoveragePath -Recurse -Force -Confirm:$false
     }
+    $coverageComplete = $true
     Stop-Step 'coverage-publication'
 }
 
@@ -492,9 +503,21 @@ $gateOutcome = 'passed'
     $script:LastErrorMessage = $_.Exception.Message
     throw
 } finally {
-    if ($Coverage -and -not $coveragePublished) {
-        Remove-CoverageGateStaging -StagePath $coverageStagingRoot `
-            -BaseResultsPath $baseResultsPath -RemovePublished
+    if ($coverageEnabled -and -not $coverageComplete) {
+        $coverageRoot = Join-Path $baseResultsPath 'coverage'
+        if (Test-Path -LiteralPath $coverageRoot) {
+            try {
+                Remove-Item -LiteralPath $coverageRoot -Recurse -Force -Confirm:$false
+            } catch {
+                $coverageCleanupFailureMessage =
+                    "Failed to remove incomplete coverage artifacts from '$coverageRoot': $($_.Exception.Message)"
+                try {
+                    Write-BuildMessage -Type Warning -Message $coverageCleanupFailureMessage
+                } catch {
+                    # Summary and the active primary failure remain authoritative.
+                }
+            }
+        }
     }
 
     # One timing entry per gate, on every exit path: pass, fail, and throw.
@@ -544,6 +567,9 @@ $gateOutcome = 'passed'
         $message = if ($coverageFailureMessage) { $coverageFailureMessage }
             elseif ($script:LastErrorMessage) { $script:LastErrorMessage }
             else { 'Container coverage run did not complete.' }
+        if ($coverageCleanupFailureMessage) {
+            $message = "$message Cleanup failure: $coverageCleanupFailureMessage"
+        }
         $coverageBlock = [ordered]@{
             schemaVersion = 1
             enabled       = $true
@@ -557,6 +583,9 @@ $gateOutcome = 'passed'
         $message = if ($coverageFailureMessage) { $coverageFailureMessage }
             elseif ($script:LastErrorMessage) { $script:LastErrorMessage }
             else { "Gate stopped before container coverage execution (stage: $stage)." }
+        if ($coverageCleanupFailureMessage) {
+            $message = "$message Cleanup failure: $coverageCleanupFailureMessage"
+        }
         $coverageBlock = [ordered]@{
             schemaVersion = 1
             enabled       = $true
@@ -571,6 +600,9 @@ $gateOutcome = 'passed'
         $message = if ($coverageFailureMessage) { $coverageFailureMessage }
             elseif ($script:LastErrorMessage) { $script:LastErrorMessage }
             else { 'Coverage collection, aggregation, or publication failed.' }
+        if ($coverageCleanupFailureMessage) {
+            $message = "$message Cleanup failure: $coverageCleanupFailureMessage"
+        }
         $coverageBlock = [ordered]@{
             schemaVersion = 1
             enabled       = $true
