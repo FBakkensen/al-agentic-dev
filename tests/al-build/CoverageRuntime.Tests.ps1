@@ -463,6 +463,9 @@ function Resolve-CoverageEnabled {
     if ($UnitTestOnly) {
         return $false
     }
+    if (@($Config.TestApps).Count -eq 0) {
+        return $false
+    }
     if ($Coverage) {
         return $true
     }
@@ -2390,22 +2393,27 @@ Describe 'test.ps1 coverage integration' {
         Assert-CoverageSummaryArtifactConsistency -Harness $harness -Summary $summary
     }
 
-    It 'rejects configured coverage with no test apps before compilation or tests' {
-        $harness = New-TestPs1Harness -TestAppNames @() -ConfiguredCoverage
+    It 'skips coverage with no test apps and completes the compile-only gate' -TestCases @(
+        @{ ConfiguredCoverage = $true; ExplicitCoverage = $false }
+        @{ ConfiguredCoverage = $false; ExplicitCoverage = $true }
+    ) {
+        param($ConfiguredCoverage, $ExplicitCoverage)
 
-        $result = Invoke-TestPs1Harness $harness
+        $harness = New-TestPs1Harness -TestAppNames @() `
+            -ConfiguredCoverage:$ConfiguredCoverage
+        $result = Invoke-TestPs1Harness $harness -Coverage:$ExplicitCoverage
         $eventNames = @($result.Events | ForEach-Object { $_.Name })
         $summary = Get-Content -LiteralPath $harness.SummaryPath -Raw | ConvertFrom-Json
 
-        $result.ExitCode | Should -Not -Be 0
-        ($result.Output -join "`n") | Should -Match 'Coverage requires at least one configured container test app'
-        $eventNames | Should -Not -Contain 'Invoke-ALBuild'
+        $result.ExitCode | Should -Be 0
+        $eventNames | Should -Contain 'Invoke-ALBuild'
+        $eventNames | Should -Not -Contain 'Ensure-BCAgentContainer'
+        $eventNames | Should -Not -Contain 'Test-BcCoveragePreflight'
         $eventNames | Should -Not -Contain 'Invoke-ALRunnerTest'
         $eventNames | Should -Not -Contain 'Invoke-ALTest'
-        $summary.coverage.status | Should -Be 'not-run'
+        $summary.coverage.enabled | Should -BeFalse
+        $summary.coverage.status | Should -Be 'disabled'
         $summary.coverage.complete | Should -BeFalse
-        $summary.coverage.PSObject.Properties.Name | Should -Not -Contain 'perTestJsonlPath'
-        $summary.coverage.PSObject.Properties.Name | Should -Not -Contain 'coberturaXmlPath'
         Assert-CoverageSummaryArtifactConsistency -Harness $harness -Summary $summary
     }
 

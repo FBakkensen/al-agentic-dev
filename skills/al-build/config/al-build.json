@@ -6,7 +6,7 @@
   "testApps": ["test"],
 
   "coverage": {
-    "enabled": false
+    "enabled": true
   },
 
   "warnAsError": false,
