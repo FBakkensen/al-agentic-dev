@@ -15,12 +15,14 @@ BeforeAll {
             [string]$RepoRoot,
 
             [AllowNull()]
-            [Nullable[bool]]$Enabled
+            [Nullable[bool]]$Enabled,
+
+            [string[]]$TestApps = @('test')
         )
 
         $config = [ordered]@{
             appDir   = 'app'
-            testApps = @('test')
+            testApps = @($TestApps)
         }
         if ($null -ne $Enabled) {
             $config.coverage = @{ enabled = [bool]$Enabled }
@@ -34,10 +36,12 @@ BeforeAll {
             [Nullable[bool]]$JsonEnabled,
             [AllowNull()]
             [object]$EnvironmentValue,
+            [string[]]$TestApps = @('test'),
             [hashtable]$Overrides = @{}
         )
 
-        Set-CoverageConfig -RepoRoot $global:CoverageConfigRepoRoot -Enabled $JsonEnabled
+        Set-CoverageConfig -RepoRoot $global:CoverageConfigRepoRoot -Enabled $JsonEnabled `
+            -TestApps $TestApps
         if ($null -eq $EnvironmentValue) {
             Remove-Item Env:\ALBT_COVERAGE_ENABLED -ErrorAction SilentlyContinue
         } else {
@@ -68,10 +72,10 @@ Describe 'coverage configuration' {
         Remove-Variable CoverageConfigRepoRoot -Scope Global -ErrorAction SilentlyContinue
     }
 
-    It 'ships coverage disabled by default' {
+    It 'enables coverage in the new-project template' {
         $defaultConfig = Get-Content -LiteralPath $script:DefaultConfigPath -Raw | ConvertFrom-Json
 
-        $defaultConfig.coverage.enabled | Should -BeFalse
+        $defaultConfig.coverage.enabled | Should -BeTrue
     }
 
     It 'uses false when the repo JSON omits coverage and no higher layer exists' {
@@ -115,6 +119,32 @@ Describe 'coverage configuration' {
         $config = Get-CoverageConfig -JsonEnabled $false -EnvironmentValue 'false'
 
         Resolve-CoverageEnabled -Config $config -Coverage | Should -BeTrue
+    }
+
+    It 'skips coverage from JSON, environment, and overrides when testApps is empty' -TestCases @(
+        @{ JsonEnabled = $true; EnvironmentValue = $null; Overrides = @{} }
+        @{ JsonEnabled = $false; EnvironmentValue = 'true'; Overrides = @{} }
+        @{ JsonEnabled = $false; EnvironmentValue = 'false'; Overrides = @{ coverageEnabled = $true } }
+    ) {
+        param($JsonEnabled, $EnvironmentValue, $Overrides)
+
+        $config = Get-CoverageConfig -JsonEnabled $JsonEnabled -EnvironmentValue $EnvironmentValue `
+            -TestApps @() -Overrides $Overrides
+
+        $config.CoverageEnabled | Should -BeFalse
+        Resolve-CoverageEnabled -Config $config | Should -BeFalse
+    }
+
+    It 'does not parse environment coverage when testApps is empty' {
+        $config = Get-CoverageConfig -JsonEnabled $true -EnvironmentValue 'invalid' -TestApps @()
+
+        $config.CoverageEnabled | Should -BeFalse
+    }
+
+    It 'skips explicit coverage when testApps is empty' {
+        $config = Get-CoverageConfig -JsonEnabled $false -EnvironmentValue $null -TestApps @()
+
+        Resolve-CoverageEnabled -Config $config -Coverage | Should -BeFalse
     }
 
     It 'does not parse lower-precedence environment coverage when explicit coverage is present' {

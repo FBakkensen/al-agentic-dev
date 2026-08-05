@@ -20,6 +20,10 @@
     (the analyzer gate runs over the whole solution) and run AL Runner unit tests.
     Skips container publish and container tests entirely.
 
+    Coverage can be enabled by configuration, ALBT_COVERAGE_ENABLED, or -Coverage.
+    It is mandatory for configured container test apps and skipped when testApps
+    is empty.
+
 .PARAMETER Force
     Force republish even if apps are unchanged.
 
@@ -29,6 +33,7 @@
 
 .PARAMETER Coverage
     Collect complete per-test raw coverage for every configured container test app.
+    Ignored when testApps is empty. Cannot be combined with -UnitTestOnly.
 
 .EXAMPLE
     pwsh -File test.ps1
@@ -245,18 +250,13 @@ $requiredRuntimeMajor = Get-RequiredRuntimeMajor -Config $config
 
 try {
 
-# Validate -UnitTestOnly requires unitTestApp, coverage requires at least one
-# configured container test app, and unitTestApp path — after valid config
-# resolution, so every exit from here on (including these validation
-# failures) leaves a current summary.json.
+# Validate -UnitTestOnly requires unitTestApp and the configured unitTestApp
+# path after valid config resolution, so every exit from here on leaves a
+# current summary.json.
 Start-Step 'validate-config'
 if ($UnitTestOnly -and -not $config.UnitTestApp) {
     Write-BuildMessage -Type Error -Message "unitTestApp not configured in al-build.json. Cannot run -UnitTestOnly."
     exit 1
-}
-
-if ($coverageEnabled -and $config.TestApps.Count -eq 0) {
-    throw 'Coverage requires at least one configured container test app.'
 }
 
 if ($config.UnitTestApp -and -not (Test-Path $config.UnitTestApp)) {

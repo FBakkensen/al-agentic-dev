@@ -28,7 +28,8 @@ function Get-BuildConfig {
     .SYNOPSIS
         Load build configuration with three-tier resolution
     .DESCRIPTION
-        Priority: 1. Parameter overrides → 2. Environment variables → 3. Config file defaults
+        Priority: 1. Parameter overrides → 2. Environment variables → 3. Config file defaults.
+        Coverage uses false when omitted and is disabled without configured testApps.
     .PARAMETER Overrides
         Hashtable of parameter overrides
     .OUTPUTS
@@ -188,7 +189,11 @@ function Get-BuildConfig {
         Tenant                              = Resolve-Value 'tenant' 'ALBT_BC_TENANT' 'default'
         ValidateCurrent                     = Resolve-Value 'validateCurrent' 'ALBT_VALIDATE_CURRENT' '1'
         ApplicationInsightsConnectionString = Resolve-Value 'applicationInsightsConnectionString' 'ALBT_APPLICATION_INSIGHTS_CONNECTION_STRING' ''
-        CoverageEnabled                     = ConvertTo-Boolean (Resolve-CoverageValue 'enabled' 'coverageEnabled' 'ALBT_COVERAGE_ENABLED' $false)
+        CoverageEnabled                     = if ($testApps.Count -eq 0) {
+            $false
+        } else {
+            ConvertTo-Boolean (Resolve-CoverageValue 'enabled' 'coverageEnabled' 'ALBT_COVERAGE_ENABLED' $false)
+        }
         BreakingChangeEnabled               = ConvertTo-Boolean (Resolve-BreakingChangeValue 'enabled' 'ALBT_BREAKING_CHANGE_ENABLED' $false)
         BaselinePackageCachePath            = Resolve-BreakingChangeValue 'baselinePackageCachePath' 'ALBT_BASELINE_CACHE_PATH' '.output/baseline-cache'
     }
@@ -201,8 +206,9 @@ function Resolve-CoverageEnabled {
     .SYNOPSIS
         Resolve effective coverage at the test invocation boundary.
     .DESCRIPTION
-        An explicit -Coverage enable wins over configured coverage. Unit-only
-        runs ignore configured coverage but reject the explicit contradiction.
+        Unit-only runs ignore configured coverage but reject explicit -Coverage.
+        Runs without configured testApps skip coverage from every source.
+        Otherwise explicit -Coverage wins over configured coverage.
     #>
     [CmdletBinding()]
     param(
@@ -218,6 +224,9 @@ function Resolve-CoverageEnabled {
         throw '-Coverage cannot be combined with -UnitTestOnly.'
     }
     if ($UnitTestOnly) {
+        return $false
+    }
+    if (@($Config.TestApps).Count -eq 0) {
         return $false
     }
     if ($Coverage) {
