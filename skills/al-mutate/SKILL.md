@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # al-mutate
 
-A suite that passes a broken program proves nothing. Break the program on purpose, one site at a time, and see whether the tests notice. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+A suite that passes a broken program proves nothing. Break the program on purpose, one site at a time, and see whether the tests notice. Your first line names that a standard-class model serves this run — the survivor-kill tests are its only new AL. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 ## Before the first mutation
 

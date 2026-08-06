@@ -19,9 +19,10 @@ depends_on: [T-004]  # hard edges onto the tasks this one must follow
 status: open | done  # the only two written states
 phase: refined | implemented | refactored | mutated   # technical stamps; on a verify task planned | page-scripted; on the provision task provisioned | bcapps-cloned
 review: clean        # the review gate's stamp
+tier: mechanical | standard | frontier   # the weakest model class the task's remaining work needs
 ```
 
-Creation writes the structural fields plus `status: open` and no `phase:` — `/al-scope` at scoping, or the skill that finds new work mid-pipeline, naming the edges its find must wait on. A finder task takes a free `NNN` below the slice's verify task where one exists, so the verify task stays the slice's tail; a backend-only slice appends at the tail. The breaking-change task never carries `phase:`. Every later write is a stamp this skill makes when a run's outcome arrives.
+Creation writes the structural fields plus `status: open` and no `phase:` — `/al-scope` at scoping, or the skill that finds new work mid-pipeline, naming the edges its find must wait on. `/al-scope` also stamps `tier:` at creation; a finder's task omits it — recording is any model's work, sizing is not. A finder task takes a free `NNN` below the slice's verify task where one exists, so the verify task stays the slice's tail; a backend-only slice appends at the tail. The breaking-change task never carries `phase:`. Every later write is a stamp this skill makes when a run's outcome arrives.
 
 ## Derived, never written
 
@@ -52,7 +53,7 @@ One edit per stamped outcome, committed as it lands under the owning task's `T-N
 
 | The reported outcome | Stamp |
 |---|---|
-| `/al-refine` wrote the proof | `phase: refined` (technical) / `phase: planned` (verify) |
+| `/al-refine` wrote the proof | `phase: refined` (technical) / `phase: planned` (verify); `tier:` re-stamped to the class its report names for the remaining work |
 | `/al-implement` reached green outside a repair episode | `phase: implemented` |
 | `/al-refactor` closed its pass — reshape landed, or every dimension came back clean | `phase: refactored` |
 | `/al-mutate` closed its pass | `phase: mutated` and `status: done` |
@@ -78,6 +79,6 @@ After recording — stamp or no stamp — a dirty tree is put to the user: summa
 
 ## Present the moves
 
-After recording a report — or when `/al-next` asks — one line per runnable task: its `task:` id, the skill the ladder names, and what opened it, in the feature's own object and field vocabulary. A firing gate (`/al-code-review`, `/al-sync-main`) is presented as a move the same way. Several open → id order, naming which unblocks the most. None → the one edge or gate that must settle, and who settles it. A repair-episode report skips the move list — its own path continues.
+After recording a report — or when `/al-next` asks — one line per runnable task: its `task:` id, the skill the ladder names, the model class the move wants, and what opened it, in the feature's own object and field vocabulary. A move's class is the task's `tier:`, raised to standard for `/al-refine`, `/al-refactor`, `/al-mutate`, `/al-code-review`, and `/al-user-verification`; untiered, `/al-refine` presents at frontier — triage is replanning — and any other move at standard. A firing gate (`/al-code-review`, `/al-sync-main`) is presented as a move the same way. Several open → id order, naming which unblocks the most. None → the one edge or gate that must settle, and who settles it. A repair-episode report skips the move list — its own path continues.
 
 Close on the state recorded and the moves named; the session continues in the caller's flow.

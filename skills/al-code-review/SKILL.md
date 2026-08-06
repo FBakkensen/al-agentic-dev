@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # /al-code-review — the review gate
 
-Code still in flight belongs to `/al-implement`; this gate reviews what has landed. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+Code still in flight belongs to `/al-implement`; this gate reviews what has landed. Your first line names that this run wants a standard-class model or above — the user picked the model and weighs the mismatch. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 ## Baseline
 
