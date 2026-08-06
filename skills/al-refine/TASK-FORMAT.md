@@ -12,7 +12,8 @@ Skills parse these shapes, so field names and structure are exact.
 4. Sections appear in the order the table below declares.
 5. A case header carries the handle other sections reference: the AL test procedure name in `AAA Cases`, which `Covered By` cells name; the ID plus a short name in the verify sections, which `Closeout:` and `Partial-run record:` name.
 6. Inside a case, `Scope:` comes first, then the remaining scalar fields, then the bullet blocks in execution order.
-7. `; ` separates multiple values in a field. Rationale that needs writing down lands in `Contract notes:`, never as an inline comment. A `Contract notes:` bullet may carry a lede naming its kind: `Researched:` for a grounding citation, `Precedent:` for a `.bcapps/` verdict.
+7. `; ` separates multiple values in a field. Rationale that needs writing down lands in `Contract notes:`, never as an inline comment. A `Contract notes:` bullet is one sentence — a decision, a grounded fact, a push-up justification, or an accepted-survivor ruling; what happened during a run belongs in the commit message, never here.
+8. A `Contract notes:` bullet carries a glyphed lede naming its kind, the emoji between the dash and the lede so the lede stays greppable: `- 🔎 Researched:` a grounding citation, `- 🏛️ Precedent:` a `.bcapps/` verdict, `- ⬆️ Push-up` a layer justification, `- ✅ Accepted:` a survivor ruling. A bullet of no listed kind stays plain; an emoji outside these slots stays out.
 
 ## Section order
 
@@ -52,7 +53,7 @@ One coverage table per technical task, and `Covered By` holds AL test procedure 
 
 ## Language
 
-Write the body in the reader's language: project domain terms from `CONTEXT.md` first, BC display labels second, exact AL object, field, page, procedure, event, and API names only where traceability or ambiguity demands them. `New and Modified Objects` is the deliberate exception — exact names and signatures are its whole content. Where `event-model.md` exists, a `Verification Plan` speaks its Role, Action, Business Event, View, and Status vocabulary.
+Write the body in the reader's language: project domain terms from `CONTEXT.md` first, BC display labels second, exact AL object, field, page, procedure, event, and API names only where traceability or ambiguity demands them. In prose slots, show the thing — the page, the field, the command, the number — one sentence per fact. `New and Modified Objects` is the deliberate exception — exact names and signatures are its whole content. Where `event-model.md` exists, a `Verification Plan` speaks its Role, Action, Business Event, View, and Status vocabulary.
 
 Both examples below show a task after `/al-refine` has filled the body; frontmatter is `/al-routing`'s schema and omitted here.
 
@@ -74,8 +75,9 @@ Test Specification:
 
 Contract notes:
 - Zero Integration cases — the policy decides from parameters alone; T-005 proves the wiring.
-- Researched: `Vendor."Lead Time Calculation"` is a DateFormula, not an Integer → Learn al-vendor-table.
-- Precedent: none in System App / apps — no shipped policy measures receipt dates against a per-Vendor tolerance.
+- 🔎 Researched: `Vendor."Lead Time Calculation"` is a DateFormula, not an Integer → Learn al-vendor-table.
+- 🏛️ Precedent: none in System App / apps — no shipped policy measures receipt dates against a per-Vendor tolerance.
+- ✅ Accepted: the `ToleranceDays < 0` guard mutant is equivalent — `Validate` blocks negatives upstream (user ruling).
 
 ## Decision Matrix
 
@@ -133,7 +135,7 @@ naming the line and its overdue days while release still completes.
 Verification Plan:
 
 Contract notes:
-- Push-up `V2` `Record: yes` — the warning renders in a notification no AL test layer observes.
+- ⬆️ Push-up `V2` `Record: yes` — the warning renders in a notification no AL test layer observes.
 
 ## Journey Examples
 

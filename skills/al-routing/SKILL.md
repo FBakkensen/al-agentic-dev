@@ -17,7 +17,7 @@ kind: technical | verify | provision | breaking-change
 slice: <slug>        # an event-model.md timeline step or architecture.md slice; ops tasks sit on the reserved slugs provision / breaking-change
 depends_on: [T-004]  # hard edges onto the tasks this one must follow
 status: open | done  # the only two written states
-phase: refined | implemented | refactored | mutated   # technical stamps; on a verify task planned | page-scripted; on the provision task provisioned | bcapps-cloned
+phase: refined | implemented | refactored | mutated | planned | page-scripted | provisioned | bcapps-cloned   # first four technical, then verify, then provision
 review: clean        # the review gate's stamp
 tier: mechanical | standard | frontier   # the weakest model class the task's remaining work needs
 ```

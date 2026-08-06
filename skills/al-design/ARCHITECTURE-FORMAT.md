@@ -1,6 +1,6 @@
 # architecture.md
 
-One file per feature, in the feature's spec folder next to `event-model.md` and the `tasks/` folder. Agent-facing: declarative, present tense, text only with relationships named in prose — no diagram fences, no workflow narration, no history; the story of how the design got here belongs in the commit message.
+One file per feature, in the feature's spec folder next to `event-model.md` and the `tasks/` folder. Agent-facing: declarative, present tense, text only with relationships named in prose — one sentence per fact, showing the object, the field, the event; no diagram fences, no workflow narration, no history; the story of how the design got here belongs in the commit message.
 
 ## Section order
 

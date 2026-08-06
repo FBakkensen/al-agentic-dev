@@ -17,11 +17,13 @@ The review re-derives the rules rather than trusting citations: narrow `.bcquali
 
 ## Findings and disposition
 
-Three classes; each finding is one line — what, where, the source that convicts it:
+Three classes, each finding a glyphed headline over three slots of one line each — `⚡ Breaks:` what goes wrong, `📍 Proof:` the source that convicts it, `🔧 Fix:` the change that clears it:
 
-- **Blocking** — the artifact states something false or unproven: a coverage gap, a name that resolves to nothing, a verdict its source contradicts. The caller lands every blocking finding in the artifact, then one re-review; a finding still standing after that is named in the caller's close with the disagreement, one line each.
-- **Advisory** — worth knowing, not worth holding the close. Rides in the caller's close, one line each.
-- **Contradiction** — the evidence contradicts a decision the user settled. The caller cannot land it: it reopens the decision, not the artifact. The caller puts it to the user as one question before anything commits; this is the only class that reaches the user. The answer lands as the revised locked constraint: upheld, the close proceeds; overturned, the caller lands the rewrite and it joins the blocking fixes in the one re-review.
+- **⛔ Blocking** — the artifact states something false or unproven: a coverage gap, a name that resolves to nothing, a verdict its source contradicts. The caller lands every blocking finding in the artifact, then one re-review; a finding still standing after that is named in the caller's close with the disagreement, one line each.
+- **⚠️ Advisory** — worth knowing, not worth holding the close. Rides in the caller's close, one line each.
+- **⚖️ Contradiction** — the evidence contradicts a decision the user settled. The caller cannot land it: it reopens the decision, not the artifact. The caller puts it to the user as one question before anything commits; this is the only class that reaches the user. The answer lands as the revised locked constraint: upheld, the close proceeds; overturned, the caller lands the rewrite and it joins the blocking fixes in the one re-review.
+
+Two mechanical checks ride every artifact read: a `Contract notes:` bullet past one sentence, and run narration in a prose slot — each an advisory finding naming the bullet.
 
 ## Dimensions per artifact
 
