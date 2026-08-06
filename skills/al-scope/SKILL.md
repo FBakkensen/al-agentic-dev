@@ -34,7 +34,7 @@ A task file is frontmatter, an H1 title, then a description paragraph — that i
 
 ## Frontmatter
 
-Load `/al-routing` — it owns the task-state schema. Your write sets the structural fields it declares — `task:`, `kind:`, `slice:`, `depends_on:` — and opens every task per that schema, stamping each task's tier — mechanical, standard, or frontier, the weakest model class its remaining work needs; the ops brackets take mechanical, their work is scripted. The lifecycle stamps arrive later and are `/al-routing`'s writes, never yours.
+Load `/al-routing` — it owns the task-state schema. Your write sets the structural fields it declares — `task:`, `kind:`, `slice:`, `depends_on:` — and opens every task per that schema, stamping each task's tier as that schema defines it; the ops brackets take mechanical, their work is scripted. The lifecycle stamps arrive later and are `/al-routing`'s writes, never yours.
 
 ## Slices, order, brackets
 
