@@ -9,7 +9,7 @@ Read the state, name the move, stop. This skill writes no file. Ask every questi
 
 ## No tasks folder yet
 
-The entry chain runs in one session: `/al-grill-adr` → `/al-event-model` (backend-only skips it) → `/al-design` → `/al-scope`. Landing here is a resumed session — name the step after the last artifact present:
+The entry chain runs in one session: `/al-grill-adr` → `/al-event-model` (backend-only skips it) → `/al-design` → `/al-scope`. Landing here is a resumed session — name the step after the last artifact present; every entry-chain move wants a frontier-class model, so say so beside it:
 
 - No `CONTEXT.md` at the repo root → `/al-grill-adr`.
 - `CONTEXT.md` present, no `event-model.md` → `/al-event-model` — or `/al-design` once the user confirms backend-only (no human, no API consumer). New vocabulary in this feature reopens `/al-grill-adr` first.

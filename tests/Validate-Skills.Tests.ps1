@@ -492,6 +492,7 @@ Describe 'Validate-Skills state-home checks' {
         @{ Case = 'phase'; Body = 'Stamp `phase: refined` on the task.'; Expected = "phase:" }
         @{ Case = 'blocked-on'; Body = 'Write blocked-on: with the reason.'; Expected = "blocked-on:" }
         @{ Case = 'review'; Body = 'Add `review: clean` to the last task.'; Expected = "review:" }
+        @{ Case = 'tier'; Body = 'Stamp `tier: frontier` on the task.'; Expected = "tier:" }
     ) {
         param($Case, $Body, $Expected)
 

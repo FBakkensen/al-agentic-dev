@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Drive one task red → green
 
-One task per session. Consume its `Test Specification`, stop at green. Reshaping the diff is `/al-refactor`'s work and rigor is `/al-mutate`'s; neither is chained from here. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+One task per session. Consume its `Test Specification`, stop at green. Your first line names the model class this run wants — the task's stamped tier, standard when absent — and the user, who picked the model, weighs the mismatch. Reshaping the diff is `/al-refactor`'s work and rigor is `/al-mutate`'s; neither is chained from here. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 ## Before any code
 

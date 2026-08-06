@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Journey → event-model.md
 
-Settle the journey at the altitude of what an external observer sees, so the architecture can be designed without re-litigating the user-side picks.
+Settle the journey at the altitude of what an external observer sees, so the architecture can be designed without re-litigating the user-side picks. Your first line names that this run wants a frontier-class model — the user picked the model and weighs the mismatch — then proceed.
 
 Preconditions: the `CONTEXT.md` terms and the domain ADRs are settled — run `/al-grill-adr` first, since a fuzzy domain term becomes a wrong Role name or an invented Business Event. And the feature has a human or API surface; a Job Queue, install/upgrade, or scheduled-task feature has no journey and goes straight to `/al-design`. The journey is checked against BCQuality — `.bcquality/knowledge-index.json` missing → **stop.** Run `/al-clone-bcquality`.
 

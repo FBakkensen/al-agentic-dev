@@ -10,7 +10,7 @@ disable-model-invocation: true
 
 ## Before you write
 
-The branch matches `^\d{3}-` and `specs/<branch>/architecture.md` exists; missing either, say which one and name `/al-design`. An `event-model.md` beside it means the feature is user/API-facing; `architecture.md` alone means backend-only.
+The branch matches `^\d{3}-` and `specs/<branch>/architecture.md` exists; missing either, say which one and name `/al-design`. An `event-model.md` beside it means the feature is user/API-facing; `architecture.md` alone means backend-only. Your first line names that this run wants a frontier-class model — the user picked the model and weighs the mismatch — then proceed.
 
 Every BC name you put in a task — table, field, procedure, event — comes from a lookup in this session rather than recall. BC vocabulary in every line you write: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, the record or the API body not the payload, codeunit not class, procedure not method.
 
@@ -34,7 +34,7 @@ A task file is frontmatter, an H1 title, then a description paragraph — that i
 
 ## Frontmatter
 
-Load `/al-routing` — it owns the task-state schema. Your write sets the structural fields it declares — `task:`, `kind:`, `slice:`, `depends_on:` — and opens every task per that schema; the lifecycle stamps arrive later and are `/al-routing`'s writes, never yours.
+Load `/al-routing` — it owns the task-state schema. Your write sets the structural fields it declares — `task:`, `kind:`, `slice:`, `depends_on:` — and opens every task per that schema, stamping each task's tier as that schema defines it; the ops brackets take mechanical, their work is scripted. The lifecycle stamps arrive later and are `/al-routing`'s writes, never yours.
 
 ## Slices, order, brackets
 

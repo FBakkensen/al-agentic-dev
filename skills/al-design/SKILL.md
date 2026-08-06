@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Idea → `architecture.md`
 
-Settle the feature-level architecture through an interview and write it into `architecture.md` in the feature's spec folder, `specs/<NNN>-<slug>/` — created if absent with `<NNN>` one past the highest spec folder present, together with a matching `<NNN>-<slug>` branch off the default branch. `/al-scope` decomposes that file into every task of the feature, so a gap here resurfaces as a guess inside a task. [ARCHITECTURE-FORMAT.md](ARCHITECTURE-FORMAT.md) holds the shape and a worked example.
+Settle the feature-level architecture through an interview and write it into `architecture.md` in the feature's spec folder, `specs/<NNN>-<slug>/` — created if absent with `<NNN>` one past the highest spec folder present, together with a matching `<NNN>-<slug>` branch off the default branch. Your first line names that this run wants a frontier-class model — the user picked the model and weighs the mismatch — then proceed. `/al-scope` decomposes that file into every task of the feature, so a gap here resurfaces as a guess inside a task. [ARCHITECTURE-FORMAT.md](ARCHITECTURE-FORMAT.md) holds the shape and a worked example.
 
 ## Before the interview
 

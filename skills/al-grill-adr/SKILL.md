@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Grill the domain
 
-Interview the user about what the business does until the vocabulary is unambiguous, and record the rules that would be expensive to change later.
+Interview the user about what the business does until the vocabulary is unambiguous, and record the rules that would be expensive to change later. Your first line names that this run wants a frontier-class model — the user picked the model and weighs the mismatch — then proceed.
 
 Writes `CONTEXT.md` at the repo root and accepted ADRs under `docs/adr/`. Reads production, test, and app code to expose conflicts and leaves it unchanged. `event-model.md`, `architecture.md`, and the `tasks/` folder belong to later skills.
 

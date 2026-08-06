@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # al-quiz — quiz the developer, not the code
 
-**The subject under test is the developer.** The code is on disk either way; what nobody has checked is whether the person who now owns it could have written it. So this skill runs no gate and flips no task — the result lives in the developer's head when it closes, and its one possible write is the follow-up task below. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+**The subject under test is the developer.** The code is on disk either way; what nobody has checked is whether the person who now owns it could have written it. So this skill runs no gate and flips no task — the result lives in the developer's head when it closes, and its one possible write is the follow-up task below. Your first line names that this run wants a standard-class model or above — the user picked the model and weighs the mismatch. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 ## Scope
 

@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Refine a task into its proof
 
-One named task per run. Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. Regenerate its Test Specification or Verification Plan whole against the current app and tests; keep everything scope-time — title, description, `depends_on:`, `slice:`, constraints, risks, acceptance intent — except a user-approved split, which narrows title and description as part of writing it. [TASK-FORMAT.md](TASK-FORMAT.md) is the body's exact shape — section order, heading levels, labels, and column names.
+One named task per run. Your first line names the model class this run wants — the task's stamped tier, standard at least; a task with no tier stamped wants frontier, since sizing it is replanning — the user picked the model and weighs the mismatch. Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. Regenerate its Test Specification or Verification Plan whole against the current app and tests; keep everything scope-time — title, description, `depends_on:`, `slice:`, constraints, risks, acceptance intent — except a user-approved split, which narrows title and description as part of writing it. [TASK-FORMAT.md](TASK-FORMAT.md) is the body's exact shape — section order, heading levels, labels, and column names.
 
 The body is your write; the frontmatter is `/al-routing`'s. An open question this run cannot settle — one only running code can answer, a slot `architecture.md` never allotted, an unsettled domain rule — stops the run instead: name it in chat and leave the body as the interview left it; the next run regenerates it whole once the question settles.
 
@@ -50,6 +50,6 @@ A technical task's behaviour answers to a `Precedent` verdict in `architecture.m
 
 A written proof first goes blind through `/al-spec-review` — the body, its sources, and the interview's settled answers as locked constraints; its findings land per that skill's disposition before anything commits.
 
-Name the task and what this run left on it — the proof written, the open question that stopped it, or the decline and the skill it names. A written proof goes up drawn through `/al-visualize` — its behaviours mapped to the cases and layers that pin them. Every exit commits the task file under its `T-NNN` prefix — the written proof, or on a stop whatever settled before the question.
+Name the task and what this run left on it — the proof written, the open question that stopped it, or the decline and the skill it names. A written proof also names the model class the task's remaining work needs, for `/al-routing` to re-stamp. A written proof goes up drawn through `/al-visualize` — its behaviours mapped to the cases and layers that pin them. Every exit commits the task file under its `T-NNN` prefix — the written proof, or on a stop whatever settled before the question.
 
 Then `/al-routing` on a written proof. A stop ends in chat and the user re-runs once the question settles; a decline ends naming the owning skill.
