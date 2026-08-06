@@ -22,5 +22,5 @@ Load `/al-routing` — it owns the frontmatter schema, the ladder, the gates, an
 
 Asked what is blocked: per task, name the open dependency or the holding gate in the feature's own object, table, and field names, and close with the one thing whose settling opens the most. A closed feature's next move is a fresh idea at `/al-grill-adr`.
 
-Outcome: the viable move(s), each with the state behind it.
+Outcome: the viable move(s), each glyphed with the state behind it — `▶` ready, `⛔` blocked, `✅` done.
 The user runs the skill named.

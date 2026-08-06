@@ -46,7 +46,7 @@ The second pass is yours — the dimensions below, which reach what no leaf can 
 
 ## Disposition
 
-Rank the survivors of both passes by the consequence of shipping the diff as it stands; rank orders the queue and chooses nothing. A leaf finding is a survivor like any other. Decision evidence is the task's Test Specification, `architecture.md`, `event-model.md`, `CONTEXT.md`, the ADRs, behaviour the user already verified, and explicit rulings in this session.
+Rank the survivors of both passes by the consequence of shipping the diff as it stands; rank orders the queue and chooses nothing. Present each survivor as a glyphed headline — `⛔` defect, `⚖️` change request, `⚠️` recommendation — over three slots of one line each: `⚡ Breaks:`, `📍 Proof:`, `🔧 Fix:`. A leaf finding is a survivor like any other. Decision evidence is the task's Test Specification, `architecture.md`, `event-model.md`, `CONTEXT.md`, the ADRs, behaviour the user already verified, and explicit rulings in this session.
 
 - **Defect** — a bug or implementation-quality problem whose correction needs no user decision. It lands in this run.
 - **Change request** — the proposed resolution would override a recorded user decision, or establish business or architecture intent nobody has decided. The user settles it.
