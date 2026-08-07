@@ -10,7 +10,7 @@ The tree is clean and the build is green before the first change. Evaluate the t
 
 ## The knowledge pass
 
-`.bcquality/microsoft/skills/review/al-code-review.md` names one review leaf per knowledge domain in its `sub-skills:` frontmatter. Run every leaf it lists against the task's diff, each per its own instructions, resolving the paths inside those files against `.bcquality/`. Every leaf runs — each decides its own applicability, and pre-judging which ones have something to say is the documented way to make them underreport. A leaf that ends partial or failed leaves its domain unjudged: name it and stop. Its findings are reshape candidates like any other, cited by the article behind them.
+`.bcquality/` is intentionally gitignored. Its `microsoft/skills/review/al-code-review.md` names one review leaf per knowledge domain in its `sub-skills:` frontmatter. Default workspace search can omit the clone, so use a search mode or direct file reading that includes it. Run every leaf it lists against the task's diff, each per its own instructions, resolving the paths inside those files against `.bcquality/`. Every leaf runs — each decides its own applicability, and pre-judging which ones have something to say is the documented way to make them underreport. A leaf that ends partial or failed leaves its domain unjudged: name it and stop. Its findings are reshape candidates like any other, cited by the article behind them.
 
 ## Improvement dimensions
 
@@ -44,7 +44,7 @@ After every request is settled, apply its ruling: **Do it now** lands on the def
 
 ## Writing AL
 
-Every BC object, table, field, procedure, event, and enum value name comes from a lookup in this session — search the workspace, or read the symbols. Recall is not evidence. `.bcapps/` is the pattern library: read how the nearest System Application or `src/Apps/W1` code shapes what you are reshaping toward, and lift that shape — default search skips gitignored folders.
+Every BC object, table, field, procedure, event, and enum value name comes from a lookup in this session — search the workspace, or read the symbols. Recall is not evidence. `.bcapps/` is the intentionally gitignored pattern library: read how the nearest System Application or `src/Apps/W1` code shapes what you are reshaping toward, and lift that shape. Missing → stop, naming `/al-clone-bcapps`; otherwise default workspace search can omit the clone, so use a search mode or direct file reading that includes it.
 
 Use BC vocabulary: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, the record or the API body not the payload, procedure not method, codeunit not class — and a codeunit is named for the behaviour it owns, never a Manager or Handler.
 

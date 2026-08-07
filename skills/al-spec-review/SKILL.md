@@ -9,7 +9,7 @@ The session that wrote an artifact is its worst reader: its own rationale stands
 
 ## The blind contract
 
-If your harness supports subagents, run the review as one full-capability subagent on the same model as this conversation, carrying only the artifact, its sources — `architecture.md`, `event-model.md` when present, `CONTEXT.md`, the ADRs, the code the artifact lands on, `.bcquality/knowledge-index.json`, `.bcapps/` where cloned — and the locked constraints. Otherwise the caller runs this rubric itself in one pass, reading artifact and sources only, dimensions in order.
+If your harness supports subagents, run the review as one full-capability subagent on the same model as this conversation, carrying only the artifact, its sources — `architecture.md`, `event-model.md` when present, `CONTEXT.md`, the ADRs, the code the artifact lands on, `.bcquality/knowledge-index.json`, `.bcapps/` where cloned — and the locked constraints. Otherwise the caller runs this rubric itself in one pass, reading artifact and sources only, dimensions in order. `.bcapps/` and `.bcquality/` are intentionally gitignored: when either is a source, inspect it directly because default workspace search can omit it; use a search mode or file reading that includes the clone. A required clone that is missing is a blocking return to the caller, naming `/al-clone-bcapps` or `/al-clone-bcquality`.
 
 **Locked constraints** are the decisions the user settled in the caller's interview, listed by the caller. They bound this read — the artifact is judged against its sources *within* them, and no pick is re-opened.
 
