@@ -26,14 +26,14 @@ Mixed state, a squash that hides the `T-NNN` prefixes, or an ambiguous range is 
 - Write BC vocabulary: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, the record or the API body not the payload, procedure not method, codeunit not class.
 - Hold production code to AL thrift: reach for the platform before writing code, keep no `interface` with a single implementation, and let a deliberate shortcut carry a one-line comment naming its ceiling and its upgrade path.
 - Thrift governs production code only. Test thoroughness, trust-boundary validation, posting and ledger correctness, and permission checks stay at full strength.
-
 ## The review passes
 Two passes over the scoped diff. The first is BCQuality's: `.bcquality/` is intentionally gitignored, and its `microsoft/skills/review/al-code-review.md` is the parent review entry. Default workspace search can omit the clone, so use a search mode or direct file reading that includes it.
 - Delegate the complete BCQuality knowledge pass to its parent review entry; do not independently read or dispatch its leaves.
 - Where isolated workers are available, the parent review entry's isolated-call discipline applies; never dispatch a leaf path alone.
 - The parent provides the complete context its discipline requires, including access to the ignored `.bcquality/` clone.
 - Setup text or no valid DO-contract result means the leaf did not run; retry that isolated call once. If the retry produces no valid result, stop as an invocation failure.
-- A valid `partial` or `failed` leaf result remains terminal under the existing behavior.
+- A valid `partial` or `failed` leaf result remains terminal under the existing behaviour.
+
 The second pass is yours — the dimensions below, which reach what no leaf can see: the task's proof, the project's baselines, the shape of the code. If your harness supports subagents, these parallelize under the same subagent rule; otherwise apply them in one pass.
 - **Correctness** — logic faults a fresh read exposes, plus an identifier whose claim is false: a `Get…` that mutates, an `Is…` that does not reflect the state it names.
 - **Assertion rigor** — a test that would pass whether or not the behaviour under test works: an `Assert` restating the `Act`, an expected value the test derives for itself, an assertion on error text where the promised outcome is a state change.

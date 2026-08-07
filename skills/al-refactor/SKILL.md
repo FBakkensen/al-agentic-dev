@@ -15,7 +15,7 @@ The tree is clean and the build is green before the first change. Evaluate the t
 - Where isolated workers are available, the parent review entry's isolated-call discipline applies; never dispatch a leaf path alone.
 - The parent provides the complete context its discipline requires, including access to the ignored `.bcquality/` clone.
 - Setup text or no valid DO-contract result means the leaf did not run; retry that isolated call once. If the retry produces no valid result, stop as an invocation failure.
-- A valid `partial` or `failed` leaf result remains terminal under the existing behavior.
+- A valid `partial` or `failed` leaf result remains terminal under the existing behaviour.
 ## Improvement dimensions
 Read the whole diff — a task's full diff, once per task — through each of these:
 
