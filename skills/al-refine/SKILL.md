@@ -44,7 +44,7 @@ Every exact BC name written into the task — object, table, field, procedure, e
 
 BC vocabulary in every line the body takes: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, the record or the API body not the payload, codeunit not class, procedure not method — TDD, red/green, and AAA keep their own names.
 
-A technical task's behaviour answers to a `Precedent` verdict in `architecture.md`'s module map. A behaviour no verdict covers gets its own intentionally gitignored `.bcapps/` read — clone missing → stop, naming `/al-clone-bcapps`. Default workspace search can omit the clone, so use a search mode or direct file reading that includes it — and the verdict lands as a `Precedent:` line in `Contract notes:`; a verdict that already covers the behaviour is consumed, never copied down. A read contradicting the map — Microsoft ships what a module builds — is a strategic finding: stop the run and name it in chat, because it reopens the architecture, not the task.
+A technical task's behaviour answers to a `Precedent` verdict in `architecture.md`'s module map. A behaviour no verdict covers gets its own intentionally gitignored `.bcapps/` read — clone missing → stop, naming `/al-clone-bcapps` — and the verdict lands as a `Precedent:` line in `Contract notes:`; a verdict that already covers the behaviour is consumed, never copied down. Default workspace search can omit the clone, so use a search mode or direct file reading that includes it. A read contradicting the map — Microsoft ships what a module builds — is a strategic finding: stop the run and name it in chat, because it reopens the architecture, not the task.
 
 ## Close
 
