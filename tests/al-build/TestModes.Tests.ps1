@@ -30,8 +30,9 @@ Describe 'test.ps1 modes' {
     It 'rejects a missing mode before cleanup or configuration' {
         Mock Get-GitRepoRoot { throw 'cleanup must not start' }
 
-        (Invoke-TestGate) | Should -Be 1
+        (Invoke-TestGate)
 
+        $script:GateExitCode | Should -Be 1
         Should -Invoke Get-GitRepoRoot -Times 0 -Exactly
         Should -Invoke Write-BuildMessage -Times 1 -Exactly -ParameterFilter {
             $Type -eq 'Error' -and
@@ -74,8 +75,9 @@ Describe 'test.ps1 modes' {
         Mock Invoke-ALPublish {}
         Mock Invoke-ALTest {}
 
-        (Invoke-TestGate -UnitTestOnly) | Should -Be 0
+        (Invoke-TestGate -UnitTestOnly)
 
+        $script:GateExitCode | Should -Be 0
         Should -Invoke Invoke-ALRunnerTest -Times 1 -Exactly
         Should -Invoke Ensure-BCAgentContainer -Times 0 -Exactly
         Should -Invoke Invoke-ALPublish -Times 0 -Exactly
@@ -120,8 +122,9 @@ Describe 'test.ps1 modes' {
         }
         Mock Invoke-ALRunnerTest {}
 
-        (Invoke-TestGate -AllTests) | Should -Be 0
+        (Invoke-TestGate -AllTests)
 
+        $script:GateExitCode | Should -Be 0
         Should -Invoke Ensure-BCAgentContainer -Times 1 -Exactly
         Should -Invoke Invoke-ALPublish -Times 2 -Exactly
         Should -Invoke Invoke-ALTest -Times 1 -Exactly
@@ -171,8 +174,9 @@ Describe 'test.ps1 modes' {
             }
         }
 
-        (Invoke-TestGate -AllTests) | Should -Be 1
+        (Invoke-TestGate -AllTests)
 
+        $script:GateExitCode | Should -Be 1
         Should -Invoke Invoke-ALTest -Times 1 -Exactly
     }
 }

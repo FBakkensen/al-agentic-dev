@@ -1054,7 +1054,10 @@ function Invoke-ALBuild {
     Write-BuildMessage -Type Step -Message "Compiling..."
 
     # Execute the selected channel's compiler by full path (not the global 'al').
-    & $compilerInfo.CommandPath @alcArgs
+    # Diagnostics arrive on the compiler's stdout — route them to the host
+    # stream so no capturing caller can swallow them ($LASTEXITCODE survives
+    # the pipeline).
+    & $compilerInfo.CommandPath @alcArgs | ForEach-Object { Write-Host $_ }
 
     if ($LASTEXITCODE -ne 0) {
         throw "AL compilation failed with exit code $LASTEXITCODE"
