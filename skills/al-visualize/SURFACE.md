@@ -3,8 +3,10 @@
 Every surface is one self-contained, read-only HTML file: no input capture — no form
 controls, no comment boxes, no submit action — and no external assets. Answers happen
 in chat. Two moods share one skeleton: a **decision surface** carries open cards; a
-**close or ruling surface** carries none — its rail leads with the settled outcome —
-unless the close is itself an unresolved call, which keeps that one open card.
+**close surface** carries none — its rail leads with the run's tactical calls (zone 4)
+— unless the close is itself an unresolved call, which keeps that one open card. A
+close centerpiece is the notation SKILL.md's menu prescribes for the artifact being
+closed — a flow strip is never a default.
 
 ## Read in layers
 
@@ -15,23 +17,26 @@ phrase telling the reader what the zone gives them:
 1. **Verdict** — `<h1>`, one thesis line naming what is open (or that nothing is),
    and 3–5 stat tiles: mono numerals, semantic color, uppercase micro-label. The
    zone opens with the situation before the thesis: one short block in domain
-   terms — the scenario the artifact serves, who hits it, what goes wrong — that
-   a reader returning cold follows before any implementation name appears. The
-   page answers "what is this about?" and "what do you need from me?" here,
-   within two seconds.
+   terms — the scenario the artifact serves, who hits it, what goes wrong — each
+   lead-in sentence one shown fact behind a glyph, so a reader returning cold
+   follows before any implementation name appears. The page answers "what is
+   this about?" and "what do you need from me?" here, within two seconds.
 2. **The picture** — the centerpiece diagram (below).
 3. **One-liners** — one row per change or argument step: glyph · name · one-line
    gist · ID. Prose detail lives behind a `<details>` expander on the row, never
    inline.
-4. **Your call** — the open decision cards, in the rail. On a settled surface this
-   zone is the ruling card instead.
+4. **Your call** — the open decision cards, in the rail. On a close surface this
+   zone carries the run's tactical calls instead: one quiet card per call the run
+   took without putting it to the user — the call, its one-line reason, its
+   `data-id`. No reply is demanded; silence is consent, and a call reopens by
+   naming its ID in chat.
 5. **Proof / evidence** — gate numbers, audit tables, groundings; skimmable,
    collapsible where large.
 6. **Already settled** — LOCKED context as quiet collapsed rows.
 
 **One loud thing (hard):** exactly one element class is visually loudest — the open
-decision cards (blue ring), or on a settled surface the ruling card (green). All
-else stays quiet; a squint shows only what needs the reader.
+decision cards (blue ring), or on a close surface the centerpiece picture. All else
+stays quiet, tactical calls included; a squint shows only what needs the reader.
 
 ## Layout
 
@@ -45,7 +50,7 @@ Two-pane grid on wide viewports (page up to ~1560px): content left, rail
   --bg:#0b0d12; --surface:#12151c; --surface2:#181c25; --line:#252b36; --line-soft:#1d222b;
   --ink:#e9edf3; --muted:#9aa4b2; --faint:#606a77;
   /* GitHub-Primer-dark semantic hues; every hue rides with a glyph */
-  --green:#3fb950; --green-em:#2ea043;  /* added / gate green / ruled */
+  --green:#3fb950; --green-em:#2ea043;  /* added / gate green */
   --amber:#d29922;                      /* modified / duplicated */
   --red:#f85149; --red-soft:#ffb3ae;    /* fix / dissolves / misplaced */
   --blue:#58a6ff;                       /* open decision — the one loud accent */
@@ -87,7 +92,7 @@ the reader remembers nothing from chat.
    option names its worst property on a second line; the card ends with the literal
    reply shape: `Reply in chat: D1: A (or B, or ask).`
 3. **Locked context.** Collapsed rows under a muted `LOCKED` tag. A decision settled
-   in chat becomes a locked or ruled card naming the pick.
+   in chat becomes a locked card naming the pick.
 4. **Navigation only.** Clicking a diagram node may scroll to and flash its row;
    no interaction stores or transmits anything.
 

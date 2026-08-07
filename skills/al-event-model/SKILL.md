@@ -10,7 +10,13 @@ Settle the journey at the altitude of what an external observer sees, so the arc
 
 Preconditions: the `CONTEXT.md` terms and the domain ADRs are settled — run `/al-grill-adr` first, since a fuzzy domain term becomes a wrong Role name or an invented Business Event. And the feature has a human or API surface; a Job Queue, install/upgrade, or scheduled-task feature has no journey and goes straight to `/al-design`. The journey is checked against BCQuality — `.bcquality/knowledge-index.json` missing → **stop.** Run `/al-clone-bcquality`.
 
-`event-model.md` lands in the feature's spec folder, `specs/<NNN>-<slug>/`, created if absent with `<NNN>` one past the highest spec folder present, together with a matching `<NNN>-<slug>` branch off the default branch. Where the file already exists for this feature, reshape it in place.
+`event-model.md` lands in the feature's spec folder, `specs/<NNN>-<slug>/`, created if absent with `<NNN>` one past the highest spec folder present. Where the file already exists for this feature, reshape it in place. The run continues on a branch named `<NNN>-<slug>`:
+
+- No branch for this feature yet → create `<NNN>-<slug>` off the default branch.
+- The session sits on its own working branch with another name → rename it to `<NNN>-<slug>`, with plain `git branch -m` where the environment's branch tooling cannot produce the exact name.
+- Never rename the default branch.
+- Never rename a branch already `<NNN>-<slug>`-shaped — that name binds it to its own spec folder; a mismatch with this run's spec is a stop put to the user.
+- A rename that fails is a stop put to the user, never a quiet note.
 
 Every BC name that lands in a slot — a persona, a BaseApp event, a table, a field, a page — comes from a lookup made this session: search the workspace, or read Microsoft's BC documentation. Recall is fiction. Where `.bcapps/` is present, search it explicitly for BaseApp's own events and code — default search skips gitignored folders.
 
@@ -54,10 +60,6 @@ Document shape and a worked example: [EVENT-MODEL-FORMAT.md](EVENT-MODEL-FORMAT.
 
 `event-model.md` holds one timeline in which every step names its Role, its Action, its Business Event, its View, and the Status it flips or `—`, and every branch the interview surfaced has its own section.
 
-A settled timeline first goes blind through `/al-spec-review` — the file, its sources, and the interview's settled answers as locked constraints; its findings land per that skill's disposition before anything commits.
+A settled timeline first goes blind through `/al-spec-review` — the file, its sources, and the interview's settled answers as locked constraints; its findings land per that skill's disposition before anything commits. Then it goes up drawn through `/al-visualize` — the five slots end to end, swimlanes where Roles hand off.
 
-A settled timeline goes up drawn through `/al-visualize` — the five slots end to end, swimlanes where Roles hand off.
-
-Commit `event-model.md` and any `CONTEXT.md` term this run settled with a plain descriptive message; a stop mid-interview commits what settled the same way.
-
-Then continue in this session with `/al-design`.
+Commit `event-model.md` and any `CONTEXT.md` term this run settled with a plain descriptive message; a stop mid-interview commits what settled the same way. Then continue in this session with `/al-design`.

@@ -6,7 +6,13 @@ disable-model-invocation: true
 
 # Idea → `architecture.md`
 
-Settle the feature-level architecture through an interview and write it into `architecture.md` in the feature's spec folder, `specs/<NNN>-<slug>/` — created if absent with `<NNN>` one past the highest spec folder present, together with a matching `<NNN>-<slug>` branch off the default branch. Your first line names that this run wants a frontier-class model — the user picked the model and weighs the mismatch — then proceed. `/al-scope` decomposes that file into every task of the feature, so a gap here resurfaces as a guess inside a task. [ARCHITECTURE-FORMAT.md](ARCHITECTURE-FORMAT.md) holds the shape and a worked example.
+Settle the feature-level architecture through an interview and write it into `architecture.md` in the feature's spec folder, `specs/<NNN>-<slug>/` — created if absent with `<NNN>` one past the highest spec folder present. Your first line names that this run wants a frontier-class model — the user picked the model and weighs the mismatch — then proceed. `/al-scope` decomposes that file into every task of the feature, so a gap here resurfaces as a guess inside a task. [ARCHITECTURE-FORMAT.md](ARCHITECTURE-FORMAT.md) holds the shape and a worked example. The run continues on a branch named `<NNN>-<slug>`:
+
+- No branch for this feature yet → create `<NNN>-<slug>` off the default branch.
+- The session sits on its own working branch with another name → rename it to `<NNN>-<slug>`, with plain `git branch -m` where the environment's branch tooling cannot produce the exact name.
+- Never rename the default branch.
+- Never rename a branch already `<NNN>-<slug>`-shaped — that name binds it to its own spec folder; a mismatch with this run's spec is a stop put to the user.
+- A rename that fails is a stop put to the user, never a quiet note.
 
 ## Before the interview
 
@@ -40,9 +46,7 @@ Tactical — object and file names, which of two equivalent patterns carries a m
 
 ## Candidates
 
-Multi-module designs, brownfield refactors, and novel pattern selection earn candidates. Diverge only once the strategic inventory is settled apart from the fork they turn on; earlier, the user is choosing between guesses. Propose how many are worth building and which one you would pick, and let the user set the count. If your harness supports subagents, these parallelize; otherwise build them in one pass.
-
-Each candidate is self-contained under **Constraint**, **Shape**, **Flow**, **Seams**, **Trade-offs**, and carries the same settled decisions marked as settled so none reopens one. Present them in sequence, compare along depth, locality, and seam placement, recommend one or a hybrid opinionatedly, and put the pick to the user as one lettered question.
+Multi-module designs, brownfield refactors, and novel pattern selection earn candidates. Diverge only once the strategic inventory is settled apart from the fork they turn on; earlier, the user is choosing between guesses. Propose how many are worth building and which one you would pick, and let the user set the count. If your harness supports subagents, these parallelize; otherwise build them in one pass. Each candidate is self-contained under **Constraint**, **Shape**, **Flow**, **Seams**, **Trade-offs**, and carries the same settled decisions marked as settled so none reopens one. Present them in sequence, compare along depth, locality, and seam placement, recommend one or a hybrid opinionatedly, and put the pick to the user as one lettered question.
 
 ## BC patterns
 
@@ -50,16 +54,12 @@ A plain procedure on a focused codeunit is the default and most modules fit no p
 
 ## AppSource and trade-offs
 
-A BaseApp modification is replaced by interception: a published event, a table extension, or an `interface` implementation. A shipped field is never renamed or removed in place; it follows `ObsoleteState: Pending → Removed` across the deprecation window. Both bite here, as a reshape, rather than at implement time.
-
-A contested decision carries its reason inline where the decision lands — one line naming what lost and why: `queue table, not job queue entries — replay needs ordering the platform doesn't guarantee`. Domain rules belong to `/al-grill-adr`.
+A BaseApp modification is replaced by interception: a published event, a table extension, or an `interface` implementation. A shipped field is never renamed or removed in place; it follows `ObsoleteState: Pending → Removed` across the deprecation window. Both bite here, as a reshape, rather than at implement time. A contested decision carries its reason inline where the decision lands — one line naming what lost and why: `queue table, not job queue entries — replay needs ordering the platform doesn't guarantee`. Domain rules belong to `/al-grill-adr`.
 
 ## Close
 
 `architecture.md` carries the module map, every slice's AL realisation named slot by slot with its `new` / `extends` marker, the brownfield touchpoint inventory, and where decision logic stays reachable by unit tests.
 
-A settled architecture first goes blind through `/al-spec-review` — the file, its sources, and the interview's settled answers as locked constraints; its findings land per that skill's disposition before anything commits.
-
-A settled architecture goes up drawn through `/al-visualize` — the module map, each slice's realisation on it, each minted name beside the term or `event-model.md` slot it derives from, so the user can spot a name worth reopening.
+A settled architecture first goes blind through `/al-spec-review` — the file, its sources, and the interview's settled answers as locked constraints; its findings land per that skill's disposition before anything commits. Then it goes up drawn through `/al-visualize` — the module map as a C4 component map, dependency direction and seams on its edges, each slice's realisation on its node, each minted name a chip on its node naming the term or `event-model.md` slot it derives from, and the run's tactical calls in the rail — so the user can spot a name or a call worth reopening.
 
 Commit `architecture.md` and any `CONTEXT.md` term this run settled with a plain descriptive message; a stop mid-interview commits what settled the same way. Then continue in this session with `/al-scope`.
