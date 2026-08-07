@@ -127,4 +127,52 @@ Describe 'test.ps1 modes' {
         Should -Invoke Invoke-ALTest -Times 1 -Exactly
         Should -Invoke Invoke-ALRunnerTest -Times 0 -Exactly
     }
+
+    It 'returns a failure from a red AllTests run without exiting Pester' {
+        $repoRoot = Join-Path $TestDrive 'red-all-tests'
+        $testApp = Join-Path $repoRoot 'test'
+        New-Item -ItemType Directory -Path $testApp -Force | Out-Null
+
+        Mock Get-GitRepoRoot { $repoRoot }
+        Mock Get-BuildConfig {
+            [pscustomobject]@{
+                AppDir             = $repoRoot
+                TestApps           = @($testApp)
+                UnitTestApp         = $null
+                UnitTestInitEvents  = $false
+                WarnAsError         = $false
+                ContainerName       = 'agent'
+                ContainerUsername   = 'admin'
+                Tenant              = 'default'
+            }
+        }
+        Mock Get-CompileTargets {
+            @([pscustomobject]@{ AppDir = $testApp; Role = 'test' })
+        }
+        Mock Ensure-BCAgentContainer {}
+        Mock Get-AppJsonObject { [pscustomobject]@{ name = 'Test App' } }
+        Mock Test-AppNeedsPublish { $false }
+        Mock Invoke-ALPublish {}
+        Mock Wait-BCAppsSynced {}
+        Mock Invoke-ALTest {
+            [pscustomobject]@{
+                Runner     = 'container'
+                AppName    = 'Test App'
+                TestDir    = $testApp
+                Passed     = $false
+                Counts     = [ordered]@{
+                    testCodeunits = 1
+                    tests         = 1
+                    testsPassed   = 0
+                    testsFailed   = 1
+                    testsSkipped  = 0
+                }
+                ResultFile = (Join-Path $repoRoot 'last.xml')
+            }
+        }
+
+        (Invoke-TestGate -AllTests) | Should -Be 1
+
+        Should -Invoke Invoke-ALTest -Times 1 -Exactly
+    }
 }

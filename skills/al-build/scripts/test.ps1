@@ -534,7 +534,7 @@ if ($failedRuns) {
         Write-BuildMessage -Type Error -Message "  - $($failed.Runner) - $($failed.AppName): $($failed.ResultFile)"
     }
     $gateOutcome = 'failed'
-    exit 1
+    return 1
 }
 
 Write-BuildHeader 'Test Complete'
