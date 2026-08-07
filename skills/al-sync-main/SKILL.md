@@ -12,7 +12,7 @@ ask the user to commit or stash. Already on main → stop; nothing to sync. Ask 
 
 ## Sync
 
-1. **Baseline gate.** Run `/al-build` on the current tip. Red → report it as
+1. **Baseline gate.** Run `/al-build -AllTests` on the current tip. Red → report it as
    pre-existing and stop; the rebase would otherwise take the blame for it.
 2. **Rebase.** Record the pre-rebase tip — `git rev-parse HEAD` — then
    `git fetch origin main` and `git rebase origin/main`.
@@ -25,7 +25,7 @@ ask the user to commit or stash. Already on main → stop; nothing to sync. Ask 
    carrying two different numbers (the concept was modelled twice), or anything
    else the rebase flags. `git rebase --abort` so the tree sits back at the branch
    tip, then report the object type, number, file, and reason, and ask.
-4. **Closing gate.** After the renumber pass, run `/al-build` on the rebased
+4. **Closing gate.** After the renumber pass, run `/al-build -AllTests` on the rebased
    tree. Green → push with `git push --force-with-lease` (`git push -u origin
    HEAD` where no remote counterpart exists). Red → name the object, field, or
    test that broke, then the user's call: repair it in this session and rerun

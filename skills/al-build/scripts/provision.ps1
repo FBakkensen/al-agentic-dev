@@ -139,4 +139,4 @@ if ($config.BreakingChangeEnabled) {
 
 Write-BuildHeader 'Provision Complete'
 Write-BuildMessage -Type Success -Message "Environment is ready for development"
-Write-BuildMessage -Type Info -Message "Next: Run 'pwsh $PSScriptRoot/test.ps1' to build and test"
+Write-BuildMessage -Type Info -Message "Next: Run 'pwsh $PSScriptRoot/test.ps1 -AllTests' to build and test"

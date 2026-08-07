@@ -868,8 +868,8 @@ Export-ModuleMember -Function 'Write-BcCoverageArtifacts'
 
             $pwsh = Join-Path $PSHOME 'pwsh.exe'
             $coverageArg = if ($Coverage) { ' -Coverage' } else { '' }
-            $unitTestOnlyArg = if ($UnitTestOnly) { ' -UnitTestOnly' } else { '' }
-            $output = & $pwsh -NoProfile -Command "Set-Location '$($Harness.Root)'; & '$($Harness.TestScript)'$coverageArg$unitTestOnlyArg" 2>&1
+            $modeArg = if ($UnitTestOnly) { ' -UnitTestOnly' } else { ' -AllTests' }
+            $output = & $pwsh -NoProfile -Command "Set-Location '$($Harness.Root)'; & '$($Harness.TestScript)'$coverageArg$modeArg" 2>&1
             $events = @()
             if (Test-Path -LiteralPath $Harness.StatePath) {
                 $events = @(
@@ -2312,7 +2312,7 @@ Describe 'test.ps1 coverage integration' {
         $exitCode = $LASTEXITCODE
 
         $exitCode | Should -Not -Be 0
-        ($output -join "`n") | Should -Match '-Coverage cannot be combined with -UnitTestOnly'
+        ($output -join "`n") | Should -Match 'Specify exactly one test mode'
         ($output -join "`n") | Should -Not -Match 'al-build.json'
     }
 

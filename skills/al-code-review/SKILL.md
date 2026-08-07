@@ -10,7 +10,7 @@ Code still in flight belongs to `/al-implement`; this gate reviews what has land
 
 ## Baseline
 
-Start on a clean tree, then identify the scope below and select its newest clean full-gate receipt. Its commit must be an ancestor of `HEAD`, and the diff since it may name only its owning task file. Match → `🔎✅ Green gate reused — T-123 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build` green. A red gate or unrelated uncommitted work → name the gap and stop. An uncertain baseline makes every finding a guess, and this run's fix commits would land on top of the pollution. The BCQuality corpus is the other baseline: no `.bcquality/` means the knowledge pass cannot run and the verdict would be narrower than it claims → name `/al-clone-bcquality` and stop.
+Start on a clean tree, then identify the scope below and select its newest clean full-gate receipt. Its commit must be an ancestor of `HEAD`, and the diff since it may name only its owning task file. Match → `🔎✅ Green gate reused — T-123 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build -AllTests` green. A red gate or unrelated uncommitted work → name the gap and stop. An uncertain baseline makes every finding a guess, and this run's fix commits would land on top of the pollution. The BCQuality corpus is the other baseline: no `.bcquality/` means the knowledge pass cannot run and the verdict would be narrower than it claims → name `/al-clone-bcquality` and stop.
 
 Scope is one of three diffs:
 
@@ -54,7 +54,7 @@ Rank the survivors of both passes by the consequence of shipping the diff as it 
 
 ### Land the defects
 
-- A behavioural defect goes red first: write the missing AAA case, watch it fail on a real assertion, then make it pass. Commit under the originating `T-NNN` prefix and re-run `/al-build`. Task-file state stays untouched — a repair is not a pipeline step.
+- A behavioural defect goes red first: write the missing AAA case, watch it fail on a real assertion, then make it pass. Commit under the originating `T-NNN` prefix and re-run `/al-build -AllTests`. Task-file state stays untouched — a repair is not a pipeline step.
 - A provably non-semantic defect — a comment, local rename, dead code, or equivalent query shape — lands directly, gates, and commits standalone. A red gate reverts it and it re-enters as behavioural.
 - A fix that would overturn behaviour the user already verified is a change request. A defect whose fix exceeds this run reverts, and the close puts it to the user as one proposed technical task — created on their yes per `/al-routing`'s schema on the owning slice, carrying the failing case this review wrote as its red. Declining the task rules that the behaviour stands: the finding re-enters as a change request, settled and recorded in the artifact whose expectation it overturns. Difficulty reclassifies nothing — a hard fix is a task, never a lesser defect.
 

@@ -52,7 +52,7 @@ One short PascalCase procedure per case, BaseApp style: `RuleSetWithBlockedRecor
 
 ## Gate once, at task close
 
-Run the full gate through `/al-build` after the last case; a gate between `Unit` cases re-proves the same tree. Read a red there by class: a container or publish failure is infrastructure and `/al-build` owns the recovery; a test green under AL Runner and red under the container is a placement or runner-semantics mismatch, not a production defect; anything else is an ordinary regression — repair the production code and re-gate.
+Run the full gate through `/al-build -AllTests` after the last case; a gate between `Unit` cases re-proves the same tree. Read a red there by class: a container or publish failure is infrastructure and `/al-build` owns the recovery; a test green under AL Runner and red under the container is a placement or runner-semantics mismatch, not a production defect; anything else is an ordinary regression — repair the production code and re-gate.
 
 ## Reconcile, then hand over
 
