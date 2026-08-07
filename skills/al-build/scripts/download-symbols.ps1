@@ -145,6 +145,96 @@ function Get-CopiedLocalDependencyIds {
     return $copiedLocalAppIds
 }
 
+function Set-PackageMapMinimum {
+    param(
+        [System.Collections.IDictionary]$Map,
+        [string]$PackageId,
+        [string]$Version
+    )
+
+    if (-not $PackageId) { return }
+
+    if ($Map.Contains($PackageId)) {
+        $existing = [string]$Map[$PackageId]
+        if ($Version -and ((Compare-Version -Left $Version -Right $existing) -gt 0)) {
+            $Map[$PackageId] = $Version
+        }
+        return
+    }
+
+    $Map[$PackageId] = $Version
+}
+
+function Add-DependencyToPackageMap {
+    param(
+        [System.Collections.IDictionary]$Map,
+        $Dep
+    )
+
+    if (-not ($Dep.publisher) -or -not ($Dep.name) -or -not ($Dep.id) -or -not ($Dep.version)) {
+        return
+    }
+
+    $publisher = ($Dep.publisher -replace '\s+', '')
+    $name = ($Dep.name -replace '\s+', '')
+    $appId = ($Dep.id -replace '\s+', '')
+    $packageId = "{0}.{1}.symbols.{2}" -f $publisher, $name, $appId
+    Set-PackageMapMinimum -Map $Map -PackageId $packageId -Version ([string]$Dep.version)
+}
+
+function Add-LocalAppDependenciesToPackageMap {
+    param(
+        [System.Collections.IDictionary]$Map,
+        [hashtable]$CopiedLocalAppIds,
+        [string]$LocalAppId,
+        [System.Collections.Generic.HashSet[string]]$VisitedLocalAppIds
+    )
+
+    if (-not $LocalAppId) { return }
+    if (-not $VisitedLocalAppIds.Add($LocalAppId)) { return }
+    if (-not $CopiedLocalAppIds.ContainsKey($LocalAppId)) { return }
+
+    $localInfo = $CopiedLocalAppIds[$LocalAppId]
+    $localAppJsonPath = if ($localInfo -and $localInfo.Path) { [string]$localInfo.Path } else { $null }
+    if (-not $localAppJsonPath -or -not (Test-Path -LiteralPath $localAppJsonPath)) {
+        return
+    }
+
+    try {
+        $localAppJson = Read-JsonFile -Path $localAppJsonPath
+    } catch {
+        Write-Warning "Failed to read local dependency manifest ${localAppJsonPath}: $($_.Exception.Message)"
+        return
+    }
+
+    if (-not ((Test-JsonProperty $localAppJson 'dependencies') -and $localAppJson.dependencies)) {
+        return
+    }
+
+    foreach ($dep in $localAppJson.dependencies) {
+        if (-not ($dep.publisher) -or -not ($dep.name) -or -not ($dep.id) -or -not ($dep.version)) { continue }
+
+        $depAppId = ([string]$dep.id).Trim().ToLowerInvariant()
+        if ($CopiedLocalAppIds.ContainsKey($depAppId)) {
+            $script:localDependencySkips.Add([pscustomobject]@{
+                Publisher = [string]$dep.publisher
+                Name      = [string]$dep.name
+                Id        = [string]$dep.id
+                Path      = $CopiedLocalAppIds[$depAppId].Path
+            }) | Out-Null
+
+            Add-LocalAppDependenciesToPackageMap `
+                -Map $Map `
+                -CopiedLocalAppIds $CopiedLocalAppIds `
+                -LocalAppId $depAppId `
+                -VisitedLocalAppIds $VisitedLocalAppIds
+            continue
+        }
+
+        Add-DependencyToPackageMap -Map $Map -Dep $dep
+    }
+}
+
 function Build-PackageMap {
     param(
         $AppJson,
@@ -152,9 +242,12 @@ function Build-PackageMap {
     )
 
     $map = [ordered]@{}
+    $visitedLocalAppIds = [System.Collections.Generic.HashSet[string]]::new(
+        [System.StringComparer]::OrdinalIgnoreCase
+    )
 
     if ((Test-JsonProperty $AppJson 'application') -and $AppJson.application) {
-        $map['Microsoft.Application.symbols'] = [string]$AppJson.application
+        Set-PackageMapMinimum -Map $map -PackageId 'Microsoft.Application.symbols' -Version ([string]$AppJson.application)
     }
 
     if ((Test-JsonProperty $AppJson 'dependencies') -and $AppJson.dependencies) {
@@ -168,14 +261,18 @@ function Build-PackageMap {
                     Id        = [string]$dep.id
                     Path      = $CopiedLocalAppIds[$depAppId].Path
                 }) | Out-Null
+
+                # Keep the local main/test-gate app out of NuGet, but still pull its
+                # own dependencies into this cache (al-runner recompiles main + tests).
+                Add-LocalAppDependenciesToPackageMap `
+                    -Map $map `
+                    -CopiedLocalAppIds $CopiedLocalAppIds `
+                    -LocalAppId $depAppId `
+                    -VisitedLocalAppIds $visitedLocalAppIds
                 continue
             }
 
-            $publisher = ($dep.publisher -replace '\s+', '')
-            $name = ($dep.name -replace '\s+', '')
-            $appId = ($dep.id -replace '\s+', '')
-            $packageId = "{0}.{1}.symbols.{2}" -f $publisher, $name, $appId
-            $map[$packageId] = [string]$dep.version
+            Add-DependencyToPackageMap -Map $map -Dep $dep
         }
     }
 
@@ -578,7 +675,7 @@ $packageMap = Build-PackageMap -AppJson $appJson -CopiedLocalAppIds $copiedLocal
 Write-BuildHeader 'Package Requirements'
 Write-BuildMessage -Type Info -Message "$($packageMap.Count) packages required"
 foreach ($localDependency in $script:localDependencySkips) {
-    Write-BuildMessage -Type Detail -Message "Skipping test-gate local dependency: $($localDependency.Publisher) $($localDependency.Name)"
+    Write-BuildMessage -Type Detail -Message "Skipping test-gate local dependency (keeping its deps): $($localDependency.Publisher) $($localDependency.Name)"
 }
 
 if ($packageMap.Count -gt 0) {
