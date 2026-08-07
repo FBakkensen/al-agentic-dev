@@ -41,6 +41,15 @@ These govern work on this repo and never ship. No `SKILL.md` may mention them.
 
 `REVIEW.md` holds a generated verbatim copy of `skills.instructions.md`. Edit the instruction file, then run `scripts/Update-Review.ps1` to regenerate `REVIEW.md`; CI fails on drift (`scripts/Update-Review.ps1 -Check`).
 
+## Reply shape
+
+Dev-time chat in this repo follows the same style the shipped skills ask for:
+
+- Show the actual thing — the command and its output, the diff, the table row — before explaining it; one sentence of prose per thing shown.
+- Glyphs ride fixed slots only — findings, verdicts, and moves (⛔ ⚠️ ✅ ▶ 🔧 📍 ⚡) and lead-in status lines; an emoji in running prose is decoration.
+- Outcome first when finishing, detail after.
+- Ask one question per message, with lettered options and the recommendation marked, as plain text in the reply — never through a question or elicitation tool.
+
 ## Working here
 
 `main` is PR-only. Branch off a fresh `origin/main` and open a PR with `gh`.
