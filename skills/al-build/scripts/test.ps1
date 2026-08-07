@@ -131,9 +131,14 @@ function Invoke-TestGate {
         [switch]$Coverage
     )
 
+    # Verdict channel. The gate's success stream carries live payload (native
+    # command stdout — compiler diagnostics above all), so the exit code never
+    # rides it: every verdict sets $script:GateExitCode and returns nothing.
+    $script:GateExitCode = 1
+
     if (-not (Test-TestModeSelection -Force:$Force -UnitTestOnly:$UnitTestOnly -AllTests:$AllTests -Coverage:$Coverage)) {
         Write-TestModeUsage
-        return 1
+        return
     }
 
 # ---------------------------------------------------------------------------
@@ -149,7 +154,7 @@ if (Test-Path -LiteralPath $baseResultsPath) {
         Remove-Item -LiteralPath $baseResultsPath -Recurse -Force -Confirm:$false
     } catch {
         Write-BuildMessage -Type Error -Message "Failed to remove stale test results tree: $baseResultsPath. $_"
-        return 1
+        return
     }
 }
 New-Item -ItemType Directory -Path $baseResultsPath -Force | Out-Null
@@ -301,12 +306,12 @@ try {
 Start-Step 'validate-config'
 if ($UnitTestOnly -and -not $config.UnitTestApp) {
     Write-BuildMessage -Type Error -Message "unitTestApp not configured in al-build.json. Cannot run -UnitTestOnly."
-    return 1
+    return
 }
 
 if ($config.UnitTestApp -and -not (Test-Path $config.UnitTestApp)) {
     Write-BuildMessage -Type Error -Message "unitTestApp directory not found: $($config.UnitTestApp)"
-    return 1
+    return
 }
 Stop-Step 'validate-config'
 
@@ -334,7 +339,8 @@ if ($config.TestApps.Count -eq 0 -and -not $UnitTestOnly) {
         Write-BuildMessage -Type Warning -Message "No test apps configured. Skipping publish and tests."
         Write-BuildHeader 'Build Complete (no tests)'
         $gateOutcome = 'passed'
-        return 0
+        $script:GateExitCode = 0
+        return
     }
 }
 
@@ -394,7 +400,7 @@ if ($config.UnitTestApp) {
         Write-BuildMessage -Type Error -Message "Unit tests failed: $($unitResult.AppName)"
         Write-BuildMessage -Type Error -Message "Results: $($unitResult.ResultFile)"
         $gateOutcome = 'failed'
-        return 1
+        return
     }
 
     if ($UnitTestOnly) {
@@ -403,7 +409,8 @@ if ($config.UnitTestApp) {
         Show-RunnerTotals $testResults
         Write-BuildMessage -Type Success -Message "All unit tests passed"
         $gateOutcome = 'passed'
-        return 0
+        $script:GateExitCode = 0
+        return
     }
 
     Write-BuildMessage -Type Success -Message "AL Runner gate passed — proceeding to container tests"
@@ -534,13 +541,14 @@ if ($failedRuns) {
         Write-BuildMessage -Type Error -Message "  - $($failed.Runner) - $($failed.AppName): $($failed.ResultFile)"
     }
     $gateOutcome = 'failed'
-    return 1
+    return
 }
 
 Write-BuildHeader 'Test Complete'
 Show-RunnerTotals $testResults
 Write-BuildMessage -Type Success -Message "All tests passed with zero warnings and zero errors"
 $gateOutcome = 'passed'
+$script:GateExitCode = 0
 
 } catch {
     # Preserve the original diagnostics and nonzero exit; capture where we
@@ -686,9 +694,12 @@ $gateOutcome = 'passed'
     Save-BuildTimingEntry @saveArgs
     Show-BuildTimingHistory -Count 5
 }
-    return 0
 }
 
 if (-not $isDotSourced) {
-    exit (Invoke-TestGate -Force:$Force -UnitTestOnly:$UnitTestOnly -AllTests:$AllTests -Coverage:$Coverage)
+    # Invoked bare — never as `exit ( ... )`, which would capture the gate's
+    # whole success stream and swallow every native command's stdout (compiler
+    # diagnostics above all). The verdict travels via $script:GateExitCode.
+    Invoke-TestGate -Force:$Force -UnitTestOnly:$UnitTestOnly -AllTests:$AllTests -Coverage:$Coverage
+    exit $script:GateExitCode
 }
