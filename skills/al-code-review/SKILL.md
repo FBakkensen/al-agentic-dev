@@ -12,8 +12,6 @@ Code still in flight belongs to `/al-implement`; this gate reviews what has land
 
 Start on a clean tree, then identify the scope below and select its newest clean full-gate receipt. Its commit must be an ancestor of `HEAD`, and the diff since it may name only its owning task file. Match → `🔎✅ Green gate reused — T-123 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build` green. A red gate or unrelated uncommitted work → name the gap and stop. An uncertain baseline makes every finding a guess, and this run's fix commits would land on top of the pollution. The BCQuality corpus is the other baseline: no `.bcquality/` means the knowledge pass cannot run and the verdict would be narrower than it claims → name `/al-clone-bcquality` and stop.
 
-Scope is one of three diffs:
-
 - **Slice-done** — every `T-NNN` commit of the technical tasks sharing one `slice:`, from the first through the last one settled.
 - **Feature-done** — the whole branch against `main`, after every task but the breaking-change task is settled.
 - **Repair** — the fix commits of one named repair episode from a verification walk, reviewed against the check that failed; this scope reports its verdict and stamps nothing.
@@ -29,9 +27,14 @@ Mixed state, a squash that hides the `T-NNN` prefixes, or an ambiguous range is 
 
 ## The review passes
 
-Two passes over the scoped diff. The first is BCQuality's: `.bcquality/` is intentionally gitignored, and its `microsoft/skills/review/al-code-review.md` names one review leaf per knowledge domain in its `sub-skills:` frontmatter. Default workspace search can omit the clone, so use a search mode or direct file reading that includes it. Run every leaf it lists against the diff, each per its own instructions, resolving the paths inside those files against `.bcquality/`. Every leaf runs: each decides its own applicability, and pre-judging which ones have something to say is the documented way to make them underreport. A leaf that ends partial or failed leaves its domain unjudged — name it and stop, rather than counting silence as clean. If your harness supports subagents, one leaf per subagent holds each context to a single domain; otherwise run them one at a time.
+Two passes over the scoped diff. The first is BCQuality's: `.bcquality/` is intentionally gitignored, and its `microsoft/skills/review/al-code-review.md` is the parent review entry. Default workspace search can omit the clone, so use a search mode or direct file reading that includes it.
 
-The second pass is yours — the dimensions below, which reach what no leaf can see: the task's proof, the project's baselines, the shape of the code. If your harness supports subagents, these parallelize under the same subagent rule; otherwise apply them in one pass.
+- Delegate the complete BCQuality knowledge pass to its parent review entry; do not independently read or dispatch its leaves.
+- Where isolated workers are available, the parent review entry's isolated-call discipline supplies the complete context it requires, including access to the ignored `.bcquality/` clone; never dispatch a leaf path alone.
+- Setup text or no valid DO-contract result means the leaf did not run; the parent retries that isolated call once. If its retry produces no valid result, stop as an invocation failure.
+- A valid `partial` or `failed` leaf result leaves its domain unjudged: name it and stop.
+
+The second pass is yours — the dimensions below, which reach what no leaf can see: the task's proof, the project's baselines, the shape of the code. If your harness supports subagents, these parallelize; otherwise apply them in one pass.
 
 - **Correctness** — logic faults a fresh read exposes, plus an identifier whose claim is false: a `Get…` that mutates, an `Is…` that does not reflect the state it names.
 - **Assertion rigor** — a test that would pass whether or not the behaviour under test works: an `Assert` restating the `Act`, an expected value the test derives for itself, an assertion on error text where the promised outcome is a state change.
@@ -50,7 +53,6 @@ Rank the survivors of both passes by the consequence of shipping the diff as it 
 
 - **Defect** — a bug or implementation-quality problem whose correction needs no user decision. It lands in this run.
 - **Change request** — the proposed resolution would override a recorded user decision, or establish business or architecture intent nobody has decided. The user settles it.
-- Code, comments, the current diff, and a knowledge article are technical evidence, not user decisions.
 
 ### Land the defects
 
