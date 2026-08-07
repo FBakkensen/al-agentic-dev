@@ -10,7 +10,7 @@ Code still in flight belongs to `/al-implement`; this gate reviews what has land
 
 ## Baseline
 
-Run the gate with `/al-build` and require green on a clean tree. A red gate or unrelated uncommitted work → name the gap and stop. An uncertain baseline makes every finding a guess, and this run's fix commits would land on top of the pollution. The BCQuality corpus is the other baseline: no `.bcquality/` means the knowledge pass cannot run and the verdict would be narrower than it claims → name `/al-clone-bcquality` and stop.
+Start on a clean tree, then identify the scope below and select its newest clean full-gate receipt. Its commit must be an ancestor of `HEAD`, and the diff since it may name only its owning task file. Match → `🔎✅ Green gate reused — T-123 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build` green. A red gate or unrelated uncommitted work → name the gap and stop. An uncertain baseline makes every finding a guess, and this run's fix commits would land on top of the pollution. The BCQuality corpus is the other baseline: no `.bcquality/` means the knowledge pass cannot run and the verdict would be narrower than it claims → name `/al-clone-bcquality` and stop.
 
 Scope is one of three diffs:
 
@@ -78,5 +78,5 @@ A clean gate is no defect left and no open change request.
 
 Keep the pass churn out of chat. Name each defect commit. Report each change request as `Impact:` / `Ruling:` / `Outcome:`. A slice or feature verdict that landed defects or settled change requests also goes up drawn through `/al-visualize` — the reviewed diff with each ruling on it; a clean gate and a repair verdict close plain.
 
-**Outcome:** the diff is reviewed, every defect has landed green or become a task the user accepted, and every change request has a ruling.
+**Outcome:** the diff is reviewed, every defect has landed green or become a task the user accepted, and every change request has a ruling. Report the committed `HEAD` from its last durable full green when the review changed the tree; a clean no-change review retains its selected receipt.
 Then `/al-routing` on a slice or feature verdict; a repair verdict closes back into the paused walk.

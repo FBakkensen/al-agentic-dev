@@ -17,7 +17,7 @@
     for the per-skill exemptions in $scriptExemptions, each an upstream tool a named skill
     runs inside a checkout it clones. Task
     state has one home: outside skills/al-routing, no skill body states a lifecycle field
-    (status:, phase:, blocked-on:, review:, tier:). Every skill carries the shared plain-text
+    (status:, phase:, blocked-on:, review:, tier:, green-gate:). Every skill carries the shared plain-text
     question rule. Every /al-<name> skill reference resolves to a folder under the skills
     root. Every violation is reported; any violation exits 1.
 .EXAMPLE
@@ -174,7 +174,7 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
         }
 
         if ($skill.Name -ne 'al-routing') {
-            foreach ($field in [regex]::Matches($body, '(?<![\w-])(status|phase|blocked-on|review|tier)\s*:')) {
+            foreach ($field in [regex]::Matches($body, '(?<![\w-])(status|phase|blocked-on|review|tier|green-gate)\s*:')) {
                 $violations += "${relative}: states the lifecycle field '$($field.Groups[1].Value):' outside al-routing; task state has one home"
             }
         }

@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Reshape while green
 
-The build is green before the first change. Reshaping against red is debugging — that belongs in /al-implement. Your first line names that this run wants a standard-class model or above — the user picked the model and weighs the mismatch. Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. Task-file state is `/al-routing`'s; this skill reshapes code. The knowledge pass below reads `.bcquality/` — missing → name `/al-clone-bcquality` and stop. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+The tree is clean and the build is green before the first change. Evaluate the task's clean full-gate receipt: its commit is an ancestor of `HEAD` and the diff since it names only this task file. Match → `🔎✅ Green gate reused — T-123 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build` green. Reshaping against red is debugging — that belongs in /al-implement. Your first line names that this run wants a standard-class model or above — the user picked the model and weighs the mismatch. Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. Task-file state is `/al-routing`'s; this skill reshapes code. The knowledge pass below reads `.bcquality/` — missing → name `/al-clone-bcquality` and stop. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 ## The knowledge pass
 
@@ -52,6 +52,6 @@ Reach for the platform before writing code — a field plus a FlowField over a s
 
 ## Close
 
-Report the reshape and defects fixed at module, pattern, and seam altitude, naming the invariant that held and the dimensions and leaves that came back clean. Report each change request by impact, ruling, and outcome. A run that reshaped code or landed a fix also goes up drawn through `/al-visualize` — the component diff of the reshape; a run that changed nothing closes plain.
+Report the reshape and defects fixed at module, pattern, and seam altitude, naming the invariant that held and the dimensions and leaves that came back clean. Report the committed `HEAD` from the last durable full green when this run reshaped code; a no-change pass retains its incoming receipt. Report each change request by impact, ruling, and outcome. A run that reshaped code or landed a fix also goes up drawn through `/al-visualize` — the component diff of the reshape; a run that changed nothing closes plain.
 
 Then `/al-routing`.

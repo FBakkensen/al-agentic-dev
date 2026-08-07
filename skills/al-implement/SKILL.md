@@ -64,7 +64,7 @@ At full green, the handoff certifies that the task file matches what landed. Bef
 - Every `Contract notes:` bullet is one sentence; a bullet that grew a history is rewritten to its surviving decision, the history going to the commit message.
 - A shipped surface is a one-way door: new objects take IDs from the workspace's ID allocator, and a shipped field goes `ObsoleteState: Pending` → `Removed` rather than being renamed in place.
 
-Commit at green under the task's `T-NNN` prefix — the slice review selects its diff by those prefixes — so the tree is clean for what comes next.
+Commit at green under the task's `T-NNN` prefix — the slice review selects its diff by those prefixes — so the tree is clean for what comes next. Report that committed `HEAD` and the full-gate result to `/al-routing`; it records the clean-gate receipt, including on a repair green.
 
 ## Apply a decision, or ask on a new one
 

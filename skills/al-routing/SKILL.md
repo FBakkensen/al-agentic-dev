@@ -20,14 +20,20 @@ status: open | done  # the only two written states
 phase: refined | implemented | refactored | mutated | planned | page-scripted | provisioned | bcapps-cloned   # first four technical, then verify, then provision
 review: clean        # the review gate's stamp
 tier: mechanical | standard | frontier   # the weakest model class the task's remaining work needs
+green-gate:
+  commit: <40-character SHA>  # the durable HEAD a full gate proved
+  profile: full
 ```
 
-Creation writes the structural fields plus `status: open` and no `phase:` — `/al-scope` at scoping, or the skill that finds new work mid-pipeline, naming the edges its find must wait on. `/al-scope` also stamps `tier:` at creation; a finder's task omits it — recording is any model's work, sizing is not. A finder task takes a free `NNN` below the slice's verify task where one exists, so the verify task stays the slice's tail; a backend-only slice appends at the tail. The breaking-change task never carries `phase:`. Every later write is a stamp this skill makes when a run's outcome arrives.
+Creation writes the structural fields plus `status: open`, no `phase:`, and no green-gate receipt — `/al-scope` at scoping, or the skill that finds new work mid-pipeline, naming the edges its find must wait on. `/al-scope` also stamps `tier:` at creation; a finder's task omits it — recording is any model's work, sizing is not. A finder task takes a free `NNN` below the slice's verify task where one exists, so the verify task stays the slice's tail; a backend-only slice appends at the tail. The breaking-change task never carries `phase:`. Every later write is a stamp this skill makes when a run's outcome arrives.
 
 ## Derived, never written
 
-- Ready, blocked, and waiting are computed fresh at every read — no field mirrors them, so none can go stale. A task is **runnable** when `status: open`, every `depends_on` entry is satisfied, and no gate below holds it; it **waits** otherwise, and presenting it names the open edge or the holding gate.
-- An edge inside a slice is satisfied by `done`. An edge that crosses slices also needs the target slice reviewed — its last task carrying `review: clean` — so a task appended at a backend-only slice's tail re-holds the slices that build on it until the re-review lands.
+Ready, blocked, and waiting are computed fresh at every read — no field mirrors them, so none can go stale. A task is **runnable** when `status: open`, every `depends_on` entry is satisfied, and no gate below holds it; it **waits** otherwise, and presenting it names the open edge or holding gate. An edge inside a slice is satisfied by `done`; a cross-slice edge also needs the target slice reviewed — its last task carrying `review: clean`.
+
+## Clean-gate receipt
+
+A completed full gate reports the `HEAD` committed immediately from its unchanged green tree. Record or replace its receipt on the outcome task with `commit:` and `profile: full`, in the same routing commit as the outcome, then say `✅ Green gate recorded — T-123 @ abc123 (full).` A receiver accepts the newest receipt in its scope only on a clean tree, when the recorded commit is an ancestor of `HEAD` and `git diff --name-only <commit>..HEAD` names only that receipt-owning task file. A non-full profile, missing or unreachable commit, or any other path requires a new full gate. No skill finishes red, so no invalid receipt is written.
 
 ## The ladder
 
@@ -39,13 +45,9 @@ Creation writes the structural fields plus `status: open` and no `phase:` — `/
 - `done` is settled at any phase; on a technical task short of `mutated` it is a deliberate early close, not a gap.
 
 ## Gates
-
-- **Scoping** — no breaking-change task in `tasks/` means the folder is half-scoped: `/al-scope` finishes the write before anything routes.
-- **Re-scope** — `architecture.md` reshaped since the folder settled: `/al-scope` reconciles before anything routes.
-- **Provisioning** — while the provision task is not `done`, its ladder step is the only move.
-- **Slice-done** — every technical task in a feature slice `done` (the reserved ops slugs never gate) and the slice's last task lacking `review: clean` → `/al-code-review` on the slice.
-- **Feature-done** — every task `done` except the breaking-change task, which lacks `review: clean` → `/al-code-review` across the feature; its stamp is what opens the breaking-change task.
-- **All done** — everything `done`, breaking-change included → `/al-sync-main`, then the user opens the PR. Branch synced and PR open → the feature is closed; nothing to route.
+- **Scoping / re-scope** — no breaking-change task in `tasks/`, or an `architecture.md` reshaped since the folder settled, → `/al-scope` before anything routes. While provision is not `done`, its ladder step is the only move.
+- **Slice / feature done** — every technical task in a slice `done` and its last task lacking `review: clean` → `/al-code-review`; every task but breaking-change done and its task lacking `review: clean` → feature `/al-code-review`.
+- **All done** — everything `done`, breaking-change included → `/al-sync-main`, then the user opens the PR. Branch synced and PR open → closed.
 
 ## Outcome → stamp
 
@@ -54,21 +56,20 @@ One edit per stamped outcome, committed as it lands under the owning task's `T-N
 | The reported outcome | Stamp |
 |---|---|
 | `/al-refine` wrote the proof | `phase: refined` (technical) / `phase: planned` (verify); `tier:` re-stamped to the class its report names for the remaining work |
-| `/al-implement` reached green outside a repair episode | `phase: implemented` |
-| `/al-refactor` closed its pass — reshape landed, or every dimension came back clean | `phase: refactored` |
-| `/al-mutate` closed its pass | `phase: mutated` and `status: done` |
+| `/al-implement` reached green outside a repair episode | `phase: implemented`; record its full-gate receipt |
+| `/al-refactor` closed its pass — reshape landed, or every dimension came back clean | `phase: refactored`; replace the receipt after a reshaped green, otherwise retain the incoming one |
+| `/al-mutate` closed its pass | `phase: mutated` and `status: done`; replace the receipt after a kill's green, otherwise retain the incoming one |
 | `/al-user-verification` sealed the slice's last recording | `phase: page-scripted` |
 | `/al-user-verification` finished the walk clean | `status: done` |
-| `/al-code-review` cleared the slice / the feature | `review: clean` on the slice's last task / on the breaking-change task |
+| `/al-code-review` cleared the slice / the feature | `review: clean` on the slice's last task / on the breaking-change task; record its latest durable full gate when it changed the tree |
 | `/al-provision` ran | green → `phase: provisioned`; red → one `Last run:` line in the task body naming what failed, frontmatter untouched |
 | `/al-clone-bcapps`, `/al-clone-bcquality`, or `/al-validate-breaking-changes` ran | green → `phase: bcapps-cloned` for the first, `status: done` for the other two; red → one `Last run:` line in the task body naming what failed, frontmatter untouched |
 | the user closes a task early | `status: done` |
 
-Four outcomes stamp nothing:
+Four outcomes stamp nothing: `/al-scope` landed the tasks folder → present the opening move.
 
-- `/al-scope` landed the tasks folder → present the opening move.
 - A run whose outcome is a task it created — a change request at the review gate, a quiz follow-up → the new task is the move, and any gate it re-holds re-fires once it settles.
-- A repair episode — the fix green, its repair-scope review, a verification run paused on a fail — stays inside its episode: no stamp, and the run resumes at the failed scenario.
+- A repair episode — the fix green, its repair-scope review, a verification run paused on a fail — stays inside its episode: no phase stamp; a durable full green records or replaces its receipt, and the run resumes at the failed scenario.
 - A run that stopped on an open question or declined its task → the stop line in chat is the whole record; the user re-runs once it settles.
 
 Any other unmatched outcome goes back to the reporter as one question rather than being guessed into a stamp.
