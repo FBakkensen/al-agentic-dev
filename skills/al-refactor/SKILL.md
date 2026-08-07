@@ -15,7 +15,7 @@ The tree is clean and the build is green before the first change. Evaluate the t
 - Delegate the complete BCQuality knowledge pass to its parent review entry; do not independently read or dispatch its leaves.
 - Where isolated workers are available, the parent review entry's isolated-call discipline applies; never dispatch a leaf path alone.
 - The parent provides the complete context its discipline requires, including access to the ignored `.bcquality/` clone.
-- Setup text or no valid DO-contract result means the leaf did not run; retry that isolated call once. If the retry produces no valid result, stop as an invocation failure.
+- Setup text or no valid DO-contract result means the leaf did not run; the parent retries that isolated call once. If its retry produces no valid result, stop as an invocation failure.
 - A valid `partial` or `failed` leaf result leaves its domain unjudged: name it and stop.
 
 ## Improvement dimensions

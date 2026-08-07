@@ -31,7 +31,7 @@ Two passes over the scoped diff. The first is BCQuality's: `.bcquality/` is inte
 
 - Delegate the complete BCQuality knowledge pass to its parent review entry; do not independently read or dispatch its leaves.
 - Where isolated workers are available, the parent review entry's isolated-call discipline supplies the complete context it requires, including access to the ignored `.bcquality/` clone; never dispatch a leaf path alone.
-- Setup text or no valid DO-contract result means the leaf did not run; retry that isolated call once. If the retry produces no valid result, stop as an invocation failure.
+- Setup text or no valid DO-contract result means the leaf did not run; the parent retries that isolated call once. If its retry produces no valid result, stop as an invocation failure.
 - A valid `partial` or `failed` leaf result leaves its domain unjudged: name it and stop.
 
 The second pass is yours — the dimensions below, which reach what no leaf can see: the task's proof, the project's baselines, the shape of the code. If your harness supports subagents, these parallelize; otherwise apply them in one pass.
