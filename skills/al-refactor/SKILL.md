@@ -10,10 +10,13 @@ The tree is clean and the build is green before the first change. Evaluate the t
 
 ## The knowledge pass
 
-`.bcquality/` is intentionally gitignored. Its `microsoft/skills/review/al-code-review.md` names one review leaf per knowledge domain in its `sub-skills:` frontmatter. Default workspace search can omit the clone, so use a search mode or direct file reading that includes it. Run every leaf it lists against the task's diff, each per its own instructions, resolving the paths inside those files against `.bcquality/`. Every leaf runs — each decides its own applicability, and pre-judging which ones have something to say is the documented way to make them underreport. A leaf that ends partial or failed leaves its domain unjudged: name it and stop. Its findings are reshape candidates like any other, cited by the article behind them.
-
+`.bcquality/` is intentionally gitignored. Its `microsoft/skills/review/al-code-review.md` is the parent review entry. Default workspace search can omit the clone, so use a search mode or direct file reading that includes it. Its findings are reshape candidates like any other, cited by the article behind them.
+- Delegate the complete BCQuality knowledge pass to its parent review entry; do not independently read or dispatch its leaves.
+- Where isolated workers are available, the parent review entry's isolated-call discipline applies; never dispatch a leaf path alone.
+- The parent provides the complete context its discipline requires, including access to the ignored `.bcquality/` clone.
+- Setup text or no valid DO-contract result means the leaf did not run; retry that isolated call once. If the retry produces no valid result, stop as an invocation failure.
+- A valid `partial` or `failed` leaf result remains terminal under the existing behavior.
 ## Improvement dimensions
-
 Read the whole diff — a task's full diff, once per task — through each of these:
 
 - **Simplification** — duplication, dead code, pass-through procedures, generality nothing asked for.
