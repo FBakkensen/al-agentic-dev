@@ -29,9 +29,10 @@ Mixed state, a squash that hides the `T-NNN` prefixes, or an ambiguous range is 
 
 Two passes over the scoped diff. The first is BCQuality's: `.bcquality/` is intentionally gitignored, and its `microsoft/skills/review/al-code-review.md` is the parent review entry. Default workspace search can omit the clone, so use a search mode or direct file reading that includes it.
 
-- Delegate the complete BCQuality knowledge pass to its parent review entry; do not independently read or dispatch its leaves.
-- Where isolated workers are available, the parent review entry's isolated-call discipline supplies the complete context it requires, including access to the ignored `.bcquality/` clone; never dispatch a leaf path alone.
-- Setup text or no valid DO-contract result means the leaf did not run; the parent retries that isolated call once. If its retry produces no valid result, stop as an invocation failure.
+- Run the complete BCQuality knowledge pass in the active agent by following the review entry; do not delegate the entry itself.
+- If the harness supports subagents, only the isolated leaf reviews prescribed by the entry become subagent calls; otherwise the active agent runs the leaves serially. Never dispatch a leaf path alone.
+- The active agent provides the complete context the entry requires for each leaf, including access to the ignored `.bcquality/` clone.
+- Setup text or no valid DO-contract result means the leaf did not run; the active agent retries that isolated call once. If its retry produces no valid result, stop as an invocation failure.
 - A valid `partial` or `failed` leaf result leaves its domain unjudged: name it and stop.
 
 The second pass is yours — the dimensions below, which reach what no leaf can see: the task's proof, the project's baselines, the shape of the code. If your harness supports subagents, these parallelize; otherwise apply them in one pass.
