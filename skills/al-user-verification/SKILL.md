@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Walk a slice's Verification Plan
 
-The user is the oracle; you drive everything mechanical — containers, publish, replays, Contract clients, the task file. They never open the task file. Your first line names that this run wants a standard-class model or above — the user picked the model and weighs the mismatch. The walk runs in the mode the user picks at the opener:
+The user is the oracle; you drive everything mechanical — containers, publish, replays, Contract clients, the task file. They never open the task file. Your first line names that this run wants a frontier-class model — the user picked the model and weighs the mismatch — then proceed. The walk runs in the mode the user picks at the opener:
 
 - **Guided** — the user drives the Web Client; you turn each plan element into one concrete instruction and ask what they see.
 - **Annotated** — you drive the Web Client and narrate; the user watches, interrupts at will, and rules on each scenario. Offer it only when you can drive the Web Client from this session; otherwise open guided, noting in one line that the `microsoft/playwright-mcp` browser-automation server enables annotated walks.
