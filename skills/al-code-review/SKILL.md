@@ -12,8 +12,6 @@ Code still in flight belongs to `/al-implement`; this gate reviews what has land
 
 Start on a clean tree, then identify the scope below and select its newest clean full-gate receipt. Its commit must be an ancestor of `HEAD`, and the diff since it may name only its owning task file. Match → `🔎✅ Green gate reused — T-123 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build` green. A red gate or unrelated uncommitted work → name the gap and stop. An uncertain baseline makes every finding a guess, and this run's fix commits would land on top of the pollution. The BCQuality corpus is the other baseline: no `.bcquality/` means the knowledge pass cannot run and the verdict would be narrower than it claims → name `/al-clone-bcquality` and stop.
 
-Scope is one of three diffs:
-
 - **Slice-done** — every `T-NNN` commit of the technical tasks sharing one `slice:`, from the first through the last one settled.
 - **Feature-done** — the whole branch against `main`, after every task but the breaking-change task is settled.
 - **Repair** — the fix commits of one named repair episode from a verification walk, reviewed against the check that failed; this scope reports its verdict and stamps nothing.
@@ -26,15 +24,18 @@ Mixed state, a squash that hides the `T-NNN` prefixes, or an ambiguous range is 
 - Write BC vocabulary: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, the record or the API body not the payload, procedure not method, codeunit not class.
 - Hold production code to AL thrift: reach for the platform before writing code, keep no `interface` with a single implementation, and let a deliberate shortcut carry a one-line comment naming its ceiling and its upgrade path.
 - Thrift governs production code only. Test thoroughness, trust-boundary validation, posting and ledger correctness, and permission checks stay at full strength.
-## The review passes
-Two passes over the scoped diff. The first is BCQuality's: `.bcquality/` is intentionally gitignored, and its `microsoft/skills/review/al-code-review.md` is the parent review entry. Default workspace search can omit the clone, so use a search mode or direct file reading that includes it.
-- Delegate the complete BCQuality knowledge pass to its parent review entry; do not independently read or dispatch its leaves.
-- Where isolated workers are available, the parent review entry's isolated-call discipline applies; never dispatch a leaf path alone.
-- The parent provides the complete context its discipline requires, including access to the ignored `.bcquality/` clone.
-- Setup text or no valid DO-contract result means the leaf did not run; retry that isolated call once. If the retry produces no valid result, stop as an invocation failure.
-- A valid `partial` or `failed` leaf result remains terminal under the existing behaviour.
 
-The second pass is yours — the dimensions below, which reach what no leaf can see: the task's proof, the project's baselines, the shape of the code. If your harness supports subagents, these parallelize under the same subagent rule; otherwise apply them in one pass.
+## The review passes
+
+Two passes over the scoped diff. The first is BCQuality's: `.bcquality/` is intentionally gitignored, and its `microsoft/skills/review/al-code-review.md` is the parent review entry. Default workspace search can omit the clone, so use a search mode or direct file reading that includes it.
+
+- Delegate the complete BCQuality knowledge pass to its parent review entry; do not independently read or dispatch its leaves.
+- Where isolated workers are available, the parent review entry's isolated-call discipline supplies the complete context it requires, including access to the ignored `.bcquality/` clone; never dispatch a leaf path alone.
+- Setup text or no valid DO-contract result means the leaf did not run; retry that isolated call once. If the retry produces no valid result, stop as an invocation failure.
+- A valid `partial` or `failed` leaf result leaves its domain unjudged: name it and stop.
+
+The second pass is yours — the dimensions below, which reach what no leaf can see: the task's proof, the project's baselines, the shape of the code. If your harness supports subagents, these parallelize; otherwise apply them in one pass.
+
 - **Correctness** — logic faults a fresh read exposes, plus an identifier whose claim is false: a `Get…` that mutates, an `Is…` that does not reflect the state it names.
 - **Assertion rigor** — a test that would pass whether or not the behaviour under test works: an `Assert` restating the `Act`, an expected value the test derives for itself, an assertion on error text where the promised outcome is a state change.
 - **Proof coverage** — behaviour the task's Test Specification claims that no case proves, and every decision branch, error path, and boundary the code admits with no case behind it.
@@ -45,11 +46,14 @@ The second pass is yours — the dimensions below, which reach what no leaf can 
 - **Naming and compliance** — every introduced name traces to a `CONTEXT.md` term, the BC baseline, or an `event-model.md` Action, Business Event, or Status, its verb to BC's own set — an untraceable name (a `Mutate`, a `Manager`, a noun no source names) is a finding — and artifact prose in the diff (task bodies, `architecture.md`) answers to the same vocabulary; a decision that contradicts a settled ADR or crosses a stated module boundary; diff behaviour traceable to no `Expected Behaviors` row, `Decision Matrix` row, or AAA case.
 - **Comments and history** — a change that breaks an invariant a modified file's comment states, or that undoes a fix the commit history names.
 - **Simplification** — duplication, dead code, redundant procedures, and speculative generality. Run the deletion test on every shallow object in the diff: what is lost if it goes away.
+
 ## Disposition
+
 Rank the survivors of both passes by the consequence of shipping the diff as it stands; rank orders the queue and chooses nothing. Present each survivor as a glyphed headline — `⛔` defect, `⚖️` change request, `⚠️` recommendation — over three slots of one line each: `⚡ Breaks:`, `📍 Proof:`, `🔧 Fix:`. A leaf finding is a survivor like any other. Decision evidence is the task's Test Specification, `architecture.md`, `event-model.md`, `CONTEXT.md`, the ADRs, behaviour the user already verified, and explicit rulings in this session.
+
 - **Defect** — a bug or implementation-quality problem whose correction needs no user decision. It lands in this run.
 - **Change request** — the proposed resolution would override a recorded user decision, or establish business or architecture intent nobody has decided. The user settles it.
-- Code, comments, the current diff, and a knowledge article are technical evidence, not user decisions.
+
 ### Land the defects
 
 - A behavioural defect goes red first: write the missing AAA case, watch it fail on a real assertion, then make it pass. Commit under the originating `T-NNN` prefix and re-run `/al-build`. Task-file state stays untouched — a repair is not a pipeline step.
