@@ -17,25 +17,21 @@ Run one at a time. `al-build.json` in the repo root is required — without it t
 
 | Command | Scope |
 |---|---|
-| `test.ps1` | Full gate. Compiles the main app and every `testApps` entry through the analyzer gate, publishes to the branch's agent container, runs the container tests. `-Force` republishes unchanged apps. |
-| `test.ps1 -UnitTestOnly` | Inner loop. Compiles every app through the analyzer gate, runs the AL Runner unit tests, skips the container entirely — seconds where the full gate spends minutes. Needs `unitTestApp` set in `al-build.json`. |
+| `test.ps1 -UnitTestOnly` | AL Runner unit tests only. Compiles every app through the analyzer gate and never touches the container. Needs `unitTestApp` set in `al-build.json`. |
+| `test.ps1 -AllTests` | Full gate. Compiles the main app and every `testApps` entry through the analyzer gate, runs AL Runner when configured, then publishes to the branch's agent container and runs the container tests. `-Force` republishes unchanged apps. |
 
 Green is zero errors and zero warnings. `test.ps1` exits 0 on warnings by default, so set `WARN_AS_ERROR=true` to bind that bar to the exit code.
 
-The full gate is the scope: `test.ps1` owns symbol resolution and the container publish, and both codeunit filtering and a bare `alc.exe` call bypass them.
-
-## Coverage
-
-For any coverage run, read [COVERAGE.md](COVERAGE.md) before the gate; it is the authority for enablement, artifacts, failure, and recovery.
+Name one mode in every request. `/al-build` runs only that sequence; it never selects or extends a test mode for its caller.
 
 ## Read the result, not the output
 
-After the run, read `.output/TestResults/summary.json` and report from it. It carries `gate` (`full` or `unit`), per-runner `totals`, `runs[]` — one record per run with `runner`, `appName`, `dir`, `passed`, `counts`, `resultFile` — and the coverage block. For a red, open the `resultFile` of each run whose `passed` is false (JUnit XML) for the failing test names and their assertion messages. Reading the console stream instead floods the session with thousands of lines of build spew for numbers the summary already holds.
+After the run, read `.output/TestResults/summary.json` and report from it. It carries `gate` (`full` or `unit`), per-runner `totals`, and `runs[]` — one record per run with `runner`, `appName`, `dir`, `passed`, `counts`, `resultFile`. For a red, open the `resultFile` of each run whose `passed` is false (JUnit XML) for the failing test names and their assertion messages. Reading the console stream instead floods the session with thousands of lines of build spew for numbers the summary already holds.
 
 - Totals are per runner, never summed across them — the unit-test app runs under both AL Runner and the container, so a sum counts those tests twice.
 - `counts: null` reports as unavailable, not as zeros.
 - `Codeunit … Success` console lines count test codeunits, not tests. Counts come from the summary and the JUnit XML alone.
-- `test.ps1` clears prior test results before configuration or compilation. A malformed config or early compile failure can leave no `summary.json`; take the red signal from the diagnostics instead.
+- `test.ps1` clears prior test results after its mode validation. A malformed config or early compile failure can leave no `summary.json`; take the red signal from the diagnostics instead.
 
 Other artifacts: `.output/TestResults/<dir>/al-runner.xml` and `last.xml` (unit and container JUnit, separate files so a full gate leaves the unit result intact), and `.output/logs/build-timing.jsonl`, one entry per gate run on every exit path.
 
@@ -61,13 +57,13 @@ The three container scripts are one sequence, run once per BC version: `new-bc-c
 
 ## Configuration
 
-Resolution order, highest first: script switch, environment variable (`ALBT_*`, plus `WARN_AS_ERROR` and `RULESET_PATH`), `al-build.json` in the repo root, built-in default. The fields that change behaviour are `appDir`, `testApps`, `coverage.enabled`, `unitTestApp`, `unitTestInitEvents`, and `breakingChange.enabled`. A unit-only project sets `"testApps": []`; the `["test"]` default fails loudly without a `test/` folder.
+Resolution order, highest first: script switch, environment variable (`ALBT_*`, plus `WARN_AS_ERROR` and `RULESET_PATH`), `al-build.json` in the repo root, built-in default. The fields that change behaviour are `appDir`, `testApps`, `unitTestApp`, `unitTestInitEvents`, and `breakingChange.enabled`. A unit-only project sets `"testApps": []`; the `["test"]` default fails loudly without a `test/` folder.
 
 Analyzer selection is `al.codeAnalyzers` in `.vscode/settings.json`, in the AL extension's own notation — `<appDir>/.vscode/settings.json` wins, the repo root file is the shared fallback. No `settings.json` means no analyzers, and a listed analyzer that cannot be resolved stops the build rather than quietly compiling with less lint coverage than asked for. Diagnostic prefixes: `AA` CodeCop, `AW` UICop, `AS` AppSourceCop, `PTE` PerTenantExtensionCop, `AC`/`DC`/`FC`/`LC`/`PC`/`TA` the ALCops family. `${AppSourceCop}` must be listed for compile-time breaking-change detection to run at all; a break then arrives as an ordinary `AS00xx` error.
 
 ## Container recovery
 
-For ordinary container failures, recovery escalates from outside it: `docker restart <container>` and re-run the gate; then `docker rm -f <container>` and re-run, which recreates it; then re-run `provision.ps1` and the gate. Coverage-helper recovery follows [COVERAGE.md](COVERAGE.md). Nothing inside the container is patched by hand — `docker exec` or installing apps by hand leaves state the scripts cannot reproduce.
+For ordinary container failures, recovery escalates from outside it: `docker restart <container>` and re-run the gate; then `docker rm -f <container>` and re-run, which recreates it; then re-run `provision.ps1` and the gate. Nothing inside the container is patched by hand — `docker exec` or installing apps by hand leaves state the scripts cannot reproduce.
 
 ## Close
 

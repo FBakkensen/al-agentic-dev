@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Reshape while green
 
-The tree is clean and the build is green before the first change. Evaluate the task's clean full-gate receipt: its commit is an ancestor of `HEAD` and the diff since it names only this task file. Match → `🔎✅ Green gate reused — T-123 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build` green. Reshaping against red is debugging — that belongs in /al-implement. Your first line names that this run wants a standard-class model or above — the user picked the model and weighs the mismatch. Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. Task-file state is `/al-routing`'s; this skill reshapes code. The knowledge pass below reads `.bcquality/` — missing → name `/al-clone-bcquality` and stop. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+The tree is clean and the build is green before the first change. Evaluate the task's clean full-gate receipt: its commit is an ancestor of `HEAD` and the diff since it names only this task file. Match → `🔎✅ Green gate reused — T-123 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build -AllTests` green. Reshaping against red is debugging — that belongs in /al-implement. Your first line names that this run wants a standard-class model or above — the user picked the model and weighs the mismatch. Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. Task-file state is `/al-routing`'s; this skill reshapes code. The knowledge pass below reads `.bcquality/` — missing → name `/al-clone-bcquality` and stop. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 ## The knowledge pass
 
@@ -32,7 +32,7 @@ If your harness supports subagents, these parallelize; otherwise apply them in o
 
 ## Apply
 
-One reshape at a time, committed under the owning task's `T-NNN` prefix, running the gate with /al-build after each. Red reverts that step, and recovery comes before the next one.
+One reshape at a time, committed under the owning task's `T-NNN` prefix, running the gate with `/al-build -AllTests` after each. Red reverts that step, and recovery comes before the next one.
 
 - Renames and seam introduction land first — they touch many call sites and conflict with anything queued behind them.
 - Extract a helper on the third occurrence, not the second. Below that, leave the duplication and say so. Logic with a rightful home — a BaseApp or System Application helper, an existing module's internal helper — moves there and the canonical one is reused.

@@ -1,4 +1,4 @@
-#requires -Version 7.2
+#Requires -Version 7.2
 
 <#
 .SYNOPSIS
@@ -20,6 +20,9 @@
     (the analyzer gate runs over the whole solution) and run AL Runner unit tests.
     Skips container publish and container tests entirely.
 
+    If -AllTests is specified, run the full gate: AL Runner unit tests when
+    configured, then container publish and container tests.
+
     Coverage can be enabled by configuration, ALBT_COVERAGE_ENABLED, or -Coverage.
     It is mandatory for configured container test apps and skipped when testApps
     is empty.
@@ -36,7 +39,7 @@
     Ignored when testApps is empty. Cannot be combined with -UnitTestOnly.
 
 .EXAMPLE
-    pwsh -File test.ps1
+    pwsh -File test.ps1 -AllTests
     # Run all tests (unit + container)
 
 .EXAMPLE
@@ -44,11 +47,11 @@
     # Inner loop: compile all apps (analyzer gate) + AL Runner unit tests, no container
 
 .EXAMPLE
-    pwsh -File test.ps1 -Force
+    pwsh -File test.ps1 -AllTests -Force
     # Force republish and run all tests
 
 .EXAMPLE
-    pwsh -File test.ps1 -Coverage
+    pwsh -File test.ps1 -AllTests -Coverage
     # Run container tests and retain complete per-test raw coverage
 #>
 
@@ -56,6 +59,7 @@
 param(
     [switch]$Force,
     [switch]$UnitTestOnly,
+    [switch]$AllTests,
     [switch]$Coverage
 )
 
@@ -82,10 +86,55 @@ function Stop-Step {
     }
 }
 
+function Test-TestModeSelection {
+    param(
+        [switch]$Force,
+        [switch]$UnitTestOnly,
+        [switch]$AllTests,
+        [switch]$Coverage
+    )
+
+    -not (($UnitTestOnly -eq $AllTests) -or ($UnitTestOnly -and ($Force -or $Coverage)))
+}
+
+function Write-TestModeUsage {
+    $message = @'
+Specify exactly one test mode:
+-UnitTestOnly: run AL Runner unit tests without a container.
+-AllTests: run AL Runner when configured, then container tests.
+'@
+
+    if (Get-Command Write-BuildMessage -ErrorAction SilentlyContinue) {
+        Write-BuildMessage -Type Error -Message $message
+        return
+    }
+
+    [Console]::Error.WriteLine($message)
+}
+
+$isDotSourced = $MyInvocation.InvocationName -eq '.'
+if (-not $isDotSourced -and -not (Test-TestModeSelection -Force:$Force -UnitTestOnly:$UnitTestOnly -AllTests:$AllTests -Coverage:$Coverage)) {
+    Write-TestModeUsage
+    exit 1
+}
+
 # Import modules
 Import-Module (Join-Path $PSScriptRoot 'common.psm1') -Force -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot 'coverage-runtime.psm1') -Force -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot 'build-operations.psm1') -Force -DisableNameChecking
+
+function Invoke-TestGate {
+    param(
+        [switch]$Force,
+        [switch]$UnitTestOnly,
+        [switch]$AllTests,
+        [switch]$Coverage
+    )
+
+    if (-not (Test-TestModeSelection -Force:$Force -UnitTestOnly:$UnitTestOnly -AllTests:$AllTests -Coverage:$Coverage)) {
+        Write-TestModeUsage
+        return 1
+    }
 
 # ---------------------------------------------------------------------------
 # Startup cleanup — runs for every invocation (disabled, -UnitTestOnly, full,
@@ -100,14 +149,10 @@ if (Test-Path -LiteralPath $baseResultsPath) {
         Remove-Item -LiteralPath $baseResultsPath -Recurse -Force -Confirm:$false
     } catch {
         Write-BuildMessage -Type Error -Message "Failed to remove stale test results tree: $baseResultsPath. $_"
-        exit 1
+        return 1
     }
 }
 New-Item -ItemType Directory -Path $baseResultsPath -Force | Out-Null
-
-if ($Coverage -and $UnitTestOnly) {
-    throw '-Coverage cannot be combined with -UnitTestOnly.'
-}
 
 function ConvertTo-RunRecord {
     param($Result)
@@ -256,12 +301,12 @@ try {
 Start-Step 'validate-config'
 if ($UnitTestOnly -and -not $config.UnitTestApp) {
     Write-BuildMessage -Type Error -Message "unitTestApp not configured in al-build.json. Cannot run -UnitTestOnly."
-    exit 1
+    return 1
 }
 
 if ($config.UnitTestApp -and -not (Test-Path $config.UnitTestApp)) {
     Write-BuildMessage -Type Error -Message "unitTestApp directory not found: $($config.UnitTestApp)"
-    exit 1
+    return 1
 }
 Stop-Step 'validate-config'
 
@@ -289,7 +334,7 @@ if ($config.TestApps.Count -eq 0 -and -not $UnitTestOnly) {
         Write-BuildMessage -Type Warning -Message "No test apps configured. Skipping publish and tests."
         Write-BuildHeader 'Build Complete (no tests)'
         $gateOutcome = 'passed'
-        exit 0
+        return 0
     }
 }
 
@@ -349,7 +394,7 @@ if ($config.UnitTestApp) {
         Write-BuildMessage -Type Error -Message "Unit tests failed: $($unitResult.AppName)"
         Write-BuildMessage -Type Error -Message "Results: $($unitResult.ResultFile)"
         $gateOutcome = 'failed'
-        exit 1
+        return 1
     }
 
     if ($UnitTestOnly) {
@@ -358,7 +403,7 @@ if ($config.UnitTestApp) {
         Show-RunnerTotals $testResults
         Write-BuildMessage -Type Success -Message "All unit tests passed"
         $gateOutcome = 'passed'
-        exit 0
+        return 0
     }
 
     Write-BuildMessage -Type Success -Message "AL Runner gate passed — proceeding to container tests"
@@ -489,7 +534,7 @@ if ($failedRuns) {
         Write-BuildMessage -Type Error -Message "  - $($failed.Runner) - $($failed.AppName): $($failed.ResultFile)"
     }
     $gateOutcome = 'failed'
-    exit 1
+    return 1
 }
 
 Write-BuildHeader 'Test Complete'
@@ -640,4 +685,10 @@ $gateOutcome = 'passed'
     if ($headSha) { $saveArgs.HeadSha = $headSha }
     Save-BuildTimingEntry @saveArgs
     Show-BuildTimingHistory -Count 5
+}
+    return 0
+}
+
+if (-not $isDotSourced) {
+    exit (Invoke-TestGate -Force:$Force -UnitTestOnly:$UnitTestOnly -AllTests:$AllTests -Coverage:$Coverage)
 }

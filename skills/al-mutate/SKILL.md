@@ -10,7 +10,7 @@ A suite that passes a broken program proves nothing. Break the program on purpos
 
 ## Before the first mutation
 
-Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. The tree is clean and the green baseline is committed — revert returns to `HEAD`, so uncommitted work is not safe. Evaluate the task's clean full-gate receipt: its commit is an ancestor of `HEAD` and the diff since it names only this task file. Match → `🔎✅ Green gate reused — T-123 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build` green. Survivors measured against a red baseline carry no signal. Mutate production AL only: not tests, not generated `.rdlc` or `.xlf`, not captions, labels, or tooltips. Let a reshape in flight land green and commit first — a shape still moving stales every classification. Anything missing here: name it and stop.
+Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. The tree is clean and the green baseline is committed — revert returns to `HEAD`, so uncommitted work is not safe. Evaluate the task's clean full-gate receipt: its commit is an ancestor of `HEAD` and the diff since it names only this task file. Match → `🔎✅ Green gate reused — T-123 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build -AllTests` green. Survivors measured against a red baseline carry no signal. Mutate production AL only: not tests, not generated `.rdlc` or `.xlf`, not captions, labels, or tooltips. Let a reshape in flight land green and commit first — a shape still moving stales every classification. Anything missing here: name it and stop.
 
 ## Plan the sites first
 
@@ -31,7 +31,7 @@ Two edits usually fail to compile in AL and waste the round: removing an assignm
 
 ## Run one mutant at a time
 
-Apply the mutation, run the full gate with `/al-build`, classify it, then revert the tree to `HEAD` before the next site. A kill is behavioural.
+Apply the mutation, run the full gate with `/al-build -AllTests`, classify it, then revert the tree to `HEAD` before the next site. A kill is behavioural.
 
 | Verdict | Evidence |
 |---|---|
@@ -47,7 +47,7 @@ A survivor fails its own mutation, not the run — keep going through the planne
 
 Report the killed / survived / equivalent / stillborn / gate-error counts, then the actionable rows — each stillborn with the compiling operator that replaces it, each equivalence with its reason. Name the baseline SHA, and the catching test for every kill.
 
-Then put every survivor to the user first, one at a time: kill it now, or accept it — no kill is written while a ruling is open, so the whole damage picture is in view before any work starts. Rulings in, write each kill — re-apply the mutation, write the test that goes red on it, revert the mutation, run `/al-build` green, and commit that kill under the owning `T-NNN` prefix at its green; every BC object, table, field, procedure, event, and enum value name in that test comes from a lookup run this session, never recall. An acceptance lands as one `- ✅ Accepted:` sentence in the task body's `Contract notes:` naming the site and the user's reason — the ruling, not the hunt — committed with the last ruling. Report the committed `HEAD` from the last kill's full green; a pass without kills retains its incoming receipt.
+Then put every survivor to the user first, one at a time: kill it now, or accept it — no kill is written while a ruling is open, so the whole damage picture is in view before any work starts. Rulings in, write each kill — re-apply the mutation, write the test that goes red on it, revert the mutation, run `/al-build -AllTests` green, and commit that kill under the owning `T-NNN` prefix at its green; every BC object, table, field, procedure, event, and enum value name in that test comes from a lookup run this session, never recall. An acceptance lands as one `- ✅ Accepted:` sentence in the task body's `Contract notes:` naming the site and the user's reason — the ruling, not the hunt — committed with the last ruling. Report the committed `HEAD` from the last kill's full green; a pass without kills retains its incoming receipt.
 
 The pass closes when every survivor is killed or accepted, no stillborn is unsettled, and every equivalence is documented.
 
