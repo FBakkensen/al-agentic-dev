@@ -10,7 +10,7 @@ Code still in flight belongs to `/al-implement`; this gate reviews what has land
 
 ## Baseline
 
-Start on a clean tree, then identify the scope below and select its newest clean full-gate receipt. Its commit must be an ancestor of `HEAD`, and the diff since it may name only its owning task file. Match → `🔎✅ Green gate reused — T-123 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build -AllTests` green. A red gate or unrelated uncommitted work → name the gap and stop. An uncertain baseline makes every finding a guess, and this run's fix commits would land on top of the pollution. The BCQuality corpus is the other baseline: no `.bcquality/` means the knowledge pass cannot run and the verdict would be narrower than it claims → name `/al-clone-bcquality` and stop.
+Start on a clean tree, then identify the scope below and select its newest clean full-gate receipt. Its commit must be an ancestor of `HEAD`, and the diff since it may name only its owning task file. Match → `🔎✅ Green gate reused — T-123 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build -AllTests` green. A red gate or unrelated uncommitted work → name the gap and stop. An uncertain baseline makes every finding a guess, and this run's fix commits would land on top of the pollution. The knowledge pass reads the `.bcquality/` clone: missing → name `/al-clone-bcquality` and stop, before the gate rather than after it.
 
 - **Slice-done** — every `T-NNN` commit of the technical tasks sharing one `slice:`, from the first through the last one settled.
 - **Feature-done** — the whole branch against `main`, after every task but the breaking-change task is settled.
@@ -27,13 +27,7 @@ Mixed state, a squash that hides the `T-NNN` prefixes, or an ambiguous range is 
 
 ## The review passes
 
-Two passes over the scoped diff. The first is BCQuality's: `.bcquality/` is intentionally gitignored, and its `microsoft/skills/review/al-code-review.md` is the parent review entry. Default workspace search can omit the clone, so use a search mode or direct file reading that includes it.
-
-- Run the complete BCQuality knowledge pass in the active agent by following the review entry; do not delegate the entry itself.
-- If the harness supports subagents, only the isolated leaf reviews prescribed by the entry become subagent calls; otherwise the active agent runs the leaves serially. Never dispatch a leaf path alone.
-- The active agent provides the complete context the entry requires for each leaf, including access to the ignored `.bcquality/` clone.
-- Setup text or no valid DO-contract result means the leaf did not run; the active agent retries that isolated call once. If its retry produces no valid result, stop as an invocation failure.
-- A valid `partial` or `failed` leaf result leaves its domain unjudged: name it and stop.
+Two passes over the scoped diff. The first is BCQuality's: `/al-knowledge-pass` on the scoped diff returns the findings, or the one line naming the domain that stopped it; a stop there stops this run — an unjudged domain makes the verdict narrower than it claims.
 
 The second pass is yours — the dimensions below, which reach what no leaf can see: the task's proof, the project's baselines, the shape of the code. If your harness supports subagents, these parallelize; otherwise apply them in one pass.
 
