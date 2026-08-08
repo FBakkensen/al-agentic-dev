@@ -13,7 +13,7 @@ If your harness supports subagents, run the review as one full-capability subage
 
 **Locked constraints** are the decisions the user settled in the caller's interview, listed by the caller. They bound this read — the artifact is judged against its sources *within* them, and no pick is re-opened.
 
-The review re-derives the rules rather than trusting citations: narrow `.bcquality/knowledge-index.json` to the domains the artifact touches and read those articles as your own evidence base — a `Researched:` bullet is a claim, not proof. A `Precedent` verdict is a claim too: a `reused:` or pattern verdict the `.bcapps/` source does not support is blocking. Every exact BC name the artifact writes is confirmed by a lookup run in this review, never recalled.
+The review re-derives the rules rather than trusting citations: narrow `.bcquality/knowledge-index.json` to the domains the artifact touches and read those articles as your own evidence base — a `Researched:` bullet is a claim, not proof. The index is one minified line — parse it as JSON rather than reading or searching it by line. A `Precedent` verdict is a claim too: a `reused:` or pattern verdict the `.bcapps/` source does not support is blocking. Every exact BC name the artifact writes is confirmed by a lookup run in this review, never recalled.
 
 ## Findings and disposition
 

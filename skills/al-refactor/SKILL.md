@@ -6,17 +6,11 @@ disable-model-invocation: true
 
 # Reshape while green
 
-The tree is clean and the build is green before the first change. Evaluate the task's clean full-gate receipt: its commit is an ancestor of `HEAD` and the diff since it names only this task file. Match → `🔎✅ Green gate reused — T-123 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build -AllTests` green. Reshaping against red is debugging — that belongs in /al-implement. Your first line names that this run wants a standard-class model or above — the user picked the model and weighs the mismatch. Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. Task-file state is `/al-routing`'s; this skill reshapes code. The knowledge pass below reads `.bcquality/` — missing → name `/al-clone-bcquality` and stop. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+The tree is clean and the build is green before the first change. Evaluate the task's clean full-gate receipt: its commit is an ancestor of `HEAD` and the diff since it names only this task file. Match → `🔎✅ Green gate reused — T-123 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build -AllTests` green. Reshaping against red is debugging — that belongs in /al-implement. Your first line names that this run wants a standard-class model or above — the user picked the model and weighs the mismatch. Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. Task-file state is `/al-routing`'s; this skill reshapes code. The knowledge pass below reads the `.bcquality/` clone: missing → name `/al-clone-bcquality` and stop, before the gate rather than after it. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 ## The knowledge pass
 
-`.bcquality/` is intentionally gitignored. Its `microsoft/skills/review/al-code-review.md` is the parent review entry. Default workspace search can omit the clone, so use a search mode or direct file reading that includes it. Its findings are reshape candidates like any other, cited by the article behind them.
-
-- Run the complete BCQuality knowledge pass in the active agent by following the review entry; do not delegate the entry itself.
-- If the harness supports subagents, only the isolated leaf reviews prescribed by the entry become subagent calls; otherwise the active agent runs the leaves serially. Never dispatch a leaf path alone.
-- The active agent provides the complete context the entry requires for each leaf, including access to the ignored `.bcquality/` clone.
-- Setup text or no valid DO-contract result means the leaf did not run; the active agent retries that isolated call once. If its retry produces no valid result, stop as an invocation failure.
-- A valid `partial` or `failed` leaf result leaves its domain unjudged: name it and stop.
+`/al-knowledge-pass` on this task's diff returns the findings, or the one line naming the domain that stopped it; a stop there stops this run. Its findings are reshape candidates like any other, cited by the article behind them.
 
 ## Improvement dimensions
 
