@@ -5,7 +5,7 @@ description: "Blind agent review of a just-written spec artifact against its sou
 
 # al-spec-review — the blind gate on spec artifacts
 
-The session that wrote an artifact is its worst reader: its own rationale stands by to argue every finding down. This skill reads the artifact blind — the document and its sources, never the writing session's reasoning — and returns findings to the caller. Callers: `al-design` on `architecture.md`, `al-event-model` on `event-model.md`, `al-scope` on the `tasks/` folder, `al-refine` on a Test Specification or Verification Plan. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+The session that wrote an artifact is its worst reader: its own rationale stands by to argue every finding down. Callers: `al-design` on `architecture.md`, `al-event-model` on `event-model.md`, `al-scope` on the `tasks/` folder, `al-refine` on a Test Specification or Verification Plan. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 ## The blind contract
 

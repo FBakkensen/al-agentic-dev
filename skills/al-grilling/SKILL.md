@@ -9,4 +9,4 @@ Ask one question per message, with lettered options and your recommendation mark
 
 If a *fact* can be found by exploring the environment (filesystem, tools, etc.), look it up rather than asking me. The *decisions*, though, are mine — put each one to me and wait for my answer.
 
-Do not act on it until I confirm we have reached a shared understanding.
+Wait for my confirmation that we have reached a shared understanding before acting on it.

@@ -90,4 +90,4 @@ Full walkthrough, including the branch points: [docs/pipeline.md](docs/pipeline.
 
 `/al-build` runs a scripted toolchain and needs PowerShell 7.2+, Docker Desktop, the .NET SDK, Node.js 22+ with `npx` on PATH, and BcContainerHelper, plus an `al-build.json` in the consumer repo root. The rest of the skills are prose and need nothing beyond the harness. See [docs/al-build.md](docs/al-build.md).
 
-The four interview skills — `/al-grill-adr`, `/al-event-model`, `/al-design`, `/al-refine` — escalate to `/al-grilling` when an answer itself needs pressure. It ships with the set, copied 1:1 from [mattpocock/skills](https://github.com/mattpocock/skills)' `grilling`. Nothing here depends on a skill it doesn't ship.
+The four interview skills — `/al-grill-adr`, `/al-event-model`, `/al-design`, `/al-refine` — escalate to `/al-grilling` when an answer itself needs pressure. It ships with the set, adapted with minimal edits from [mattpocock/skills](https://github.com/mattpocock/skills)' `grilling`. Nothing here depends on a skill it doesn't ship.
