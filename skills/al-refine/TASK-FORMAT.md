@@ -47,7 +47,7 @@ One coverage table per technical task, and `Covered By` holds AL test procedure 
 
 **`## Usability Review`** (`U1`, `U2`) — each item carries `Scope: Usability`, one `Judge:` sentence, and a `Prompts:` block of two to four bullets.
 
-**`Deviations:`** — one line per assumption absorbed inline during implementation, appended, never edited away; the provenance that qualifies mutation sites.
+**`Deviations:`** — one line per assumption absorbed inline during implementation, appended, never edited away; the breadcrumb marking behaviour that arrived without a red, whose tests are proved by mutation.
 
 **`Closeout:`** — one line per example with its outcome, written when the walk completes.
 

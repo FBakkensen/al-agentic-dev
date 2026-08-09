@@ -1,12 +1,12 @@
 ---
 name: al-implement
-description: Drive one refined task red→green through TDD, one AAA case at a time. Run it when the router names a task for implementation, or to land the red-first repair of a verification-walk defect.
+description: Drive one refined task through TDD, one AAA case at a time — red→green, or a green-born test proved by mutation. Run it when the router names a task for implementation, or to land the red-first repair of a verification-walk defect.
 disable-model-invocation: true
 ---
 
 # Drive one task red → green
 
-One task per session. Consume its `Test Specification`, stop at green. Your first line names the model class this run wants — the task's stamped tier, standard when absent — and the user, who picked the model, weighs the mismatch. Reshaping the diff is `/al-refactor`'s work and rigor is `/al-mutate`'s; neither is chained from here. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+One task per session. Consume its `Test Specification`, stop at green. Your first line names the model class this run wants — the task's stamped tier, standard when absent — and the user, who picked the model, weighs the mismatch. Reshaping the diff is `/al-refactor`'s work, not chained from here. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 ## Before any code
 
@@ -35,6 +35,8 @@ Work the cases in the specification's order: every `Unit` case first, then every
 1. **Scaffold** the test codeunit and the production procedure the case names, empty, build green.
 2. **Red.** Write just enough test to fail on a `Library Assert` call. A compile error, or a runtime error the `Act` never survived, is not a red — clear it, then reach the assertion. Production stays behaviour-free: the delta this case exists to force is unwritten.
 3. **Green.** Write the smallest production change that passes the case, with the test text left as the red had it.
+
+A test born green — the behaviour already exists: a characterization test, a case over code absorbed earlier without a red — takes mutation as its red. Inject one compiling fault into the production site the case targets, watch the test go red, revert the fault, and confirm green. A test no fault forces red is not a real test: strengthen the assertion until it bites, and keep the strengthened text. Per fault, run the case's own scope — a `Unit` case the unit suite, an `Integration` case all tests; the full gate stays at task close. Faults that work: flip a guard, swap `=` for `<>`, widen a comparator, `+` for `-` in money or quantity math, replace a literal with a neighbour, drop `Validate()` for direct assignment, `Modify(true)` → `Modify(false)`. Removing an assignment or inserting an early `exit` fails to compile and wastes the round.
 
 ## Unit or Integration is the runner's verdict
 

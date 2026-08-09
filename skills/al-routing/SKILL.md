@@ -17,7 +17,7 @@ kind: technical | verify | provision | breaking-change
 slice: <slug>        # an event-model.md timeline step or architecture.md slice; ops tasks sit on the reserved slugs provision / breaking-change
 depends_on: [T-004]  # hard edges onto the tasks this one must follow
 status: open | done  # the only two written states
-phase: refined | implemented | refactored | mutated | planned | page-scripted | provisioned | bcapps-cloned   # first four technical, then verify, then provision
+phase: refined | implemented | refactored | planned | page-scripted | provisioned | bcapps-cloned   # first three technical, then verify, then provision
 review: clean        # the review gate's stamp
 tier: mechanical | standard | frontier   # the weakest model class the task's remaining work needs
 green-gate:
@@ -39,10 +39,10 @@ A completed full gate reports the `HEAD` committed immediately from its unchange
 
 `phase:` names the last finished step; absent means nothing past scope has run.
 
-- `technical`, open — no phase → `/al-refine` · `refined` → `/al-implement` · `implemented` → `/al-refactor` · `refactored` → `/al-mutate`.
+- `technical`, open — no phase → `/al-refine` · `refined` → `/al-implement` · `implemented` → `/al-refactor`.
 - `verify`, open — no phase → `/al-refine` · `planned` with its `review: clean` stamp → `/al-user-verification` · `page-scripted` → `/al-user-verification` resumes the walk from the task body's `Partial-run record:`, or starts it when none exists.
 - `provision`, open — no phase → `/al-provision` · `provisioned` → `/al-clone-bcapps` · `bcapps-cloned` → `/al-clone-bcquality`. `breaking-change` → `/al-validate-breaking-changes`. Neither ops kind passes through `/al-refine`.
-- `done` is settled at any phase; on a technical task short of `mutated` it is a deliberate early close, not a gap.
+- `done` is settled at any phase; on a technical task short of `refactored` it is a deliberate early close, not a gap.
 
 ## Gates
 - **Scoping / re-scope** — no breaking-change task in `tasks/`, or an `architecture.md` reshaped since the folder settled, → `/al-scope` before anything routes. While provision is not `done`, its ladder step is the only move.
@@ -57,8 +57,7 @@ One edit per stamped outcome, committed as it lands under the owning task's `T-N
 |---|---|
 | `/al-refine` wrote the proof | `phase: refined` (technical) / `phase: planned` (verify); `tier:` re-stamped to the class its report names for the remaining work |
 | `/al-implement` reached green outside a repair episode | `phase: implemented`; record its full-gate receipt |
-| `/al-refactor` closed its pass — reshape landed, or every dimension came back clean | `phase: refactored`; replace the receipt after a reshaped green, otherwise retain the incoming one |
-| `/al-mutate` closed its pass | `phase: mutated` and `status: done`; replace the receipt after a kill's green, otherwise retain the incoming one |
+| `/al-refactor` closed its pass — reshape landed, or every dimension came back clean | `phase: refactored` and `status: done`; replace the receipt after a reshaped green, otherwise retain the incoming one |
 | `/al-user-verification` sealed the slice's last recording | `phase: page-scripted` |
 | `/al-user-verification` finished the walk clean | `status: done` |
 | `/al-code-review` cleared the slice / the feature | `review: clean` on the slice's last task / on the breaking-change task; record its latest durable full gate when it changed the tree |
@@ -80,6 +79,6 @@ After recording — stamp or no stamp — a dirty tree is put to the user: summa
 
 ## Present the moves
 
-After recording a report — or when `/al-next` asks — one line per runnable task: its `task:` id, the skill the ladder names, the model class the move wants, and what opened it, in the feature's own object and field vocabulary. A move's class is the task's `tier:`, raised to frontier for `/al-refine` and `/al-user-verification`, raised to standard for `/al-refactor`, `/al-mutate`, and `/al-code-review`; untiered, any other move at standard. A firing gate (`/al-code-review`, `/al-sync-main`) is presented as a move the same way. Several open → id order, naming which unblocks the most. None → the one edge or gate that must settle, and who settles it. A repair-episode report skips the move list — its own path continues.
+After recording a report — or when `/al-next` asks — one line per runnable task: its `task:` id, the skill the ladder names, the model class the move wants, and what opened it, in the feature's own object and field vocabulary. A move's class is the task's `tier:`, raised to frontier for `/al-refine` and `/al-user-verification`, raised to standard for `/al-refactor` and `/al-code-review`; untiered, any other move at standard. A firing gate (`/al-code-review`, `/al-sync-main`) is presented as a move the same way. Several open → id order, naming which unblocks the most. None → the one edge or gate that must settle, and who settles it. A repair-episode report skips the move list — its own path continues.
 
 Close on the state recorded and the moves named; the session continues in the caller's flow.

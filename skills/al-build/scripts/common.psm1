@@ -2716,9 +2716,9 @@ function Get-GateMetricsSummary {
 
         The signature is derived from the dirty-workspace evidence recorded at
         gate time, never from a caller-supplied tag:
-          prod-only — app files dirty, test apps clean. Mutation gates have
-                      exactly this shape (/al-mutate proves a committed clean
-                      baseline, then applies one production mutant).
+          prod-only — app files dirty, test apps clean. Mutation checks have
+                      exactly this shape (a fault applied to production over a
+                      clean committed baseline).
           test-only — test app files dirty, app clean. RED-first runs.
           mixed     — both dirty. TDD inner-loop runs after the first GREEN.
           clean     — no app/test changes. Closeout and baseline runs.
