@@ -1,7 +1,6 @@
 ---
 name: al-implement
-description: Drive one refined task through TDD, one AAA case at a time — red→green, or a green-born test proved by mutation. Run it when the router names a task for implementation, or to land the red-first repair of a verification-walk defect.
-disable-model-invocation: true
+description: Drive one refined task through TDD, one AAA case at a time — red→green, or a green-born test proved by mutation. Run it when the router names a task for implementation, when `/al-code-review` or `/al-refactor` routes a behavioural defect, or to land the red-first repair of a verification-walk defect.
 ---
 
 # Drive one task red → green
@@ -12,7 +11,7 @@ One task per session. Consume its `Test Specification`, stop at green. Your firs
 
 Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. The task this skill takes is `kind: technical` with a populated `Test Specification`. Missing its specification, `/al-refine` writes it first. Another `kind:` is declined — `/al-routing`'s ladder names its skill. Task-file state is `/al-routing`'s; this skill edits only the task body.
 
-A task whose behaviour is already proved is re-entered by one named repair alone, settled tasks included: a functional fail from a verification run — its failed check is the red, written as a test at the layer that can catch it. It lands red-first, commits under the owning `T-NNN`, and moves no task-file state. At green, the user runs `/al-code-review` on the fix diff under its repair scope, then resumes `/al-user-verification` at the failed scenario.
+A task whose behaviour is already proved is re-entered by one named repair alone, settled tasks included: a functional fail from a verification run or a behavioural defect routed from `/al-code-review` or `/al-refactor` — its failed check is the red, written as a test at the layer that can catch it. It lands red-first, commits under the owning `T-NNN`, and moves no task-file state. At green, a verification-walk repair resumes `/al-user-verification` at the failed scenario; a `/al-code-review` or `/al-refactor` repair returns to its caller for its gate.
 
 Read `architecture.md` and name the seam in BC vocabulary — the procedure to extract, the event to subscribe, the interface to implement, the page action to wire. Production names and signatures arrive minted in the task's `New and Modified Objects`; test codeunit and procedure names are yours to mint.
 
@@ -78,4 +77,4 @@ A new decision pauses the cycle: ask it in chat as one question and wait. An ans
 
 Name the task green and the behaviour it now proves — one line, no build counts; those live in the commit and the task file. Put the landed change in view through `/al-visualize` — the component diff of what this task added and modified, `Deviations:` among its risks; a repair green draws its fix diff the same way before rejoining its episode.
 
-Then `/al-routing`; a repair green stays inside its episode, following the repair path above.
+Then `/al-routing`; a repair green returns to its caller inside its episode, following the repair path above.

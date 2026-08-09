@@ -36,7 +36,7 @@ One reshape at a time, committed under the owning task's `T-NNN` prefix, running
 
 ## Findings
 
-A defect needs no user decision: fix it in this run. A behavioural defect goes red first — write the missing case, watch it fail on a real assertion, then make it pass. A provably non-semantic defect lands directly.
+A defect needs no user decision: fix it in this run. A behavioural defect routes to `/al-implement`, which writes the missing case, watches it fail on a real assertion, then makes it pass. A provably non-semantic defect lands directly.
 
 A change request would override a decision the user already made, or establish missing business or architecture intent. Interview every change request before implementing any ruling, one per message, highest impact first. Explain the impact, choice, consequences, and recommendation. Name modules, boundaries, public objects, interfaces, events, or other AL concepts when they make the current or proposed architecture legible; keep paths, line numbers, private procedures, code snippets, lookup mechanics, and knowledge-article details out unless the user asks. One answer settles only the request in front of the user.
 

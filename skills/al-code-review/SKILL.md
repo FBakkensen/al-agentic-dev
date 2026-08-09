@@ -51,7 +51,7 @@ Rank the survivors of both passes by the consequence of shipping the diff as it 
 
 ### Land the defects
 
-- A behavioural defect goes red first: write the missing AAA case, watch it fail on a real assertion, then make it pass. Commit under the originating `T-NNN` prefix and re-run `/al-build -AllTests`. Task-file state stays untouched — a repair is not a pipeline step.
+- A behavioural defect routes to `/al-implement`: hand it the missing AAA case and the owning task, watch the assertion fail on a real red, then let it make the case pass. Commit under the originating `T-NNN` prefix and re-run `/al-build -AllTests`. Task-file state stays untouched — a repair is not a pipeline step.
 - A provably non-semantic defect — a comment, local rename, dead code, or equivalent query shape — lands directly, gates, and commits standalone. A red gate reverts it and it re-enters as behavioural.
 - A fix that would overturn behaviour the user already verified is a change request. A defect whose fix exceeds this run reverts, and the close puts it to the user as one proposed technical task — created on their yes per `/al-routing`'s schema on the owning slice, carrying the failing case this review wrote as its red. Declining the task rules that the behaviour stands: the finding re-enters as a change request, settled and recorded in the artifact whose expectation it overturns. Difficulty reclassifies nothing — a hard fix is a task, never a lesser defect.
 
