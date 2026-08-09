@@ -12,8 +12,8 @@
 
     The signature derives from recorded workspace evidence (git dirty-state at
     gate time), never from a caller-supplied tag:
-      prod-only — mutation-shaped (app dirty, tests clean; /al-mutate's
-                  clean-baseline-then-mutant contract produces exactly this)
+      prod-only — mutation-shaped (app dirty, tests clean; a fault applied
+                  to production over a clean committed baseline)
       test-only — RED-first runs (test apps dirty, app clean)
       mixed     — TDD inner loop (both dirty)
       clean     — closeout / baseline runs

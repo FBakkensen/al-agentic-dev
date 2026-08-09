@@ -26,9 +26,8 @@ Emit [TOUR.md](TOUR.md) exactly as written, filling its two slots; the skills ta
 | `/al-design` | Settles the architecture as `architecture.md`, comparing candidates with you. |
 | `/al-scope` | Cuts `architecture.md` into slices and one task file per unit of work. |
 | `/al-refine` | Opens one task into a Test Specification or a Verification Plan. |
-| `/al-implement` | Drives one task red→green, Unit cases before Integration cases. |
+| `/al-implement` | Drives one task through TDD — red→green, or a green-born test proved by mutation. |
 | `/al-refactor` | Reshapes production and test code while the gate stays green. |
-| `/al-mutate` | Injects one mutation at a time to prove the tests bite. |
 | `/al-code-review` | Reviews at slice-done and before merge, splitting rework from change requests. |
 | `/al-spec-review` | Blind-reads a just-written spec artifact against its sources before it commits; the writing skills invoke it at close. |
 | `/al-visualize` | Draws a decision or a landed change as an HTML page beside the chat — the pipeline skills invoke it at decisions and closes. |

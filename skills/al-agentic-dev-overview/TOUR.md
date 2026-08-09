@@ -21,7 +21,7 @@ Skills that carry a Business Central feature from idea to merged branch. You dri
 ```
 1. Provision  /al-provision → /al-clone-bcapps → /al-clone-bcquality
 2. Shape      /al-grill-adr → /al-event-model → /al-design → /al-scope
-3. Build      per task:  /al-refine → /al-implement → /al-refactor → /al-mutate
+3. Build      per task:  /al-refine → /al-implement → /al-refactor
 4. Ship       per slice: /al-code-review → /al-user-verification
               before merge: /al-validate-breaking-changes
 ```

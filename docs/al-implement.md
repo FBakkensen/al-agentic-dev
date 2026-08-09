@@ -2,23 +2,22 @@
 
 ## What it is for
 
-Drives one technical task red to green with TDD. It consumes the task's Test Specification, takes the AAA cases one at a time — Unit before Integration — and stops at green.
+Drives one technical task through TDD. It consumes the task's Test Specification, takes the AAA cases one at a time — Unit before Integration — and stops at green. A test that starts red goes red→green; a test born green (the behaviour already exists) is proved by mutation: one fault injected into the site it targets must force it red, then the fault is reverted.
 
-It does not reshape the diff and it does not test the tests. Those are [`/al-refactor`](al-refactor.md) and [`/al-mutate`](al-mutate.md), and neither is chained from here.
+It does not reshape the diff. That is [`/al-refactor`](al-refactor.md), and it is not chained from here.
 
 ## When you reach for it
 
 - A technical task is refined — its Test Specification filled — and the router names it for implementation.
-- A `/al-mutate` survivor needs a killer test.
 - An `/al-code-review` must-fix needs a red-first repair.
 
-The last two re-enter a task that is already `done`, land under the original `T-NNN`, and move no status.
+The repair re-enters a task that is already `done`, lands under the original `T-NNN`, and moves no status.
 
 ## What it produces
 
 Production and test AL, committed at green, with the task file reconciled against what actually landed — every AAA case header carrying its real AL test procedure name, `New and Modified Objects` matching the diff.
 
-The green is handed to `/al-routing`, which stamps the phase. The task stays open through the hardening window; `/al-mutate`'s clean verdict is what settles it.
+The green is handed to `/al-routing`, which stamps the phase. `/al-refactor`'s clean pass is what settles the task.
 
 ## Worth knowing
 

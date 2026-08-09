@@ -1,6 +1,6 @@
 # The pipeline
 
-Nineteen skills carry a Business Central feature from a rough idea to a merged branch. You drive; nothing auto-chains. A skill that moves a task hands its outcome to `/al-routing`, which records the state and presents the moves that are open.
+Twenty-three skills carry a Business Central feature from a rough idea to a merged branch. You drive; nothing auto-chains. A skill that moves a task hands its outcome to `/al-routing`, which records the state and presents the moves that are open.
 
 State lives on disk, so every skill starts cold — `CONTEXT.md` and `docs/adr/` at the repo root, `specs/<NNN>-<slug>/` and its `tasks/` folder on the feature branch.
 
@@ -8,7 +8,7 @@ State lives on disk, so every skill starts cold — `CONTEXT.md` and `docs/adr/`
 
 ```
 /al-grill-adr → /al-event-model → /al-design → /al-scope → /al-provision
-   → /al-refine → /al-implement → /al-refactor → /al-mutate
+   → /al-refine → /al-implement → /al-refactor
    → /al-code-review → /al-user-verification → /al-validate-breaking-changes
 ```
 
@@ -20,9 +20,8 @@ State lives on disk, so every skill starts cold — `CONTEXT.md` and `docs/adr/`
 | Cut the task list | [`/al-scope`](al-scope.md) | once |
 | Refresh the toolchain | [`/al-provision`](al-provision.md) | the feature's first task |
 | Plan the proof | [`/al-refine`](al-refine.md) | once per task |
-| Red → green | [`/al-implement`](al-implement.md) | once per technical task |
+| TDD — red→green, or green proved by mutation | [`/al-implement`](al-implement.md) | once per technical task |
 | Reshape while green | [`/al-refactor`](al-refactor.md) | once per technical task |
-| Prove the tests bite | [`/al-mutate`](al-mutate.md) | once per technical task |
 | Review the landed diff | [`/al-code-review`](al-code-review.md) | once per slice, then once across the feature |
 | Walk it with the user | [`/al-user-verification`](al-user-verification.md) | once per slice with a user surface |
 | Check the shipped surface | [`/al-validate-breaking-changes`](al-validate-breaking-changes.md) | the feature's last task |
@@ -41,7 +40,7 @@ State lives on disk, so every skill starts cold — `CONTEXT.md` and `docs/adr/`
 ## Branches in the route
 
 - **Backend-only features** — no human, no API consumer — skip `/al-event-model`, and get no verify tasks from `/al-scope`. `/al-user-verification` never runs.
-- `/al-refine` → `/al-implement` → `/al-refactor` → `/al-mutate` is the per-task loop. It repeats for every technical task in a slice.
+- `/al-refine` → `/al-implement` → `/al-refactor` is the per-task loop. It repeats for every technical task in a slice.
 - A slice closes on `/al-code-review`; its clean verdict, recorded through `/al-routing`, stamps the review evidence `/al-user-verification` needs to start.
-- A `/al-mutate` survivor or an `/al-code-review` must-fix re-enters `/al-implement` under the task that owns it, red first.
+- An `/al-code-review` must-fix re-enters `/al-implement` under the task that owns it, red first.
 - `/al-validate-breaking-changes` opens only after the feature-wide review comes back clean.

@@ -1,6 +1,6 @@
 # al-agentic-dev
 
-Nineteen Agent Skills that carry a Microsoft Dynamics 365 Business Central feature from a rough idea to a merged branch — domain interview, event model, architecture, task breakdown, TDD, mutation testing, code review, and a guided user walk, with a scripted compile-publish-test gate underneath.
+Twenty-three Agent Skills that carry a Microsoft Dynamics 365 Business Central feature from a rough idea to a merged branch — domain interview, event model, architecture, task breakdown, TDD, mutation testing, code review, and a guided user walk, with a scripted compile-publish-test gate underneath.
 
 They are harness-neutral. Every skill is a `SKILL.md` with two frontmatter keys and no file crossing a folder boundary, so the same folder runs in Claude Code, GitHub Copilot CLI, VS Code Copilot, and Codex. No custom agents, no hooks, no plugin manifests.
 
@@ -59,9 +59,8 @@ Name it instead of `'*'`. Every skill is self-contained, so that works — `/al-
 | [`/al-design`](docs/al-design.md) | Settles the architecture as `architecture.md`, comparing candidates with you. |
 | [`/al-scope`](docs/al-scope.md) | Cuts `architecture.md` into slices and one task file per unit of work. |
 | [`/al-refine`](docs/al-refine.md) | Opens one task into a Test Specification or a Verification Plan. |
-| [`/al-implement`](docs/al-implement.md) | Drives one task red→green, Unit cases before Integration cases. |
+| [`/al-implement`](docs/al-implement.md) | Drives one task through TDD — red→green, or a green-born test proved by mutation. |
 | [`/al-refactor`](docs/al-refactor.md) | Reshapes production and test code while the gate stays green. |
-| [`/al-mutate`](docs/al-mutate.md) | Injects one mutation at a time to prove the tests bite. |
 | [`/al-code-review`](docs/al-code-review.md) | Reviews at slice-done and before merge, splitting rework from change requests. |
 | [`/al-user-verification`](docs/al-user-verification.md) | Walks a slice's verify task with you, one scenario at a time, recordings included. |
 | [`/al-build`](docs/al-build.md) | Compiles, publishes, runs the tests — the gate every other skill reaches through. |
@@ -75,11 +74,11 @@ Name it instead of `'*'`. Every skill is self-contained, so that works — `/al-
 
 ```
 /al-grill-adr → /al-event-model → /al-design → /al-scope → /al-provision
-   → /al-refine → /al-implement → /al-refactor → /al-mutate
+   → /al-refine → /al-implement → /al-refactor
    → /al-code-review → /al-user-verification → /al-validate-breaking-changes
 ```
 
-`/al-event-model` runs for user- or API-facing features only; backend-only features go straight to `/al-design`. `/al-refine` through `/al-mutate` runs once per task; `/al-code-review` and `/al-user-verification` run once per slice, with `/al-code-review` again across the whole feature before merge. `/al-validate-breaking-changes` is the feature's last task. `/al-quiz` and `/al-sync-main` run whenever you want them.
+`/al-event-model` runs for user- or API-facing features only; backend-only features go straight to `/al-design`. `/al-refine` through `/al-refactor` runs once per task; `/al-code-review` and `/al-user-verification` run once per slice, with `/al-code-review` again across the whole feature before merge. `/al-validate-breaking-changes` is the feature's last task. `/al-quiz` and `/al-sync-main` run whenever you want them.
 
 Full walkthrough, including the branch points: [docs/pipeline.md](docs/pipeline.md).
 
