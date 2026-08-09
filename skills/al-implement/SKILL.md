@@ -1,7 +1,6 @@
 ---
 name: al-implement
 description: Drive one refined task through TDD, one AAA case at a time — red→green, or a green-born test proved by mutation. Run it when the router names a task for implementation, or to land the red-first repair of a verification-walk defect.
-disable-model-invocation: true
 ---
 
 # Drive one task red → green
