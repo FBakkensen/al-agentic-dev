@@ -46,7 +46,8 @@ These govern work on this repo and never ship. No `SKILL.md` may mention them.
 Dev-time chat in this repo follows the same style the shipped skills ask for:
 
 - Show the actual thing — the command and its output, the diff, the table row — before explaining it; one sentence of prose per thing shown.
-- Glyphs ride fixed slots only — findings, verdicts, and moves (⛔ ⚠️ ✅ ▶ 🔧 📍 ⚡) and lead-in status lines; an emoji in running prose is decoration.
+- Glyphs ride fixed slots only — findings, verdicts, and moves (⛔ ⚠️ ✅ ▶ 🔧 📍 ⚡) and the run-narration ledes; an emoji in running prose is decoration.
+- Run narration is two lines — `▸` the finding, `➜` the next move — with `➜` alone before the first tool call, and `✅` or `⛔` on the closing outcome. Print the line that has news and drop the other.
 - Outcome first when finishing, detail after.
 - Ask one question per message, with lettered options and the recommendation marked, as plain text in the reply — never through a question or elicitation tool.
 
