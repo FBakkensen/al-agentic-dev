@@ -36,7 +36,7 @@ BCQuality is the intentionally gitignored rule set. `.bcquality/knowledge-index.
 
 ## The interview
 
-Ask one question per message, with lettered options and the recommendation marked in its own option line. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. A decision that turns on a picture — the module map, a lifecycle, a data shape — may instead go to the user as a decision surface through `/al-visualize`; the decision still settles here in chat. Each answer lands in `architecture.md` as it settles — batching an hour of settled decisions into one write at the close loses the hour.
+Ask one question per message, with lettered options and the recommendation marked in its own option line. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. A decision that turns on a picture — the module map, a lifecycle, a data shape — may instead go to the user as a steering surface through `/al-visualize`; the decision still settles here in chat. Each answer lands in `architecture.md` as it settles — batching an hour of settled decisions into one write at the close loses the hour.
 
 Strategic, and therefore asked: module ownership and dependency direction, where persisted data lives, seam placement, which existing behaviour the feature may change, the public surface it commits to, the boundary between pure decisions and BC runtime, the future change this architecture must keep cheap, and the binding constraint. The interview closes when each of those is settled or stopped on a named spike.
 
@@ -60,6 +60,6 @@ A BaseApp modification is replaced by interception: a published event, a table e
 
 `architecture.md` carries the module map, every slice's AL realisation named slot by slot with its `new` / `extends` marker, the brownfield touchpoint inventory, and where decision logic stays reachable by unit tests.
 
-A settled architecture first goes blind through `/al-spec-review` — the file, its sources, and the interview's settled answers as locked constraints; its findings land per that skill's disposition before anything commits. Then it goes up drawn through `/al-visualize` — the module map as a C4 component map, dependency direction and seams on its edges, each slice's realisation on its node, each minted name a chip on its node naming the term or `event-model.md` slot it derives from, and the run's tactical calls in the rail — so the user can spot a name or a call worth reopening.
+A settled architecture first goes blind through `/al-spec-review` — the file, its sources, and the interview's settled answers as locked constraints; its findings land per that skill's disposition before anything commits. Then it goes up as a steering surface through `/al-visualize` — the settled architecture, each minted name traceable to the term or `event-model.md` slot it derives from, and the run's tactical calls in view — so the user can spot a name or a call worth reopening.
 
 Commit `architecture.md` and any `CONTEXT.md` term this run settled with a plain descriptive message; a stop mid-interview commits what settled the same way. Then continue in this session with `/al-scope`.

@@ -16,7 +16,7 @@ Every BC name you put in a task — table, field, procedure, event — comes fro
 
 ## The interview
 
-Ask one question per message, land each slice's files as that slice settles, and where a fork stands open, build out the affected slice's full task list per candidate, edges included, before asking. A contested slice order or dependency shape may go to the user as a graph through `/al-visualize`. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+Ask one question per message, land each slice's files as that slice settles, and where a fork stands open, build out the affected slice's full task list per candidate, edges included, before asking. A contested slice order or dependency shape may go to the user as a steering surface through `/al-visualize`. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
 
 - **Where does one task end?** A task lands one behaviour with the tests that prove it. Two behaviours in one task hide one of them from its own red.
 - **Which slice ships first?** `event-model.md` timeline order — or `architecture.md` slice order, backend-only — is the default. Ask only where two slices are genuinely independent, because that answer decides what the user can exercise soonest.
@@ -58,6 +58,6 @@ A folder already fully scoped means the architecture was reshaped over settled t
 
 A fully scoped folder first goes blind through `/al-spec-review` — the folder, `architecture.md`, `event-model.md` when present, and the interview's settled answers as locked constraints; its findings land per that skill's disposition before the commit.
 Name what landed: the slices, the task and verify-task counts (or *none, backend-only*), whether the dependency shape is linear or branching, and the Goal in user terms.
-A fully scoped folder goes up drawn through `/al-visualize` — the slice and task dependency graph.
+A fully scoped folder goes up as a steering surface through `/al-visualize` — what ships, and in what order.
 Commit the `tasks/` folder with a plain descriptive message; a write stopped on a gap commits the slices already landed the same way.
 Then `/al-routing` presents the opening move.

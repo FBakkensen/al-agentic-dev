@@ -16,7 +16,7 @@ Read the diff first, then the `Test Specification`, `Verification Plan`, and `Co
 
 ## Ask
 
-**One question per message, with lettered options, then wait for the answer.** Distractors are plausible wrongs — the seam the logic almost landed on, the guard that looks sufficient — and no option carries a recommendation: the witness gets no hint. Take the answer, then give the punchline. Where the scope's structure carries the questions, `/al-visualize` can put a component map of the scope in view; each question stays here, in chat.
+**One question per message, with lettered options, then wait for the answer.** Distractors are plausible wrongs — the seam the logic almost landed on, the guard that looks sufficient — and no option carries a recommendation: the witness gets no hint. Take the answer, then give the punchline. Where the scope's structure carries the questions, `/al-visualize` can put the scope in view as a steering surface; each question stays here, in chat.
 
 Ask where a wrong answer would cost something:
 
@@ -33,7 +33,7 @@ Scale the number of questions to the scope and stop once the answers show a soun
 
 ## Close
 
-A sound model → name the answers that demonstrated it. Gaps → name each decision held incorrectly, each with its one-line correction. Misses clustered on one object are worth naming as an area to re-read together. Put the verdict in view through `/al-visualize` — the scope's component map with each miss and its correction pinned, clean where the model held.
+A sound model → name the answers that demonstrated it. Gaps → name each decision held incorrectly, each with its one-line correction. Misses clustered on one object are worth naming as an area to re-read together. Put the verdict in view through `/al-visualize` as a steering surface — each miss and its correction pinned, clean where the model held.
 
 Where the misses land on shipped behaviour rather than on how it was built and a feature's `tasks/` folder owns the area, offer a follow-up task in its slice — on the user's yes, write it yourself as a new open technical task per `/al-routing`'s schema and commit it under its own `T-NNN` prefix. Outside any feature, the gap stays a named correction in chat.
 

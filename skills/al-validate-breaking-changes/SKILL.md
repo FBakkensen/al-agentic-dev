@@ -29,5 +29,5 @@ Whether a break is acceptable is a merge-time business call: intended means a ma
 
 ## Close
 
-Name the outcome in one line — the feature's last gate is clear, or the run is red on the named cause. A detected break also goes up drawn through `/al-visualize` — the broken members as a component diff, the bump-or-fix call as its open card; a clear gate closes plain.
+Name the outcome in one line — the feature's last gate is clear, or the run is red on the named cause. A detected break also goes up as a steering surface through `/al-visualize` — the bump-or-fix call its open decision; a clear gate closes plain.
 Then `/al-routing`.

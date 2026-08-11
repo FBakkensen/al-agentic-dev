@@ -44,7 +44,7 @@ Ask one question per message, with lettered options and your recommendation mark
 
 An answer that shifts each time it is restated, or a preference with no reason under it, goes through `/al-grilling`; carry back what surfaces.
 
-Once everything is settled except one genuine fork, offer competing timelines on that fork — each complete, the same five slots end to end — and say which you would pick. A fork with one credible answer earns no alternatives. Competing timelines may go to the user drawn as a decision surface through `/al-visualize`.
+Once everything is settled except one genuine fork, offer competing timelines on that fork — each complete, the same five slots end to end — and say which you would pick. A fork with one credible answer earns no alternatives. Competing timelines may go to the user as a steering surface through `/al-visualize`.
 
 ## The write
 
@@ -60,6 +60,6 @@ Document shape and a worked example: [EVENT-MODEL-FORMAT.md](EVENT-MODEL-FORMAT.
 
 `event-model.md` holds one timeline in which every step names its Role, its Action, its Business Event, its View, and the Status it flips or `—`, and every branch the interview surfaced has its own section.
 
-A settled timeline first goes blind through `/al-spec-review` — the file, its sources, and the interview's settled answers as locked constraints; its findings land per that skill's disposition before anything commits. Then it goes up drawn through `/al-visualize` — the five slots end to end, swimlanes where Roles hand off.
+A settled timeline first goes blind through `/al-spec-review` — the file, its sources, and the interview's settled answers as locked constraints; its findings land per that skill's disposition before anything commits. Then it goes up as a steering surface through `/al-visualize` — the settled timeline.
 
 Commit `event-model.md` and any `CONTEXT.md` term this run settled with a plain descriptive message; a stop mid-interview commits what settled the same way. Then continue in this session with `/al-design`.
