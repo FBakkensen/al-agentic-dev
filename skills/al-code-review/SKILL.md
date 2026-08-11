@@ -57,7 +57,7 @@ Rank the survivors of both passes by the consequence of shipping the diff as it 
 
 ### Interview the change requests
 
-Interview every change request before implementing any ruling, one per message, highest impact first. State the impact, business or architecture choice, consequences, and recommendation. On a slice or feature scope, `/al-visualize` may put the scoped diff in view — the architectural change drawn, the change requests as its open-decision cards — while each request is still settled here, one per message. Name modules, boundaries, public objects, interfaces, events, or other AL concepts when they make the current or proposed architecture legible; keep paths, line numbers, private procedures, code snippets, lookup mechanics, and knowledge-article details out unless the user asks. One answer settles only the request in front of the user.
+Interview every change request before implementing any ruling, one per message, highest impact first. State the impact, business or architecture choice, consequences, and recommendation. On a slice or feature scope, `/al-visualize` may put the scoped change in view as a steering surface — the change requests its open calls — while each request is still settled here, one per message. Name modules, boundaries, public objects, interfaces, events, or other AL concepts when they make the current or proposed architecture legible; keep paths, line numbers, private procedures, code snippets, lookup mechanics, and knowledge-article details out unless the user asks. One answer settles only the request in front of the user.
 
 After every request is settled, apply its ruling:
 
@@ -73,7 +73,7 @@ Re-review the updated diff exactly once, running both passes from scratch. A fin
 
 A clean gate is no defect left and no open change request.
 
-Keep the pass churn out of chat. Name each defect commit. Report each change request as `Impact:` / `Ruling:` / `Outcome:`. A slice or feature verdict that landed defects or settled change requests also goes up drawn through `/al-visualize` — the reviewed diff with each ruling on it; a clean gate and a repair verdict close plain.
+Keep the pass churn out of chat. Name each defect commit. Report each change request as `Impact:` / `Ruling:` / `Outcome:`. A slice or feature verdict that landed defects or settled change requests also goes up as a steering surface through `/al-visualize`; a clean gate and a repair verdict close plain.
 
 **Outcome:** the diff is reviewed, every defect has landed green or become a task the user accepted, and every change request has a ruling. Report the committed `HEAD` from its last durable full green when the review changed the tree; a clean no-change review retains its selected receipt.
 Then `/al-routing` on a slice or feature verdict; a repair verdict closes back into the paused walk.

@@ -75,6 +75,6 @@ A new decision pauses the cycle: ask it in chat as one question and wait. An ans
 
 ## Close
 
-Name the task green and the behaviour it now proves — one line, no build counts; those live in the commit and the task file. Put the landed change in view through `/al-visualize` — the component diff of what this task added and modified, `Deviations:` among its risks; a repair green draws its fix diff the same way before rejoining its episode.
+Name the task green and the behaviour it now proves — one line, no build counts; those live in the commit and the task file. Put the landed change in view through `/al-visualize` as a receipt — the task's product delta, `Deviations:` named; a repair green draws its fix receipt the same way before rejoining its episode.
 
 Then `/al-routing`; a repair green returns to its caller inside its episode, following the repair path above.

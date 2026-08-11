@@ -1,104 +1,80 @@
-# SURFACE.md — the decision-surface page contract
+# SURFACE.md — the steering-surface page contract
 
 Every surface is one self-contained, read-only HTML file: no input capture — no form
-controls, no comment boxes, no submit action — and no external assets. Answers happen
-in chat. Two moods share one skeleton: a **decision surface** carries open cards; a
-**close surface** carries none — its rail leads with the run's tactical calls (zone 4)
-— unless the close is itself an unresolved call, which keeps that one open card. A
-close centerpiece is the notation SKILL.md's menu prescribes for the artifact being
-closed — a flow strip is never a default.
+controls, no submit action — and no external assets. Answers happen in chat.
 
-## Read in layers
+## The reader scrolls into depth
 
-The page discloses top-down, one layer per glance; the reader stops when satisfied.
-Each zone opens with a header — a numbered pill, an uppercase name, and a payoff
-phrase telling the reader what the zone gives them:
+A steering surface is four layers on one scroll page. Each layer fills most of a
+viewport (`min-height: 92vh`), so one glance holds one layer; a cue line at its foot
+names what the next layer offers and anchors to it. The reader stops when satisfied —
+layer 1 says so explicitly.
 
-1. **Verdict** — `<h1>`, one thesis line naming what is open (or that nothing is),
-   and 3–5 stat tiles: mono numerals, semantic color, uppercase micro-label. The
-   zone opens with the situation before the thesis: one short block in domain
-   terms — the scenario the artifact serves, who hits it, what goes wrong — each
-   lead-in sentence one shown fact behind a glyph, so a reader returning cold
-   follows before any implementation name appears. The page answers "what is
-   this about?" and "what do you need from me?" here, within two seconds.
-2. **The picture** — the centerpiece diagram (below).
-3. **One-liners** — one row per change or argument step: glyph · name · one-line
-   gist · ID. Prose detail lives behind a `<details>` expander on the row, never
-   inline.
-4. **Your call** — the open decision cards, in the rail. On a close surface this
-   zone carries the run's tactical calls instead: one quiet card per call the run
-   took without putting it to the user — the call, its one-line reason, its
-   `data-id`. No reply is demanded; silence is consent, and a call reopens by
-   naming its ID in chat.
-5. **Proof / evidence** — gate numbers, audit tables, groundings; skimmable,
-   collapsible where large.
-6. **Already settled** — LOCKED context as quiet collapsed rows.
+1. **The glance** — a task line (ID · name · state) with one lozenge naming what is
+   needed from the reader (`Your review`, `Receipt`); one headline sentence naming the
+   product change; labeled fact rows (Today / After, or the 3–5 rows the moment
+   needs); an exit line telling the reader they may stop here.
+2. **The product** — what the user of the app will experience: the screen, the
+   gesture, the refusals. Dialog and error texts verbatim in quoted blocks naming who
+   reads them. Reasoning sits behind drill links, never inline.
+3. **Your call** — one flat row per call: title, reversibility lozenge (cheap /
+   moderate / hard to undo), stable ID; a one-line gist; reasoning behind a drill. The
+   layer ends with the literal reply shape (`D1: reopen`) and that silence approves.
+4. **The work** — marked agent territory: a table of pieces and proof in plain terms;
+   locked context behind one expander; a final line saying nothing deeper exists.
 
-**One loud thing (hard):** exactly one element class is visually loudest — the open
-decision cards (blue ring), or on a close surface the centerpiece picture. All else
-stays quiet, tactical calls included; a squint shows only what needs the reader.
+A **receipt** is layer 1 alone plus the work expander: verdict line, the honest
+product delta ("nothing changes for the user" when true), fact rows, work collapsed.
+No scroll machinery.
 
-## Layout
-
-Two-pane grid on wide viewports (page up to ~1560px): content left, rail
-(~400px, `position: sticky`) right holding zones 4–6. Below ~1100px, stack.
-
-## Visual identity
+## Visual identity — a light document
 
 ```css
 :root {
-  --bg:#0b0d12; --surface:#12151c; --surface2:#181c25; --line:#252b36; --line-soft:#1d222b;
-  --ink:#e9edf3; --muted:#9aa4b2; --faint:#606a77;
-  /* GitHub-Primer-dark semantic hues; every hue rides with a glyph */
-  --green:#3fb950; --green-em:#2ea043;  /* added / gate green */
-  --amber:#d29922;                      /* modified / duplicated */
-  --red:#f85149; --red-soft:#ffb3ae;    /* fix / dissolves / misplaced */
-  --blue:#58a6ff;                       /* open decision — the one loud accent */
-  --mono:"Cascadia Code", ui-monospace, SFMono-Regular, Consolas, monospace;
+  --bg:#fff; --panel:#f7f8f9; --line:#dcdfe4; --line-soft:#ebecf0;
+  --ink:#172b4d; --muted:#44546f; --faint:#626f86;
+  --blue:#0c66e4; --blue-bg:#e9f2ff; --blue-ink:#0055cc;
+  --green-bg:#dcfff1; --green-ink:#216e4e;
+  --amber-bg:#fff7d6; --amber-ink:#7f5f01;
+  --red-bg:#ffeceb;  --red-ink:#ae2e24;
 }
 body { background:var(--bg); color:var(--ink);
-  font:15px/1.55 "Segoe UI Variable Text","Segoe UI",-apple-system,system-ui,sans-serif; }
+  font:16px/1.6 -apple-system,"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif; }
 ```
 
-Mono is reserved for identifiers, numerals, and IDs; running text stays sans. Tinted
-node backgrounds stay near the surface tone (e.g. `#0f1f17` for green, `#201113` for
-red) — washed-out pastels and full-strength fills are both defects.
+One sans family; hierarchy rides weight and size. Mono only for identifiers, trees,
+and IDs — never as a costume for "technical". Color lives in lozenges — small
+uppercase tinted chips — and nowhere else; the tinted panels above are the only
+fills, reserved for trees, quoted dialog texts, and pictures. Everything else is flat
+rows over hairline dividers. Headings are sentence-case questions or statements — no
+uppercase eyebrows above them. Text measure stays at or under 72ch.
 
-## Diagrams are HTML (hard)
+## Scroll machinery
 
-The picture is built from HTML boxes laid out with CSS grid — stage containers
-(dashed border, uppercase micro-label) holding node cards (glyph column + title +
-one-line gist), with flow carried by glyph cells (`→`, `↓`) between grid tracks.
-Text in an HTML box wraps; it can never clip or overlap. SVG appears only for
-connector lines that grid adjacency cannot express — never for text layout. A claim
-an arrow would carry may instead sit on the node as a labeled chip
-(`belongs in stage 1 — beside B8/B9/B10`).
+Progressive disclosure is pure scroll — no click on the main path. Guard in
+`@supports`: content rises into view via `animation-timeline: view()` (~16px
+translate, ease-out); a 3px top gauge fills via `animation-timeline: scroll()`; cue
+lines (`▼ Scroll for …`) carry anchor links as the fallback. Drills are native
+`<details>` styled as links (`Why this shape →`) — sideways depth, never a box in a
+box.
 
-**Colorblind rule (hard): color never carries a meaning alone.** Every semantic
-distinction also rides a glyph (`+ ~ = − ⚠ ✓`), a border style, or a label, so the
-page reads correctly in grayscale. Legends show color and glyph together.
+## Pictures
 
-**Self-contained (hard): an identifier never stands alone.** The reader does not
-hold the mapping behind a `T-NNN`, a `B#`/`R#` row, a case or object name — every
-identifier carries its plain-language meaning at point of use, and the page assumes
-the reader remembers nothing from chat.
+Prose by default. A picture earns its slot only for a relational fact — three or more
+things whose arrangement carries the meaning — that prose would force the reader to
+assemble in their head. Every picture is drawn in the product's vocabulary: record
+cards with status lozenges, checkbox trees, document flows in document terms
+(Order → Shipment → Invoice), position-in-the-flow markers. C4, UML, ERD, and
+sequence notation are foreign to this reader and never appear. Boxes are HTML/CSS;
+SVG only for connector lines. Color never carries a meaning alone — a glyph, border
+style, or label rides with it, so the page reads in grayscale.
 
-## Cards and IDs
+## Language
 
-1. **Stable IDs.** Every addressable element — node, row, card, decision — carries
-   `data-id` (`D1`, `N-DFS`, `L2`), shown subtly on the element; chat answers point
-   at these.
-2. **Open decisions.** 2–4 lettered options; exactly one carries `RECOMMENDED`; each
-   option names its worst property on a second line; the card ends with the literal
-   reply shape: `Reply in chat: D1: A (or B, or ask).`
-3. **Locked context.** Collapsed rows under a muted `LOCKED` tag. A decision settled
-   in chat becomes a locked card naming the pick.
-4. **Navigation only.** Clicking a diagram node may scroll to and flash its row;
-   no interaction stores or transmits anything.
-
-## Density
-
-A surface is a working document: realistic names, exact signatures where a decision
-turns on one, honest trade-off wording. Every item earns one line in its zone;
-everything longer collapses. The verdict strip carries the whole story for the
-reader who reads nothing else.
+One sentence per fact, in the product's words — the page, the field, the error, the
+number. An identifier never stands alone: every `T-NNN`, `D1`, object or case name
+carries its plain-language meaning at point of use; the page assumes the reader
+remembers nothing from chat. Run narration is a defect. Every addressable call
+carries a `data-id` shown subtly on the element; chat answers point at these. An open
+call carries 2–4 lettered options, exactly one `RECOMMENDED`, each option naming its
+worst property on a second line.

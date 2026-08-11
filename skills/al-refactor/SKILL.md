@@ -52,6 +52,6 @@ Reach for the platform before writing code — a field plus a FlowField over a s
 
 ## Close
 
-Report the reshape and defects fixed at module, pattern, and seam altitude, naming the invariant that held and the dimensions and leaves that came back clean. Report the committed `HEAD` from the last durable full green when this run reshaped code; a no-change pass retains its incoming receipt. Report each change request by impact, ruling, and outcome. A run that reshaped code or landed a fix also goes up drawn through `/al-visualize` — the component diff of the reshape; a run that changed nothing closes plain.
+Report the reshape and defects fixed at module, pattern, and seam altitude, naming the invariant that held and the dimensions and leaves that came back clean. Report the committed `HEAD` from the last durable full green when this run reshaped code; a no-change pass retains its incoming receipt. Report each change request by impact, ruling, and outcome. A run that reshaped code or landed a fix also goes up through `/al-visualize` as a receipt of the reshape; a run that changed nothing closes plain.
 
 Then `/al-routing`.
