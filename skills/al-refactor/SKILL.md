@@ -22,7 +22,7 @@ Read the whole diff — a task's full diff, once per task — through each of th
 - **Terminology** — every introduced name tracing to a `CONTEXT.md` term, the BC baseline, or an `event-model.md` Action, Business Event, or Status, its verb to BC's own set — an untraceable name is a finding — and names agreeing with the ADRs, `architecture.md`, and the task's `New and Modified Objects`; artifact prose the diff touched (task bodies, `architecture.md`) answers to the same vocabulary as the code.
 - **Performance shape** — a lookup hoisted out of a loop, a filtered read replacing a scan, fields loaded selectively. The structural kind, not one-line tweaks.
 
-If your harness supports subagents, these parallelize; otherwise apply them in one pass.
+If your harness supports subagents, these parallelize in full-capability subagents; otherwise apply them in one pass.
 
 ## Apply
 

@@ -13,7 +13,7 @@ BCQuality is the intentionally gitignored rule set, one review leaf per knowledg
 
 Default workspace search can omit the clone, so use a search mode or direct file reading that includes it; missing → name `/al-clone-bcquality` and stop, since every domain would go unjudged. `.bcquality/knowledge-index.json` is one minified line — parse it as JSON rather than reading or searching it by line.
 
-If your harness supports subagents, the isolated leaf calls parallelize; otherwise apply them in one pass. Check every leaf on the parent review entry's `sub-skills` list:
+Run every isolated leaf call in a full-capability subagent; parallelize the calls. Check every leaf on the parent review entry's `sub-skills` list:
 
 - A leaf on the list with no result → name it and stop as an invocation failure.
 - `no-knowledge` where that domain carries rows in the knowledge index → it never reached its articles: name the domain unjudged and stop.

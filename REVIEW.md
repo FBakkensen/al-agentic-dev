@@ -67,8 +67,8 @@ Every folder under `skills/` is an Agent Skill: a `SKILL.md` plus optional sibli
 
 ## Delegation
 
-28. Delegation is for large, genuinely independent work. Flag a skill that spawns a subagent for work finishable in a few tool calls, or that spawns one to check its own output — `/al-spec-review`'s blind spec gate is the sanctioned exception; a writing skill invoking it at close is not a finding.
-29. Where fan-out is optional, one sentence covers it: `If your harness supports subagents, these parallelize; otherwise apply them in one pass.`
+28. Delegation is for large, genuinely independent work. Flag a skill that spawns a subagent for work finishable in a few tool calls, or that spawns one to check its own output — `/al-spec-review`'s blind spec gate is the sanctioned exception; a writing skill invoking it at close is not a finding. Every delegated review judgment runs in a full-capability subagent; flag a skill that assigns one below that capability.
+29. Where fan-out is optional, one sentence covers it: `If your harness supports subagents, these parallelize in full-capability subagents; otherwise apply them in one pass.`
 
 ## Task-file state has one home
 

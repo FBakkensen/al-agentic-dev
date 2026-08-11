@@ -29,7 +29,7 @@ Mixed state, a squash that hides the `T-NNN` prefixes, or an ambiguous range is 
 
 Two passes over the scoped diff. The first is BCQuality's: `/al-knowledge-pass` on the scoped diff returns the findings, or the one line naming the domain that stopped it; a stop there stops this run — an unjudged domain makes the verdict narrower than it claims.
 
-The second pass is yours — the dimensions below, which reach what no leaf can see: the task's proof, the project's baselines, the shape of the code. If your harness supports subagents, these parallelize; otherwise apply them in one pass.
+The second pass is yours — the dimensions below, which reach what no leaf can see: the task's proof, the project's baselines, the shape of the code. If your harness supports subagents, these parallelize in full-capability subagents; otherwise apply them in one pass.
 
 - **Correctness** — logic faults a fresh read exposes, plus an identifier whose claim is false: a `Get…` that mutates, an `Is…` that does not reflect the state it names.
 - **Assertion rigor** — a test that would pass whether or not the behaviour under test works: an `Assert` restating the `Act`, an expected value the test derives for itself, an assertion on error text where the promised outcome is a state change.
