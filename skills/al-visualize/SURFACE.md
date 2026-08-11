@@ -23,9 +23,10 @@ layer 1 says so explicitly.
 4. **The work** — marked agent territory: a table of pieces and proof in plain terms;
    locked context behind one expander; a final line saying nothing deeper exists.
 
-A **receipt** is layer 1 alone plus the work expander: verdict line, the honest
-product delta ("nothing changes for the user" when true), fact rows, work collapsed.
-No scroll machinery.
+A **receipt** is layer 1 plus the work expander: verdict line, the honest product
+delta ("nothing changes for the user" when true), fact rows, work collapsed. When
+the landed change carries a mechanism that earns a picture, the receipt grows one
+second screen for it, reached by a cue line — one screen is the floor, not a cap.
 
 ## Visual identity — a light document
 
@@ -64,10 +65,15 @@ Prose by default. A picture earns its slot only for a relational fact — three 
 things whose arrangement carries the meaning — that prose would force the reader to
 assemble in their head. Every picture is drawn in the product's vocabulary: record
 cards with status lozenges, checkbox trees, document flows in document terms
-(Order → Shipment → Invoice), position-in-the-flow markers. C4, UML, ERD, and
-sequence notation are foreign to this reader and never appear. Boxes are HTML/CSS;
-SVG only for connector lines. Color never carries a meaning alone — a glyph, border
-style, or label rides with it, so the page reads in grayscale.
+(Order → Shipment → Invoice), position-in-the-flow markers. Two mechanism pictures
+carry a landed change, labeled in those same product words: a **sequence** — one
+lifeline per participant, messages downward, replies dashed — when the change moves
+who decides or when; a **data flow** — stores, processes, arrows, and the
+transaction boundary drawn — when the change moves what is written where. When both
+moved, both appear, the louder one first. C4, ERD, and all other UML notation stay
+foreign to this reader and never appear. Boxes are HTML/CSS; SVG only for connector
+lines. Color never carries a meaning alone — a glyph, border style, or label rides
+with it, so the page reads in grayscale.
 
 ## Language
 

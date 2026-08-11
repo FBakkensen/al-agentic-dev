@@ -16,7 +16,7 @@ Every layer answers one of four questions about the product — what changed, wh
 The caller names the moment and the tier; this skill alone picks the pictures.
 
 - A **steering surface** — the full scroll page of [SURFACE.md](SURFACE.md) — carries a settled artifact, a landed feature or slice, or a mid-run decision.
-- A **receipt** — one screen — carries a routine green: verdict line, the honest product delta, the work collapsed.
+- A **receipt** — one screen as the floor, a second only when the change carries a mechanism worth drawing — carries a routine green: verdict line, the honest product delta, the work collapsed.
 
 ## Ground every fact
 
