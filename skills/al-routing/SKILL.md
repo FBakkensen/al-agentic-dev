@@ -5,7 +5,7 @@ description: "Use when a skill finishes work on a task and the outcome needs rec
 
 # al-routing — the state engine
 
-Task state has one home: the Azure DevOps work item. Every other skill reports what happened in plain words and invokes `/al-routing`; the transitions, the derivations, and the open moves are decided here, and no skill writes task state to a repo file. Two preconditions, and a stop naming the missing one: the Azure DevOps work-item tools are available — see the README note — and the binding resolves: `al-ado.json` at the consumer repo root names `organization`, `project`, `rootWorkItemId`, and `areaPath` (shipped defaults in `config/al-ado.json`; `/al-scope` and `/al-next` read the same binding). Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+Task state has one home: the Azure DevOps work item. Every other skill reports what happened in plain words and invokes `/al-routing`; the transitions, the derivations, and the open moves are decided here, and no skill writes task state to a repo file. Two preconditions, and a stop naming the missing one: the Azure DevOps work-item tools are available — see the README note — and the binding resolves: `al-ado.json` at the consumer repo root names `organization`, `project`, `rootWorkItemId`, and `areaPath` (shipped defaults in `config/al-ado.json`; `/al-scope` and `/al-next` read the same binding). Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## The schema
 

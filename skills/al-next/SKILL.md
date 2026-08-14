@@ -5,7 +5,7 @@ description: "Names the open moves in plain language. Use when a session picks a
 
 # al-next
 
-Read the state, name the move, stop. This skill writes nothing. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+Read the state, name the move, stop. This skill writes nothing. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## No work-item tree yet
 
