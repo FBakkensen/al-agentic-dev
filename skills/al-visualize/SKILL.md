@@ -30,8 +30,8 @@ In a terminal CLI session, where open_canvas is absent, state the finding as tex
 
 ## Export once
 
-A surface is a session artifact and leaves nothing behind — no repo file, close surfaces, receipts, and quiz anchors included. Approval is export: the approved surface is written once, one self-contained file, into the session files area. The close hands the caller one line naming that file and the owning work item; the attachment of the file to the work item happens in /al-routing with the caller's outcome.
+A surface is a session artifact and leaves nothing behind — no repo file, close surfaces, receipts, and quiz anchors included. Approval is export: the approved surface is written once, one self-contained file, into the session files area. The close hands the caller one line naming that file and the owning work item; the attachment of the file to the work item happens in `/al-routing` with the caller's outcome.
 
 ## Close
 
-Report the settled decisions, the export line, and anything left open back into the flow that invoked the surface; the caller owns what happens next, and any task state it implies is the caller's outcome to hand to /al-routing. Invoked directly by the user, close naming what the surface settled, then /al-next.
+Report the settled decisions, the export line, and anything left open back into the flow that invoked the surface; the caller owns what happens next, and any task state it implies is the caller's outcome to hand to `/al-routing`. Invoked directly by the user, close naming what the surface settled, then `/al-next`.
