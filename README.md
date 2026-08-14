@@ -14,8 +14,8 @@ The plugin bundles NAB AL Tools for XLF translation and Microsoft Learn for curr
 
 Azure DevOps needs your organization and interactive authentication, so configure it once at user level after `az login`, replacing `YOUR-ORG`:
 
-```powershell
-copilot mcp add azure-devops -- npx -y @azure-devops/mcp YOUR-ORG
+```console
+copilot mcp add azure-devops -- npx -y @azure-devops/mcp YOUR-ORG --authentication azcli
 ```
 
 Azure DevOps is deliberately outside the plugin. Plugin-owned server names are reserved globally, so a user configuration cannot replace one. Environment placeholders in MCP URLs also stay literal in Copilot CLI 1.0.79.
