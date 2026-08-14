@@ -23,7 +23,7 @@ $sourcePath = Join-Path $repoRoot '.github' 'instructions' 'skills.instructions.
 $reviewPath = Join-Path $repoRoot 'REVIEW.md'
 
 $preamble = @'
-Report a violation of any directive below — they govern `skills/**/*.md` — as **Important**, not as a nit.
+Report a violation of any directive below — they govern `skills/**/*.md` and `agents/*.agent.md` — as **Important**, not as a nit.
 
 Skip findings under `skills/al-build/scripts/`; CI already covers that path.
 
