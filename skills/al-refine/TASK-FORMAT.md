@@ -28,7 +28,7 @@ Skills parse these shapes, so field names and structure are exact.
 | `## Contract Examples` | verify | the slice is API or external-client-facing |
 | `## Usability Review` | verify | optional; earned by new workflows, changed workflows, and error-guidance changes |
 | `Partial-run record:` | verify | a verification walk is in flight |
-| `Closeout:` | verify | the walk is complete |
+| `Closeout:` | verify | the walk is complete, the user waived it, or a sibling's merged plan absorbed it |
 | `Last run:` | ops | the last run was red — one line naming what failed |
 
 ## Sections that carry structure
@@ -49,7 +49,7 @@ One coverage table per technical task, and `Covered By` holds AL test procedure 
 
 **`Deviations:`** — one line per assumption absorbed inline during implementation, appended, never edited away; the breadcrumb marking behaviour that arrived without a red, whose tests are proved by mutation.
 
-**`Closeout:`** — one line per example with its outcome, written when the walk completes.
+**`Closeout:`** — one line per example with its outcome, written when the walk completes. A waived walk instead carries one `Waived (user ruling, <date>)` line naming the pinning Integration cases and the prior walk that verified the wire; an absorbed task carries one `Absorbed (into T-NNN, <date>)` line naming the sibling whose merged plan carries its checks.
 
 ## Language
 

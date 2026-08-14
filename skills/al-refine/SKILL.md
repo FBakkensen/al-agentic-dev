@@ -13,7 +13,7 @@ The body is your write; the frontmatter is `/al-routing`'s. An open question thi
 ## Branch by kind
 
 - `technical` → Test Specification, the red→green driver.
-- `verify` → Verification Plan, the walk run with the user. Without `event-model.md` the slice has no user-facing source; the run stops.
+- `verify` → Verification Plan, the walk run with the user. Without `event-model.md` the slice has no user-facing source; the run stops. A slice not yet cleared by `/al-code-review` also stops the run, naming that gate first — machine review comes before walk time.
 - `provision` → decline, naming `/al-provision`. `breaking-change` → decline, naming `/al-validate-breaking-changes`.
 
 ## The interview
@@ -35,6 +35,8 @@ Two unrelated behaviour groups mean a low-cohesion task: put the split to the us
 ## Verify task: Verification Plan
 
 Every check derives from the slice's observable user or API surface, never internal state, and title, description, and every Role / Action / Business Event / View / Status name quote `event-model.md`. Write only the sections the slice earns, per [TASK-FORMAT.md](TASK-FORMAT.md).
+
+Before writing, scan the folder's other unwalked verify tasks; a sibling sharing this slice's surface and fixtures is a merge candidate — put merge-or-separate to the user as a strategic call, one combined plan for one walk session being the default when surfaces overlap. On a merge this plan absorbs the sibling's checks, and the close names the sibling absorbed for `/al-routing` to record.
 
 ## Push-ups and exact names
 

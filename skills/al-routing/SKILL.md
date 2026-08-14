@@ -63,7 +63,7 @@ One edit per stamped outcome, committed as it lands under the owning task's `T-N
 | `/al-code-review` cleared the slice / the feature | `review: clean` on the slice's last task / on the breaking-change task; record its latest durable full gate when it changed the tree |
 | `/al-provision` ran | green → `phase: provisioned`; red → one `Last run:` line in the task body naming what failed, frontmatter untouched |
 | `/al-clone-bcapps`, `/al-clone-bcquality`, or `/al-validate-breaking-changes` ran | green → `phase: bcapps-cloned` for the first, `status: done` for the other two; red → one `Last run:` line in the task body naming what failed, frontmatter untouched |
-| the user closes a task early | `status: done` |
+| the user closes a task early — a verify task waived (every delta pinned by green Integration cases, its wire human-verified in a prior walk) or absorbed into a sibling's merged plan included | `status: done`; a waived or absorbed verify close also writes the one `Closeout:` line naming the cover — the pinning cases and prior walk, or the carrying task. A waiver closes the walk, never the slice's review gate |
 
 Four outcomes stamp nothing: `/al-scope` landed the tasks folder → present the opening move.
 
@@ -79,6 +79,6 @@ After recording — stamp or no stamp — a dirty tree is put to the user: summa
 
 ## Present the moves
 
-After recording a report — or when `/al-next` asks — one line per runnable task: its `task:` id, the skill the ladder names, the model class the move wants, and what opened it, in the feature's own object and field vocabulary. A move's class is the task's `tier:`, raised to frontier for `/al-refine` and `/al-user-verification`, raised to standard for `/al-refactor` and `/al-code-review`; untiered, any other move at standard. A firing gate (`/al-code-review`, `/al-sync-main`) is presented as a move the same way. Several open → id order, naming which unblocks the most. None → the one edge or gate that must settle, and who settles it. A repair-episode report skips the move list — its own path continues.
+After recording a report — or when `/al-next` asks — first sweep every task frontmatter in the folder and derive each gate above, naming the result in one line — `Gates: <slice> review firing` or `Gates: none` — a firing gate outranks every ladder move and is presented first; a move whose gate condition the sweep does not confirm is never named. Then one line per runnable task: its `task:` id, the skill the ladder names, the model class the move wants, and what opened it, in the feature's own object and field vocabulary. A move's class is the task's `tier:`, raised to frontier for `/al-refine` and `/al-user-verification`, raised to standard for `/al-refactor` and `/al-code-review`; untiered, any other move at standard. Several open → id order, naming which unblocks the most; runnable verify tasks sharing a surface and fixtures are one walk opportunity — merged at refine or walked back-to-back in one warm session, never serial refine→walk cycles. None → the one edge or gate that must settle, and who settles it. A repair-episode report skips the move list — its own path continues.
 
 Close on the state recorded and the moves named; the session continues in the caller's flow.
