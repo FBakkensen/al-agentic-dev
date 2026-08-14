@@ -12,9 +12,9 @@ Writes `CONTEXT.md` at the repo root and accepted ADRs under `docs/adr/`. Reads 
 
 ## The interview
 
-Ask one question per message: one line naming what the answer locks in, then the question, then lettered options of one line each, the recommendation first and marked. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+Ask one question per message: one line naming what the answer locks in, then the question, then lettered options of one line each, the recommendation first and marked. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
-- **A fact is answered, not asked.** Search the workspace, read the official BC documentation, say what you found, move on.
+- **A fact is answered, not asked.** Grep the workspace, read the official BC documentation through the microsoft-learn tools (microsoft_docs_search, microsoft_docs_fetch), say what you found, move on.
 - **A strategic decision is asked.** Strategic means `CONTEXT.md` or an ADR locks it in and the next skill consumes it.
 - **A tactical decision is made and named in one line** — where an entry sits, which of two equivalent phrasings lands. Naming it is what makes it overridable.
 - **Write each answer down the moment it resolves.** Mid-session `CONTEXT.md` is working state: reorder it, leave it half-built. Batching an hour of settled answers into one write at the close loses the hour to compaction.

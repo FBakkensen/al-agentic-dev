@@ -5,7 +5,7 @@ description: Tour of the AL agentic-dev toolkit and where to start. Use when the
 
 # AL agentic dev — the tour
 
-These skills carry a Business Central feature from a rough idea to a merged branch. You drive; nothing auto-chains. A skill that moves a task hands its outcome to `/al-routing`, which records it and presents the open moves. State lives on disk — `CONTEXT.md` and `docs/adr/` at repo root, `specs/<NNN>-<slug>/` and its `tasks/` folder on the feature branch — so every skill starts cold. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+These skills carry a Business Central feature from a rough idea to a merged branch. You drive; nothing auto-chains. A skill that moves a task hands its outcome to `/al-routing`, which records it and presents the open moves. State lives on disk — `CONTEXT.md` and `docs/adr/` at repo root, `specs/<NNN>-<slug>/` and its `tasks/` folder on the feature branch — so every skill starts cold. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## The tour
 
