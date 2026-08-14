@@ -18,7 +18,7 @@ The entry chain runs in one session: `/al-grill-adr` → `/al-event-model` (back
 
 ## The tree exists
 
-The Azure DevOps work-item tools answer everything from here — see the README note when they are absent, and stop with that message. Load `/al-routing` — it owns the schema, the ladder, the gates, the sweeps, and the derivations. Run its two-query sweep and batch read through `wit_query` and `wit_work_item`; no repo file carries task state. Present the moves the way `/al-routing` prescribes.
+The Azure DevOps work-item tools answer everything from here — see the README note when they are absent, and stop with that message. Load `/al-routing` — it owns the schema, the ladder, the gates, the sweeps, and the derivations. Run its level-by-level one-hop sweep and batch read through `azure-devops-wit_query` and `azure-devops-wit_work_item`; no repo file carries task state. Present the moves the way `/al-routing` prescribes.
 
 Asked what is blocked: per task, name the open Predecessor or the holding gate in the feature's own object, table, and field names — a task carrying `al-question` names the question waiting on the user, from its newest comment — and close with the one thing whose settling opens the most. A feature whose items are all closed points at a fresh idea through `/al-grill-adr`.
 

@@ -27,7 +27,7 @@ A gap `architecture.md` cannot answer — a missing module, a pattern conflict, 
 
 ## What lands in the tree
 
-Creation goes through `wit_work_item_write` under the binding's `areaPath`, every dependency edge through `wit_work_item_link_write` as a Predecessor/Successor link — the edges are the sole encoding of order, so a task inserts between two by relinking:
+Creation goes through `azure-devops-wit_work_item_write` under the binding's `areaPath`, every dependency edge through `azure-devops-wit_work_item_link_write` as a Predecessor/Successor link — the edges are the sole encoding of order, so a task inserts between two by relinking:
 
 - The `Design` User Story — its Description opens with the Goal in user terms, lifted from the `event-model.md` journey or the `architecture.md` trigger source, then carries the settled `architecture.md` and, when present, `event-model.md`, so the consultant reads the feature's shape where the work lives.
 - One User Story per vertical slice — Description is the slice contract in user terms, `Microsoft.VSTS.Common.AcceptanceCriteria` the slice's behaviour checks in `event-model.md` vocabulary (Role, Action, Business Event, View, Status).
@@ -53,7 +53,7 @@ A tree already fully scoped means the architecture was reshaped over settled wor
 
 ## Close
 
-A fully scoped tree first goes blind through `/al-spec-review` — the tree read back through `wit_work_item` and `wit_query`, `architecture.md`, `event-model.md` when present, and the interview's settled answers as locked constraints; its findings land per that skill's disposition before the tree stands.
+A fully scoped tree first goes blind through `/al-spec-review` — the tree read back through `azure-devops-wit_work_item` and `azure-devops-wit_query`, `architecture.md`, `event-model.md` when present, and the interview's settled answers as locked constraints; its findings land per that skill's disposition before the tree stands.
 Name what landed: the slices, the task and verify-task counts (or *none, backend-only*), whether the dependency shape is linear or branching, and the Goal in user terms.
 The tree goes up as a steering surface through `/al-visualize` — what ships, and in what order.
 Then `/al-routing` presents the opening move.
