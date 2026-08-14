@@ -23,12 +23,13 @@ $RepoRoot = (Resolve-Path -LiteralPath $RepoRoot -ErrorAction Stop).Path
 $errors = @()
 
 Get-ChildItem -Path $RepoRoot -Recurse -Filter "*.json" | ForEach-Object {
+    $file = $_
     try {
-        $null = Get-Content $_.FullName -Raw | ConvertFrom-Json
-        Write-Host "OK: $($_.FullName)" -ForegroundColor Green
+        $null = Get-Content $file.FullName -Raw | ConvertFrom-Json
+        Write-Host "OK: $($file.FullName)" -ForegroundColor Green
     } catch {
-        $errors += "FAIL: $($_.FullName) - $($_.Exception.Message)"
-        Write-Host "FAIL: $($_.FullName)" -ForegroundColor Red
+        $errors += "FAIL: $($file.FullName) - $($_.Exception.Message)"
+        Write-Host "FAIL: $($file.FullName)" -ForegroundColor Red
     }
 }
 
@@ -67,7 +68,7 @@ if ($plugin) {
 
 $mcp = Read-PluginJson -Path $mcpPath -Label '.mcp.json'
 if ($mcp) {
-    $servers = @($mcp.mcpServers.PSObject.Properties)
+    $servers = @($mcp.mcpServers.PSObject.Properties | Where-Object { $null -ne $_ })
     if (-not $mcp.mcpServers -or $servers.Count -eq 0) {
         $errors += 'FAIL: .mcp.json - mcpServers must carry at least one server'
     }
@@ -75,7 +76,7 @@ if ($mcp) {
         if (-not $server.Value.type) {
             $errors += "FAIL: .mcp.json - server '$($server.Name)' must carry a type"
         }
-        if (@($server.Value.tools).Count -eq 0) {
+        if (-not $server.Value.tools) {
             $errors += "FAIL: .mcp.json - server '$($server.Name)' must carry a non-empty tools allowlist"
         }
     }
@@ -84,7 +85,7 @@ if ($mcp) {
 $marketplace = Read-PluginJson -Path $marketplacePath -Label '.github/plugin/marketplace.json'
 if ($marketplace) {
     if (-not $marketplace.name) { $errors += 'FAIL: marketplace.json - name must be non-empty' }
-    $plugins = @($marketplace.plugins)
+    $plugins = @($marketplace.plugins | Where-Object { $null -ne $_ })
     if ($plugins.Count -eq 0) {
         $errors += 'FAIL: marketplace.json - plugins must carry at least one entry'
     }

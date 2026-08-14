@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/copilot-first-migration]
   pull_request:
-    branches: [main]
+    branches: [main, feature/copilot-first-migration]
 
 jobs:
   validate:
