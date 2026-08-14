@@ -60,4 +60,4 @@ A tree already fully scoped means the architecture was reshaped over settled wor
 A fully scoped tree first goes blind through `/al-spec-review` — the tree read back through `azure-devops-wit_work_item` and `azure-devops-wit_query`, `architecture.md`, `event-model.md` when present, and the interview's settled answers as locked constraints; its findings land per that skill's disposition before the tree stands.
 Name what landed: the slices, the task and verify-task counts (or *none, backend-only*), whether the dependency shape is linear or branching, and the Goal in user terms.
 The tree goes up as a steering surface through `/al-visualize` — what ships, and in what order.
-Then `/al-routing` presents the opening move.
+Then `/al-orchestrate` takes coordination — the feature session goes hands-off and conducts the slice work from here.

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "al-orchestrate configuration defaults. Override by placing al-orchestrate.json in the consumer repo root. modelLadder is ordered cheap to premium; the orchestrator picks per conversation at spawn.",
+
+  "parallelCap": 3,
+
+  "modelLadder": [
+    "claude-haiku-4.5",
+    "claude-sonnet-5",
+    "claude-opus-5"
+  ]
+}

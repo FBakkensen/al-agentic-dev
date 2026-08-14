@@ -5,19 +5,21 @@ This repo ships the GitHub Copilot plugin `al-agentic-dev`: Agent Skills for AL/
 ## The shipped surface
 
 ```
-plugin.json                     the plugin manifest: name, version, skills/, agents/, .mcp.json
+plugin.json                     the plugin manifest: name, version, skills/, agents/, hooks, .mcp.json
 .mcp.json                       bundled MCP servers, each with a tools allowlist
+hooks.json                      the shipped hook: preToolUse denies the ask_user tool
 .github/plugin/marketplace.json the marketplace manifest the plugin installs through
 skills/<name>/SKILL.md          frontmatter: name, description, disable-model-invocation
 skills/<name>/<SIBLING>.md      optional format files, inside the same folder only
 skills/al-build/scripts/*.ps1   the build substrate
 skills/al-build/config/         al-build.json
+skills/al-orchestrate/config/   al-orchestrate.json
 agents/<name>.agent.md          packaged custom agents: name, description, tools, model
 ```
 
 The folder name equals the frontmatter `name`; an agent's `name` equals its filename stem, and its `model` pin and `tools` scope are mandatory. A skill reaches outside its folder only by naming another skill — `/al-build` — never by path. Skill names are prefix-free: `al-` marks the AL pipeline family, and a generic name like `babysit-pr` is as valid as `al-build`.
 
-`disable-model-invocation: true` is the default on every skill: the pipeline is user-driven, so a skill loads only when the user types its slash command. Exactly nine skills omit the flag, each because something must load it without a slash command: `al-build` (invoked mid-run by other skills), `al-grilling` (invoked mid-interview by `al-grill-adr`, `al-event-model`, `al-design`, `al-refine`), `al-knowledge-pass` (the BCQuality pass over a diff — invoked mid-run by `al-code-review` and `al-refactor`), `al-implement` (feedback implementation invoked mid-run by `al-code-review` and `al-refactor`), `al-routing` (the task-state engine — invoked at close by every skill that moves task state, and loaded by `al-next` and `al-scope` for its schema), `al-visualize` (the decision surface — invoked mid-run by `al-design`, `al-event-model`, `al-refine`, `al-scope`, `al-code-review`, `al-quiz`, and at close by every pipeline skill that presents its settled artifact or landed change drawn), `al-spec-review` (the blind spec gate — invoked at close by `al-design`, `al-event-model`, `al-scope`, and `al-refine` to read a just-written spec artifact against its sources), `al-next` (the plain-language navigator), `al-agentic-dev-overview` (discovery by someone who doesn't know the commands). A new exception names who invokes it.
+`disable-model-invocation: true` is the default on every skill: the pipeline is user-driven, so a skill loads only when the user types its slash command. Exactly ten skills omit the flag, each because something must load it without a slash command: `al-build` (invoked mid-run by other skills), `al-grilling` (invoked mid-interview by `al-grill-adr`, `al-event-model`, `al-design`, `al-refine`), `al-knowledge-pass` (the BCQuality pass over a diff — invoked mid-run by `al-code-review` and `al-refactor`), `al-implement` (feedback implementation invoked mid-run by `al-code-review` and `al-refactor`), `al-routing` (the task-state engine — invoked at close by every skill that moves task state, and loaded by `al-next` and `al-scope` for its schema), `al-visualize` (the decision surface — invoked mid-run by `al-design`, `al-event-model`, `al-refine`, `al-scope`, `al-code-review`, `al-quiz`, and at close by every pipeline skill that presents its settled artifact or landed change drawn), `al-spec-review` (the blind spec gate — invoked at close by `al-design`, `al-event-model`, `al-scope`, and `al-refine` to read a just-written spec artifact against its sources), `al-orchestrate` (the feature conductor — invoked at close by `al-scope` so the feature session rolls from scoping into coordination), `al-next` (the plain-language navigator), `al-agentic-dev-overview` (discovery by someone who doesn't know the commands). A new exception names who invokes it.
 
 ## What never ships
 
@@ -27,7 +29,7 @@ The folder name equals the frontmatter `name`; an agent's `name` equals its file
 - Skill frontmatter beyond `name`, `description`, `disable-model-invocation` — no `allowed-tools`, `model`, `tools`, `mcp-servers`, `user-invocable` on a skill.
 - A task-state transition outside `al-routing` — a legacy lifecycle field (`status:`, `phase:`, `blocked-on:`, `review:`, `tier:`, `green-gate:`) or an Azure DevOps work-item transition (`State: New|Active|Blocked|Testing|Resolved|Closed`).
 - A link that leaves the skill folder: `](../`, `](/`, any absolute path.
-- Hooks and slash-command files — out of scope until a proven defect asks for them.
+- Slash-command files — out of scope until a proven defect asks for them. One hook ships: `hooks.json` denies the `ask_user` tool with a redirect to plain-text questions (its proven defect: a child session hung silently on an `ask_user` call); a new hook needs its own proven defect.
 
 Say so when a change reintroduces one of these.
 
