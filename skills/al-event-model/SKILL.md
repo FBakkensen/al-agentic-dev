@@ -13,14 +13,14 @@ Preconditions: the `CONTEXT.md` terms and the domain ADRs are settled — run `/
 `event-model.md` lands in the feature's spec folder, `specs/<NNN>-<slug>/`, created if absent with `<NNN>` one past the highest spec folder present. Where the file already exists for this feature, reshape it in place. The run continues on a branch named `<NNN>-<slug>`:
 
 - No branch for this feature yet → create `<NNN>-<slug>` off the default branch.
-- The session sits on its own working branch with another name → rename it to `<NNN>-<slug>`, with plain `git branch -m` where the environment's branch tooling cannot produce the exact name.
+- The session sits on its own working branch with another name → rename it to `<NNN>-<slug>`, through the rename_branch tool where the session provides it, with plain `git branch -m` otherwise.
 - Never rename the default branch.
 - Never rename a branch already `<NNN>-<slug>`-shaped — that name binds it to its own spec folder; a mismatch with this run's spec is a stop put to the user.
 - A rename that fails is a stop put to the user, never a quiet note.
 
-Every BC name that lands in a slot — a persona, a BaseApp event, a table, a field, a page — comes from a lookup made this session: search the workspace, or read Microsoft's BC documentation. Recall is fiction. Where `.bcapps/` is present, it is intentionally gitignored: inspect it directly for BaseApp's own events and code. Default workspace search can omit it, so use a search mode or direct file reading that includes the clone.
+Every BC name that lands in a slot — a persona, a BaseApp event, a table, a field, a page — comes from a lookup made this session: grep the workspace, or read Microsoft's BC documentation through the microsoft-learn tools (microsoft_docs_search, microsoft_docs_fetch). Recall is fiction. Where `.bcapps/` is present, it is intentionally gitignored: a workspace-wide grep skips the clone, so point grep at `.bcapps/` explicitly and view its files directly for BaseApp's own events and code.
 
-BCQuality is the intentionally gitignored rule set for the slots that carry BC mechanics. `.bcquality/knowledge-index.json` carries one row per article with its `domain` and `keywords`. Default workspace search can omit the clone, so use a search mode or direct file reading that includes it, and it is one minified line — parse it as JSON rather than reading or searching it by line. Narrow to the domains a step touches — events above all, plus ui and web services where the View sits there — and read those articles before settling the step. Where an article moved a decision, `event-model.md` names it on that step's line; elsewhere it stays silent.
+BCQuality is the intentionally gitignored rule set for the slots that carry BC mechanics. `.bcquality/knowledge-index.json` carries one row per article with its `domain` and `keywords`. A workspace-wide grep skips the gitignored clone, so point grep at `.bcquality/` explicitly and view its files directly, and the index is one minified line — parse it as JSON rather than reading or searching it by line. Narrow to the domains a step touches — events above all, plus ui and web services where the View sits there — and read those articles before settling the step. Where an article moved a decision, `event-model.md` names it on that step's line; elsewhere it stays silent.
 
 The timeline is a naming authority: downstream skills derive procedure, event publisher, and enum value names from its Actions, Business Events, and Statuses. A concept entering one of those three slots with no `CONTEXT.md` term and no BC baseline term behind it is a vocabulary gap: settle it as one question, land the term in `CONTEXT.md` per its format, and name the slot from it — Roles and Views stay in the user's own words.
 
@@ -34,7 +34,7 @@ The timeline is a naming authority: downstream skills derive procedure, event pu
 
 ## The interview
 
-Ask one question per message, with lettered options and your recommendation marked. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Put to the user what the design and the task breakdown will lock in; decide the rest and name it in one line — wording, the order of steps whose order carries no meaning. Look up a BC fact rather than asking it.
+Ask one question per message, with lettered options and your recommendation marked. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Put to the user what the design and the task breakdown will lock in; decide the rest and name it in one line — wording, the order of steps whose order carries no meaning. Look up a BC fact rather than asking it.
 
 - **Whose journey is this, and where does it start and end?** A second Role appearing mid-timeline is a handoff — name it. Two disjoint journeys are two features.
 - **What does an external observer see that says the step worked?** The View in the surface's own words, plus the Status flip where there is one. A step with no observable outcome is a step nobody can verify later.
