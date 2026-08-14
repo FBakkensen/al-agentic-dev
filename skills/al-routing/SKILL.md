@@ -42,7 +42,7 @@ A completed full gate reports the `HEAD` committed immediately from its unchange
 - **Scoping / re-scope** — no `al-pipeline` item under the bound root, or an `architecture.md` reshaped since the tree settled, → `/al-scope` before anything routes. While the provision chain is not fully Resolved, its next rung is the only move.
 - **Slice review** — every Task in a slice story Resolved and the story not Closed → `/al-code-review` on the slice.
 - **Feature review** — every slice story Closed, the breaking-change task still New, and the Design story not yet Resolved → feature `/al-code-review` before it runs.
-- **All shipped** — the Design story Resolved and every ops task Resolved → `/al-sync-main`, then the user opens the PR. Branch synced and PR open → close every remaining item; the feature is done.
+- **All shipped** — the Design story Resolved and every ops task Resolved → `/al-sync-main`, then the user marks the root PR ready. Branch synced and root PR ready → close every remaining item; the feature is done.
 
 ## Outcome → transition
 
@@ -60,7 +60,7 @@ One state write per reported outcome, plus one `➡️ Routing:` comment on the 
 | an ops skill ran green | its Task → Resolved |
 | the user closes a task early — a waived or absorbed verify walk included | Task → Resolved; the closing comment names the cover — the pinning cases and prior walk, or the carrying task. A waiver closes the walk, never the slice's review gate |
 | the user retired a task at `/al-scope`'s reconcile | the item → Removed |
-| `/al-sync-main` synced and the user's PR is open | every remaining item → Closed |
+| `/al-sync-main` synced and the root PR is ready | every remaining item → Closed |
 
 Four outcomes transition nothing: `/al-scope` landed the tree → present the opening move. A run whose outcome is a work item it created — a change request at the review gate, a quiz follow-up — → the new item is the move, and any gate it re-holds re-fires once it settles. A repair episode — the fix green, its repair-scope review, a verification run paused on a fail — stays inside its episode: a durable full green records or replaces its receipt, and the run resumes at the failed scenario. A declined task's stop line in chat is the whole record. Any other unmatched outcome goes back to the reporter as one question rather than being guessed into a transition.
 
