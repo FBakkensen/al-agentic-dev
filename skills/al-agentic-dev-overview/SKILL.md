@@ -30,7 +30,7 @@ Emit [TOUR.md](TOUR.md) exactly as written, filling its two slots; the skills ta
 | `/al-refactor` | Reshapes production and test code while the gate stays green. |
 | `/al-code-review` | Reviews at slice-done and before merge, splitting rework from change requests. |
 | `/al-spec-review` | Blind-reads a just-written spec artifact against its sources before it commits; the writing skills invoke it at close. |
-| `/al-visualize` | Draws what a run settled or landed as an HTML steering surface beside the chat — the pipeline skills invoke it at decisions and closes. |
+| `/al-visualize` | Draws what a run settled or landed as a steering surface on the app's side-panel canvas — the pipeline skills invoke it at decisions and closes. |
 | `/al-user-verification` | Walks a slice's verify task with you, one scenario at a time, recordings included. |
 | `/al-build` | Compiles, publishes, runs the tests — the gate every other skill reaches through. |
 | `/al-provision` | Runs the provision task's first step, refreshing compiler, symbols, and baseline. |
