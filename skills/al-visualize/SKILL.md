@@ -9,14 +9,14 @@ The reader is the architect or PM steering agents: the surface gives them enough
 
 ## Show the product, never the work
 
-Every layer answers one of four questions about the product — what changed, why, what it costs later, what needs the reader — and the moment picks which is loud. Agent effort — passes, commits, build counts, file lists — compresses into the final layer behind one drill. Dialog and error texts appear verbatim, in the product's own words. Cost-later rides reversibility: each call the run took or asks carries cheap, moderate, or hard to undo, and the hard ones are the loud ones.
+Every layer answers one of four questions about the product — what changed, why, what it costs later, what needs the reader — and the moment picks which is loud. Agent effort — passes, commits, build counts, file lists — compresses into the final layer's table. Dialog and error texts appear verbatim, in the product's own words. Cost-later rides reversibility: each call the run took or asks carries cheap, moderate, or hard to undo, and the hard ones are the loud ones.
 
 ## Two tiers
 
 The caller names the moment and the tier; this skill alone picks the pictures.
 
 - A **steering surface** — the full four-layer artifact of [SURFACE.md](SURFACE.md) — carries a settled artifact, a landed feature or slice, or a mid-run decision.
-- A **receipt** — the glance plus the work drill, a mechanism section only when the change carries one worth drawing — carries a routine green: verdict line, the honest product delta, the work collapsed.
+- A **receipt** — the glance plus the work table, a mechanism section only when the change carries one worth drawing — carries a routine green: verdict line, the honest product delta, the work collapsed.
 
 ## Ground every fact
 
