@@ -26,12 +26,13 @@ BeforeAll {
         param(
             [string]$Name = 'demo',
             [string]$Body = 'Name the outcome.',
+            [string]$QuestionRule = 'Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.',
             [switch]$ModelInvocable,
             [switch]$WithoutQuestionRule
         )
 
         $flagLine = if ($ModelInvocable) { '' } else { "disable-model-invocation: true`n" }
-        $questionLine = if ($WithoutQuestionRule) { '' } else { "Ask every question in the reply itself, as plain text — never through a question or elicitation tool.`n`n" }
+        $questionLine = if ($WithoutQuestionRule) { '' } else { "$QuestionRule`n`n" }
         return @"
 ---
 name: $Name
@@ -121,6 +122,29 @@ Name the outcome, then /al-build.
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'no-question-rule') -Files @{
             'demo/SKILL.md'     = (New-SkillContent -WithoutQuestionRule)
             'al-build/SKILL.md' = (New-SkillContent -Name 'al-build' -ModelInvocable)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'demo/SKILL\.md: missing the required plain-text question rule'
+    }
+
+    It 'passes the pre-ban question rule only in a slice 4/5 transition folder' {
+        $legacy = 'Ask every question in the reply itself, as plain text — never through a question or elicitation tool.'
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'legacy-transition') -Files @{
+            'al-scope/SKILL.md' = (New-SkillContent -Name 'al-scope' -QuestionRule $legacy)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+
+    It 'fails the pre-ban question rule outside the transition folders' {
+        $legacy = 'Ask every question in the reply itself, as plain text — never through a question or elicitation tool.'
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'legacy-elsewhere') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -QuestionRule $legacy)
         }
 
         $result = Invoke-SkillValidator -Root $root
