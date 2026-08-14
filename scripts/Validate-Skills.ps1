@@ -1,9 +1,10 @@
 #Requires -Version 7.2
 <#
 .SYNOPSIS
-    Validates that every folder under skills/ is a portable, self-contained Agent Skill.
+    Validates every skills/ folder as a Copilot-first Agent Skill and every
+    agents/*.agent.md as a packaged custom agent.
 .DESCRIPTION
-    Each skill folder holds a SKILL.md whose frontmatter carries the keys name and
+    Skills: each folder holds a SKILL.md whose frontmatter carries the keys name and
     description, constrained per the Agent Skills specification (agentskills.io): name is
     1-64 characters of lowercase a-z0-9 and single hyphens and equals the folder name
     exactly; description is a non-empty single-line value of at most 1024 characters,
@@ -15,17 +16,27 @@
     Every relative Markdown link in the folder's .md files resolves to a file inside that
     same folder, and only skills/al-build may name a .ps1 file or a scripts/ path — save
     for the per-skill exemptions in $scriptExemptions, each an upstream tool a named skill
-    runs inside a checkout it clones. Task
-    state has one home: outside skills/al-routing, no skill body states a lifecycle field
-    (status:, phase:, blocked-on:, review:, tier:, green-gate:). Every skill carries the shared plain-text
-    question rule. Every /al-<name> skill reference resolves to a folder under the skills
-    root. Every violation is reported; any violation exits 1.
+    runs inside a checkout it clones.
+    Harness-conditional phrasing is banned: no skill or agent markdown contains the token
+    'harness' — tools, MCP servers, and delegation targets are named by their Copilot names.
+    Task state has one home: outside skills/al-routing, no skill body states a legacy
+    lifecycle field (status:, phase:, blocked-on:, review:, tier:, green-gate:) or an Azure
+    DevOps work-item transition (State: New|Active|Blocked|Testing|Resolved|Closed).
+    Every skill carries the shared plain-text question rule, which bans the ask_user tool
+    by name. A /name skill reference that
+    matches a folder under the skills root resolves regardless of prefix; an al-prefixed
+    reference with no folder is a violation.
+    Agents: each agents/*.agent.md carries exactly the frontmatter keys name, description,
+    tools, and model; name equals the filename stem and meets the skill name spec;
+    description follows the skill description rules; model is a non-empty pin; tools is a
+    non-empty inline value or block list. Every violation is reported; any violation exits 1.
 .EXAMPLE
     pwsh scripts/Validate-Skills.ps1
 #>
 [CmdletBinding()]
 param(
-    [string]$SkillsRoot = (Join-Path $PSScriptRoot '..' 'skills')
+    [string]$SkillsRoot = (Join-Path $PSScriptRoot '..' 'skills'),
+    [string]$AgentsRoot = (Join-Path $PSScriptRoot '..' 'agents')
 )
 
 function Get-MarkdownLinkTarget {
@@ -56,7 +67,7 @@ function Get-MarkdownLinkTarget {
 $violations = @()
 $root = (Resolve-Path -LiteralPath $SkillsRoot -ErrorAction Stop).Path
 $modelInvocable = @('al-build', 'al-grilling', 'al-knowledge-pass', 'al-implement', 'al-next', 'al-routing', 'al-agentic-dev-overview', 'al-visualize', 'al-spec-review')
-$questionRule = 'Ask every question in the reply itself, as plain text — never through a question or elicitation tool.'
+$questionRule = 'Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.'
 # Per-skill script exemptions, approved one at a time. The key is the skill folder; the
 # value is the exact script paths that skill may name. al-build is exempt wholesale
 # because it owns the substrate; every other entry is an upstream tool the skill runs
@@ -173,20 +184,30 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
             }
         }
 
+        foreach ($hit in [regex]::Matches([string]$text, 'harness', 'IgnoreCase')) {
+            $violations += "${relative}: uses harness-conditional phrasing ('$($hit.Value)'); name the Copilot tool or agent instead"
+        }
+
         if ($skill.Name -ne 'al-routing') {
             foreach ($field in [regex]::Matches($body, '(?<![\w-])(status|phase|blocked-on|review|tier|green-gate)\s*:')) {
                 $violations += "${relative}: states the lifecycle field '$($field.Groups[1].Value):' outside al-routing; task state has one home"
             }
+            foreach ($transition in [regex]::Matches($body, '(?<![\w-])[Ss]tate\s*:\s*(New|Active|Blocked|Testing|Resolved|Closed)\b')) {
+                $violations += "${relative}: states the work-item transition '$($transition.Value)' outside al-routing; task state has one home"
+            }
         }
 
-        foreach ($mention in [regex]::Matches($body, '/al-[a-z0-9-]+')) {
+        foreach ($mention in [regex]::Matches($body, '/[a-z0-9]+(?:-[a-z0-9]+)*')) {
             $end = $mention.Index + $mention.Length
             $next = if ($end -lt $body.Length) { $body.Substring($end, [Math]::Min(2, $body.Length - $end)) } else { '' }
             if ($next -match '^\.[A-Za-z0-9]' -or $next -match '^[/\\]') { continue }
             $prev = if ($mention.Index -gt 0) { [string]$body[$mention.Index - 1] } else { ' ' }
             if ($prev -match '[\w.>/\\-]') { continue }
             $name = $mention.Value.TrimStart('/')
-            if ($skillFolders -cnotcontains $name) {
+            if ($skillFolders -ccontains $name) { continue }
+            # A slash token matching no folder is a violation only in the al- family;
+            # a generic non-folder token is indistinguishable from a platform command or path.
+            if ($name -clike 'al-*') {
                 $violations += "${relative}: names a skill that has no folder: $($mention.Value)"
             }
         }
@@ -194,6 +215,90 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
 
     if ($violations.Count -eq $skillCount) {
         Write-Host "OK: $($skill.Name)" -ForegroundColor Green
+    }
+}
+
+$agentFiles = @()
+if (Test-Path -LiteralPath $AgentsRoot -PathType Container) {
+    $agentFiles = @(Get-ChildItem -LiteralPath $AgentsRoot -Filter '*.agent.md' -File | Sort-Object Name)
+}
+
+foreach ($agent in $agentFiles) {
+    $agentCount = $violations.Count
+    $agentRelative = "agents/$($agent.Name)"
+    $stem = $agent.Name -replace '\.agent\.md$', ''
+    $text = Get-Content -LiteralPath $agent.FullName -Raw
+    $lines = @($text -split '\r?\n')
+    $close = -1
+    for ($i = 1; $i -lt $lines.Count; $i++) {
+        if ($lines[$i].Trim() -eq '---') { $close = $i; break }
+    }
+
+    if ($lines[0].Trim() -ne '---' -or $close -lt 1) {
+        $violations += "${agentRelative}: frontmatter block does not parse"
+    } else {
+        $frontmatterLines = @($lines[1..($close - 1)])
+        $frontmatter = $frontmatterLines -join "`n"
+        $keys = @([regex]::Matches($frontmatter, '(?m)^([A-Za-z][\w-]*)\s*:') |
+            ForEach-Object { $_.Groups[1].Value })
+        $requiredKeys = @('name', 'description', 'tools', 'model')
+        $unknownKeys = @($keys | Where-Object { $requiredKeys -cnotcontains $_ })
+        $duplicateKeys = @($keys | Group-Object | Where-Object Count -gt 1)
+        $missingKeys = @($requiredKeys | Where-Object { $keys -cnotcontains $_ })
+        if ($unknownKeys.Count -gt 0 -or $duplicateKeys.Count -gt 0 -or $missingKeys.Count -gt 0) {
+            $violations += "${agentRelative}: frontmatter keys must be exactly name, description, tools, and model (found: $($keys -join ', '))"
+        }
+
+        $name = [regex]::Match($frontmatter, '(?m)^name\s*:\s*(.+?)\s*$').Groups[1].Value.Trim("'", '"')
+        if ($name.Length -gt 64 -or $name -cnotmatch '^[a-z0-9]+(-[a-z0-9]+)*$') {
+            $violations += "${agentRelative}: name '$name' must be 1-64 characters of lowercase letters, digits, and single hyphens"
+        }
+        if ($name -cne $stem) {
+            $violations += "${agentRelative}: name '$name' does not match the file name stem '$stem'"
+        }
+
+        $descriptionMatch = [regex]::Match($frontmatter, '(?m)^description\s*:\s*(\S.*?)\s*$')
+        $description = $descriptionMatch.Groups[1].Value
+        $isQuoted = $description.Length -ge 2 -and
+            (($description[0] -eq '"' -and $description[-1] -eq '"') -or
+             ($description[0] -eq "'" -and $description[-1] -eq "'"))
+        $descriptionBody = if ($isQuoted) { $description.Substring(1, $description.Length - 2).Trim() } else { $description }
+        if (-not $descriptionMatch.Success -or $description -match '^[>|][+-]?$' -or -not $descriptionBody) {
+            $violations += "${agentRelative}: description must be a non-empty single-line value"
+        } elseif ($descriptionBody.Length -gt 1024) {
+            $violations += "${agentRelative}: description exceeds 1024 characters"
+        }
+        if (($description -match ':\s' -or $description -match ':$') -and -not $isQuoted) {
+            $violations += "${agentRelative}: description contains a colon and must be quoted"
+        }
+
+        $model = [regex]::Match($frontmatter, '(?m)^model\s*:\s*(.+?)\s*$').Groups[1].Value.Trim("'", '"')
+        if (-not $model -or $model -match '^[>|][+-]?$') {
+            $violations += "${agentRelative}: model must be a non-empty pin"
+        }
+
+        $toolsInline = [regex]::Match($frontmatter, '(?m)^tools\s*:\s*(.*?)\s*$').Groups[1].Value
+        $hasBlockItems = $false
+        for ($i = 0; $i -lt $frontmatterLines.Count; $i++) {
+            if ($frontmatterLines[$i] -match '^tools\s*:') {
+                for ($j = $i + 1; $j -lt $frontmatterLines.Count -and $frontmatterLines[$j] -notmatch '^[A-Za-z]'; $j++) {
+                    if ($frontmatterLines[$j] -match '^\s*-\s*\S') { $hasBlockItems = $true; break }
+                }
+                break
+            }
+        }
+        $inlineEmpty = (-not $toolsInline) -or $toolsInline -match '^(\[\s*\]|""|'''')$'
+        if ($inlineEmpty -and -not $hasBlockItems) {
+            $violations += "${agentRelative}: tools must be a non-empty list"
+        }
+    }
+
+    foreach ($hit in [regex]::Matches([string]$text, 'harness', 'IgnoreCase')) {
+        $violations += "${agentRelative}: uses harness-conditional phrasing ('$($hit.Value)'); name the Copilot tool or agent instead"
+    }
+
+    if ($violations.Count -eq $agentCount) {
+        Write-Host "OK: $agentRelative" -ForegroundColor Green
     }
 }
 

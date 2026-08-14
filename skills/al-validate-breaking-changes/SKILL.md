@@ -6,11 +6,11 @@ disable-model-invocation: true
 
 # Breaking-change gate
 
-The gate answers one question: did this feature break a released public API? It is the AppSource-style validation — per country, install and upgrade — run against the baseline release cached at provision time, and it catches breaks that the compile-time AppSourceCop pass inside the ordinary build gate never reaches. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+The gate answers one question: did this feature break a released public API? It is the AppSource-style validation — per country, install and upgrade — run against the baseline release cached at provision time, and it catches breaks that the compile-time AppSourceCop pass inside the ordinary build gate never reaches. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## Precondition
 
-Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. Run it on the feature's `kind: breaking-change` task while it is open — the feature's last task, opened by the feature-done review. Any other kind, or a task already settled, closes on one Stop line with no run. Task-file state is `/al-routing`'s.
+The task is an Azure DevOps work item (`/al-routing`'s schema). Run it on the feature's `al-breaking-change` task while it is open — the feature's last task, opened by the feature-done review. Any other kind, or a task already settled, closes on one Stop line with no run. Work-item state is `/al-routing`'s.
 
 ## Run
 

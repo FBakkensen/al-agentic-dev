@@ -15,7 +15,7 @@ Legacy code with no covering tests has no regression signal, so the skill writes
 
 ## What it produces
 
-A reshaped diff, gated after every single change; the reshape is reported to `/al-routing`, which stamps the phase. The task does not settle here.
+A reshaped diff, gated after every single change; the reshape is reported to `/al-routing`, whose write settles the task — a reshaped green replaces the task's gate receipt.
 
 It reads the whole task diff through five dimensions: simplification, BC platform reuse, structure, terminology against `CONTEXT.md` and the ADRs, and performance shape. Anything that would move observable behaviour, or that contradicts `architecture.md`, an ADR, or verified behaviour, is not a reshape — it gets recorded and routed as new work.
 

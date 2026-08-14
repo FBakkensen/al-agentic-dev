@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Provision is a per-feature refresh, not machine setup. The toolchain moves
 between BC releases, so the feature's first task absorbs that drift before
-anything is built on a stale toolchain. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+anything is built on a stale toolchain. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## Precondition
 
@@ -16,7 +16,7 @@ None beyond the workspace itself. Run it as the provision task's first step
 when routed there — first time, or as a re-run once the developer has cleared
 what the task body's `Last run:` line names — or ad hoc whenever the toolchain
 is suspect: a stale compiler, missing symbols, a baseline cache a later gate
-reported empty. Task-file state is `/al-routing`'s.
+reported empty. Work-item state is `/al-routing`'s.
 
 ## Run
 

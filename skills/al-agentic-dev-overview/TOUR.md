@@ -6,9 +6,9 @@ Everything below the rule is emitted as written, with the `<...>` slots filled. 
   - You're in `<cwd>` — not an AL repository. `cd` into your AL repo, then run `/al-agentic-dev-overview` again.
   - You're in `<repo root>` — an AL app with no provisioned environment. Run `/al-provision` → `/al-clone-bcapps` → `/al-clone-bcquality`, then begin at `/al-grill-adr`.
   - You're in `<repo root>` — provisioned, nothing written down yet. Begin at `/al-grill-adr`.
-  - You're in `<repo root>`, mid-feature on `specs/<NNN>-<slug>/`. Run `/al-next` for the open moves.
-- `<snippet state>` — `not installed` when no home carries the snippet, `out of date` when some do.
-- `<stale homes>` — the homes missing or stale. All four current → the whole Snippet section is omitted.
+  - You're in `<repo root>`, mid-feature on `specs/<NNN>-<slug>/` — its tasks live in the bound Azure DevOps work items. Run `/al-next` for the open moves.
+- `<snippet state>` — `not installed` when `~/.copilot/copilot-instructions.md` carries no snippet block, `out of date` when the block differs.
+- `<home state>` — the home and what the check found. Block current → the whole Snippet section is omitted.
 
 ---
 
@@ -36,6 +36,7 @@ Skills that carry a Business Central feature from idea to merged branch. You dri
 - `/al-quiz` — quizzes you on what just landed
 - `/al-grilling` — stress-tests one answer at a time
 - `/al-sync-main` — rebases onto main, renumbers object collisions
+- `/babysit-pr` — drives an open PR to a clean review state; never merges
 
 ## Start here
 
@@ -44,7 +45,7 @@ Skills that carry a Business Central feature from idea to merged branch. You dri
 ## ⚠️ Reply-shape snippet — <snippet state>
 
 - **What it is** — the reply rules these skills assume: one question at a time, plain text, lettered options, recommendation marked; brief replies, outcome first; exact object and field names.
-- **Where it goes** — your personal agent config, user level, never the repo.
-- **Status** — `<stale homes>`.
+- **Where it goes** — `~/.copilot/copilot-instructions.md`, user level, never the repo.
+- **Status** — `<home state>`.
 
 **→ Say "install the snippet" and I'll set it up.**

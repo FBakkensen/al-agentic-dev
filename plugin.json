@@ -1,0 +1,8 @@
+{
+  "name": "al-agentic-dev",
+  "description": "Agentic AL and Business Central development skills.",
+  "version": "1.0.0",
+  "skills": "skills/",
+  "agents": "agents/",
+  "mcpServers": ".mcp.json"
+}

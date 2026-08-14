@@ -6,21 +6,21 @@ disable-model-invocation: true
 
 # /al-code-review — the review gate
 
-Code still in flight belongs to `/al-implement`; this gate reviews what has landed. Your first line names that this run wants a standard-class model or above — the user picked the model and weighs the mismatch. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+Code still in flight belongs to `/al-implement`; this gate reviews what has landed. Your first line names that this run wants a standard-class model or above — the user picked the model and weighs the mismatch. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## Baseline
 
-Start on a clean tree, then identify the scope below and select its newest clean full-gate receipt. Its commit must be an ancestor of `HEAD`, and the diff since it may name only its owning task file. Match → `🔎✅ Green gate reused — T-123 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build -AllTests` green. A red gate or unrelated uncommitted work → name the gap and stop. An uncertain baseline makes every finding a guess, and this run's fix commits would land on top of the pollution. The knowledge pass reads the `.bcquality/` clone: missing → name `/al-clone-bcquality` and stop, before the gate rather than after it.
+Start on a clean tree, then identify the scope below and select its newest `✅ Gate:` comment per `/al-routing`'s receipt rule — its commit an ancestor of `HEAD`, the diff since it empty. Match → `🔎✅ Green gate reused — AB#1204 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build -AllTests` green. A red gate or unrelated uncommitted work → name the gap and stop. An uncertain baseline makes every finding a guess, and this run's fix commits would land on top of the pollution. The knowledge pass reads the `.bcquality/` clone: missing → name `/al-clone-bcquality` and stop, before the gate rather than after it.
 
-- **Slice-done** — every `T-NNN` commit of the technical tasks sharing one `slice:`, from the first through the last one settled.
+- **Slice-done** — every `AB#<id>` commit of the slice story's technical tasks, from the first through the last one settled.
 - **Feature-done** — the whole branch against `main`, after every task but the breaking-change task is settled.
 - **Repair** — the fix commits of one named repair episode from a verification walk, reviewed against the check that failed; this scope reports its verdict and stamps nothing.
 
-Mixed state, a squash that hides the `T-NNN` prefixes, or an ambiguous range is one lettered question to the user. Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. Task files are evidence — read their bodies and their frontmatter (the schema is `/al-routing`'s) rather than inferring state from the diff.
+Mixed state, a squash that hides the `AB#` ids, or an ambiguous range is one lettered question to the user. The tasks are Azure DevOps work items — evidence: read their Descriptions and fields through `azure-devops-wit_work_item` (the schema is `/al-routing`'s) rather than inferring state from the diff.
 
 ## Ground every AL judgment
 
-- Every BC object, table, field, procedure, event, or enum value you name in a finding or write in a fix comes from a lookup you run this session — search the workspace, read the symbol packages, or quote the docs. Recall is not evidence. `.bcapps/` is the intentionally gitignored pattern library: read how Microsoft implements the behaviour a finding touches before judging it. Missing → stop, naming `/al-clone-bcapps`; otherwise default workspace search can omit the clone, so use a search mode or direct file reading that includes it.
+- Every BC object, table, field, procedure, event, or enum value you name in a finding or write in a fix comes from a lookup you run this session — grep the workspace, view the symbol packages, or quote the docs through the microsoft-learn tools (microsoft_docs_search, microsoft_docs_fetch). Recall is not evidence. `.bcapps/` is the intentionally gitignored pattern library: read how Microsoft implements the behaviour a finding touches before judging it. Missing → stop, naming `/al-clone-bcapps`; a workspace-wide grep skips the gitignored clone, so point grep at `.bcapps/` explicitly and view its files directly.
 - Write BC vocabulary: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, the record or the API body not the payload, procedure not method, codeunit not class.
 - Hold production code to AL thrift: reach for the platform before writing code, keep no `interface` with a single implementation, and let a deliberate shortcut carry a one-line comment naming its ceiling and its upgrade path.
 - Thrift governs production code only. Test thoroughness, trust-boundary validation, posting and ledger correctness, and permission checks stay at full strength.
@@ -29,7 +29,7 @@ Mixed state, a squash that hides the `T-NNN` prefixes, or an ambiguous range is 
 
 Two passes over the scoped diff. The first is BCQuality's: `/al-knowledge-pass` on the scoped diff returns the findings, or the one line naming the domain that stopped it; a stop there stops this run — an unjudged domain makes the verdict narrower than it claims.
 
-The second pass is yours — the dimensions below, which reach what no leaf can see: the task's proof, the project's baselines, the shape of the code. If your harness supports subagents, these parallelize in full-capability subagents; otherwise apply them in one pass.
+The second pass fans out — the dimensions below, which reach what no leaf can see: the task's proof, the project's baselines, the shape of the code. Each dimension runs as one `al-review-lens` invocation through the task tool — the dimension's definition, the diff scope, and its sources in the prompt — the invocations parallelized in one batch. A returned `clean` names its dimension judged; each returned finding is a proposed class this run's disposition settles.
 
 - **Correctness** — logic faults a fresh read exposes, plus an identifier whose claim is false: a `Get…` that mutates, an `Is…` that does not reflect the state it names.
 - **Assertion rigor** — a test that would pass whether or not the behaviour under test works: an `Assert` restating the `Act`, an expected value the test derives for itself, an assertion on error text where the promised outcome is a state change.
@@ -51,7 +51,7 @@ Rank the survivors of both passes by the consequence of shipping the diff as it 
 
 ### Land the defects
 
-- A behavioural defect routes to `/al-implement`: hand it the missing AAA case and the owning task, watch the assertion fail on a real red, then let it make the case pass. Commit under the originating `T-NNN` prefix and re-run `/al-build -AllTests`. Task-file state stays untouched — a repair is not a pipeline step.
+- A behavioural defect routes to `/al-implement`: hand it the missing AAA case and the owning task, watch the assertion fail on a real red, then let it make the case pass. Commit opening with the originating `AB#<id>` and re-run `/al-build -AllTests`. Work-item state stays untouched — a repair is not a pipeline step.
 - A provably non-semantic defect — a comment, local rename, dead code, or equivalent query shape — lands directly, gates, and commits standalone. A red gate reverts it and it re-enters as behavioural.
 - A fix that would overturn behaviour the user already verified is a change request. A defect whose fix exceeds this run reverts, and the close puts it to the user as one proposed technical task — created on their yes per `/al-routing`'s schema on the owning slice, carrying the failing case this review wrote as its red. Declining the task rules that the behaviour stands: the finding re-enters as a change request, settled and recorded in the artifact whose expectation it overturns. Difficulty reclassifies nothing — a hard fix is a task, never a lesser defect.
 
@@ -62,14 +62,14 @@ Interview every change request before implementing any ruling, one per message, 
 After every request is settled, apply its ruling:
 
 - **Do it now** — record the ruling in its decision artifact and land the change on the defect terms above.
-- **Write a task** — create one on the `slice:` whose decision it changes, per `/al-routing`'s schema. Create it only because the user chose it.
+- **Write a task** — create one on the slice story whose decision it changes, per `/al-routing`'s schema. Create it only because the user chose it.
 - **Keep the current behaviour** — record the ruling in its decision artifact, so the same request does not return.
 
-Each ruling commits as it lands: a created task under its own `T-NNN` prefix, a ruling recorded in a decision artifact with a plain descriptive message, apart from the defect commits. Technical evidence belongs in the resulting commit or task, not the interview.
+Each ruling lands as it settles: a created task is a work item and needs no repo commit; a ruling recorded in a decision artifact commits with a plain descriptive message, apart from the defect commits. Technical evidence belongs in the resulting commit or the work item's comments, not the interview.
 
 ## Re-review and close
 
-Re-review the updated diff exactly once, running both passes from scratch. A finding still standing after it is reported, not fixed again.
+Re-review the updated diff exactly once, running both passes from scratch. A finding still standing after it is reported — one comment on the owning work item — not fixed again.
 
 A clean gate is no defect left and no open change request.
 
