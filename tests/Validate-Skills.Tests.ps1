@@ -130,7 +130,7 @@ Name the outcome, then /al-build.
         $result.Text | Should -Match 'demo/SKILL\.md: missing the required plain-text question rule'
     }
 
-    It 'passes the pre-ban question rule only in a slice 4/5 transition folder' {
+    It 'fails the pre-ban question rule even in a former transition folder' {
         $legacy = 'Ask every question in the reply itself, as plain text — never through a question or elicitation tool.'
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'legacy-transition') -Files @{
             'al-scope/SKILL.md' = (New-SkillContent -Name 'al-scope' -QuestionRule $legacy)
@@ -138,7 +138,8 @@ Name the outcome, then /al-build.
 
         $result = Invoke-SkillValidator -Root $root
 
-        $result.ExitCode | Should -Be 0
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'al-scope/SKILL\.md: missing the required plain-text question rule'
     }
 
     It 'fails the pre-ban question rule outside the transition folders' {

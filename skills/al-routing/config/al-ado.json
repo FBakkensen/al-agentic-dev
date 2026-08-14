@@ -1,0 +1,7 @@
+{
+  "$comment": "Azure DevOps work-item binding for the AL pipeline. These shipped defaults are empty on purpose: each consumer repo binds once by placing al-ado.json at its repo root with organization (the Azure DevOps organization name), project (the team project holding the work items), rootWorkItemId (the customer's root work item the pipeline tree hangs under - read-only for the pipeline), and areaPath (the area the pipeline may create work items in; empty means the project default, but most projects deny creates at the root area).",
+  "organization": "",
+  "project": "",
+  "rootWorkItemId": 0,
+  "areaPath": ""
+}

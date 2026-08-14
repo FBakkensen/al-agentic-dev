@@ -1,11 +1,11 @@
 ---
 name: al-spec-review
-description: "Blind agent review of a just-written spec artifact against its sources. Use when a pipeline skill has written architecture.md, event-model.md, a Test Specification, a Verification Plan, or the tasks/ folder whole, and its close needs fresh eyes on the artifact before anything commits."
+description: "Blind agent review of a just-written spec artifact against its sources. Use when a pipeline skill has written architecture.md, event-model.md, a Test Specification, a Verification Plan, or the work-item tree whole, and its close needs fresh eyes on the artifact before anything commits."
 ---
 
 # al-spec-review — the blind gate on spec artifacts
 
-The session that wrote an artifact is its worst reader: its own rationale stands by to argue every finding down. Callers: `al-design` on `architecture.md`, `al-event-model` on `event-model.md`, `al-scope` on the `tasks/` folder, `al-refine` on a Test Specification or Verification Plan. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+The session that wrote an artifact is its worst reader: its own rationale stands by to argue every finding down. Callers: `al-design` on `architecture.md`, `al-event-model` on `event-model.md`, `al-scope` on the work-item tree it created, read back and carried in the prompt, `al-refine` on a Test Specification or Verification Plan. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## The blind contract
 
