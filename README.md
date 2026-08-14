@@ -4,7 +4,7 @@ Twenty-three Agent Skills that carry a Microsoft Dynamics 365 Business Central f
 
 They are harness-neutral. Every skill is a `SKILL.md` with two frontmatter keys and no file crossing a folder boundary, so the same folder runs in Claude Code, GitHub Copilot CLI, VS Code Copilot, and Codex. No custom agents, no hooks, no plugin manifests.
 
-You drive; nothing auto-chains. A skill that moves a task hands its outcome to `/al-routing`, which records the state and presents the moves that are open. State lives on disk — `CONTEXT.md` and `docs/adr/` at the repo root, `specs/<NNN>-<slug>/` and its `tasks/` folder on the feature branch — so every skill starts cold.
+You drive; nothing auto-chains. A skill that moves a task hands its outcome to `/al-routing`, which records the state and presents the moves that are open. `CONTEXT.md`, `docs/adr/`, and the feature's `specs/` artifacts live in git; task state lives in Azure DevOps work items under the customer's root work item, bound per repo by `al-ado.json` — so every skill starts cold.
 
 ## Install
 
@@ -12,13 +12,7 @@ You drive; nothing auto-chains. A skill that moves a task hands its outcome to `
 
 The plugin bundles NAB AL Tools for XLF translation and Microsoft Learn for current Microsoft documentation.
 
-Azure DevOps needs your organization and interactive authentication, so configure it once at user level after `az login`, replacing `YOUR-ORG`:
-
-```console
-copilot mcp add azure-devops -- npx -y @azure-devops/mcp YOUR-ORG --authentication azcli
-```
-
-Azure DevOps is deliberately outside the plugin. Plugin-owned server names are reserved globally, so a user configuration cannot replace one. Environment placeholders in MCP URLs also stay literal in Copilot CLI 1.0.79.
+Task state lives in Azure DevOps work items, so install and authenticate the Azure DevOps MCP server per its own documentation — the pipeline needs its work-item tools available in every session that runs `/al-routing`, `/al-scope`, or `/al-next`.
 
 This repository lives on GitHub Enterprise at `9altitudes.ghe.com`. Pass the full URL and the host is unambiguous, whatever your `gh` is pointed at:
 
@@ -64,12 +58,12 @@ Name it instead of `'*'`. Every skill is self-contained, so that works — `/al-
 | Skill | What it does |
 |---|---|
 | [`/al-agentic-dev-overview`](docs/al-agentic-dev-overview.md) | This tour, plus the user-level snippet install below. |
-| `/al-routing` | The state engine — records each skill's outcome on the task files and derives the open moves. |
+| `/al-routing` | The state engine — records each skill's outcome on the Azure DevOps work items and derives the open moves. |
 | [`/al-next`](docs/al-next.md) | Names the open moves when you resume a session or ask what is next. |
 | [`/al-grill-adr`](docs/al-grill-adr.md) | Grills the idea in BC vocabulary, writes `CONTEXT.md`, earns domain ADRs. |
 | [`/al-event-model`](docs/al-event-model.md) | Settles the user journey as `event-model.md` — Role, Action, Business Event, View, Status. |
 | [`/al-design`](docs/al-design.md) | Settles the architecture as `architecture.md`, comparing candidates with you. |
-| [`/al-scope`](docs/al-scope.md) | Cuts `architecture.md` into slices and one task file per unit of work. |
+| [`/al-scope`](docs/al-scope.md) | Cuts `architecture.md` into slices and one work item per unit of work. |
 | [`/al-refine`](docs/al-refine.md) | Opens one task into a Test Specification or a Verification Plan. |
 | [`/al-implement`](docs/al-implement.md) | Drives one task through TDD — red→green, or a green-born test proved by mutation. |
 | [`/al-refactor`](docs/al-refactor.md) | Reshapes production and test code while the gate stays green. |
