@@ -23,8 +23,7 @@
     lifecycle field (status:, phase:, blocked-on:, review:, tier:, green-gate:) or an Azure
     DevOps work-item transition (State: New|Active|Blocked|Testing|Resolved|Closed).
     Every skill carries the shared plain-text question rule, which bans the ask_user tool
-    by name; the pre-ban sentence passes only for the slice 4/5 folders until their owning
-    slices land the ban. A /name skill reference that
+    by name. A /name skill reference that
     matches a folder under the skills root resolves regardless of prefix; an al-prefixed
     reference with no folder is a violation.
     Agents: each agents/*.agent.md carries exactly the frontmatter keys name, description,
@@ -69,11 +68,6 @@ $violations = @()
 $root = (Resolve-Path -LiteralPath $SkillsRoot -ErrorAction Stop).Path
 $modelInvocable = @('al-build', 'al-grilling', 'al-knowledge-pass', 'al-implement', 'al-next', 'al-routing', 'al-agentic-dev-overview', 'al-visualize', 'al-spec-review')
 $questionRule = 'Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.'
-# Transition: slices 4 and 5 own these folders wholesale and adopt the ask_user ban in
-# their own PRs; until they land, the pre-ban sentence passes for them alone. Delete the
-# allowance once al-routing, al-scope, al-next, and al-visualize carry the ban.
-$legacyQuestionRule = 'Ask every question in the reply itself, as plain text — never through a question or elicitation tool.'
-$questionRuleTransition = @('al-routing', 'al-scope', 'al-next', 'al-visualize')
 # Per-skill script exemptions, approved one at a time. The key is the skill folder; the
 # value is the exact script paths that skill may name. al-build is exempt wholesale
 # because it owns the substrate; every other entry is an upstream tool the skill runs
@@ -185,8 +179,7 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
                     }
                 }
             }
-            if (-not $body.Contains($questionRule) -and
-                -not ($questionRuleTransition -ccontains $skill.Name -and $body.Contains($legacyQuestionRule))) {
+            if (-not $body.Contains($questionRule)) {
                 $violations += "${relative}: missing the required plain-text question rule"
             }
         }
