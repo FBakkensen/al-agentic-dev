@@ -66,7 +66,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## Reply shape a skill asks for
 
-27. Every `SKILL.md` carries this exact rule: `Ask every question in the reply itself, as plain text — never through a question or elicitation tool.` A skill that shapes the reply also asks for: one sentence before the first tool call; a brief update only on an important finding or a change of direction; the outcome first when finishing, detail after.
+27. Every `SKILL.md` carries this exact rule: `Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.` A skill that shapes the reply also asks for: one sentence before the first tool call; a brief update only on an important finding or a change of direction; the outcome first when finishing, detail after.
 28. Flag a skill that asks the model to announce each step before taking it.
 29. Written artifacts match the length the task needs. Flag instructions to add summary sections, recaps, or boilerplate headings.
 
