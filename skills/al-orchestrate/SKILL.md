@@ -21,6 +21,8 @@ Inside the workspace, every skill run on a task is its own fresh conversation, s
 copilot -C <worktree> -p "/<skill> <task id>" --model <pick> --allow-all-tools
 ```
 
+A resume of a paused conversation repeats `-C <worktree>` and the permission flags — the file-path allowlist comes from the resuming process, not the session, and a bare resume gets its workspace writes denied.
+
 The task's tier tag is the natural input for the model pick from the ladder in `config/al-orchestrate.json` (`parallelCap`, `modelLadder`; a copy at the consumer repo root overrides) — cheap where the conversation drives tools, premium where judgment lives; the packaged agents `al-review-lens`, `al-spec-reviewer`, and `al-knowledge-leaf` keep their own pins inside any conversation. Cross-skill episodes — a walk pausing on a defect, the repair, the resumed walk — are further conversations in the same workspace. Each child closes through `/al-routing` in its own context; the orchestrator never moves work-item state itself.
 
 ## The loop
@@ -28,6 +30,7 @@ The task's tier tag is the natural input for the model pick from the ladder in `
 Sweep the tree, spawn ready slices up to `parallelCap`, queue the rest; inside a slice, tasks run in Predecessor order.
 
 - A skill run that plans before it acts starts with `--plan`: read `plan.md` from the child's session-state folder, resume the child with approval when the plan conforms to the task's contract, or send it back naming the mismatch.
+- Advance on artifacts, never on a child's claim: the commit on the slice branch, the state `/al-routing` recorded, the green the gate reported.
 - Merge a slice PR when `/babysit-pr` reports Clean and the slice's walk has passed — a merge commit into the feature branch, never a squash — then update dependent slice branches from it.
 - Escalate to the user, never absorb: human reviewer feedback, verification walks, `/al-quiz`, any stop, and the root-PR ship moment after `/al-sync-main`.
 
