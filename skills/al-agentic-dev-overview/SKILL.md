@@ -46,6 +46,6 @@ Emit [TOUR.md](TOUR.md) exactly as written, filling its two slots; the skills ta
 [AGENTS-SNIPPET.md](AGENTS-SNIPPET.md) holds the reply-shape rules these skills assume. The check behind the tour's Snippet section: `~/.agents/AGENTS.md` must equal the snippet file, and each mirror — `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.copilot/copilot-instructions.md` — must carry it verbatim between `<!-- al-agentic-dev:start -->` and `<!-- al-agentic-dev:end -->`; a home missing or differing is stale. The check gates the offer only — when the user asks, install regardless, at user level only, keeping it out of the repository being worked on.
 
 1. Write the snippet to `~/.agents/AGENTS.md`, the canonical home.
-2. Mirror it into the other three homes, wrapped in the two markers. A re-run replaces what sits between them and leaves the rest of each file as it was. Once a harness reads `~/.agents/AGENTS.md` directly, drop its mirror.
+2. Mirror it into the other three homes, wrapped in the two markers. A re-run replaces what sits between them and leaves the rest of each file as it was. Once an assistant reads `~/.agents/AGENTS.md` directly, drop its mirror.
 
 The tour emitted is the outcome; its Start here line is the user's next move — mid-feature, `/al-next`.

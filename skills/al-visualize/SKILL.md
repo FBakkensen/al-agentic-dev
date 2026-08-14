@@ -24,7 +24,7 @@ Every BC object, table, field, procedure, event, enum value, or dialog text the 
 
 ## Present and settle
 
-Write the page to `.output/visuals/<branch>/<topic>.html` and open it through whatever browser capability the harness offers; without one, give the user the path to open themselves. The repo's `.gitignore` carries an `.output/` line — add it when missing, committing the edit with a plain descriptive message — so no run leaves dirt behind. Then interview the open decisions in chat, one question per message, each naming its call's stable ID and its lettered options. As each answer lands, update the page — the open call becomes a settled one — and reload it, so the user answers every remaining question with the current truth in view and the page closes as the approved picture.
+Write the page to `.output/visuals/<branch>/<topic>.html` and open it through an available browser capability; without one, give the user the path to open themselves. The repo's `.gitignore` carries an `.output/` line — add it when missing, committing the edit with a plain descriptive message — so no run leaves dirt behind. Then interview the open decisions in chat, one question per message, each naming its call's stable ID and its lettered options. As each answer lands, update the page — the open call becomes a settled one — and reload it, so the user answers every remaining question with the current truth in view and the page closes as the approved picture.
 
 ## Persist or discard
 
