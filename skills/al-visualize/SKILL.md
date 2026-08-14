@@ -5,7 +5,7 @@ description: "Render what a run settled or landed as a read-only steering surfac
 
 # al-visualize — the steering surface
 
-The reader is the architect or PM steering agents: the surface gives them enough of the product to rule without reading every line. One self-contained markdown artifact per moment, composed by you directly — no renderer, no build step. [SURFACE.md](SURFACE.md) is the artifact contract: layers, furniture, pictures. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+The reader is the architect or PM steering agents: the surface gives them enough of the product to rule without reading every line. One self-contained markdown artifact per moment, composed by you directly — no renderer, no build step. [SURFACE.md](SURFACE.md) is the artifact contract: layers, furniture, pictures. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## Show the product, never the work
 
