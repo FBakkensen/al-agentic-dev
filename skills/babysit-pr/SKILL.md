@@ -1,6 +1,6 @@
 ---
 name: babysit-pr
-description: "Monitor the existing pull request for the current branch: wait for an automatic Copilot code review, address actionable Copilot and PR-caused CI feedback, and repeat after each push until required checks are green and no Copilot review is active. Never merges. Use when the user says to monitor workflows, wait for Copilot review, address Copilot comments, or repeat review after every push."
+description: Drive the current branch's open pull request to a clean review state — wait for the automatic Copilot code review, fix actionable Copilot findings and PR-caused CI failures, reply and resolve, repeat after every push; never merges. Reach for it once a PR is ready for review and again whenever new pushes land.
 disable-model-invocation: true
 ---
 
