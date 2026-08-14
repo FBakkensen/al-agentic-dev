@@ -1,0 +1,32 @@
+{
+  "mcpServers": {
+    "nab-al-tools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@nabsolutions/nab-al-tools-mcp"
+      ],
+      "tools": [
+        "initialize",
+        "createLanguageXlf",
+        "refreshXlf",
+        "getGlossaryTerms",
+        "getTextsToTranslate",
+        "getTextsByKeyword",
+        "getTranslatedTextsByState",
+        "getTranslatedTextsMap",
+        "saveTranslatedTexts"
+      ]
+    },
+    "microsoft-learn": {
+      "type": "http",
+      "url": "https://learn.microsoft.com/api/mcp",
+      "tools": [
+        "microsoft_docs_search",
+        "microsoft_docs_fetch",
+        "microsoft_code_sample_search"
+      ]
+    }
+  }
+}
