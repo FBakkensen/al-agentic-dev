@@ -8,6 +8,30 @@ You drive; nothing auto-chains. A skill that moves a task hands its outcome to `
 
 ## Install
 
+### Azure DevOps organization
+
+The plugin uses the organization-neutral Azure DevOps MCP endpoint. To bind it to your organization, add this server to `~/.copilot/mcp-config.json`, replacing `YOUR_ORGANIZATION`:
+
+```json
+{
+  "mcpServers": {
+    "azure-devops": {
+      "type": "http",
+      "url": "https://mcp.dev.azure.com/YOUR_ORGANIZATION",
+      "tools": [
+        "core_list_projects",
+        "wit_backlog",
+        "wit_query",
+        "wit_work_item",
+        "wit_work_item_comment_write",
+        "wit_work_item_link_write",
+        "wit_work_item_write"
+      ]
+    }
+  }
+}
+```
+
 This repository lives on GitHub Enterprise at `9altitudes.ghe.com`. Pass the full URL and the host is unambiguous, whatever your `gh` is pointed at:
 
 ```
