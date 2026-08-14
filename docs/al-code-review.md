@@ -6,23 +6,23 @@ The review gate. One pass over a settled diff across a single list of review dim
 
 ## When you reach for it
 
-- **Slice-done** — every technical task sharing one slice is `done` and the slice's verify task is still `blocked`.
-- **Feature-done** — every task in the feature is `done` and the branch is waiting to merge.
+- **Slice-done** — every technical task in the slice has settled and the slice's verify walk still waits on the review stamp.
+- **Feature-done** — every task but the breaking-change task has settled and the branch is waiting to merge.
 - Any time you want an in-depth review of AL code.
 
 It requires a green gate on a clean tree. An uncertain baseline makes every finding a guess.
 
 ## What it produces
 
-Findings reported as `Finding:` / `Where:` / `Action:`, each disposed one of two ways:
+Findings surviving both passes are ranked by the consequence of shipping the diff as it stands, each presented as a glyphed headline — `⛔` defect, `⚖️` change request, `⚠️` recommendation — over three one-line slots: `⚡ Breaks:`, `📍 Proof:`, `🔧 Fix:`. Each is disposed one of two ways:
 
-- **Rework** — resolving it restores conformance to an existing baseline and changes no baseline. It lands in this run: behaviour-changing rework goes red first and commits under the originating `T-NNN`; non-semantic rework lands directly.
-- **Change request** — resolving it would contradict a baseline, or write one that does not exist yet. You settle it, in conversation, worst first: do it now, write a task, or keep the code.
+- **Defect** — a bug or implementation-quality problem whose correction needs no user decision. It lands in this run: a behavioural defect goes red first through `/al-implement` and commits under the originating `AB#<id>`; a provably non-semantic one lands directly.
+- **Change request** — resolving it would override a recorded user decision, or establish business or architecture intent nobody has decided. You settle it, in conversation, worst first: do it now, write a task, or keep the code.
 
 A finding whose baseline cannot be named is asking for a new baseline, so it is a change request. The diff cannot authorize itself.
 
 A clean gate hands its verdict to `/al-routing`, which stamps the review evidence and opens what the gate was holding — the slice's verify task, or on a clean feature the breaking-change task.
 
-## The dimensions
+## The passes
 
-Correctness, assertion rigor, proof coverage, red-verdict rigor, BC anti-patterns, AppSource contract, performance, structure, naming and compliance, comments and history, simplification. One list, applied to the scoped diff.
+Two passes over the scoped diff. The first is BCQuality's knowledge pass, run through `/al-knowledge-pass`. The second fans out across the dimensions: correctness, assertion rigor, proof coverage, red-verdict rigor, precedent, public surface, structure, naming and compliance, comments and history, simplification.

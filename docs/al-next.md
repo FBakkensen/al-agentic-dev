@@ -2,9 +2,9 @@
 
 ## What it is for
 
-The navigator. It reads the feature's `tasks/` folder, works out which moves the current state makes viable, and presents them. It runs nothing and writes nothing — you take the step.
+The navigator. It reads the feature's work items under the bound Azure DevOps root, works out which moves the current state makes viable, and presents them. It runs nothing and writes nothing — you take the step.
 
-This is where the routing lives now. There is no status board and no replan ceremony; the task files are the state, and this skill reads them.
+This is where the routing lives now. There is no status board and no replan ceremony; the work items are the state, and this skill reads them through `/al-routing`'s sweep.
 
 ## When you reach for it
 
@@ -15,6 +15,6 @@ This is where the routing lives now. There is no status board and no replan cere
 
 ## What it produces
 
-One line per viable move in chat: the `T-NNN`, the skill that owns it, and the state that makes it viable — in the feature's own object and field names, not in categories. Where several moves are open at once it lists them in order and says which one unblocks the most downstream work. Where nothing is reachable it names the one thing that has to settle, and who settles it.
+One line per viable move in chat: the work item id, the skill that owns it, and the state that makes it viable — in the feature's own object and field names, not in categories. Where several moves are open at once it lists them in order and says which one unblocks the most downstream work. Where nothing is reachable it names the one thing that has to settle, and who settles it.
 
 No file changes.

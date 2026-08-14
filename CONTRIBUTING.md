@@ -1,6 +1,6 @@
 # Contributing to al-agentic-dev
 
-Thank you for your interest in contributing to these harness-neutral Agent Skills for AL/Business Central development!
+Thank you for your interest in contributing to this GitHub Copilot plugin of Agent Skills for AL/Business Central development!
 
 ## How to Contribute
 
@@ -35,7 +35,7 @@ When adding or modifying a skill:
 1. Follow the existing skill structure:
    ```
    skills/skill-name/
-   ├── SKILL.md          # frontmatter: name + description only
+   ├── SKILL.md          # frontmatter: name, description, disable-model-invocation
    ├── SOME-FORMAT.md    # optional sibling files, referenced relatively
    └── scripts/          # al-build only
    ```

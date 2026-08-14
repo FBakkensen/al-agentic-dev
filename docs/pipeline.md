@@ -1,8 +1,8 @@
 # The pipeline
 
-Twenty-three skills carry a Business Central feature from a rough idea to a merged branch. You drive; nothing auto-chains. A skill that moves a task hands its outcome to `/al-routing`, which records the state and presents the moves that are open.
+Twenty-four skills carry a Business Central feature from a rough idea to a merged branch. You drive; nothing auto-chains. A skill that moves a task hands its outcome to `/al-routing`, which records the state and presents the moves that are open.
 
-State lives on disk, so every skill starts cold — `CONTEXT.md` and `docs/adr/` at the repo root, `specs/<NNN>-<slug>/` and its `tasks/` folder on the feature branch.
+Every skill starts cold. The artifacts live in git — `CONTEXT.md` and `docs/adr/` at the repo root, `specs/<NNN>-<slug>/` on the feature branch — and task state lives in Azure DevOps work items under the customer's root work item, bound per repo by `al-ado.json`.
 
 ## Order
 
@@ -17,7 +17,7 @@ State lives on disk, so every skill starts cold — `CONTEXT.md` and `docs/adr/`
 | Settle the domain | [`/al-grill-adr`](al-grill-adr.md) | once, up front |
 | Settle the journey | [`/al-event-model`](al-event-model.md) | once — user- or API-facing features only |
 | Settle the architecture | [`/al-design`](al-design.md) | once |
-| Cut the task list | [`/al-scope`](al-scope.md) | once |
+| Cut the work-item tree | [`/al-scope`](al-scope.md) | once |
 | Refresh the toolchain | [`/al-provision`](al-provision.md) | the feature's first task |
 | Plan the proof | [`/al-refine`](al-refine.md) | once per task |
 | TDD — red→green, or green proved by mutation | [`/al-implement`](al-implement.md) | once per technical task |
@@ -30,7 +30,7 @@ State lives on disk, so every skill starts cold — `CONTEXT.md` and `docs/adr/`
 
 | Skill | Use |
 |---|---|
-| `/al-routing` | The state engine — records each skill's outcome on the task files and derives the open moves. |
+| `/al-routing` | The state engine — records each skill's outcome on the Azure DevOps work items and derives the open moves. |
 | [`/al-next`](al-next.md) | Names the open moves when you resume a session or ask what is next. |
 | [`/al-build`](al-build.md) | The compile-publish-test gate, and the only skill that runs the PowerShell substrate. |
 | [`/al-agentic-dev-overview`](al-agentic-dev-overview.md) | The tour, and the user-level reply-shape snippet install. |
