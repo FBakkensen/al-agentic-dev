@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Provision is a per-feature refresh, not machine setup. The toolchain moves
 between BC releases, so the feature's first task absorbs that drift before
-anything is built on a stale toolchain. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+anything is built on a stale toolchain. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## Precondition
 

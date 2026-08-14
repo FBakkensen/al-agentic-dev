@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 **Rebase, never merge** — the replay makes every surfacing collision this branch's to move.
 Start from a clean working tree on a branch that is not main. Uncommitted work →
-ask the user to commit or stash. Already on main → stop; nothing to sync. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+ask the user to commit or stash. Already on main → stop; nothing to sync. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## Sync
 
@@ -35,8 +35,8 @@ ask the user to commit or stash. Already on main → stop; nothing to sync. Ask 
 
 One pass once the rebase completes, never per commit, landed as one commit
 before the closing gate. `git log origin/main..HEAD` names the objects and
-fields this branch introduced — the only ones eligible to move. Find the surviving collisions through the workspace symbol index, or by
-searching the workspace where no index is available; that scan is what a number is
+fields this branch introduced — the only ones eligible to move. Find the surviving collisions with an lsp workspace-symbol
+search where an AL language server runs, or with grep over the workspace; that scan is what a number is
 checked against, never recall.
 
 Move the branch-new number within the same `idRanges` bucket in the owning app's

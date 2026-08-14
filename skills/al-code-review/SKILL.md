@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # /al-code-review — the review gate
 
-Code still in flight belongs to `/al-implement`; this gate reviews what has landed. Your first line names that this run wants a standard-class model or above — the user picked the model and weighs the mismatch. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+Code still in flight belongs to `/al-implement`; this gate reviews what has landed. Your first line names that this run wants a standard-class model or above — the user picked the model and weighs the mismatch. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## Baseline
 
@@ -20,7 +20,7 @@ Mixed state, a squash that hides the `T-NNN` prefixes, or an ambiguous range is 
 
 ## Ground every AL judgment
 
-- Every BC object, table, field, procedure, event, or enum value you name in a finding or write in a fix comes from a lookup you run this session — search the workspace, read the symbol packages, or quote the docs. Recall is not evidence. `.bcapps/` is the intentionally gitignored pattern library: read how Microsoft implements the behaviour a finding touches before judging it. Missing → stop, naming `/al-clone-bcapps`; otherwise default workspace search can omit the clone, so use a search mode or direct file reading that includes it.
+- Every BC object, table, field, procedure, event, or enum value you name in a finding or write in a fix comes from a lookup you run this session — grep the workspace, view the symbol packages, or quote the docs through the microsoft-learn tools (microsoft_docs_search, microsoft_docs_fetch). Recall is not evidence. `.bcapps/` is the intentionally gitignored pattern library: read how Microsoft implements the behaviour a finding touches before judging it. Missing → stop, naming `/al-clone-bcapps`; a workspace-wide grep skips the gitignored clone, so point grep at `.bcapps/` explicitly and view its files directly.
 - Write BC vocabulary: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, the record or the API body not the payload, procedure not method, codeunit not class.
 - Hold production code to AL thrift: reach for the platform before writing code, keep no `interface` with a single implementation, and let a deliberate shortcut carry a one-line comment naming its ceiling and its upgrade path.
 - Thrift governs production code only. Test thoroughness, trust-boundary validation, posting and ledger correctness, and permission checks stay at full strength.
@@ -29,7 +29,7 @@ Mixed state, a squash that hides the `T-NNN` prefixes, or an ambiguous range is 
 
 Two passes over the scoped diff. The first is BCQuality's: `/al-knowledge-pass` on the scoped diff returns the findings, or the one line naming the domain that stopped it; a stop there stops this run — an unjudged domain makes the verdict narrower than it claims.
 
-The second pass is yours — the dimensions below, which reach what no leaf can see: the task's proof, the project's baselines, the shape of the code. These parallelize in full-capability subagents; when subagents are unavailable, apply them in one pass.
+The second pass fans out — the dimensions below, which reach what no leaf can see: the task's proof, the project's baselines, the shape of the code. Each dimension runs as one `al-review-lens` invocation through the task tool — the dimension's definition, the diff scope, and its sources in the prompt — the invocations parallelized in one batch. A returned `clean` names its dimension judged; each returned finding is a proposed class this run's disposition settles.
 
 - **Correctness** — logic faults a fresh read exposes, plus an identifier whose claim is false: a `Get…` that mutates, an `Is…` that does not reflect the state it names.
 - **Assertion rigor** — a test that would pass whether or not the behaviour under test works: an `Assert` restating the `Act`, an expected value the test derives for itself, an assertion on error text where the promised outcome is a state change.
