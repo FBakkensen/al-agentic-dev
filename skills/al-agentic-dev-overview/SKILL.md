@@ -12,7 +12,7 @@ These skills carry a Business Central feature from a rough idea to a merged bran
 Emit [TOUR.md](TOUR.md) exactly as written, filling its two slots; the skills table below is reference for follow-up questions, never emitted whole.
 
 - **Start here** — no `app.json` anywhere in the tree (it is rarely at the repo root) → the not-an-AL-repo line. Present, but `.bcapps/` or `.bcquality/` missing at repo root → the provision-first line; the three provision skills run ad hoc, no work item needed. Provisioned, no `specs/<NNN>-<slug>/` at repo root → the cold-start line; whichever of `/al-event-model` or `/al-design` runs first creates the branch and the spec folder. `specs/` present → the mid-feature line. Detection names the kind of place only; the open moves belong to `/al-next`.
-- **Snippet** — the section appears only when the check below finds a home missing or stale, naming which.
+- **Snippet** — the section appears only when the check below finds the home missing or stale.
 
 ## The skills
 
@@ -29,6 +29,7 @@ Emit [TOUR.md](TOUR.md) exactly as written, filling its two slots; the skills ta
 | `/al-implement` | Drives one task through TDD — red→green, or a green-born test proved by mutation. |
 | `/al-refactor` | Reshapes production and test code while the gate stays green. |
 | `/al-code-review` | Reviews at slice-done and before merge, splitting rework from change requests. |
+| `/al-knowledge-pass` | Runs BCQuality's knowledge pass over a scoped diff; the review skills invoke it mid-run. |
 | `/al-spec-review` | Blind-reads a just-written spec artifact against its sources before it commits; the writing skills invoke it at close. |
 | `/al-visualize` | Draws what a run settled or landed as a steering surface on the app's side-panel canvas — the pipeline skills invoke it at decisions and closes. |
 | `/al-user-verification` | Walks a slice's verify task with you, one scenario at a time, recordings included. |
@@ -40,12 +41,12 @@ Emit [TOUR.md](TOUR.md) exactly as written, filling its two slots; the skills ta
 | `/al-quiz` | Quizzes you on what just landed, one question at a time. |
 | `/al-grilling` | Stress-tests one answer at a time; the interview skills escalate to it. |
 | `/al-sync-main` | Rebases the branch onto main and renumbers object and field collisions. |
+| `/babysit-pr` | Drives an open PR to a clean review state — Copilot review, findings, CI — and never merges. |
 
 ## The reply-shape snippet
 
-[AGENTS-SNIPPET.md](AGENTS-SNIPPET.md) holds the reply-shape rules these skills assume. The check behind the tour's Snippet section: `~/.agents/AGENTS.md` must equal the snippet file, and each mirror — `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.copilot/copilot-instructions.md` — must carry it verbatim between `<!-- al-agentic-dev:start -->` and `<!-- al-agentic-dev:end -->`; a home missing or differing is stale. The check gates the offer only — when the user asks, install regardless, at user level only, keeping it out of the repository being worked on.
+[AGENTS-SNIPPET.md](AGENTS-SNIPPET.md) holds the reply-shape rules these skills assume. Its home is `~/.copilot/copilot-instructions.md`: the snippet sits verbatim between `<!-- al-agentic-dev:start -->` and `<!-- al-agentic-dev:end -->`, and the check behind the tour's Snippet section is that block — missing or differing is stale. The check gates the offer only — when the user asks, install regardless, at user level only, keeping it out of the repository being worked on.
 
-1. Write the snippet to `~/.agents/AGENTS.md`, the canonical home.
-2. Mirror it into the other three homes, wrapped in the two markers. A re-run replaces what sits between them and leaves the rest of each file as it was. Once an assistant reads `~/.agents/AGENTS.md` directly, drop its mirror.
+Write the snippet between the two markers, leaving the rest of the file as it was; a re-run replaces only that block. A copy left by an earlier install — `~/.agents/AGENTS.md`, or a marked block in `~/.claude/CLAUDE.md` or `~/.codex/AGENTS.md` — is named and offered for removal in the same pass.
 
 The tour emitted is the outcome; its Start here line is the user's next move — mid-feature, `/al-next`.
