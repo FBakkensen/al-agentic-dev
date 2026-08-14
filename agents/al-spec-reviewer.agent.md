@@ -1,7 +1,7 @@
 ---
 name: al-spec-reviewer
 description: Blind review of one just-written AL/Business Central spec artifact against its sources, within locked constraints. Invoked by al-spec-review, one invocation per gate.
-tools: ["read", "search", "execute", "microsoft-learn/*"]
+tools: ["grep", "glob", "view", "execute", "microsoft-learn/*"]
 model: claude-opus-5
 ---
 

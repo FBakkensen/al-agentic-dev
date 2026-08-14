@@ -1,7 +1,7 @@
 ---
 name: al-knowledge-leaf
 description: Runs exactly one BCQuality review leaf named in the prompt over a scoped AL diff and returns the leaf's result verbatim. Invoked by al-knowledge-pass, one invocation per leaf.
-tools: ["read", "search", "execute"]
+tools: ["grep", "glob", "view", "execute"]
 model: claude-opus-5
 ---
 

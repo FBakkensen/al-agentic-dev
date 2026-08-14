@@ -1,7 +1,7 @@
 ---
 name: al-review-lens
 description: Reads one scoped AL/Business Central diff through exactly one review dimension named in the prompt and returns grounded findings. Invoked by al-code-review and al-refactor, one invocation per dimension.
-tools: ["read", "search", "execute", "microsoft-learn/*"]
+tools: ["grep", "glob", "view", "execute", "microsoft-learn/*"]
 model: claude-opus-5
 ---
 
