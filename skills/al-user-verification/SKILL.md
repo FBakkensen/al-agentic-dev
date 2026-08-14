@@ -11,7 +11,7 @@ The user is the oracle; you drive everything mechanical — containers, publish,
 - **Guided** — the user drives the Web Client; you turn each plan element into one concrete instruction and ask what they see.
 - **Annotated** — you drive the Web Client and narrate; the user watches, interrupts at will, and rules on each scenario. Offer it only when you can drive the Web Client from this session; otherwise open guided, noting in one line that the `microsoft/playwright-mcp` browser-automation server enables annotated walks.
 
-**A guided walk asks what the user sees before naming what you expect.** *"What does the Status field show now?"*, never *"Does Status say Open?"* — a led question hides the defect the walk exists to catch. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+**A guided walk asks what the user sees before naming what you expect.** *"What does the Status field show now?"*, never *"Does Status say Open?"* — a led question hides the defect the walk exists to catch. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 Functional outcomes gate: a Status value, a cue count, an HTTP status, an error. Usability outcomes never gate.
 

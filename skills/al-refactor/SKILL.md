@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Reshape while green
 
-The tree is clean and the build is green before the first change. Evaluate the task's clean full-gate receipt: its commit is an ancestor of `HEAD` and the diff since it names only this task file. Match → `🔎✅ Green gate reused — T-123 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build -AllTests` green. Reshaping against red is debugging — that belongs in /al-implement. Your first line names that this run wants a standard-class model or above — the user picked the model and weighs the mismatch. Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. Task-file state is `/al-routing`'s; this skill reshapes code. The knowledge pass below reads the `.bcquality/` clone: missing → name `/al-clone-bcquality` and stop, before the gate rather than after it. Ask every question in the reply itself, as plain text — never through a question or elicitation tool.
+The tree is clean and the build is green before the first change. Evaluate the task's clean full-gate receipt: its commit is an ancestor of `HEAD` and the diff since it names only this task file. Match → `🔎✅ Green gate reused — T-123 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build -AllTests` green. Reshaping against red is debugging — that belongs in /al-implement. Your first line names that this run wants a standard-class model or above — the user picked the model and weighs the mismatch. Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. Task-file state is `/al-routing`'s; this skill reshapes code. The knowledge pass below reads the `.bcquality/` clone: missing → name `/al-clone-bcquality` and stop, before the gate rather than after it. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## The knowledge pass
 
@@ -22,7 +22,7 @@ Read the whole diff — a task's full diff, once per task — through each of th
 - **Terminology** — every introduced name tracing to a `CONTEXT.md` term, the BC baseline, or an `event-model.md` Action, Business Event, or Status, its verb to BC's own set — an untraceable name is a finding — and names agreeing with the ADRs, `architecture.md`, and the task's `New and Modified Objects`; artifact prose the diff touched (task bodies, `architecture.md`) answers to the same vocabulary as the code.
 - **Performance shape** — a lookup hoisted out of a loop, a filtered read replacing a scan, fields loaded selectively. The structural kind, not one-line tweaks.
 
-These parallelize in full-capability subagents; when subagents are unavailable, apply them in one pass.
+Each dimension runs as one `al-review-lens` invocation through the task tool — the dimension's definition, the task's diff scope, and its sources in the prompt — the invocations parallelized in one batch. A returned `clean` names its dimension judged; each returned finding enters the finding rule below.
 
 ## Apply
 
@@ -32,7 +32,7 @@ One reshape at a time, committed under the owning task's `T-NNN` prefix, running
 - Extract a helper on the third occurrence, not the second. Below that, leave the duplication and say so. Logic with a rightful home — a BaseApp or System Application helper, an existing module's internal helper — moves there and the canonical one is reused.
 - Production and tests reshape together. A test added mid-reshape — a baseline on legacy code with no covering tests, a case on a branch the reshape uncovers — passes against current code first, so the regression signal stays honest. Unit tests on a module the reshape dissolves are deleted, not relayered.
 - Rename freely what this branch introduced — `git log origin/main..HEAD` names it — and what is internal-only. A rename touching a public symbol that predates the branch is not a reshape; it follows the finding rule below.
-- `[HandlerFunctions('...')]` names a test procedure inside a string literal that symbol tools do not see: search the workspace for that literal before renaming a test procedure, and update the AAA case header and `Covered By` in the same change.
+- `[HandlerFunctions('...')]` names a test procedure inside a string literal that symbol tools do not see: grep the workspace for that literal before renaming a test procedure, and update the AAA case header and `Covered By` in the same change.
 
 ## Findings
 
@@ -44,7 +44,7 @@ After every request is settled, apply its ruling: **Do it now** lands on the def
 
 ## Writing AL
 
-Every BC object, table, field, procedure, event, and enum value name comes from a lookup in this session — search the workspace, or read the symbols. Recall is not evidence. `.bcapps/` is the intentionally gitignored pattern library: read how the nearest System Application or `src/Apps/W1` code shapes what you are reshaping toward, and lift that shape. Missing → stop, naming `/al-clone-bcapps`; otherwise default workspace search can omit the clone, so use a search mode or direct file reading that includes it.
+Every BC object, table, field, procedure, event, and enum value name comes from a lookup in this session — grep the workspace, or view the symbols. Recall is not evidence. `.bcapps/` is the intentionally gitignored pattern library: read how the nearest System Application or `src/Apps/W1` code shapes what you are reshaping toward, and lift that shape. Missing → stop, naming `/al-clone-bcapps`; a workspace-wide grep skips the gitignored clone, so point grep at `.bcapps/` explicitly and view its files directly.
 
 Use BC vocabulary: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, the record or the API body not the payload, procedure not method, codeunit not class — and a codeunit is named for the behaviour it owns, never a Manager or Handler.
 
