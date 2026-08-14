@@ -10,13 +10,13 @@ Code still in flight belongs to `/al-implement`; this gate reviews what has land
 
 ## Baseline
 
-Start on a clean tree, then identify the scope below and select its newest clean full-gate receipt. Its commit must be an ancestor of `HEAD`, and the diff since it may name only its owning task file. Match → `🔎✅ Green gate reused — T-123 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build -AllTests` green. A red gate or unrelated uncommitted work → name the gap and stop. An uncertain baseline makes every finding a guess, and this run's fix commits would land on top of the pollution. The knowledge pass reads the `.bcquality/` clone: missing → name `/al-clone-bcquality` and stop, before the gate rather than after it.
+Start on a clean tree, then identify the scope below and select its newest `✅ Gate:` comment per `/al-routing`'s receipt rule — its commit an ancestor of `HEAD`, the diff since it empty. Match → `🔎✅ Green gate reused — AB#1204 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build -AllTests` green. A red gate or unrelated uncommitted work → name the gap and stop. An uncertain baseline makes every finding a guess, and this run's fix commits would land on top of the pollution. The knowledge pass reads the `.bcquality/` clone: missing → name `/al-clone-bcquality` and stop, before the gate rather than after it.
 
-- **Slice-done** — every `T-NNN` commit of the technical tasks sharing one `slice:`, from the first through the last one settled.
+- **Slice-done** — every `AB#<id>` commit of the slice story's technical tasks, from the first through the last one settled.
 - **Feature-done** — the whole branch against `main`, after every task but the breaking-change task is settled.
 - **Repair** — the fix commits of one named repair episode from a verification walk, reviewed against the check that failed; this scope reports its verdict and stamps nothing.
 
-Mixed state, a squash that hides the `T-NNN` prefixes, or an ambiguous range is one lettered question to the user. Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. Task files are evidence — read their bodies and their frontmatter (the schema is `/al-routing`'s) rather than inferring state from the diff.
+Mixed state, a squash that hides the `AB#` ids, or an ambiguous range is one lettered question to the user. The tasks are Azure DevOps work items — evidence: read their Descriptions and fields through `azure-devops-wit_work_item` (the schema is `/al-routing`'s) rather than inferring state from the diff.
 
 ## Ground every AL judgment
 
@@ -51,7 +51,7 @@ Rank the survivors of both passes by the consequence of shipping the diff as it 
 
 ### Land the defects
 
-- A behavioural defect routes to `/al-implement`: hand it the missing AAA case and the owning task, watch the assertion fail on a real red, then let it make the case pass. Commit under the originating `T-NNN` prefix and re-run `/al-build -AllTests`. Task-file state stays untouched — a repair is not a pipeline step.
+- A behavioural defect routes to `/al-implement`: hand it the missing AAA case and the owning task, watch the assertion fail on a real red, then let it make the case pass. Commit opening with the originating `AB#<id>` and re-run `/al-build -AllTests`. Work-item state stays untouched — a repair is not a pipeline step.
 - A provably non-semantic defect — a comment, local rename, dead code, or equivalent query shape — lands directly, gates, and commits standalone. A red gate reverts it and it re-enters as behavioural.
 - A fix that would overturn behaviour the user already verified is a change request. A defect whose fix exceeds this run reverts, and the close puts it to the user as one proposed technical task — created on their yes per `/al-routing`'s schema on the owning slice, carrying the failing case this review wrote as its red. Declining the task rules that the behaviour stands: the finding re-enters as a change request, settled and recorded in the artifact whose expectation it overturns. Difficulty reclassifies nothing — a hard fix is a task, never a lesser defect.
 
@@ -62,14 +62,14 @@ Interview every change request before implementing any ruling, one per message, 
 After every request is settled, apply its ruling:
 
 - **Do it now** — record the ruling in its decision artifact and land the change on the defect terms above.
-- **Write a task** — create one on the `slice:` whose decision it changes, per `/al-routing`'s schema. Create it only because the user chose it.
+- **Write a task** — create one on the slice story whose decision it changes, per `/al-routing`'s schema. Create it only because the user chose it.
 - **Keep the current behaviour** — record the ruling in its decision artifact, so the same request does not return.
 
-Each ruling commits as it lands: a created task under its own `T-NNN` prefix, a ruling recorded in a decision artifact with a plain descriptive message, apart from the defect commits. Technical evidence belongs in the resulting commit or task, not the interview.
+Each ruling lands as it settles: a created task is a work item and needs no repo commit; a ruling recorded in a decision artifact commits with a plain descriptive message, apart from the defect commits. Technical evidence belongs in the resulting commit or the work item's comments, not the interview.
 
 ## Re-review and close
 
-Re-review the updated diff exactly once, running both passes from scratch. A finding still standing after it is reported, not fixed again.
+Re-review the updated diff exactly once, running both passes from scratch. A finding still standing after it is reported — one comment on the owning work item — not fixed again.
 
 A clean gate is no defect left and no open change request.
 

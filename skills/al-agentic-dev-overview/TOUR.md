@@ -6,7 +6,7 @@ Everything below the rule is emitted as written, with the `<...>` slots filled. 
   - You're in `<cwd>` — not an AL repository. `cd` into your AL repo, then run `/al-agentic-dev-overview` again.
   - You're in `<repo root>` — an AL app with no provisioned environment. Run `/al-provision` → `/al-clone-bcapps` → `/al-clone-bcquality`, then begin at `/al-grill-adr`.
   - You're in `<repo root>` — provisioned, nothing written down yet. Begin at `/al-grill-adr`.
-  - You're in `<repo root>`, mid-feature on `specs/<NNN>-<slug>/`. Run `/al-next` for the open moves.
+  - You're in `<repo root>`, mid-feature on `specs/<NNN>-<slug>/` — its tasks live in the bound Azure DevOps work items. Run `/al-next` for the open moves.
 - `<snippet state>` — `not installed` when no home carries the snippet, `out of date` when some do.
 - `<stale homes>` — the homes missing or stale. All four current → the whole Snippet section is omitted.
 

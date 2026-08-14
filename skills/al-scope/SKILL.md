@@ -30,7 +30,7 @@ A gap `architecture.md` cannot answer — a missing module, a pattern conflict, 
 Creation goes through `azure-devops-wit_work_item_write` under the binding's `areaPath`, every dependency edge through `azure-devops-wit_work_item_link_write` as a Predecessor/Successor link — the edges are the sole encoding of order, so a task inserts between two by relinking:
 
 - The `Design` User Story — its Description opens with the Goal in user terms, lifted from the `event-model.md` journey or the `architecture.md` trigger source, then carries the settled `architecture.md` and, when present, `event-model.md`, so the consultant reads the feature's shape where the work lives.
-- One User Story per vertical slice — Description is the slice contract in user terms, `Microsoft.VSTS.Common.AcceptanceCriteria` the slice's behaviour checks in `event-model.md` vocabulary (Role, Action, Business Event, View, Status).
+- One User Story per vertical slice — Description is the slice contract in user terms, `Microsoft.VSTS.Common.AcceptanceCriteria` the slice's behaviour checks in `event-model.md` vocabulary (Role, Action, Business Event, View, Status); the Description closes naming the slice branch `slice/ab<sliceId>-<slug>` and its stack base — the feature branch, or the branch of the slice it consumes.
 - One Task per pipeline task, child of its slice story — a title naming the behaviour, a description paragraph, and the kind, tier, and slice tags per `/al-routing`'s schema; the ops tasks take the mechanical tier, their work is scripted. The task body belongs to `/al-refine`; existing objects, pages, events, APIs, and fields may be named as source context.
 
 ## Slices, order, brackets
@@ -42,6 +42,10 @@ Bracket the feature every time: provision → clone-bcapps → clone-bcquality a
 When `event-model.md` is present, every slice closes with one verify task on that slice, Successor of every technical task in the slice, and slice N+1's first technical task takes a Predecessor link to slice N's verify task. Backend-only, that cross-slice edge points at slice N's last technical task.
 
 The write ends when every `event-model.md` timeline step — or, backend-only, every `architecture.md` slice — appears as a slice story carrying its `al-slice-<slug>` tag, and both ops brackets hang in the tree.
+
+## The delivery stack
+
+The feature ships as a stack of pull requests. The root PR from `feature/ab<rootId>-<slug>` mirrors the root work item and carries the feature-level look — the full diff, the user-verification evidence, the release notes for the consultant. Each slice ships as one PR from its slice branch, based on and targeting its stack base; the automatic Copilot review the repo ruleset fires on `feature/*` bases (a one-time repo setting) is looped to Clean by `/babysit-pr`, and only a Clean slice PR merges — into the feature branch, always a merge commit; a squash inside the stack is a defect. After a lower layer merges, every dependent slice updates from the feature branch.
 
 ## Descriptions
 

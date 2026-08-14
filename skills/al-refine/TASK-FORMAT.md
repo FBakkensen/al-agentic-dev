@@ -1,6 +1,6 @@
-# Task file body
+# Task Description body
 
-Below the frontmatter (`/al-routing`'s schema), a task file is an H1 title, a description paragraph, and then the body. `/al-refine` writes the body — a `Test Specification` on a technical task, a `Verification Plan` on a verify task — and later skills read it and edit named body fields. Ops tasks (`kind: provision`, `kind: breaking-change`) stop at the description, plus one `Last run:` line after a red run.
+A pipeline task is an Azure DevOps work item; its fields, tags, states, and links are `/al-routing`'s schema. The Title names the behaviour; the Description opens with a description paragraph and then carries the body. `/al-refine` writes the body — a `Test Specification` on an `al-technical` task, a `Verification Plan` on an `al-verify` task — and later skills read it and edit named body fields. Ops tasks (`al-provision`, `al-breaking-change`) stop at the description paragraph; their run results live in the work item's comment log, not the body.
 
 Skills parse these shapes, so field names and structure are exact.
 
@@ -10,7 +10,7 @@ Skills parse these shapes, so field names and structure are exact.
 2. A section is a `##` heading when it holds entries another section or skill references by ID or by name. Everything else is a bare labeled line.
 3. A block runs from its labeled line to the next column-0 line that is a `## ` or `### ` heading or a `<Label>:` line. Bullets open with `-` and table rows with `|`, so neither closes a block.
 4. Sections appear in the order the table below declares.
-5. A case header carries the handle other sections reference: the AL test procedure name in `AAA Cases`, which `Covered By` cells name; the ID plus a short name in the verify sections, which `Closeout:` and `Partial-run record:` name.
+5. A case header carries the handle other sections reference: the AL test procedure name in `AAA Cases`, which `Covered By` cells name; the ID plus a short name in the verify sections, which the walk's `🚶 Walk:` comments name.
 6. Inside a case, `Scope:` comes first, then the remaining scalar fields, then the bullet blocks in execution order.
 7. `; ` separates multiple values in a field. Rationale that needs writing down lands in `Contract notes:`, never as an inline comment. A `Contract notes:` bullet is one sentence — a decision, a grounded fact, a push-up justification, or an accepted-survivor ruling; what happened during a run belongs in the commit message, never here.
 8. A `Contract notes:` bullet carries a glyphed lede naming its kind, the emoji between the dash and the lede so the lede stays greppable: `- 🔎 Researched:` a grounding citation, `- 🏛️ Precedent:` a `.bcapps/` verdict, `- ⬆️ Push-up` a layer justification, `- ✅ Accepted:` a survivor ruling. A bullet of no listed kind stays plain; an emoji outside these slots stays out.
@@ -27,9 +27,8 @@ Skills parse these shapes, so field names and structure are exact.
 | `## Journey Examples` | verify | the slice is BC Web Client-facing |
 | `## Contract Examples` | verify | the slice is API or external-client-facing |
 | `## Usability Review` | verify | optional; earned by new workflows, changed workflows, and error-guidance changes |
-| `Partial-run record:` | verify | a verification walk is in flight |
-| `Closeout:` | verify | the walk is complete, the user waived it, or a sibling's merged plan absorbed it |
-| `Last run:` | ops | the last run was red — one line naming what failed |
+
+Walk results — partial-run lines, closeout lines, waivers, absorptions — live in the work item's `🚶 Walk:` and closing comments, never in the body; `/al-user-verification` and `/al-routing` own their wording.
 
 ## Sections that carry structure
 
@@ -49,19 +48,17 @@ One coverage table per technical task, and `Covered By` holds AL test procedure 
 
 **`Deviations:`** — one line per assumption absorbed inline during implementation, appended, never edited away; the breadcrumb marking behaviour that arrived without a red, whose tests are proved by mutation.
 
-**`Closeout:`** — one line per example with its outcome, written when the walk completes. A waived walk instead carries one `Waived (user ruling, <date>)` line naming the pinning Integration cases and the prior walk that verified the wire; an absorbed task carries one `Absorbed (into T-NNN, <date>)` line naming the sibling whose merged plan carries its checks.
-
 ## Language
 
 Write the body in the reader's language: project domain terms from `CONTEXT.md` first, BC display labels second, exact AL object, field, page, procedure, event, and API names only where traceability or ambiguity demands them. In prose slots, show the thing — the page, the field, the command, the number — one sentence per fact. `New and Modified Objects` is the deliberate exception — exact names and signatures are its whole content. Where `event-model.md` exists, a `Verification Plan` speaks its Role, Action, Business Event, View, and Status vocabulary.
 
-Both examples below show a task after `/al-refine` has filled the body; frontmatter is `/al-routing`'s schema and omitted here.
+Both examples below show a work item's Description after `/al-refine` has filled the body; the item's fields, tags, and links are `/al-routing`'s schema and omitted here. The Title stands above each.
 
 ## Worked example — technical task
 
-```markdown
-# T-004 — Flag Purchase Lines whose receipt date passes the Vendor tolerance
+Title: `Flag Purchase Lines whose receipt date passes the Vendor tolerance`
 
+```markdown
 Measure each `Purchase Line`'s `Expected Receipt Date` against the agreed date and the
 Vendor's tolerance in days, returning the overdue days, so release can warn the Purchase
 Agent before the Purchase Order reaches the Vendor.
@@ -74,7 +71,7 @@ Test Specification:
   - `internal procedure OverdueDays(ExpectedReceiptDate: Date; AgreedDate: Date; ToleranceDays: Integer): Integer` — P
 
 Contract notes:
-- Zero Integration cases — the policy decides from parameters alone; T-005 proves the wiring.
+- Zero Integration cases — the policy decides from parameters alone; the successor wiring task proves it.
 - 🔎 Researched: `Vendor."Lead Time Calculation"` is a DateFormula, not an Integer → Learn al-vendor-table.
 - 🏛️ Precedent: none in System App / apps — no shipped policy measures receipt dates against a per-Vendor tolerance.
 - ✅ Accepted: the `ToleranceDays < 0` guard mutant is equivalent — `Validate` blocks negatives upstream (user ruling).
@@ -125,9 +122,9 @@ Assert:
 
 ## Worked example — verify task
 
-```markdown
-# T-007 — Verify: the Purchase Agent sees late receipt dates at release
+Title: `Verify: the Purchase Agent sees late receipt dates at release`
 
+```markdown
 User-facing slice `flag-late-receipt-date`: the Purchase Agent releases a `Purchase Order`,
 and every line whose `Expected Receipt Date` passes the Vendor tolerance surfaces a warning
 naming the line and its overdue days while release still completes.

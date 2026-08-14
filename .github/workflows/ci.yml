@@ -4,7 +4,6 @@ on:
   push:
     branches: [main, feature/copilot-first-migration]
   pull_request:
-    branches: [main, feature/copilot-first-migration]
 
 jobs:
   validate:

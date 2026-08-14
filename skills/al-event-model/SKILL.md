@@ -10,12 +10,12 @@ Settle the journey at the altitude of what an external observer sees, so the arc
 
 Preconditions: the `CONTEXT.md` terms and the domain ADRs are settled — run `/al-grill-adr` first, since a fuzzy domain term becomes a wrong Role name or an invented Business Event. And the feature has a human or API surface; a Job Queue, install/upgrade, or scheduled-task feature has no journey and goes straight to `/al-design`. The journey is checked against BCQuality — `.bcquality/knowledge-index.json` missing → **stop.** Run `/al-clone-bcquality`.
 
-`event-model.md` lands in the feature's spec folder, `specs/<NNN>-<slug>/`, created if absent with `<NNN>` one past the highest spec folder present. Where the file already exists for this feature, reshape it in place. The run continues on a branch named `<NNN>-<slug>`:
+`event-model.md` lands in the feature's spec folder, `specs/<NNN>-<slug>/`, created if absent with `<NNN>` one past the highest spec folder present. Where the file already exists for this feature, reshape it in place. The run continues on the feature branch, `feature/ab<rootId>-<slug>` — the root id from the `al-ado.json` binding, the slug the spec folder's:
 
-- No branch for this feature yet → create `<NNN>-<slug>` off the default branch.
-- The session sits on its own working branch with another name → rename it to `<NNN>-<slug>`, through the rename_branch tool where the session provides it, with plain `git branch -m` otherwise.
+- No branch for this feature yet → create `feature/ab<rootId>-<slug>` off the default branch.
+- The session sits on its own working branch with another name → rename it to `feature/ab<rootId>-<slug>`, through the rename_branch tool where the session provides it, with plain `git branch -m` otherwise.
 - Never rename the default branch.
-- Never rename a branch already `<NNN>-<slug>`-shaped — that name binds it to its own spec folder; a mismatch with this run's spec is a stop put to the user.
+- Never rename a branch already `feature/ab<rootId>-<slug>`-shaped — its slug binds it to its own spec folder; a mismatch with this run's spec is a stop put to the user.
 - A rename that fails is a stop put to the user, never a quiet note.
 
 Every BC name that lands in a slot — a persona, a BaseApp event, a table, a field, a page — comes from a lookup made this session: grep the workspace, or read Microsoft's BC documentation through the microsoft-learn tools (microsoft_docs_search, microsoft_docs_fetch). Recall is fiction. Where `.bcapps/` is present, it is intentionally gitignored: a workspace-wide grep skips the clone, so point grep at `.bcapps/` explicitly and view its files directly for BaseApp's own events and code.

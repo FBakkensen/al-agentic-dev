@@ -41,7 +41,7 @@ sideways depth, never a box in a box.
 ## Language
 
 One sentence per fact, in the product's words — the page, the field, the error, the
-number. An identifier never stands alone: every `T-NNN`, `D1`, object or case name
+number. An identifier never stands alone: every `AB#<id>`, `D1`, object or case name
 carries its plain-language meaning at point of use; the artifact assumes the reader
 remembers nothing from chat. Every addressable call shows its stable ID in its row;
 chat answers point at these. An open call carries 2–4 lettered options, exactly one
