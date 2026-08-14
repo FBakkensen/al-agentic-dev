@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "matcher": "ask_user",
+        "bash": "echo '{\"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"ask_user is disabled by al-agentic-dev: ask in the reply itself, as plain text, with lettered options and the recommendation marked.\"}'",
+        "powershell": "Write-Output '{\"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"ask_user is disabled by al-agentic-dev: ask in the reply itself, as plain text, with lettered options and the recommendation marked.\"}'",
+        "timeoutSec": 15
+      }
+    ]
+  }
+}
