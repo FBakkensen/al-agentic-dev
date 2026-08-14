@@ -8,29 +8,17 @@ You drive; nothing auto-chains. A skill that moves a task hands its outcome to `
 
 ## Install
 
-### Azure DevOps organization
+### MCP servers
 
-The plugin uses the organization-neutral Azure DevOps MCP endpoint. To bind it to your organization, add this server to `~/.copilot/mcp-config.json`, replacing `YOUR_ORGANIZATION`:
+The plugin bundles NAB AL Tools for XLF translation and Microsoft Learn for current Microsoft documentation.
 
-```json
-{
-  "mcpServers": {
-    "azure-devops": {
-      "type": "http",
-      "url": "https://mcp.dev.azure.com/YOUR_ORGANIZATION",
-      "tools": [
-        "core_list_projects",
-        "wit_backlog",
-        "wit_query",
-        "wit_work_item",
-        "wit_work_item_comment_write",
-        "wit_work_item_link_write",
-        "wit_work_item_write"
-      ]
-    }
-  }
-}
+Azure DevOps needs your organization and interactive authentication, so configure it once at user level after `az login`, replacing `YOUR-ORG`:
+
+```powershell
+copilot mcp add azure-devops -- npx -y @azure-devops/mcp YOUR-ORG
 ```
+
+Azure DevOps is deliberately outside the plugin. Plugin-owned server names are reserved globally, so a user configuration cannot replace one. Environment placeholders in MCP URLs also stay literal in Copilot CLI 1.0.79.
 
 This repository lives on GitHub Enterprise at `9altitudes.ghe.com`. Pass the full URL and the host is unambiguous, whatever your `gh` is pointed at:
 

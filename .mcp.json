@@ -1,18 +1,5 @@
 {
   "mcpServers": {
-    "azure-devops": {
-      "type": "http",
-      "url": "https://mcp.dev.azure.com/",
-      "tools": [
-        "core_list_projects",
-        "wit_backlog",
-        "wit_query",
-        "wit_work_item",
-        "wit_work_item_comment_write",
-        "wit_work_item_link_write",
-        "wit_work_item_write"
-      ]
-    },
     "nab-al-tools": {
       "type": "stdio",
       "command": "npx",
