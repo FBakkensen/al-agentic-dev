@@ -9,9 +9,9 @@ One task per session. Consume its `Test Specification`, stop at green. Your firs
 
 ## Before any code
 
-Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. The task this skill takes is `kind: technical` with a populated `Test Specification`. Missing its specification, `/al-refine` writes it first. Another `kind:` is declined — `/al-routing`'s ladder names its skill. Task-file state is `/al-routing`'s; this skill edits only the task body.
+The task is an Azure DevOps work item under the bound root — `/al-routing` owns its schema; read it through `azure-devops-wit_work_item`. The task this skill takes carries the `al-technical` tag with a populated `Test Specification` in its Description. Missing its specification, `/al-refine` writes it first. Another kind tag is declined — `/al-routing`'s ladder names its skill. Work-item state is `/al-routing`'s; this skill edits only the Description's body blocks, a mid-run contract change landing beside its `✏️ Contract:` comment.
 
-A task whose behaviour is already proved is re-entered by one named repair alone, settled tasks included: a functional fail from a verification run or a behavioural defect routed from `/al-code-review` or `/al-refactor` — its failed check is the red, written as a test at the layer that can catch it. It lands red-first, commits under the owning `T-NNN`, and moves no task-file state. At green, a verification-walk repair resumes `/al-user-verification` at the failed scenario; a `/al-code-review` or `/al-refactor` repair returns to its caller for its gate.
+A task whose behaviour is already proved is re-entered by one named repair alone, settled tasks included: a functional fail from a verification run or a behavioural defect routed from `/al-code-review` or `/al-refactor` — its failed check is the red, written as a test at the layer that can catch it. It lands red-first, commits opening with the owning `AB#<id>`, and moves no work-item state. At green, a verification-walk repair resumes `/al-user-verification` at the failed scenario; a `/al-code-review` or `/al-refactor` repair returns to its caller for its gate.
 
 Read `architecture.md` and name the seam in BC vocabulary — the procedure to extract, the event to subscribe, the interface to implement, the page action to wire. Production names and signatures arrive minted in the task's `New and Modified Objects`; test codeunit and procedure names are yours to mint.
 
@@ -21,7 +21,7 @@ Every BC object, table, field, procedure, event, and enum value name comes from 
 
 BCQuality is the intentionally gitignored rule set. `.bcquality/knowledge-index.json` carries one row per article with its `domain` and `keywords`; missing → name `/al-clone-bcquality` and stop. A workspace-wide grep skips the gitignored clone, so point grep at `.bcquality/` explicitly and view its files directly, and the index is one minified line — parse it as JSON rather than reading or searching it by line. Before the first case, narrow to the domains the task touches and read those articles. The articles are written for the container runtime — AL Runner is a non-Microsoft unit runner they do not document — so this skill's runner semantics and test codeunit contract override a colliding article. An article that moved a decision lands as a `🔎 Researched:` bullet in `Contract notes`; elsewhere it stays silent.
 
-BC vocabulary, in code and in every line written to the task file: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, the record or the API body not the payload, codeunit not class, procedure not method. TDD, red/green, and AAA keep their own names. A name you mint is derived, never invented: its noun from a `CONTEXT.md` term, the BC baseline, or an `event-model.md` Action, Business Event, or Status, its verb from BC's own set, confirmed in `.bcapps/` where the clone is present. A term no source names is a vocabulary gap two interviews missed: settle it as one question, land it in `CONTEXT.md` per its format — committed on its own with a plain descriptive message, apart from the task's `T-NNN` commits — then continue.
+BC vocabulary, in code and in every line written to the work item: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, the record or the API body not the payload, codeunit not class, procedure not method. TDD, red/green, and AAA keep their own names. A name you mint is derived, never invented: its noun from a `CONTEXT.md` term, the BC baseline, or an `event-model.md` Action, Business Event, or Status, its verb from BC's own set, confirmed in `.bcapps/` where the clone is present. A term no source names is a vocabulary gap two interviews missed: settle it as one question, land it in `CONTEXT.md` per its format — committed on its own with a plain descriptive message, apart from the task's `AB#<id>` commits — then continue.
 
 Production thrift: reach for the platform before writing code — a FlowField over a setup table, a table relation or permission entry over validation code, an enum over a hand-rolled status. An `interface` arrives with its second implementation, not before. A deliberate shortcut carries a one-line comment naming its ceiling and the upgrade path. Trust-boundary validation, posting and ledger correctness, and permission checks stay at full strength.
 
@@ -57,7 +57,7 @@ Run the full gate through `/al-build -AllTests` after the last case; a gate betw
 
 ## Reconcile, then hand over
 
-At full green, the handoff certifies that the task file matches what landed. Before it:
+At full green, the handoff certifies that the work item's Description matches what landed. Before it:
 
 - Every AAA case header carries its actual AL test procedure name, and every `Covered By` cell names those procedures.
 - `New and Modified Objects` matches the diff — objects, fields, signatures, visibility, placement in the module map.
@@ -65,16 +65,16 @@ At full green, the handoff certifies that the task file matches what landed. Bef
 - Every `Contract notes:` bullet is one sentence; a bullet that grew a history is rewritten to its surviving decision, the history going to the commit message.
 - A shipped surface is a one-way door: new objects take IDs from the workspace's ID allocator, and a shipped field goes `ObsoleteState: Pending` → `Removed` rather than being renamed in place.
 
-Commit at green under the task's `T-NNN` prefix — the slice review selects its diff by those prefixes — so the tree is clean for what comes next. Report that committed `HEAD` and the full-gate result to `/al-routing`; it records the clean-gate receipt, including on a repair green.
+Commit at green opening with the task's `AB#<id>` — the slice review selects its diff by those ids — so the tree is clean for what comes next. Report that committed `HEAD` and the full-gate result to `/al-routing`; it records the clean-gate receipt, including on a repair green.
 
 ## Apply a decision, or ask on a new one
 
-Apply and continue: build scaffolding, a permission-set entry, an object ID, a caption, a local rename, a field on an object the task already names, reusing a seam a sibling task established. Where one rests on an assumption nobody blessed, append one line to the task body's `Deviations:` block — never edited away.
+Apply and continue: build scaffolding, a permission-set entry, an object ID, a caption, a local rename, a field on an object the task already names, reusing a seam a sibling task established. Where one rests on an assumption nobody blessed, append one line to the Description's `Deviations:` block — never edited away.
 
 A new decision pauses the cycle: ask it in chat as one question and wait. An answer that keeps the task's contract — a production object the assertions require that `New and Modified Objects` never named, a code path that needs its own case rather than an appended assertion, a public-surface rename — lands in the `Test Specification` by this run, and the cycle continues. An answer that reopens the architecture — a new table, a new event publisher, a genuinely new seam, a `.bcapps/` find that Microsoft already ships what the task is building, a BCQuality rule the task's named surface violates, a task that no longer matches the feature Goal — ends the run: roll the working tree back to the last commit and name the owning skill; holding work uncommitted until green is what keeps that rollback clean.
 
 ## Close
 
-Name the task green and the behaviour it now proves — one line, no build counts; those live in the commit and the task file. Put the landed change in view through `/al-visualize` as a receipt — the task's product delta, `Deviations:` named; a repair green draws its fix receipt the same way before rejoining its episode.
+Name the task green and the behaviour it now proves — one line, no build counts; those live in the commit and the work item. Put the landed change in view through `/al-visualize` as a receipt — the task's product delta, `Deviations:` named; a repair green draws its fix receipt the same way before rejoining its episode.
 
 Then `/al-routing`; a repair green returns to its caller inside its episode, following the repair path above.

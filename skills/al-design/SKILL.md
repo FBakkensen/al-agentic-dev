@@ -6,12 +6,12 @@ disable-model-invocation: true
 
 # Idea → `architecture.md`
 
-Settle the feature-level architecture through an interview and write it into `architecture.md` in the feature's spec folder, `specs/<NNN>-<slug>/` — created if absent with `<NNN>` one past the highest spec folder present. Your first line names that this run wants a frontier-class model — the user picked the model and weighs the mismatch — then proceed. `/al-scope` decomposes that file into every task of the feature, so a gap here resurfaces as a guess inside a task. [ARCHITECTURE-FORMAT.md](ARCHITECTURE-FORMAT.md) holds the shape and a worked example. The run continues on a branch named `<NNN>-<slug>`:
+Settle the feature-level architecture through an interview and write it into `architecture.md` in the feature's spec folder, `specs/<NNN>-<slug>/` — created if absent with `<NNN>` one past the highest spec folder present. Your first line names that this run wants a frontier-class model — the user picked the model and weighs the mismatch — then proceed. `/al-scope` decomposes that file into every task of the feature, so a gap here resurfaces as a guess inside a task. [ARCHITECTURE-FORMAT.md](ARCHITECTURE-FORMAT.md) holds the shape and a worked example. The run continues on the feature branch, `feature/ab<rootId>-<slug>` — the root id from the `al-ado.json` binding, the slug the spec folder's:
 
-- No branch for this feature yet → create `<NNN>-<slug>` off the default branch.
-- The session sits on its own working branch with another name → rename it to `<NNN>-<slug>`, through the rename_branch tool where the session provides it, with plain `git branch -m` otherwise.
+- No branch for this feature yet → create `feature/ab<rootId>-<slug>` off the default branch.
+- The session sits on its own working branch with another name → rename it to `feature/ab<rootId>-<slug>`, through the rename_branch tool where the session provides it, with plain `git branch -m` otherwise.
 - Never rename the default branch.
-- Never rename a branch already `<NNN>-<slug>`-shaped — that name binds it to its own spec folder; a mismatch with this run's spec is a stop put to the user.
+- Never rename a branch already `feature/ab<rootId>-<slug>`-shaped — its slug binds it to its own spec folder; a mismatch with this run's spec is a stop put to the user.
 - A rename that fails is a stop put to the user, never a quiet note.
 
 ## Before the interview

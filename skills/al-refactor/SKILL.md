@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Reshape while green
 
-The tree is clean and the build is green before the first change. Evaluate the task's clean full-gate receipt: its commit is an ancestor of `HEAD` and the diff since it names only this task file. Match → `🔎✅ Green gate reused — T-123 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build -AllTests` green. Reshaping against red is debugging — that belongs in /al-implement. Your first line names that this run wants a standard-class model or above — the user picked the model and weighs the mismatch. Task files live in `specs/<branch>/tasks/` — the current git branch names the spec folder; a branch with no matching folder stops the run, naming the mismatch. Task-file state is `/al-routing`'s; this skill reshapes code. The knowledge pass below reads the `.bcquality/` clone: missing → name `/al-clone-bcquality` and stop, before the gate rather than after it. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+The tree is clean and the build is green before the first change. The task is an Azure DevOps work item (`/al-routing`'s schema); work-item state is `/al-routing`'s — this skill reshapes code. Evaluate the task's newest `✅ Gate:` comment per `/al-routing`'s receipt rule — its commit an ancestor of `HEAD`, the diff since it empty. Match → `🔎✅ Green gate reused — AB#1204 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build -AllTests` green. Reshaping against red is debugging — that belongs in /al-implement. Your first line names that this run wants a standard-class model or above — the user picked the model and weighs the mismatch. The knowledge pass below reads the `.bcquality/` clone: missing → name `/al-clone-bcquality` and stop, before the gate rather than after it. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## The knowledge pass
 
@@ -26,7 +26,7 @@ Each dimension runs as one `al-review-lens` invocation through the task tool —
 
 ## Apply
 
-One reshape at a time, committed under the owning task's `T-NNN` prefix, running the gate with `/al-build -AllTests` after each. Red reverts that step, and recovery comes before the next one.
+One reshape at a time, each commit opening with the owning task's `AB#<id>`, running the gate with `/al-build -AllTests` after each. Red reverts that step, and recovery comes before the next one.
 
 - Renames and seam introduction land first — they touch many call sites and conflict with anything queued behind them.
 - Extract a helper on the third occurrence, not the second. Below that, leave the duplication and say so. Logic with a rightful home — a BaseApp or System Application helper, an existing module's internal helper — moves there and the canonical one is reused.
@@ -40,7 +40,7 @@ A defect needs no user decision: fix it in this run. A behavioural defect routes
 
 A change request would override a decision the user already made, or establish missing business or architecture intent. Interview every change request before implementing any ruling, one per message, highest impact first. Explain the impact, choice, consequences, and recommendation. Name modules, boundaries, public objects, interfaces, events, or other AL concepts when they make the current or proposed architecture legible; keep paths, line numbers, private procedures, code snippets, lookup mechanics, and knowledge-article details out unless the user asks. One answer settles only the request in front of the user.
 
-After every request is settled, apply its ruling: **Do it now** lands on the defect terms above; **Write a task** creates one per `/al-routing`'s schema; **Keep the current behaviour** records the ruling in the decision artifact. Create a task only when the user chose one. Each ruling commits as it lands: a created task under its own `T-NNN` prefix, an artifact ruling with a plain descriptive message. Technical evidence belongs in the resulting commit or task.
+After every request is settled, apply its ruling: **Do it now** lands on the defect terms above; **Write a task** creates one per `/al-routing`'s schema; **Keep the current behaviour** records the ruling in the decision artifact. Create a task only when the user chose one. Each ruling lands as it settles: a created task is a work item and needs no repo commit; an artifact ruling commits with a plain descriptive message. Technical evidence belongs in the resulting commit or the work item's comments.
 
 ## Writing AL
 
