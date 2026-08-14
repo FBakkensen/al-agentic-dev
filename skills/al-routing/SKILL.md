@@ -41,8 +41,8 @@ A completed full gate reports the `HEAD` committed immediately from its unchange
 
 - **Scoping / re-scope** — no `al-pipeline` item under the bound root, or an `architecture.md` reshaped since the tree settled, → `/al-scope` before anything routes. While the provision chain is not fully Resolved, its next rung is the only move.
 - **Slice review** — every Task in a slice story Resolved and the story not Closed → `/al-code-review` on the slice.
-- **Feature review** — every slice story Closed and the breaking-change task still New → feature `/al-code-review` before it runs.
-- **All shipped** — every story reviewed and every ops task Resolved → `/al-sync-main`, then the user opens the PR. Branch synced and PR open → close every remaining item; the feature is done.
+- **Feature review** — every slice story Closed, the breaking-change task still New, and the Design story not yet Resolved → feature `/al-code-review` before it runs.
+- **All shipped** — the Design story Resolved and every ops task Resolved → `/al-sync-main`, then the user opens the PR. Branch synced and PR open → close every remaining item; the feature is done.
 
 ## Outcome → transition
 
@@ -53,10 +53,10 @@ One state write per reported outcome, plus one `➡️ Routing:` comment on the 
 | `/al-refine` wrote the proof into the Description | Task → Active; swap the tier tag to the class its report names |
 | `/al-implement` reached green outside a repair episode | Task → Testing; record its `✅ Gate:` receipt |
 | `/al-refactor` closed its pass — reshape landed, or every dimension clean | Task → Resolved; replace the receipt after a reshaped green, otherwise retain the incoming one |
-| `/al-user-verification` sealed the slice's last recording | one `🚶 Walk:` comment; the task stays Testing |
+| `/al-user-verification` sealed the slice's last recording | Task → Testing, one `🚶 Walk:` comment |
 | `/al-user-verification` finished the walk clean | Task → Resolved |
 | `/al-code-review` cleared the slice | `⚖️ Review:` comment on the story; the story and its Tasks → Closed; record its latest durable full gate when it changed the tree |
-| `/al-code-review` cleared the feature | `⚖️ Review:` comment on the Design story |
+| `/al-code-review` cleared the feature | `⚖️ Review:` comment on the Design story; the Design story → Resolved |
 | an ops skill ran green | its Task → Resolved |
 | the user closes a task early — a waived or absorbed verify walk included | Task → Resolved; the closing comment names the cover — the pinning cases and prior walk, or the carrying task. A waiver closes the walk, never the slice's review gate |
 | the user retired a task at `/al-scope`'s reconcile | the item → Removed |

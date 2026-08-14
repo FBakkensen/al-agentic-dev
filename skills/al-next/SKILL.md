@@ -14,7 +14,8 @@ The entry chain runs in one session: `/al-grill-adr` → `/al-event-model` (back
 - No `CONTEXT.md` at the repo root → `/al-grill-adr`.
 - `CONTEXT.md` present, no `event-model.md` → `/al-event-model` — or `/al-design` once the user confirms backend-only (no human, no API consumer). New vocabulary in this feature reopens `/al-grill-adr` first.
 - No `architecture.md` → `/al-design`.
-- `architecture.md` present, no `al-pipeline` item under the bound root → `/al-scope`. No `al-ado.json` binding at the repo root → the move is binding the repo first: the user fills `organization`, `project`, `rootWorkItemId`, and `areaPath` per `/al-routing`'s schema, then `/al-scope`.
+- `architecture.md` present but no `al-ado.json` binding at the repo root → the move is binding the repo first: the user fills `organization`, `project`, `rootWorkItemId`, and `areaPath` per `/al-routing`'s schema, then `/al-scope`.
+- Binding resolved, no `al-pipeline` item under the bound root → `/al-scope`.
 
 ## The tree exists
 
