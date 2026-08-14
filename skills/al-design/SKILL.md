@@ -46,7 +46,7 @@ Tactical — object and file names, which of two equivalent patterns carries a m
 
 ## Candidates
 
-Multi-module designs, brownfield refactors, and novel pattern selection earn candidates. Diverge only once the strategic inventory is settled apart from the fork they turn on; earlier, the user is choosing between guesses. Propose how many are worth building and which one you would pick, and let the user set the count. If your harness supports subagents, these parallelize; otherwise build them in one pass. Each candidate is self-contained under **Constraint**, **Shape**, **Flow**, **Seams**, **Trade-offs**, and carries the same settled decisions marked as settled so none reopens one. Present them in sequence, compare along depth, locality, and seam placement, recommend one or a hybrid opinionatedly, and put the pick to the user as one lettered question.
+Multi-module designs, brownfield refactors, and novel pattern selection earn candidates. Diverge only once the strategic inventory is settled apart from the fork they turn on; earlier, the user is choosing between guesses. Propose how many are worth building and which one you would pick, and let the user set the count. These parallelize in subagents; when subagents are unavailable, build them in one pass. Each candidate is self-contained under **Constraint**, **Shape**, **Flow**, **Seams**, **Trade-offs**, and carries the same settled decisions marked as settled so none reopens one. Present them in sequence, compare along depth, locality, and seam placement, recommend one or a hybrid opinionatedly, and put the pick to the user as one lettered question.
 
 ## BC patterns
 

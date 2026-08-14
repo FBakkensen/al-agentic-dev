@@ -45,13 +45,37 @@ $Body
 "@
     }
 
+    function New-AgentContent {
+        param(
+            [string]$Name = 'review-lens',
+            [string]$Description = '"Reads a diff with one lens. Use when: a review fans out."',
+            [string]$Tools = '["grep", "view"]',
+            [string]$Model = 'pinned-model-1',
+            [string]$Body = 'Apply the lens and return findings.'
+        )
+
+        return @"
+---
+name: $Name
+description: $Description
+tools: $Tools
+model: $Model
+---
+
+$Body
+"@
+    }
+
     function Invoke-SkillValidator {
         param(
             [Parameter(Mandatory = $true)]
-            [string]$Root
+            [string]$Root,
+
+            [string]$AgentsRoot
         )
 
-        $output = & pwsh -NoProfile -File $script:ValidatorPath -SkillsRoot $Root 2>&1
+        if (-not $AgentsRoot) { $AgentsRoot = Join-Path $Root '_no-agents' }
+        $output = & pwsh -NoProfile -File $script:ValidatorPath -SkillsRoot $Root -AgentsRoot $AgentsRoot 2>&1
         return [pscustomobject]@{
             ExitCode = $LASTEXITCODE
             Text     = (@($output | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine)
@@ -519,6 +543,43 @@ Describe 'Validate-Skills state-home checks' {
         $result.Text | Should -Match "demo/FORMAT\.md: states the lifecycle field 'status:' outside al-routing"
     }
 
+    It 'fails when a skill body states a work-item transition outside al-routing' -TestCases @(
+        @{ Case = 'resolved'; Body = 'Move the work item to State: Resolved when the gate is green.'; Expected = 'State: Resolved' }
+        @{ Case = 'lowercase-field'; Body = 'Set state: Blocked while the edge is open.'; Expected = 'state: Blocked' }
+        @{ Case = 'closed'; Body = 'The run ends at State: Closed.'; Expected = 'State: Closed' }
+    ) {
+        param($Case, $Body, $Expected)
+
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive "ado-$Case") -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body $Body)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "states the work-item transition '$Expected' outside al-routing"
+    }
+
+    It 'accepts work-item transitions inside al-routing' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'ado-home') -Files @{
+            'al-routing/SKILL.md' = (New-SkillContent -Name 'al-routing' -ModelInvocable -Body 'Move the work item to State: Resolved, then State: Closed.')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+
+    It 'accepts a state token bound to no work-item value' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'ado-prose') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body 'Name the state: of the run, then the open moves.')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+
     It 'accepts lifecycle fields inside al-routing' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'lifecycle-home') -Files @{
             'al-routing/SKILL.md' = (New-SkillContent -Name 'al-routing' -ModelInvocable -Body 'Stamp `status: done` and `phase: mutated` in one edit.')
@@ -573,6 +634,206 @@ Describe 'Validate-Skills skill-reference checks' {
         $result = Invoke-SkillValidator -Root $root
 
         $result.ExitCode | Should -Be 0
+    }
+
+    It 'resolves a generic skill name with no al- prefix' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'ref-generic') -Files @{
+            'demo/SKILL.md'       = (New-SkillContent -Body 'Hand the open PR to /babysit-pr.')
+            'babysit-pr/SKILL.md' = (New-SkillContent -Name 'babysit-pr')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+
+    It 'leaves a generic non-folder slash token unflagged' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'ref-generic-unknown') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body 'The platform exposes /usage and /feedback commands.')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+}
+
+Describe 'Validate-Skills harness checks' {
+    It 'fails a harness-neutral leftover in a skill body' -TestCases @(
+        @{ Case = 'conditional'; Body = 'If your harness supports subagents, these parallelize in full-capability subagents; otherwise apply them in one pass.' }
+        @{ Case = 'casing'; Body = 'Whatever browser capability the Harness offers.' }
+        @{ Case = 'compound'; Body = 'No harness-specific frontmatter belongs here.' }
+    ) {
+        param($Case, $Body)
+
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive "harness-$Case") -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body $Body)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'uses harness-conditional phrasing'
+    }
+
+    It 'fails a harness leftover in a sibling file' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'harness-sibling') -Files @{
+            'demo/SKILL.md'  = (New-SkillContent -Body 'See [Format](FORMAT.md).')
+            'demo/FORMAT.md' = '# Format' + [Environment]::NewLine + 'Adapt this to your harness.'
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'demo/FORMAT\.md: uses harness-conditional phrasing'
+    }
+
+    It 'passes the Copilot-first phrasing of the same rule' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'harness-inverted') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body 'These parallelize in full-capability subagents; when subagents are unavailable, apply them in one pass.')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+}
+
+Describe 'Validate-Skills agent checks' {
+    BeforeAll {
+        function New-AgentsRoot {
+            param(
+                [Parameter(Mandatory = $true)][string]$Root,
+                [Parameter(Mandatory = $true)][hashtable]$Files
+            )
+
+            New-Item -ItemType Directory -Path $Root -Force | Out-Null
+            foreach ($relativePath in $Files.Keys) {
+                Set-Content -LiteralPath (Join-Path $Root $relativePath) -Value $Files[$relativePath] -Encoding utf8
+            }
+            return $Root
+        }
+
+        function New-AgentFixture {
+            param(
+                [Parameter(Mandatory = $true)][string]$Case,
+                [Parameter(Mandatory = $true)][hashtable]$AgentFiles
+            )
+
+            $skills = New-SkillsRoot -Root (Join-Path $TestDrive "agent-$Case-skills") -Files @{
+                'demo/SKILL.md' = (New-SkillContent)
+            }
+            $agents = New-AgentsRoot -Root (Join-Path $TestDrive "agent-$Case-agents") -Files $AgentFiles
+            return Invoke-SkillValidator -Root $skills -AgentsRoot $agents
+        }
+    }
+
+    It 'passes a well-formed agent' {
+        $result = New-AgentFixture -Case 'good' -AgentFiles @{
+            'review-lens.agent.md' = (New-AgentContent)
+        }
+
+        $result.ExitCode | Should -Be 0
+        $result.Text | Should -Match 'OK: agents/review-lens\.agent\.md'
+    }
+
+    It 'passes a block-list tools value' {
+        $content = "---`nname: review-lens`ndescription: `"Reads a diff with one lens.`"`ntools:`n  - grep`n  - view`nmodel: pinned-model-1`n---`n`nApply the lens."
+        $result = New-AgentFixture -Case 'block-tools' -AgentFiles @{
+            'review-lens.agent.md' = $content
+        }
+
+        $result.ExitCode | Should -Be 0
+    }
+
+    It 'passes when the agents folder is absent or holds no agent files' {
+        $skills = New-SkillsRoot -Root (Join-Path $TestDrive 'agent-none-skills') -Files @{
+            'demo/SKILL.md' = (New-SkillContent)
+        }
+        $keeper = New-AgentsRoot -Root (Join-Path $TestDrive 'agent-none-agents') -Files @{ '.gitkeep' = '' }
+
+        (Invoke-SkillValidator -Root $skills).ExitCode | Should -Be 0
+        (Invoke-SkillValidator -Root $skills -AgentsRoot $keeper).ExitCode | Should -Be 0
+    }
+
+    It 'fails when the frontmatter block does not parse' {
+        $result = New-AgentFixture -Case 'unparsed' -AgentFiles @{
+            'review-lens.agent.md' = "# review-lens`n`nNo frontmatter at all."
+        }
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'agents/review-lens\.agent\.md: frontmatter block does not parse'
+    }
+
+    It 'fails on unknown, missing, or duplicate frontmatter keys' -TestCases @(
+        @{ Case = 'unknown'; Frontmatter = "name: review-lens`ndescription: `"Reads a diff.`"`ntools: [grep]`nmodel: m`nagent_type: custom" }
+        @{ Case = 'missing-tools'; Frontmatter = "name: review-lens`ndescription: `"Reads a diff.`"`nmodel: m" }
+        @{ Case = 'missing-model'; Frontmatter = "name: review-lens`ndescription: `"Reads a diff.`"`ntools: [grep]" }
+        @{ Case = 'duplicate'; Frontmatter = "name: review-lens`nname: review-lens`ndescription: `"Reads a diff.`"`ntools: [grep]`nmodel: m" }
+    ) {
+        param($Case, $Frontmatter)
+
+        $result = New-AgentFixture -Case "keys-$Case" -AgentFiles @{
+            'review-lens.agent.md' = "---`n$Frontmatter`n---`n`nApply the lens."
+        }
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'frontmatter keys must be exactly name, description, tools, and model'
+    }
+
+    It 'fails when the name does not match the file name stem' {
+        $result = New-AgentFixture -Case 'stem' -AgentFiles @{
+            'review-lens.agent.md' = (New-AgentContent -Name 'other-lens')
+        }
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "name 'other-lens' does not match the file name stem 'review-lens'"
+    }
+
+    It 'fails when the model pin is empty' -TestCases @(
+        @{ Case = 'blank'; Model = '""' }
+        @{ Case = 'quoted-blank'; Model = "''" }
+    ) {
+        param($Case, $Model)
+
+        $result = New-AgentFixture -Case "model-$Case" -AgentFiles @{
+            'review-lens.agent.md' = (New-AgentContent -Model $Model)
+        }
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'model must be a non-empty pin'
+    }
+
+    It 'fails when tools is empty' -TestCases @(
+        @{ Case = 'empty-list'; Tools = '[]' }
+        @{ Case = 'blank'; Tools = '""' }
+    ) {
+        param($Case, $Tools)
+
+        $result = New-AgentFixture -Case "tools-$Case" -AgentFiles @{
+            'review-lens.agent.md' = (New-AgentContent -Tools $Tools)
+        }
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'tools must be a non-empty list'
+    }
+
+    It 'fails an unquoted description carrying a colon' {
+        $result = New-AgentFixture -Case 'desc-colon' -AgentFiles @{
+            'review-lens.agent.md' = (New-AgentContent -Description 'Reads a diff. Use when: a review fans out.')
+        }
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'description contains a colon and must be quoted'
+    }
+
+    It 'fails a harness leftover in an agent body' {
+        $result = New-AgentFixture -Case 'harness' -AgentFiles @{
+            'review-lens.agent.md' = (New-AgentContent -Body 'Adapt to whatever harness runs you.')
+        }
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'agents/review-lens\.agent\.md: uses harness-conditional phrasing'
     }
 }
 
