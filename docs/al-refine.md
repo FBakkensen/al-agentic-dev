@@ -4,7 +4,7 @@
 
 Opens one task and writes the proof it needs. A technical task gets a Test Specification — the thing [`/al-implement`](al-implement.md) drives red to green. A verify task gets a Verification Plan — the thing [`/al-user-verification`](al-user-verification.md) walks with the user.
 
-One task per run, regenerated whole against the current app and tests. Everything decided at scope time stays: title, description, dependency edges, slice, constraints, acceptance intent.
+One task per run, regenerated whole against the current app and tests. Its `Task:` title prefix stays visible in Azure DevOps, including `Task: Verify ...` for a verify task. Everything decided at scope time stays: title, description, dependency edges, slice, constraints, acceptance intent.
 
 ## When you reach for it
 

@@ -16,7 +16,7 @@ Skip it for backend-only work. A Job Queue entry, an install or upgrade codeunit
 
 ## What it produces
 
-One Design User Story under the bound Azure DevOps root. Git keeps `CONTEXT.md` and `docs/adr/` only.
+One Design User Story titled `Design: <journey>` under the bound Azure DevOps root. Git keeps `CONTEXT.md` and `docs/adr/` only.
 
 The Description is one page. This skill owns Goal, Happy path, and When it stops. Happy path groups steps under an `<h3>` per Role. When it stops is two bold lead-ins, not a table. Every step still names its Role, Action, Business Event, View, and Status flip — folded under that Role. Module and brownfield sections arrive in [`/al-design`](al-design.md).
 

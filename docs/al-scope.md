@@ -17,10 +17,10 @@ A gap the Design page cannot answer — a missing module, a pattern conflict, an
 
 A work-item tree in Azure DevOps under the customer's root work item (`al-ado.json` names the binding):
 
-- The `Design` User Story already exists — this skill does not create a second one, and slice stories do not copy its sections.
-- One User Story per vertical slice — the slice contract in its Description, pointing at the Design story, the behaviour checks in happy-path vocabulary as acceptance criteria, and the slice branch it ships from.
-- One Task per unit of work, child of its slice story, every dependency edge a Predecessor/Successor link. The edges are the sole encoding of order; blocked and ready are derived from them, never written.
+- The `Design` User Story already exists and is titled `Design: <journey>` — this skill does not create a second one, and slice stories do not copy its sections.
+- One User Story per vertical slice, titled `Slice: <slice outcome>` — the slice contract in its Description, pointing at the Design story, the behaviour checks in happy-path vocabulary as acceptance criteria, and the slice branch it ships from.
+- One Task per unit of work, titled `Task: <behaviour>` (verify tasks use `Task: Verify <slice outcome>`), child of its slice story, every dependency edge a Predecessor/Successor link. The edges are the sole encoding of order; blocked and ready are derived from them, never written.
 
-A task lands with a title and one description paragraph — the body is deliberately left for [`/al-refine`](al-refine.md) to write.
+A task lands with its `Task:` title prefix and one description paragraph — the body is deliberately left for [`/al-refine`](al-refine.md) to write.
 
-Every feature is bracketed: provision → clone-bcapps → clone-bcquality chained first, a breaking-change task last. Where a happy path is present, every slice also closes with a verify task.
+Every feature is bracketed: `Task: Provision` → `Task: Clone BC apps` → `Task: Clone BCQuality` chained first, `Task: Validate breaking changes` last. Where a happy path is present, every slice also closes with a `Task: Verify ...` task.
