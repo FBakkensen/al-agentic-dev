@@ -60,7 +60,7 @@ Describe 'coverage configuration' {
         Mock git {
             $global:LASTEXITCODE = 0
             $global:CoverageConfigRepoRoot
-        } -ModuleName build-operations
+        } -ModuleName common
         Mock Get-BCAgentContainerName { 'bctest' } -ModuleName build-operations
         Mock Write-BuildMessage {} -ModuleName build-operations
         Remove-Item Env:\ALBT_COVERAGE_ENABLED -ErrorAction SilentlyContinue

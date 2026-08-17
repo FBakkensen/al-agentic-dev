@@ -40,26 +40,12 @@ function Get-BuildConfig {
         [hashtable]$Overrides = @{}
     )
 
-    # Find git repo root
-    function Get-GitRepoRoot {
-        try {
-            $root = & git rev-parse --show-toplevel 2>$null
-            if ($LASTEXITCODE -eq 0 -and $root) {
-                if ($IsWindows -or $env:OS -match 'Windows') {
-                    $root = $root -replace '/', '\'
-                }
-                return $root
-            }
-        } catch { }
-        return $null
-    }
-
     # Config comes from the consumer repo root; this skill's config/al-build.json is only init.ps1's template
     $repoRoot = Get-GitRepoRoot
-    $configPath = if ($repoRoot) { Join-Path $repoRoot 'al-build.json' } else { $null }
+    $configPath = Join-Path $repoRoot 'al-build.json'
 
     $defaults = @{}
-    if ($configPath -and (Test-Path -LiteralPath $configPath)) {
+    if (Test-Path -LiteralPath $configPath) {
         try {
             $defaults = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json -AsHashtable
             Write-BuildMessage -Type Detail -Message "Loaded config: $configPath"
@@ -68,9 +54,8 @@ function Get-BuildConfig {
             throw
         }
     } else {
-        $configLocation = if ($configPath) { $configPath } else { 'repo root (not in git repo)' }
-        Write-BuildMessage -Type Error -Message "al-build.json not found at: $configLocation. Run init.ps1 from the al-build skill's scripts folder to create it."
-        throw "Config file required. Expected at: $configLocation. Run init.ps1 from the al-build skill's scripts folder to create it."
+        Write-BuildMessage -Type Error -Message "al-build.json not found at: $configPath. Run init.ps1 from the al-build skill's scripts folder to create it."
+        throw "Config file required. Expected at: $configPath. Run init.ps1 from the al-build skill's scripts folder to create it."
     }
 
     # Helper function for three-tier resolution
