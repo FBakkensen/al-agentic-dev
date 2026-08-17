@@ -12,10 +12,10 @@ Read the state, name the move, stop. This skill writes nothing. Ask every questi
 The entry chain runs in one session: `/al-grill-adr` → `/al-event-model` (backend-only skips it) → `/al-design` → `/al-scope`. Landing here is a resumed session — name the step after the last artifact present; every entry-chain move wants a frontier-class model, so say so beside it:
 
 - No `CONTEXT.md` at the repo root → `/al-grill-adr`.
-- `CONTEXT.md` present, no `event-model.md` → `/al-event-model` — or `/al-design` once the user confirms backend-only (no human, no API consumer). New vocabulary in this feature reopens `/al-grill-adr` first.
-- No `architecture.md` → `/al-design`.
-- `architecture.md` present but no `al-ado.json` binding at the repo root → the move is binding the repo first: the user fills `organization`, `project`, `rootWorkItemId`, and `areaPath` per `/al-routing`'s schema, then `/al-scope`.
-- Binding resolved, no `al-pipeline` item under the bound root → `/al-scope`.
+- `CONTEXT.md` present, no `al-ado.json` binding → the move is binding the repo first: the user fills `organization`, `project`, `rootWorkItemId`, and `areaPath` per `/al-routing`'s schema, then `/al-event-model`.
+- Binding resolved, no Design User Story under the bound root → `/al-event-model` — or `/al-design` once the user confirms backend-only (no human, no API consumer). New vocabulary in this feature reopens `/al-grill-adr` first.
+- Design story present, no Modules section → `/al-design`.
+- Design story settled, no slice story under it → `/al-scope`.
 
 ## The tree exists
 

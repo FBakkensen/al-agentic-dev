@@ -2,7 +2,7 @@
 
 Twenty-four skills carry a Business Central feature from a rough idea to a merged branch. You drive; nothing auto-chains. A skill that moves a task hands its outcome to `/al-routing`, which records the state and presents the moves that are open.
 
-Every skill starts cold. The artifacts live in git — `CONTEXT.md` and `docs/adr/` at the repo root, `specs/<NNN>-<slug>/` on the feature branch — and task state lives in Azure DevOps work items under the customer's root work item, bound per repo by `al-ado.json`.
+Every skill starts cold. Git holds `CONTEXT.md` and `docs/adr/` at the repo root. The Design story and task state live in Azure DevOps work items under the customer's root work item, bound per repo by `al-ado.json`.
 
 ## Order
 

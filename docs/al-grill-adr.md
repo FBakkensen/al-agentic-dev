@@ -8,7 +8,7 @@ Vocabulary settled here is what stops a fuzzy word from becoming a wrong Role na
 
 ## When you reach for it
 
-- A feature is still an idea — no `event-model.md`, no `architecture.md`, no work items yet.
+- A feature is still an idea — no Design story, no work items yet.
 - A term in the request means two things to two people.
 - The rule you just stated disagrees with what the code does.
 - A constraint needs its reason written down before it ships.

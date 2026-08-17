@@ -4,7 +4,7 @@ A GitHub Copilot plugin that carries a Microsoft Dynamics 365 Business Central f
 
 One install brings the whole surface: twenty-five Agent Skills, three packaged custom agents (`al-review-lens`, `al-spec-reviewer`, `al-knowledge-leaf`), and two bundled MCP servers — NAB AL Tools for XLF translation and Microsoft Learn for current Microsoft documentation.
 
-You drive; nothing auto-chains. A skill that moves a task hands its outcome to `/al-routing`, which records the state and presents the moves that are open. `CONTEXT.md`, `docs/adr/`, and the feature's `specs/` artifacts live in git; task state lives in Azure DevOps work items under the customer's root work item, bound per repo by `al-ado.json` — so every skill starts cold.
+You drive; nothing auto-chains. A skill that moves a task hands its outcome to `/al-routing`, which records the state and presents the moves that are open. `CONTEXT.md` and `docs/adr/` live in git; the Design story and task state live in Azure DevOps work items under the customer's root work item, bound per repo by `al-ado.json` — so every skill starts cold.
 
 ## Requirements
 
@@ -43,7 +43,7 @@ Same plugin, no marketplace registration — and no catalog for `copilot plugin 
 ### Verify
 
 ```
-copilot plugin list      # al-agentic-dev@al-agentic-dev (v1.1.3)
+copilot plugin list      # al-agentic-dev@al-agentic-dev (v1.2.0)
 copilot skill list       # the 25 skills, under "Plugin skills"
 copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn
 ```
@@ -80,7 +80,7 @@ The auto-install runs when Copilot starts in a trusted checkout of that reposito
 
 ### Azure DevOps MCP server
 
-Task state lives in Azure DevOps work items, so install and authenticate the Azure DevOps MCP server per its own documentation — the pipeline needs its work-item tools available in every session that runs `/al-routing`, `/al-scope`, `/al-next`, or `/al-orchestrate`. The plugin deliberately does not bundle it: the server connection is yours, not the plugin's.
+Task state lives in Azure DevOps work items, so install and authenticate the Azure DevOps MCP server per its own documentation — the pipeline needs its work-item tools available in every session that runs `/al-event-model`, `/al-design`, `/al-routing`, `/al-scope`, `/al-next`, or `/al-orchestrate`. The plugin deliberately does not bundle it: the server connection is yours, not the plugin's.
 
 ## Migrating from `npx skills add`
 
@@ -118,9 +118,9 @@ copilot plugin uninstall al-agentic-dev
 | `/al-routing` | The state engine — records each skill's outcome on the Azure DevOps work items and derives the open moves. |
 | [`/al-next`](docs/al-next.md) | Names the open moves when you resume a session or ask what is next. |
 | [`/al-grill-adr`](docs/al-grill-adr.md) | Grills the idea in BC vocabulary, writes `CONTEXT.md`, earns domain ADRs. |
-| [`/al-event-model`](docs/al-event-model.md) | Settles the user journey as `event-model.md` — Role, Action, Business Event, View, Status. |
-| [`/al-design`](docs/al-design.md) | Settles the architecture as `architecture.md`, comparing candidates with you. |
-| [`/al-scope`](docs/al-scope.md) | Cuts `architecture.md` into slices and one work item per unit of work. |
+| [`/al-event-model`](docs/al-event-model.md) | Settles the user journey on the Design User Story — Role, Action, Business Event, View, Status. |
+| [`/al-design`](docs/al-design.md) | Settles the architecture on the same Design User Story, comparing candidates with you. |
+| [`/al-scope`](docs/al-scope.md) | Cuts the Design story into slices and one work item per unit of work. |
 | `/al-orchestrate` | Conducts a scoped feature from the feature session — spawns slice workspaces, runs each skill as its own conversation, relays questions, merges slice PRs on Clean. |
 | [`/al-refine`](docs/al-refine.md) | Opens one task into a Test Specification or a Verification Plan. |
 | [`/al-implement`](docs/al-implement.md) | Drives one task through TDD — red→green, or a green-born test proved by mutation. |

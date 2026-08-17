@@ -11,11 +11,11 @@ Task state has one home: the Azure DevOps work item. Every other skill reports w
 
 The tree hangs under the bound root — the customer's root work item, read-only for the pipeline, forever. Reads go through `azure-devops-wit_work_item` and `azure-devops-wit_query`; writes through `azure-devops-wit_work_item_write`, comments through `azure-devops-wit_work_item_comment_write`, links through `azure-devops-wit_work_item_link_write`, attachments through `azure-devops-wit_work_item_attachment_upload` and `azure-devops-wit_work_item_attachment_link`.
 
-- `Design` User Story — the architecture and event model in its Description; the feature review verdict lands here as a comment.
-- One User Story per vertical slice — Description carries the slice contract, `Microsoft.VSTS.Common.AcceptanceCriteria` the behaviour checks in `event-model.md` vocabulary.
+- `Design` User Story — the one design page in its Description (Goal, happy path, when it stops, modules, brownfield — each a different HTML shape); `/al-event-model` creates it, `/al-design` rewrites it; the feature review verdict lands here as a comment.
+- One User Story per vertical slice — Description carries the slice contract and points at the Design story, `Microsoft.VSTS.Common.AcceptanceCriteria` the behaviour checks in happy-path vocabulary. Slice stories do not copy the design.
 - One Task per pipeline task, child of its slice story. The ops bracket sits under the Design story: provision → clone-bcapps → clone-bcquality chained by Predecessor links, breaking-change last, Successor of the feature's final task.
 
-On every item: the Description is the contract only — behaviour, planned AAA cases, ceiling prose, precedent verdict — edited only on a scope change, a `✏️ Contract:` comment beside every edit. Comments are the append-only run log (grammar below). Attachments carry junit and coverage files and approved canvas snapshots. Every dependency edge is a Predecessor/Successor link. Never write the root item, `Custom.Release*`, or any estimate field.
+On every item: the Description is the one home, two depths — a fast human overview always visible at the top, the agent spec in HTML `<details><summary>…</summary>…</details>` fold-outs on that same Description. Never a comment fallback, never a second work item, never a markdown file, never a canvas copy. The Description is the contract only — behaviour, planned AAA cases, ceiling prose, precedent verdict — edited only on a scope change, a `✏️ Contract:` comment beside every edit. Comments are the append-only run log (grammar below). Attachments carry junit and coverage files and approved canvas snapshots from skills that still close through `/al-visualize`. Every dependency edge is a Predecessor/Successor link. Never write the root item, `Custom.Release*`, or any estimate field.
 
 Tags, all `al-`prefixed: `al-pipeline` on every pipeline item; kind — `al-technical` / `al-verify` / `al-provision` / `al-breaking-change`; tier — `al-mechanical` / `al-standard` / `al-frontier`, re-tiered by swapping the tag; slice — `al-slice-<slug>`; precedent — `al-reused` / `al-required`; `al-ceiling` on a task carrying a deliberate shortcut; `al-question`, transient, only while a question waits.
 
@@ -39,7 +39,7 @@ A completed full gate reports the `HEAD` committed immediately from its unchange
 
 ## Gates
 
-- **Scoping / re-scope** — no `al-pipeline` item under the bound root, or an `architecture.md` reshaped since the tree settled, → `/al-scope` before anything routes. While the provision chain is not fully Resolved, its next rung is the only move.
+- **Scoping / re-scope** — no slice story under the bound root, or a Design Description reshaped since the tree settled, → `/al-scope` before anything routes. While the provision chain is not fully Resolved, its next rung is the only move.
 - **Slice review** — every Task in a slice story Resolved and the story not Closed → `/al-code-review` on the slice.
 - **Feature review** — every slice story Closed, the breaking-change task still New, and the Design story not yet Resolved → feature `/al-code-review` before it runs.
 - **All shipped** — the Design story Resolved and every ops task Resolved → `/al-sync-main`, then the user marks the root PR ready. Branch synced and root PR ready → close every remaining item; the feature is done.

@@ -48,7 +48,7 @@ Fresh container and publish through /al-build, then replay every recording in on
 
 Fresh container and publish through /al-build first — a later spawn kills the session mid-walk. Run the Contract Examples yourself against their named client and keep the request and response verbatim.
 
-Open with what the user is in for: task id, slice slug and its `event-model.md` step, the mode choice, how many scenarios, how many the replay already confirmed, a time estimate, that container work runs minutes rather than seconds, and that Usability Reviews are the user's keyboard in either mode. Guided: add a deep link to the starting page — `http://<container>/BC/?page=<id>`, the page ID read from the page AL.
+Open with what the user is in for: task id, slice slug and its Design happy-path step, the mode choice, how many scenarios, how many the replay already confirmed, a time estimate, that container work runs minutes rather than seconds, and that Usability Reviews are the user's keyboard in either mode. Guided: add a deep link to the starting page — `http://<container>/BC/?page=<id>`, the page ID read from the page AL.
 
 **Guided** — one scenario open at a time. Each `Record: no` Journey Example becomes one card — punchline, Do bullets, then its checks one at a time:
 

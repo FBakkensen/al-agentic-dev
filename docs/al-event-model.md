@@ -10,14 +10,14 @@ Getting this down first means the architecture interview does not have to re-lit
 
 - The feature has a human or API surface.
 - `CONTEXT.md` terms and any domain ADRs are settled — run [`/al-grill-adr`](al-grill-adr.md) first.
-- No `event-model.md` exists for the feature yet.
+- No Design User Story exists for the feature yet.
 
 Skip it for backend-only work. A Job Queue entry, an install or upgrade codeunit, a scheduled task — nobody watches it happen, so there is no journey to settle. Those go straight to [`/al-design`](al-design.md).
 
 ## What it produces
 
-`event-model.md` in the feature's spec folder, `specs/<NNN>-<slug>/`, created if it is not there.
+One Design User Story under the bound Azure DevOps root. Git keeps `CONTEXT.md` and `docs/adr/` only.
 
-It holds one timeline in temporal order. Every step names its Role, its Action, its Business Event, its View, and the Status field it flips — or `—` where it flips none. Every branch the interview surfaced gets its own section. More than one Role means swimlanes.
+The Description is one page. This skill owns Goal, Happy path, and When it stops. Happy path groups steps under an `<h3>` per Role. When it stops is two bold lead-ins, not a table. Every step still names its Role, Action, Business Event, View, and Status flip — folded under that Role. Module and brownfield sections arrive in [`/al-design`](al-design.md).
 
-It reads in business language, not AL. `OnAfter*` subscribers, codeunit names, and page-extension names settle later, in `architecture.md`.
+It reads in business language, not AL. `OnAfter*` subscribers, codeunit names, and page-extension names settle later, on the same page.

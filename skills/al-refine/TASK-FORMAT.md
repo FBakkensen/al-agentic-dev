@@ -1,6 +1,6 @@
 # Task Description body
 
-A pipeline task is an Azure DevOps work item; its fields, tags, states, and links are `/al-routing`'s schema. The Title names the behaviour; the Description opens with a description paragraph and then carries the body. `/al-refine` writes the body — a `Test Specification` on an `al-technical` task, a `Verification Plan` on an `al-verify` task — and later skills read it and edit named body fields. Ops tasks (`al-provision`, `al-breaking-change`) stop at the description paragraph; their run results live in the work item's comment log, not the body.
+A pipeline task is an Azure DevOps work item; its fields, tags, states, and links are `/al-routing`'s schema. The Title names the behaviour; the Description opens with a human overview paragraph, then a `<details>` fold-out whose summary is `Test Specification` or `Verification Plan` holds the agent body on that same item — never a comment fallback, never a markdown file, never a canvas copy. `/al-refine` writes the body — a `Test Specification` on an `al-technical` task, a `Verification Plan` on an `al-verify` task — and later skills read it and edit named body fields. Ops tasks (`al-provision`, `al-breaking-change`) stop at the description paragraph; their run results live in the work item's comment log, not the body.
 
 Skills parse these shapes, so field names and structure are exact.
 
@@ -50,7 +50,7 @@ One coverage table per technical task, and `Covered By` holds AL test procedure 
 
 ## Language
 
-Write the body in the reader's language: project domain terms from `CONTEXT.md` first, BC display labels second, exact AL object, field, page, procedure, event, and API names only where traceability or ambiguity demands them. In prose slots, show the thing — the page, the field, the command, the number — one sentence per fact. `New and Modified Objects` is the deliberate exception — exact names and signatures are its whole content. Where `event-model.md` exists, a `Verification Plan` speaks its Role, Action, Business Event, View, and Status vocabulary.
+Write the body in the reader's language: project domain terms from `CONTEXT.md` first, BC display labels second, exact AL object, field, page, procedure, event, and API names only where traceability or ambiguity demands them. In prose slots, show the thing — the page, the field, the command, the number — one sentence per fact. `New and Modified Objects` is the deliberate exception — exact names and signatures are its whole content. Where the Design story has a happy path, a `Verification Plan` speaks its Role, Action, Business Event, View, and Status vocabulary.
 
 Both examples below show a work item's Description after `/al-refine` has filled the body; the item's fields, tags, and links are `/al-routing`'s schema and omitted here. The Title stands above each.
 

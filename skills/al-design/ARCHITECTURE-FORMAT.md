@@ -1,22 +1,24 @@
-# architecture.md
+# The Design story page
 
-One file per feature, in the feature's spec folder next to `event-model.md` and the `tasks/` folder. Agent-facing: declarative, present tense, text only with relationships named in prose — one sentence per fact, showing the object, the field, the event; no diagram fences, no workflow narration, no history; the story of how the design got here belongs in the commit message.
+One Azure DevOps Description per feature — the same work item `/al-event-model` opened. Same item, two depths: overview always visible; agent tails in `<details>` fold-outs on that Description. Never a comment fallback, never a second work item, never a git file. Agent and consultant read this page the same way. HTML only. AzDO owns the font; dark theme makes heading+list+table look identical, so break sameness by changing each section's shape. A section that is not a comparison does not use a table. No images, no mermaid, no markdown file, no session copy, no five-column journey matrix. Declarative, present tense — one sentence per fact, showing the object, the field, the event; no workflow narration, no history; the story of how the design got here belongs in the commit message. Separate major sections with `<hr>`.
+
+Rewrite the whole Description each time, in this order: **Goal**, **Happy path**, **When it stops** (overview), then fold-outs **Journey slots** and **Modules and brownfield**. Omit Happy path and When it stops on a backend-only feature. Mid-interview ugliness is allowed; drift from this order is not.
 
 ## Section order
 
-1. **Title and opening** — an H1 naming the feature outcome, then one paragraph stating the single most important structural fact about the design (usually where it touches the base app, or what it deliberately does not touch).
-2. **Identity table** — a borderless two-column table: `Slug`, `ADR` (number plus title, or omit the row), `Event model` (`event-model.md`, or omit for backend-only), `Tasks` (`tasks/`). Values are plain text; sibling artifacts are named, not linked.
-3. **Goal** — two or three sentences on the behaviour the feature adds, in BC vocabulary.
-4. **Module map** — a table of `Module | Responsibility | Precedent`. Each module is a folder under `src/<module>/`, named in the project's ubiquitous language, marked `new` or naming the existing folder. The responsibility states what it decides and what it writes, and where it deliberately writes nothing. `Precedent` is the module's verdict from reading `.bcapps/`: `reused: <Microsoft object>` when the module calls what Microsoft ships, `pattern: <source> — <difference>` when it lifts a shape, or `none in System App / apps` — earned by the search, never assumed.
-5. **Decision logic and test surfaces** — prose, one paragraph per stage: the reads, the pure decision, the writes. Name which decision is reproducible from its inputs alone; that paragraph is what unit tests will reach.
-6. **Brownfield touchpoints** — a table of `Object | Kind | Touch`. Every existing object the feature reads, subscribes to, extends, or writes through. `Touch` says what happens and what stays untouched.
-7. **AL realisation per slice** — one small table per slice, below.
+1. **Goal** — `<h2>Goal</h2>` then two short paragraphs max, in BC vocabulary. Put the open gap in one bold line. No table.
+2. **Happy path** — one `<h3>` per Role, several steps in one paragraph under that heading. Status only when it flips. Not a list that repeats the Role, not a table.
+3. **When it stops** — two paragraphs with bold lead-ins, Before X vs After X. Not blockquotes (AzDO quotes have no visual bar) and not a table.
+4. **Journey slots** — keep the fold-out `/al-event-model` wrote.
+5. **Modules and brownfield** — one `<details><summary>Modules and brownfield</summary>` fold-out. Inside it: one short paragraph per module, not a table — name, folder (`new` or the existing folder), `Precedent` suffix (`reused: <Microsoft object>`, `pattern: <source>`, or `none`), what it Owns, what it Does not. Owns includes which decision is reproducible from its inputs alone. Then labelled brownfield paragraphs **Read** / **Insert** / **Profile** / **Reshape** / **Remove**. Omit an empty group. Merge sibling objects onto one line. Not a table.
 
 Object level throughout. Fields, signatures, and parameter lists shift during TDD and rot here.
 
+If a comparison table is ever earned, its chrome is `style="border-collapse:collapse;width:100%;"` on `table` and `style="border:1px solid #8a8a8a;padding:8px 10px;text-align:left;"` on every `th` and `td`. No background colour. No font colour.
+
 ## Slices
 
-A slice is one initiated behaviour: trigger → command → event → state → view. Qualify each slice by the pattern its trigger source implies.
+A slice is one initiated behaviour: trigger → command → event → state → view. The happy path already settled Who, Does, and You see. What settles here is which module owns the trigger and which brownfield object it extends. Backend-only slices carry the trigger source in what the module Owns.
 
 | Pattern | Trigger source |
 |---|---|
@@ -25,71 +27,28 @@ A slice is one initiated behaviour: trigger → command → event → state → 
 | **Translation** | API page, web service, webhook — external-system-initiated |
 | **View** | page render, FlowField, report layout — read-only |
 
-For a user/API-facing feature, `event-model.md` has already settled the user-facing slots — Role, Action, Business Event, View, Status. Read them; do not re-decide them. What settles here is the AL realisation: `Trigger` — the object plus the event or action that starts the slice — then `Decision`, `State`, and `View`, plus a `Publication` row only where the slice raises an integration event for other code to subscribe to. A slot the slice genuinely has no use for reads `none`; a slot left unnamed leaves `/al-implement` to invent one or stall. Backend-only slices carry the trigger source directly and have no `event-model.md` counterpart.
+## Worked page
 
-Every named object is marked `new` or `extends <existing object>` — `/al-refine` derives each task's New and Modified Objects from these markers. An object created by an earlier slice is named with its owning slice instead of being re-marked.
-
-## Worked example
-
-````md
-# Item charge allocation, validated at posting
-
-Posting is intercepted at exactly one place — event subscribers on `Sales-Post` codeunit 80. Everything else the feature touches in the base app is reads and pageextensions.
-
-| | |
-|---|---|
-| **Slug**        | sales-charge-validation |
-| **ADR**         | ADR-0007 Allocation Mismatch Surfacing |
-| **Event model** | event-model.md |
-| **Tasks**       | tasks/ |
-
-## Goal
-
-Catch item charge allocation mismatches while the invoice is still unposted, surface the cause inline on the document, and record one `Allocation Ledger Entry` per resolved allocation, tied to its source line.
-
-## Module map
-
-| Module | Responsibility | Precedent |
-|---|---|---|
-| `Charge Validation` (new, `src/ChargeValidation/`) | Reads `Item Charge Assignment (Sales)`. Decides allocation balance from the read rows. Writes nothing. | pattern: `Document Totals` — pure read-and-decide codeunit; ours decides per assignment row |
-| `Charge Post Subscribers` (new, `src/ChargePostSubscribers/`) | Carries the subscribers on `Sales-Post` codeunit 80 and owns every write. | none in System App / apps |
-
-## Decision logic and test surfaces
-
-Reads stay inside the released document. `Charge Validation` uses `Get` to read the `Sales Header` by `No.`, iterates its `Sales Line` rows, and resolves each related `Item Charge Assignment (Sales)`.
-
-The decision is pure. `Charge Validation` takes the read rows and returns balanced, or mismatched with the imbalance quantity — reproducible from its inputs, no `Insert` and no `Modify`. This is the unit-test surface.
-
-Writes go through the base app. `Charge Post Subscribers` subscribes to `OnAfterCheckSalesDoc`, calls `Charge Validation`, raises `Error` on a mismatch so posting aborts, and otherwise uses `Insert` to write the `Allocation Ledger Entry` rows.
-
-## Brownfield touchpoints
-
-| Object | Kind | Touch |
-|---|---|---|
-| `Sales-Post` codeunit 80 | Event source | Subscribe; never modified. |
-| `OnAfterCheckSalesDoc` | Event | Run `Charge Validation`; `Error` on mismatch. |
-| `Sales Header`, `Sales Line` | Tables | Read the released document; never written. |
-| `Item Charge Assignment (Sales)` | Table | Read allocation rows; never written. |
-| `Sales Order` | Page | Pageextension surfaces the mismatch cause inline. |
-| `Posted Sales Invoice` | Page | Pageextension carries the audit drill-down. |
-
-## AL realisation per slice
-
-Slice `post-validates-allocation` (Automation):
-
-| | |
-|---|---|
-| Trigger  | `OnAfterCheckSalesDoc` on `Sales-Post` codeunit 80, subscribed by new codeunit `Charge Post Subscribers` |
-| Decision | new codeunit `Charge Validation` |
-| State    | none |
-| View     | new page `Allocation Mismatch Breakdown` (ListPart); new pageextension extends `Sales Order` |
-
-Slice `audit-trail` (Automation):
-
-| | |
-|---|---|
-| Trigger  | `Charge Post Subscribers`, created by the posting slice, extended here |
-| Decision | none |
-| State    | new table `Allocation Ledger Entry` |
-| View     | new page `Allocation Ledger Entries` (List); new pageextension extends `Posted Sales Invoice` |
-````
+```html
+<h2>Goal</h2>
+<p>Catch item charge allocation mismatches while the invoice is still unposted, and record one Allocation Ledger Entry per resolved allocation.</p>
+<p>Posting is intercepted at exactly one place — event subscribers on Sales-Post codeunit 80. <strong>Open: none.</strong></p>
+<hr>
+<h2>Happy path</h2>
+<h3>Order Processor</h3>
+<p>Release Sales Order. You see the Sales Order page, Sales Order Released; Status → Released. Post Sales Order. You see Posting Progress, Posting Started.</p>
+<h3>Posting Engine</h3>
+<p>Validate Item Charge Allocation. You see Posting Progress, Item Charge Allocation Validated. Post Sales Invoice. You see the Posted Sales Invoice.</p>
+<hr>
+<h2>When it stops</h2>
+<p><strong>Before Validate.</strong> The Order Processor is still on the Sales Order. No invoice exists.</p>
+<p><strong>After mismatch.</strong> Item Charge Allocation Mismatch Found. The Sales Order stays Released. No Posted Sales Invoice exists.</p>
+<details>
+<summary>Modules and brownfield</summary>
+<p><strong>Charge Validation</strong> (new, src/ChargeValidation/) · pattern: Document Totals. Owns the allocation-balance decision from read rows — the unit-test surface. Does not write.</p>
+<p><strong>Charge Post Subscribers</strong> (new, src/ChargePostSubscribers/) · none. Owns subscribers on Sales-Post codeunit 80 and every write. Does not modify Sales-Post.</p>
+<p><strong>Read.</strong> Sales Header, Sales Line, Item Charge Assignment (Sales).</p>
+<p><strong>Insert.</strong> Allocation Ledger Entry.</p>
+<p><strong>Reshape.</strong> Pageextensions on Sales Order and Posted Sales Invoice.</p>
+</details>
+```
