@@ -1,15 +1,15 @@
 ---
 name: al-spec-review
-description: "Blind agent review of a just-written spec artifact against its sources. Use when a pipeline skill has written architecture.md, event-model.md, a Test Specification, a Verification Plan, or the work-item tree whole, and its close needs fresh eyes on the artifact before anything commits."
+description: "Blind agent review of a just-written spec artifact against its sources. Use when a pipeline skill has written the Design story Description, a Test Specification, a Verification Plan, or the work-item tree whole, and its close needs fresh eyes on the artifact before anything commits."
 ---
 
 # al-spec-review — the blind gate on spec artifacts
 
-The session that wrote an artifact is its worst reader: its own rationale stands by to argue every finding down. Callers: `al-design` on `architecture.md`, `al-event-model` on `event-model.md`, `al-scope` on the work-item tree it created, read back and carried in the prompt, `al-refine` on a Test Specification or Verification Plan. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+The session that wrote an artifact is its worst reader: its own rationale stands by to argue every finding down. Callers: `al-design` and `al-event-model` on the Design story Description, `al-scope` on the work-item tree it created, read back and carried in the prompt, `al-refine` on a Test Specification or Verification Plan. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## The blind contract
 
-Run the review as one `al-spec-reviewer` invocation through the task tool — the packaged agent pins its own model and carries the per-artifact dimensions, the re-derivation rules, and the two mechanical checks (a `Contract notes:` bullet past one sentence; run narration in a prose slot). The prompt carries the artifact, its sources — `architecture.md`, `event-model.md` when present, `CONTEXT.md`, the ADRs, the code the artifact lands on, `.bcquality/knowledge-index.json`, `.bcapps/` where cloned — and the locked constraints.
+Run the review as one `al-spec-reviewer` invocation through the task tool — the packaged agent pins its own model and carries the per-artifact dimensions, the re-derivation rules, and the two mechanical checks (a `Contract notes:` bullet past one sentence; run narration in a prose slot). The prompt carries the artifact, its sources — the Design story Description, `CONTEXT.md`, the ADRs, the code the artifact lands on, `.bcquality/knowledge-index.json`, `.bcapps/` where cloned — and the locked constraints.
 
 **Locked constraints** are the decisions the user settled in the caller's interview, listed by the caller. They bound the read — the artifact is judged against its sources *within* them, and no pick is re-opened.
 

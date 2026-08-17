@@ -8,17 +8,17 @@ disable-model-invocation: true
 
 One named task per run — an Azure DevOps work item under the bound root, `/al-routing`'s schema, read through `azure-devops-wit_work_item`. Your first line names that this run wants a frontier-class model — the user picked the model and weighs the mismatch — then proceed. Regenerate its Test Specification or Verification Plan whole against the current app and tests; keep everything scope-time — the Title, the description paragraph, the dependency links, the slice tag, constraints, risks, acceptance criteria — except a user-approved split, which narrows Title and description as part of writing it. [TASK-FORMAT.md](TASK-FORMAT.md) is the Description body's exact shape — section order, heading levels, labels, and column names.
 
-The Description body is your write, through `azure-devops-wit_work_item_write`; the item's state, tags, and links are `/al-routing`'s. An open question this run cannot settle — one only running code can answer, a slot `architecture.md` never allotted, an unsettled domain rule — stops the run instead: name it in chat and leave the Description as the interview left it; the next run regenerates it whole once the question settles.
+The Description body is your write, through `azure-devops-wit_work_item_write`; the item's state, tags, and links are `/al-routing`'s. An open question this run cannot settle — one only running code can answer, a slot the Design story never allotted, an unsettled domain rule — stops the run instead: name it in chat and leave the Description as the interview left it; the next run regenerates it whole once the question settles.
 
 ## Branch by kind
 
 - `al-technical` → Test Specification, the red→green driver.
-- `al-verify` → Verification Plan, the walk run with the user. Without `event-model.md` the slice has no user-facing source; the run stops. A slice not yet cleared by `/al-code-review` also stops the run, naming that gate first — machine review comes before walk time.
+- `al-verify` → Verification Plan, the walk run with the user. Without a happy path on the Design story the slice has no user-facing source; the run stops. A slice not yet cleared by `/al-code-review` also stops the run, naming that gate first — machine review comes before walk time.
 - `al-provision` → decline, naming `/al-provision`. `al-breaking-change` → decline, naming `/al-validate-breaking-changes`.
 
 ## The interview
 
-Read `architecture.md`, `event-model.md` when present, `CONTEXT.md`, and the code the task lands on before the first question.
+Read the Design story Description through `azure-devops-wit_work_item`, `CONTEXT.md`, and the code the task lands on before the first question.
 
 BCQuality is the intentionally gitignored rule set for what the proof pins. `.bcquality/knowledge-index.json` carries one row per article with its `domain` and `keywords`; missing → **stop**, naming `/al-clone-bcquality`, which builds it. A workspace-wide grep skips the gitignored clone, so point grep at `.bcquality/` explicitly and view its files directly, and the index is one minified line — parse it as JSON rather than reading or searching it by line. Narrow to the domains the task's surface touches, plus `testing` always — the cases and their layers are this run's whole output — and read those articles before minting names or cases. The articles are written for the container runtime and do not document AL Runner, so a `Unit` case follows the runner's semantics where they collide. An article that moved a decision lands as a `Researched:` bullet in `Contract notes:`; elsewhere it stays silent.
 
@@ -34,7 +34,7 @@ Two unrelated behaviour groups mean a low-cohesion task: put the split to the us
 
 ## Verify task: Verification Plan
 
-Every check derives from the slice's observable user or API surface, never internal state, and title, description, and every Role / Action / Business Event / View / Status name quote `event-model.md`. Write only the sections the slice earns, per [TASK-FORMAT.md](TASK-FORMAT.md).
+Every check derives from the slice's observable user or API surface, never internal state, and title, description, and every Role / Action / Business Event / View / Status name quote the Design happy path. Write only the sections the slice earns, per [TASK-FORMAT.md](TASK-FORMAT.md).
 
 Before writing, scan the tree's other unwalked verify tasks; a sibling sharing this slice's surface and fixtures is a merge candidate — put merge-or-separate to the user as a strategic call, one combined plan for one walk session being the default when surfaces overlap. On a merge this plan absorbs the sibling's checks, and the close names the sibling absorbed for `/al-routing` to record.
 
@@ -42,11 +42,11 @@ Before writing, scan the tree's other unwalked verify tasks; a sibling sharing t
 
 Every `Integration` case, `Record: yes` journey, and `Contract` example sits above the cheapest layer that could hold the behaviour. Each owes a `Contract notes:` bullet naming why the layer below cannot hold it and what reaching it would cost — a named seam, or the wall that makes it impossible.
 
-Every exact BC name written into the task — object, table, field, procedure, event, enum value — comes from a lookup made this session: grep the workspace, view the declaring file, or read the docs through the microsoft-learn tools; recall is not evidence. A minted name earns a zero-hit collision lookup first — objects against workspace declarations, fields against the target table and its extensions, procedures against the target object — and is derived, never invented: its noun from a `CONTEXT.md` term, the BC baseline, or an `event-model.md` Action, Business Event, or Status, its verb from BC's own set, confirmed in `.bcapps/` where the clone is present. A term no source names is a vocabulary gap: settle it as one question and land it in `CONTEXT.md` per its format — committed on its own with a plain descriptive message — then derive; the entry is the record, and the work item carries nothing extra.
+Every exact BC name written into the task — object, table, field, procedure, event, enum value — comes from a lookup made this session: grep the workspace, view the declaring file, or read the docs through the microsoft-learn tools; recall is not evidence. A minted name earns a zero-hit collision lookup first — objects against workspace declarations, fields against the target table and its extensions, procedures against the target object — and is derived, never invented: its noun from a `CONTEXT.md` term, the BC baseline, or a Design-story Action, Business Event, or Status, its verb from BC's own set, confirmed in `.bcapps/` where the clone is present. A term no source names is a vocabulary gap: settle it as one question and land it in `CONTEXT.md` per its format — committed on its own with a plain descriptive message — then derive; the entry is the record, and the work item carries nothing extra.
 
 BC vocabulary in every line the body takes: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, the record or the API body not the payload, codeunit not class, procedure not method — TDD, red/green, and AAA keep their own names.
 
-A technical task's behaviour answers to a `Precedent` verdict in `architecture.md`'s module map. A behaviour no verdict covers gets its own intentionally gitignored `.bcapps/` read — clone missing → stop, naming `/al-clone-bcapps` — and the verdict lands as a `Precedent:` line in `Contract notes:`; a verdict that already covers the behaviour is consumed, never copied down. A workspace-wide grep skips the gitignored clone, so point grep at `.bcapps/` explicitly and view its files directly. A read contradicting the map — Microsoft ships what a module builds — is a strategic finding: stop the run and name it in chat, because it reopens the architecture, not the task.
+A technical task's behaviour answers to a `Precedent` verdict on the Design story's Modules section. A behaviour no verdict covers gets its own intentionally gitignored `.bcapps/` read — clone missing → stop, naming `/al-clone-bcapps` — and the verdict lands as a `Precedent:` line in `Contract notes:`; a verdict that already covers the behaviour is consumed, never copied down. A workspace-wide grep skips the gitignored clone, so point grep at `.bcapps/` explicitly and view its files directly. A read contradicting the map — Microsoft ships what a module builds — is a strategic finding: stop the run and name it in chat, because it reopens the architecture, not the task.
 
 ## Close
 

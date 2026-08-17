@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Interview the user about what the business does until the vocabulary is unambiguous, and record the rules that would be expensive to change later. Your first line names that this run wants a frontier-class model — the user picked the model and weighs the mismatch — then proceed.
 
-Writes `CONTEXT.md` at the repo root and accepted ADRs under `docs/adr/`. Reads production, test, and app code to expose conflicts and leaves it unchanged. `event-model.md`, `architecture.md`, and the `tasks/` folder belong to later skills.
+Writes `CONTEXT.md` at the repo root and accepted ADRs under `docs/adr/`. Reads production, test, and app code to expose conflicts and leaves it unchanged. Git holds those two; the Design story and the slice tree belong to later skills.
 
 ## The interview
 
@@ -49,6 +49,5 @@ Accepted lands as `docs/adr/NNNN-slug.md`, taking the lowest number unused on th
 ## Close
 
 Name what settled: the terms now in `CONTEXT.md`, and any ADR accepted.
-A done thread goes up as a steering surface through /al-visualize — each term with the aliases it displaces, each accepted ADR settled.
 Commit what this run wrote — `CONTEXT.md` and any accepted ADR — with a plain descriptive message; a stop mid-interview commits what settled the same way.
 Then continue in this session with /al-event-model — backend-only features go straight to /al-design.

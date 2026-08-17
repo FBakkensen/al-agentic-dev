@@ -10,7 +10,7 @@ It also carries the reply-shape snippet these skills assume, and installs it for
 
 - You are new to the toolkit and want the map.
 - Someone asks "what skills are in here?" or "where do I start?".
-- A feature is still an idea: no `specs/<NNN>-<slug>/` folder yet.
+- A feature is still an idea: no Design User Story yet.
 - You want the reply-shape snippet installed.
 
 Mid-feature, reach for [`/al-next`](al-next.md) instead — it reads the bound Azure DevOps work items and names the next move from actual state, which this skill deliberately does not do.
