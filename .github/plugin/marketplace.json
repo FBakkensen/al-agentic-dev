@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Agentic AL and Business Central development skills.",
-    "version": "1.1.1"
+    "version": "1.1.2"
   },
   "plugins": [
     {
       "name": "al-agentic-dev",
       "source": "./",
       "description": "Agentic AL and Business Central development skills.",
-      "version": "1.1.1"
+      "version": "1.1.2"
     }
   ]
 }

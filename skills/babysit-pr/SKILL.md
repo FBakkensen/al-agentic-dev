@@ -19,14 +19,14 @@ Drive an existing pull request to a clean review state. This is a working loop, 
 
 On the first run and every scheduled wake-up:
 
-1. Inspect the PR's required checks, relevant workflow runs, Copilot reviews, inline review threads, review summaries, and PR conversation comments. Query the PR's `requested_reviewers` separately; a bot whose login is `Copilot` is a requested or running Copilot review until its request disappears or it submits a review. Never infer that no Copilot review is active from an empty `reviews` list or `reviewDecision`.
+1. Inspect the PR's required checks, relevant workflow runs, Copilot reviews, inline review threads (`pulls/{n}/comments` and GraphQL `reviewThreads`), review summaries, and PR conversation comments. Decide whether Copilot is running from the issue event stream (`issues/{n}/events` or timeline): Copilot is running when the latest `review_requested` event whose reviewer is Copilot has no later Copilot `reviewed` event whose commit is the current HEAD. `requested_reviewers` and GraphQL `reviewRequests` stay empty for Copilot even while it is requested. `reviews` and `reviewDecision` report only submitted reviews — an older COMMENTED review on a previous commit is not the current pass. Combined commit status `pending` with an empty status list is not Copilot.
 2. If a human reviewer has new feedback, stop the temporary automation and ask the user how to proceed. Do not automatically reply to, resolve, or change code for human feedback.
 3. If a Copilot comment is actionable, fix it completely. Run the smallest relevant validation required by the repository's instructions and applicable project skills. Commit and push the repair, reply to the Copilot thread, resolve the inline thread when possible, then continue the loop for the replacement review.
 4. If a required check failed because of the PR, diagnose and fix its root cause under the same validation, commit, push, reply, and resolve rules. If it is an infrastructure/access/flaky/ambiguous failure, stop the automation and report the blocker.
 5. If Copilot review is requested or running, wait for it. Do not sleep or poll inside the turn: ensure the five-minute temporary session automation is active, then end the turn.
 6. If no Copilot review is requested or running, no Copilot feedback remains to handle, and required checks pass, stop the automation and report the PR clean.
 
-Always evaluate the PR as it is now. A new push simply starts another pass through these rules; do not track reviewed commit SHAs or invent a review-dispatch state machine.
+Always evaluate the PR as it is now from those events and the current HEAD. A new push starts another pass; do not persist a last-seen SHA across wake-ups.
 
 ## Temporary automation
 
