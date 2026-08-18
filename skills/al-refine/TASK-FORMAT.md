@@ -1,6 +1,6 @@
 # Task Description body
 
-A pipeline task is an Azure DevOps work item; its fields, tags, states, and links are `/al-routing`'s schema. The Title names the behaviour; the Description opens with a human overview paragraph, then a `<details>` fold-out whose summary is `Test Specification` or `Verification Plan` holds the agent body on that same item — never a comment fallback, never a markdown file, never a canvas copy. `/al-refine` writes the body — a `Test Specification` on an `al-technical` task, a `Verification Plan` on an `al-verify` task — and later skills read it and edit named body fields. Ops tasks (`al-provision`, `al-breaking-change`) stop at the description paragraph; their run results live in the work item's comment log, not the body.
+A pipeline task is an Azure DevOps work item; its fields, tags, states, links, and `Task:` title prefix are `/al-routing`'s schema. The Title names the behaviour; a verify task uses `Task: Verify <slice outcome>`. The Description opens with a human overview paragraph, then a `<details>` fold-out whose summary is `Test Specification` or `Verification Plan` holds the agent body on that same item — never a comment fallback, never a markdown file, never a canvas copy. `/al-refine` writes the body — a `Test Specification` on an `al-technical` task, a `Verification Plan` on an `al-verify` task — and later skills read it and edit named body fields. Ops tasks (`al-provision`, `al-breaking-change`) stop at the description paragraph; their run results live in the work item's comment log, not the body.
 
 Skills parse these shapes, so field names and structure are exact.
 
@@ -56,7 +56,7 @@ Both examples below show a work item's Description after `/al-refine` has filled
 
 ## Worked example — technical task
 
-Title: `Flag Purchase Lines whose receipt date passes the Vendor tolerance`
+Title: `Task: Flag Purchase Lines whose receipt date passes the Vendor tolerance`
 
 ```markdown
 Measure each `Purchase Line`'s `Expected Receipt Date` against the agreed date and the
@@ -122,7 +122,7 @@ Assert:
 
 ## Worked example — verify task
 
-Title: `Verify: the Purchase Agent sees late receipt dates at release`
+Title: `Task: Verify the Purchase Agent sees late receipt dates at release`
 
 ```markdown
 User-facing slice `flag-late-receipt-date`: the Purchase Agent releases a `Purchase Order`,

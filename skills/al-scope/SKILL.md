@@ -29,14 +29,14 @@ A gap the Design page cannot answer — a missing module, a pattern conflict, an
 
 Creation goes through `azure-devops-wit_work_item_write` under the binding's `areaPath`, every dependency edge through `azure-devops-wit_work_item_link_write` as a Predecessor/Successor link — the edges are the sole encoding of order, so a task inserts between two by relinking. The Design story already exists; do not create a second one. Slice stories stay contracts that point at the Design story; they do not copy its sections.
 
-- One User Story per vertical slice — Description is the slice contract in user terms, `Microsoft.VSTS.Common.AcceptanceCriteria` the slice's behaviour checks in journey vocabulary (Role, Action, Business Event, View, Status); the Description closes naming the slice branch `slice/ab<sliceId>-<slug>` and its stack base — the feature branch, or the branch of the slice it consumes.
-- One Task per pipeline task, child of its slice story — a title naming the behaviour, a description paragraph, and the kind, tier, and slice tags per `/al-routing`'s schema; the ops tasks take the mechanical tier, their work is scripted. The task body belongs to `/al-refine`; existing objects, pages, events, APIs, and fields may be named as source context.
+- One User Story per vertical slice — title `Slice: <slice outcome>`; Description is the slice contract in user terms, `Microsoft.VSTS.Common.AcceptanceCriteria` the slice's behaviour checks in journey vocabulary (Role, Action, Business Event, View, Status); the Description closes naming the slice branch `slice/ab<sliceId>-<slug>` and its stack base — the feature branch, or the branch of the slice it consumes.
+- One Task per pipeline task, child of its slice story — title `Task: <behaviour>` (a verify task uses `Task: Verify <slice outcome>`), a description paragraph, and the kind, tier, and slice tags per `/al-routing`'s schema; the ops tasks take the mechanical tier, their work is scripted. The task body belongs to `/al-refine`; existing objects, pages, events, APIs, and fields may be named as source context.
 
 ## Slices, order, brackets
 
 A slice is a vertical slice the user can exercise end-to-end. One task in it crosses the slice's trigger and the others compose into that one; inside the slice, decision logic comes first, BC wiring second, page or API surface last, the verify task after all of them. A component two slices need belongs to the first slice that needs it.
 
-Bracket the feature every time: provision → clone-bcapps → clone-bcquality as three Predecessor-chained Tasks under the Design story first, and one breaking-change Task there last, Successor of the final feature task — created even where detection is off, and last of all.
+Bracket the feature every time: `Task: Provision`, `Task: Clone BC apps`, and `Task: Clone BCQuality` as three Predecessor-chained Tasks under the Design story first, and `Task: Validate breaking changes` there last, Successor of the final feature task — created even where detection is off, and last of all.
 
 When a happy path is present, every slice closes with one verify task on that slice, Successor of every technical task in the slice, and slice N+1's first technical task takes a Predecessor link to slice N's verify task. Backend-only, that cross-slice edge points at slice N's last technical task.
 

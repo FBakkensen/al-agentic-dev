@@ -16,7 +16,7 @@ It stops and sends you back if `CONTEXT.md` and the domain ADRs are not settled 
 
 ## What it produces
 
-The same Design User Story, rewritten whole: Goal, Happy path, When it stops, Modules, Brownfield. Each section uses a different HTML shape so the Azure DevOps dark theme does not flatten them into one slab. Modules are short paragraphs with a `Precedent` suffix. Brownfield is labelled paragraphs (Read / Insert / Profile / Reshape / Remove).
+The same `Design: <journey>` User Story, rewritten whole: Goal, Happy path, When it stops, Modules, Brownfield. Each section uses a different HTML shape so the Azure DevOps dark theme does not flatten them into one slab. Modules are short paragraphs with a `Precedent` suffix. Brownfield is labelled paragraphs (Read / Insert / Profile / Reshape / Remove).
 
 Where the design turns on a genuine fork, it builds competing candidates — each self-contained under Constraint, Shape, Flow, Seams, and Trade-offs — compares them, recommends one, and puts the pick to you.
 
