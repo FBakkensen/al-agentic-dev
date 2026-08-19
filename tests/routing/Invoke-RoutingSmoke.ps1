@@ -45,13 +45,19 @@ try {
     Push-Location $scratch
     try {
         $answer = copilot -p $prompt --plugin-dir $PluginDir --log-level none -s 2>&1 | Out-String
+        $copilotExit = $LASTEXITCODE
     } finally {
         Pop-Location
     }
 } finally {
-    Remove-Item -LiteralPath $scratch -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $scratch -Recurse -Force -Confirm:$false -ErrorAction SilentlyContinue
 }
 
+if ($copilotExit -ne 0) {
+    Write-Host $answer
+    Write-Error "copilot exited with code $copilotExit."
+    exit 1
+}
 if (-not $answer.Trim()) {
     Write-Error 'copilot returned no output.'
     exit 1

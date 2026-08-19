@@ -93,6 +93,6 @@ try {
     exit 1
 } finally {
     if ($stage -and (Test-Path -LiteralPath $stage)) {
-        Remove-Item -LiteralPath $stage -Recurse -Force
+        Remove-Item -LiteralPath $stage -Recurse -Force -Confirm:$false
     }
 }

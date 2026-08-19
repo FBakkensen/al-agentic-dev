@@ -2,7 +2,7 @@
 
 A GitHub Copilot plugin for Microsoft Dynamics 365 Business Central development: a scripted compile-publish-test gate with containers, coverage, Page Scripting replay, and breaking-change validation underneath, plus the two platform-knowledge clones and a visual steering surface.
 
-One install brings the whole surface: the Agent Skills, three packaged custom agents (`al-review-lens`, `al-spec-reviewer`, `al-knowledge-leaf`), and two bundled MCP servers — NAB AL Tools for XLF translation and Microsoft Learn for current Microsoft documentation.
+One install brings the whole surface: the Agent Skills, two packaged custom agents (`al-review-lens`, `al-knowledge-leaf`), and three bundled MCP servers — NAB AL Tools for XLF translation, Microsoft Learn for current Microsoft documentation, and bc-code-intelligence for BC idioms and patterns.
 
 The set is mid-rebuild: the earlier 26-skill pipeline is retired, and each new plugin version ports proven skills back in as real work needs them. Git history is the donor archive.
 
@@ -42,7 +42,7 @@ Same plugin, no marketplace registration — and no catalog for `copilot plugin 
 ### Verify
 
 ```
-copilot plugin list      # al-agentic-dev@al-agentic-dev (v1.3.0)
+copilot plugin list      # al-agentic-dev@al-agentic-dev (v1.12.0)
 copilot skill list       # the 19 skills, under "Plugin skills"
 copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn, bc-code-intelligence
 ```

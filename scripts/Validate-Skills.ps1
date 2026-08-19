@@ -156,7 +156,7 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
                 $violations += "${relative}: link uses backslashes; use forward slashes: $target"
             } elseif ($path -match '(^|/)\.\.(/|$)' -or [System.IO.Path]::IsPathRooted($path)) {
                 $violations += "${relative}: link leaves the skill folder: $target"
-            } elseif (-not (Test-Path -LiteralPath (Join-Path $markdown.Directory.FullName $path))) {
+            } elseif (-not (Test-Path -LiteralPath (Join-Path $markdown.Directory.FullName $path) -PathType Leaf)) {
                 $violations += "${relative}: link target does not exist: $target"
             }
         }
