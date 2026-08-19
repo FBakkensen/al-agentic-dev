@@ -9,19 +9,17 @@
     1-64 characters of lowercase a-z0-9 and single hyphens and equals the folder name
     exactly; description is a non-empty single-line value of at most 1024 characters,
     quoted whenever it contains a colon. Model invocation is the exception: every skill
-    carries disable-model-invocation: true, except the model-invocable ten (al-build,
-    al-grilling, al-knowledge-pass, al-implement, al-next, al-routing, al-agentic-dev-overview,
-    al-visualize, al-spec-review, al-orchestrate), which omit
-    the key entirely.
+    carries disable-model-invocation: true, except the model-invocable two (al-build,
+    al-visualize), which omit the key entirely.
     Every relative Markdown link in the folder's .md files resolves to a file inside that
     same folder, and only skills/al-build may name a .ps1 file or a scripts/ path — save
     for the per-skill exemptions in $scriptExemptions, each an upstream tool a named skill
     runs inside a checkout it clones.
     Harness-conditional phrasing is banned: no skill or agent markdown contains the token
     'harness' — tools, MCP servers, and delegation targets are named by their Copilot names.
-    Task state has one home: outside skills/al-routing, no skill body states a legacy
-    lifecycle field (status:, phase:, blocked-on:, review:, tier:, green-gate:) or an Azure
-    DevOps work-item transition (State: New|Active|Blocked|Testing|Resolved|Closed).
+    Task-state ceremony is retired: no skill body states a legacy lifecycle field
+    (status:, phase:, blocked-on:, review:, tier:, green-gate:) or an Azure DevOps
+    work-item transition (State: New|Active|Blocked|Testing|Resolved|Closed).
     Every skill carries the shared plain-text question rule, which bans the ask_user tool
     by name. A /name skill reference that
     matches a folder under the skills root resolves regardless of prefix; an al-prefixed
@@ -66,7 +64,7 @@ function Get-MarkdownLinkTarget {
 
 $violations = @()
 $root = (Resolve-Path -LiteralPath $SkillsRoot -ErrorAction Stop).Path
-$modelInvocable = @('al-build', 'al-grilling', 'al-knowledge-pass', 'al-implement', 'al-next', 'al-routing', 'al-agentic-dev-overview', 'al-visualize', 'al-spec-review', 'al-orchestrate')
+$modelInvocable = @('al-build', 'al-visualize')
 $questionRule = 'Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.'
 # Per-skill script exemptions, approved one at a time. The key is the skill folder; the
 # value is the exact script paths that skill may name. al-build is exempt wholesale
@@ -111,7 +109,7 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
                     $violations += "$($skill.Name)/SKILL.md: $($skill.Name) is model-invocable; remove disable-model-invocation"
                 }
             } elseif ($flagMatch.Groups[1].Value.Trim() -cne 'true') {
-                $violations += "$($skill.Name)/SKILL.md: disable-model-invocation: true is required (model invocation is the exception; only al-build, al-grilling, al-knowledge-pass, al-implement, al-next, al-routing, al-agentic-dev-overview, al-visualize, al-spec-review, al-orchestrate omit it)"
+                $violations += "$($skill.Name)/SKILL.md: disable-model-invocation: true is required (model invocation is the exception; only al-build and al-visualize omit it)"
             }
 
             $name = [regex]::Match($frontmatter, '(?m)^name\s*:\s*(.+?)\s*$').Groups[1].Value.Trim("'", '"')
@@ -188,13 +186,11 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
             $violations += "${relative}: uses harness-conditional phrasing ('$($hit.Value)'); name the Copilot tool or agent instead"
         }
 
-        if ($skill.Name -ne 'al-routing') {
-            foreach ($field in [regex]::Matches($body, '(?<![\w-])(status|phase|blocked-on|review|tier|green-gate)\s*:')) {
-                $violations += "${relative}: states the lifecycle field '$($field.Groups[1].Value):' outside al-routing; task state has one home"
-            }
-            foreach ($transition in [regex]::Matches($body, '(?<![\w-])[Ss]tate\s*:\s*(New|Active|Blocked|Testing|Resolved|Closed)\b')) {
-                $violations += "${relative}: states the work-item transition '$($transition.Value)' outside al-routing; task state has one home"
-            }
+        foreach ($field in [regex]::Matches($body, '(?<![\w-])(status|phase|blocked-on|review|tier|green-gate)\s*:')) {
+            $violations += "${relative}: states the lifecycle field '$($field.Groups[1].Value):'; task-state ceremony is retired"
+        }
+        foreach ($transition in [regex]::Matches($body, '(?<![\w-])[Ss]tate\s*:\s*(New|Active|Blocked|Testing|Resolved|Closed)\b')) {
+            $violations += "${relative}: states the work-item transition '$($transition.Value)'; task-state ceremony is retired"
         }
 
         foreach ($mention in [regex]::Matches($body, '/[a-z0-9]+(?:-[a-z0-9]+)*')) {

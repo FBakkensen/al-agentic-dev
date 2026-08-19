@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, feature/copilot-first-migration]
+    branches: [main, feature/copilot-first-migration, flemmingbk-skills-v2]
   pull_request:
 
 jobs:
