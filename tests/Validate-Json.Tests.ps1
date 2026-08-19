@@ -142,6 +142,8 @@ Describe 'Validate-Json plugin surface' {
         @{ Case = 'source-absent'; Json = '{ "name": "al-agentic-dev", "plugins": [ { "name": "al-agentic-dev", "source": "./missing/" } ] }'; Expected = 'source does not exist: \./missing/' }
         @{ Case = 'name-mismatch'; Json = '{ "name": "al-agentic-dev", "plugins": [ { "name": "other-plugin", "source": "./" } ] }'; Expected = "does not match the manifest name 'al-agentic-dev'" }
         @{ Case = 'no-entries'; Json = '{ "name": "al-agentic-dev", "plugins": [] }'; Expected = 'plugins must carry at least one entry' }
+        @{ Case = 'version-mismatch'; Json = '{ "name": "al-agentic-dev", "plugins": [ { "name": "al-agentic-dev", "source": "./", "version": "9.9.9" } ] }'; Expected = "version '9\.9\.9' does not match the manifest version '1\.0\.0'" }
+        @{ Case = 'metadata-version-mismatch'; Json = '{ "name": "al-agentic-dev", "metadata": { "version": "8.8.8" }, "plugins": [ { "name": "al-agentic-dev", "source": "./", "version": "1.0.0" } ] }'; Expected = "metadata version '8\.8\.8' does not match the manifest version '1\.0\.0'" }
     ) {
         param($Case, $Json, $Expected)
 

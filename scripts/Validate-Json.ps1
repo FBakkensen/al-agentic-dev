@@ -9,7 +9,8 @@
     exist), .mcp.json (at least one server; every server carries a type and a non-empty
     tools allowlist), and .github/plugin/marketplace.json (name non-empty; at least one
     plugins entry; every entry names a plugin, its source path exists, and an entry whose
-    source holds a plugin.json matches that manifest's name). All three files must exist.
+    source holds a plugin.json matches that manifest's name and version, as does the
+    marketplace metadata.version for the repo-root entry). All three files must exist.
     Returns exit code 1 if anything fails.
 .EXAMPLE
     pwsh scripts/Validate-Json.ps1
@@ -106,9 +107,16 @@ if ($marketplace) {
         $sourceManifest = Join-Path $sourcePath 'plugin.json'
         if (Test-Path -LiteralPath $sourceManifest -PathType Leaf) {
             try {
-                $manifestName = (Get-Content -LiteralPath $sourceManifest -Raw | ConvertFrom-Json).name
-                if ($entry.name -cne $manifestName) {
-                    $errors += "FAIL: marketplace.json - plugin '$($entry.name)' does not match the manifest name '$manifestName' at $($entry.source)"
+                $manifest = Get-Content -LiteralPath $sourceManifest -Raw | ConvertFrom-Json
+                if ($entry.name -cne $manifest.name) {
+                    $errors += "FAIL: marketplace.json - plugin '$($entry.name)' does not match the manifest name '$($manifest.name)' at $($entry.source)"
+                }
+                if ($entry.version -and $manifest.version -and ($entry.version -cne $manifest.version)) {
+                    $errors += "FAIL: marketplace.json - plugin '$($entry.name)' version '$($entry.version)' does not match the manifest version '$($manifest.version)' at $($entry.source)"
+                }
+                $metadataVersion = $marketplace.metadata.version
+                if ($entry.source -eq './' -and $metadataVersion -and $manifest.version -and ($metadataVersion -cne $manifest.version)) {
+                    $errors += "FAIL: marketplace.json - metadata version '$metadataVersion' does not match the manifest version '$($manifest.version)' at $($entry.source)"
                 }
             } catch {
                 # The syntax sweep or the plugin.json check reports the parse failure.
