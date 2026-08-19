@@ -9,7 +9,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 ## Copilot-first surface
 
 1. Skill frontmatter has at most three keys: `name`, `description`, `disable-model-invocation`. Tool access and model pins live in `agents/*.agent.md`, never in skill frontmatter — flag `allowed-tools`, `model`, `tools`, `mcp-servers`, `user-invocable` on a skill.
-2. Model invocation is the exception. Every skill carries `disable-model-invocation: true` unless something must load it without a slash command — today `al-build` (changed AL code or another skill's script need invokes it mid-run), `al-visualize` (invoked when a settled artifact or landed change goes to the user drawn), `grilling` (the interview engine `grill-me` starts and grill trigger phrases reach), and `unslop` (the donor says it must always apply). Flag a skill missing the flag, and flag a new exception that doesn't name who invokes it.
+2. Model invocation is the exception. Every skill carries `disable-model-invocation: true` unless something must load it without a slash command — today `al-build` (changed AL code or another skill's script need invokes it mid-run), `al-visualize` (invoked when a settled artifact or landed change goes to the user drawn), `grilling` (the interview engine `grill-me` starts and grill trigger phrases reach), `unslop` (the donor says it must always apply), and `lookup` (verify-or-declare is a mid-write reflex; the writing and review skills invoke it in-flight). Flag a skill missing the flag, and flag a new exception that doesn't name who invokes it.
 3. The folder name equals `name`.
 4. No relative link leaves the skill folder. Flag `](../`, `](/`, and any absolute path.
    - Correct: `See [RECORDING-FORMAT.md](RECORDING-FORMAT.md).`
@@ -30,7 +30,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## The description: router on the model-invocable skills, menu line on the rest
 
-11. On the model-invocable skills (`al-build`, `al-visualize`, `grilling`, `unslop`) the description says what the skill does and the state that should trigger it, in terms the model can match against the work in front of it: `Use when AL production or test code has changed and the change needs the gate`.
+11. On the model-invocable skills (`al-build`, `al-visualize`, `grilling`, `unslop`, `lookup`) the description says what the skill does and the state that should trigger it, in terms the model can match against the work in front of it: `Use when AL production or test code has changed and the change needs the gate`.
 12. On those skills, one trigger per distinct branch. Flag synonyms that rename a single branch.
 13. On those skills, flag identity restated from the body. The description spends its budget on triggers.
 14. On a `disable-model-invocation: true` skill the description is one line for the human scanning the `/` menu — what it does and when to reach for it, in plain words. Flag state grammar and trigger syntax there; the model never reads it.

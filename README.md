@@ -43,8 +43,8 @@ Same plugin, no marketplace registration — and no catalog for `copilot plugin 
 
 ```
 copilot plugin list      # al-agentic-dev@al-agentic-dev (v1.3.0)
-copilot skill list       # the 9 skills, under "Plugin skills"
-copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn
+copilot skill list       # the 10 skills, under "Plugin skills"
+copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn, bc-code-intelligence
 ```
 
 The skills must appear under **Plugin skills**. Any of them listed under *Personal skills* is a leftover legacy copy shadowing the plugin — go to [Migrating from `npx skills add`](#migrating-from-npx-skills-add).
@@ -103,7 +103,7 @@ foreach ($dir in "$HOME\.agents\skills", "$HOME\.copilot\skills") {
 copilot plugin uninstall al-agentic-dev
 ```
 
-**4. Install fresh** per [Install](#install), then verify: `copilot plugin list` shows the plugin, `copilot skill list` shows its skills under **Plugin skills** and none of them under *Personal skills*, and `copilot mcp list` shows `nab-al-tools` and `microsoft-learn` as plugin servers.
+**4. Install fresh** per [Install](#install), then verify: `copilot plugin list` shows the plugin, `copilot skill list` shows its skills under **Plugin skills** and none of them under *Personal skills*, and `copilot mcp list` shows `nab-al-tools`, `microsoft-learn`, and `bc-code-intelligence` as plugin servers.
 
 ## The skills
 
@@ -118,5 +118,6 @@ copilot plugin uninstall al-agentic-dev
 | `/wait-what` | Stops the flow and re-pitches the last message in plain shared language. |
 | `/unslop` | Cuts AI tells from any writing; applies to every reply and artifact. |
 | `/miner` | Mines session history for repeated failures and steering corrections; proposes standing lessons with evidence, never landing them itself. |
+| `/lookup` | Answers one platform question with a source pointer — Microsoft Learn, bc-code-intelligence, the BCApps clone, or the BCQuality index — and grows the repo's precedent map. |
 
 Three read-only reviewer agents ride under `agents/` — `al-review-lens`, `al-spec-reviewer`, `al-knowledge-leaf` — ready for the review skills that return in later versions. `grilling`, `grill-me`, `wait-what` (mattpocock/skills, MIT) and `unslop` (pstack, MIT) are verbatim ports: their bodies stay byte-identical to their donors, and a fix belongs upstream.
