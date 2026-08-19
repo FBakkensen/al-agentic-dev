@@ -43,7 +43,7 @@ Same plugin, no marketplace registration — and no catalog for `copilot plugin 
 
 ```
 copilot plugin list      # al-agentic-dev@al-agentic-dev (v1.3.0)
-copilot skill list       # the 13 skills, under "Plugin skills"
+copilot skill list       # the 14 skills, under "Plugin skills"
 copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn, bc-code-intelligence
 ```
 
@@ -76,6 +76,10 @@ A consumer repo can declare the plugin in `.github/copilot/settings.json`, commi
 ```
 
 The auto-install runs when Copilot starts in a trusted checkout of that repository; a user-level install through the commands above works everywhere regardless.
+
+### Azure DevOps MCP server
+
+The frontier lives in Azure DevOps work items, so install and authenticate the Azure DevOps MCP server per its own documentation — `/next` works the work items through its tools. The plugin deliberately does not bundle it: the server connection is yours, not the plugin's. Without it, `/next` keeps the frontier in `docs/frontier.md`, explicitly second-class.
 
 ## Migrating from `npx skills add`
 
@@ -112,7 +116,7 @@ copilot plugin uninstall al-agentic-dev
 | [`/al-build`](docs/al-build.md) | Compiles, publishes, runs the tests — plus provisioning, breaking-change validation, Page Scripting replay, and the container lifecycle. |
 | `/al-clone-bcapps` | Clones Microsoft's W1 source at the matching BC version into `.bcapps/` for reading and searching platform code. |
 | `/al-clone-bcquality` | Clones Microsoft's BCQuality knowledge base into `.bcquality/` and builds its knowledge index. |
-| `/al-visualize` | Draws what a run settled or landed as a steering surface on the Copilot app's side-panel canvas. |
+| `/al-visualize` | Draws the BC-anatomy delta — objects, events, flows as boxes and connections — on the Copilot app's side-panel canvas; next invokes it when the shape changed. |
 | `/grilling` | Interviews you in numbered rounds over a plan's design tree until shared understanding — the engine `grill-me` starts. |
 | `/grill-me` | Starts the grilling interview over a plan or design. |
 | `/wait-what` | Stops the flow and re-pitches the last message in plain shared language. |
@@ -122,5 +126,6 @@ copilot plugin uninstall al-agentic-dev
 | `/implement` | Drives one frontier bullet to landed code — red-green at its pre-agreed seams, /al-build as the checker — and closes on a receipt with the gate verdict and the assumptions ledger. |
 | `/refactor` | Reshapes working code toward a named deepening goal with behavior frozen — subtract first, migrate callers before deleting — and proves the hold with the full gate. |
 | `/review` | Reads a diff ledger-first — standards and spec side by side, the six AL anatomy axes, blast radius proven by running code — and returns a Blocking/Non-Blocking/Suggestion verdict without touching a line. |
+| `/next` | The loop transition: capsule, delta drawn, design reconciled, one grilling round, frontier reshaped and the next bullet sharpened — the frontier in Azure DevOps work items, or docs/frontier.md without that wiring. |
 
 Three read-only reviewer agents ride under `agents/` — `al-review-lens` and `al-knowledge-leaf` serve `/review`'s fan-out; `al-spec-reviewer` waits for the thinking layer. `grilling`, `grill-me`, `wait-what` (mattpocock/skills, MIT) and `unslop` (pstack, MIT) are verbatim ports: their bodies stay byte-identical to their donors, and a fix belongs upstream.
