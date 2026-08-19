@@ -16,7 +16,7 @@ Two jobs: coach the user through a repeatable recording, and read the `.yml` whe
 
 The recording user needs the **`PAGESCRIPTING - REC`** permission set; the container's `admin`/SUPER user carries it. (`PAGESCRIPTING - PLAY` covers replay.)
 
-## Repeatability rules — coach one per card, before recording
+## Repeatability rules — coach before recording
 
 A recording guards regressions only if it greens on clean data every time. The recorder captures *gestures*, so how the user performs the scenario decides whether it re-runs. Each rule is the gesture that replaces the brittle thing.
 
@@ -42,7 +42,7 @@ A recording guards regressions only if it greens on clean data every time. The r
 
 ## What stays out of a recording
 
-Look-and-feel, error-message tone, and accessibility encode in no assertion — they belong in a Usability Review. A recording that doubles a test a lower AL layer already runs is waste; the `Record:` flag was assigned at scope time and the walk honours it.
+Look-and-feel, error-message tone, and accessibility encode in no assertion. A recording that doubles a test a lower AL layer already runs is waste.
 
 ---
 
