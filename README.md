@@ -43,7 +43,7 @@ Same plugin, no marketplace registration — and no catalog for `copilot plugin 
 
 ```
 copilot plugin list      # al-agentic-dev@al-agentic-dev (v1.3.0)
-copilot skill list       # the 4 skills, under "Plugin skills"
+copilot skill list       # the 8 skills, under "Plugin skills"
 copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn
 ```
 
@@ -113,5 +113,9 @@ copilot plugin uninstall al-agentic-dev
 | `/al-clone-bcapps` | Clones Microsoft's W1 source at the matching BC version into `.bcapps/` for reading and searching platform code. |
 | `/al-clone-bcquality` | Clones Microsoft's BCQuality knowledge base into `.bcquality/` and builds its knowledge index. |
 | `/al-visualize` | Draws what a run settled or landed as a steering surface on the Copilot app's side-panel canvas. |
+| `/grilling` | Interviews you in numbered rounds over a plan's design tree until shared understanding — the engine `grill-me` starts. |
+| `/grill-me` | Starts the grilling interview over a plan or design. |
+| `/wait-what` | Stops the flow and re-pitches the last message in plain shared language. |
+| `/unslop` | Cuts AI tells from any writing; applies to every reply and artifact. |
 
-Three read-only reviewer agents ride under `agents/` — `al-review-lens`, `al-spec-reviewer`, `al-knowledge-leaf` — ready for the review skills that return in later versions.
+Three read-only reviewer agents ride under `agents/` — `al-review-lens`, `al-spec-reviewer`, `al-knowledge-leaf` — ready for the review skills that return in later versions. `grilling`, `grill-me`, `wait-what` (mattpocock/skills, MIT) and `unslop` (pstack, MIT) are verbatim ports: their bodies stay byte-identical to their donors, and a fix belongs upstream.

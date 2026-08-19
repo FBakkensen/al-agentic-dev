@@ -18,15 +18,15 @@ skills/al-build/config/         al-build.json
 agents/<name>.agent.md          packaged custom agents: name, description, tools, model
 ```
 
-Four skills ship today: `al-build` — the compile-publish-test gate, provisioning, breaking-change validation, Page Scripting replay, and the container lifecycle, and the contract model everything else copies — plus the two lookup-source clones `al-clone-bcapps` and `al-clone-bcquality`, and `al-visualize`, the steering surface (rebuilt on the app-bundled impeccable skill in a later package). Three read-only reviewer agents ride under `agents/`; their invokers return in later packages.
+Eight skills ship today. Four are the AL survivors: `al-build` — the compile-publish-test gate, provisioning, breaking-change validation, Page Scripting replay, and the container lifecycle, and the contract model everything else copies — plus the two lookup-source clones `al-clone-bcapps` and `al-clone-bcquality`, and `al-visualize`, the steering surface (rebuilt on the app-bundled impeccable skill in a later package). Four are verbatim ports with donor-owned bodies: `grilling` and `grill-me` (the stress-test interview and its entry), `wait-what` (the re-pitch), and `unslop` (the AI-tell cut) — see the port rule in `skills.instructions.md`. Three read-only reviewer agents ride under `agents/`; their invokers return in later packages.
 
 The folder name equals the frontmatter `name`; an agent's `name` equals its filename stem, and its `model` pin and `tools` scope are mandatory. A skill reaches outside its folder only by naming another skill — `/al-build` — never by path.
 
-`disable-model-invocation: true` is the default on every skill. Two omit it: `al-build` (changed AL code or another skill's script need invokes it mid-run) and `al-visualize` (invoked when a settled artifact or landed change goes to the user drawn). A new exception names who invokes it.
+`disable-model-invocation: true` is the default on every skill. Four omit it: `al-build` (changed AL code or another skill's script need invokes it mid-run), `al-visualize` (invoked when a settled artifact or landed change goes to the user drawn), `grilling` (the interview engine `grill-me` starts and grill trigger phrases reach), and `unslop` (the donor says it must always apply). A new exception names who invokes it.
 
 ## What never ships
 
-- The word "harness" and harness-conditional phrasing — the gate fails it; name the Copilot tool, MCP server, or packaged agent instead.
+- The word "harness" and harness-conditional phrasing — the gate fails it; name the Copilot tool, MCP server, or packaged agent instead. Verbatim ports are the one exemption: unslop's own rules name the word as jargon to cut.
 - A capability paraphrase where a concrete Copilot name exists.
 - A model name in a skill body or skill frontmatter — model pins live in `agents/*.agent.md` only.
 - Skill frontmatter beyond `name`, `description`, `disable-model-invocation` — no `allowed-tools`, `model`, `tools`, `mcp-servers`, `user-invocable` on a skill.

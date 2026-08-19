@@ -9,7 +9,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 ## Copilot-first surface
 
 1. Skill frontmatter has at most three keys: `name`, `description`, `disable-model-invocation`. Tool access and model pins live in `agents/*.agent.md`, never in skill frontmatter — flag `allowed-tools`, `model`, `tools`, `mcp-servers`, `user-invocable` on a skill.
-2. Model invocation is the exception. Every skill carries `disable-model-invocation: true` unless something must load it without a slash command — today `al-build` (changed AL code or another skill's script need invokes it mid-run) and `al-visualize` (invoked when a settled artifact or landed change goes to the user drawn). Flag a skill missing the flag, and flag a new exception that doesn't name who invokes it.
+2. Model invocation is the exception. Every skill carries `disable-model-invocation: true` unless something must load it without a slash command — today `al-build` (changed AL code or another skill's script need invokes it mid-run), `al-visualize` (invoked when a settled artifact or landed change goes to the user drawn), `grilling` (the interview engine `grill-me` starts and grill trigger phrases reach), and `unslop` (the donor says it must always apply). Flag a skill missing the flag, and flag a new exception that doesn't name who invokes it.
 3. The folder name equals `name`.
 4. No relative link leaves the skill folder. Flag `](../`, `](/`, and any absolute path.
    - Correct: `See [RECORDING-FORMAT.md](RECORDING-FORMAT.md).`
@@ -30,14 +30,14 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## The description: router on the model-invocable skills, menu line on the rest
 
-11. On the model-invocable two (`al-build`, `al-visualize`) the description says what the skill does and the state that should trigger it, in terms the model can match against the work in front of it: `Use when AL production or test code has changed and the change needs the gate`.
-12. On those two, one trigger per distinct branch. Flag synonyms that rename a single branch.
-13. On those two, flag identity restated from the body. The description spends its budget on triggers.
+11. On the model-invocable skills (`al-build`, `al-visualize`, `grilling`, `unslop`) the description says what the skill does and the state that should trigger it, in terms the model can match against the work in front of it: `Use when AL production or test code has changed and the change needs the gate`.
+12. On those skills, one trigger per distinct branch. Flag synonyms that rename a single branch.
+13. On those skills, flag identity restated from the body. The description spends its budget on triggers.
 14. On a `disable-model-invocation: true` skill the description is one line for the human scanning the `/` menu — what it does and when to reach for it, in plain words. Flag state grammar and trigger syntax there; the model never reads it.
 
 ## Length and density
 
-15. A `SKILL.md` body is at most 60 lines — 80 for `al-build`. Flag anything longer and name what to cut.
+15. A `SKILL.md` body is at most 60 lines — 80 for `al-build`, and donor length wins on a verbatim port. Flag anything longer and name what to cut.
 16. Flag any sentence the model already obeys without it. "Be thorough", "think carefully", "read the file before editing" change nothing and cost tokens.
 17. Flag one meaning stated in two places inside a skill. Each rule has one authoritative home.
 18. Flag verification scaffolding: "verify your work", "double-check", "re-read before responding", "use a subagent to confirm". Models self-verify; the instruction produces over-verification and wasted tokens.
@@ -61,7 +61,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## Reply shape a skill asks for
 
-25. Every `SKILL.md` carries this exact rule: `Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.` A skill that shapes the reply also asks for: one sentence before the first tool call; a brief update only on an important finding or a change of direction; the outcome first when finishing, detail after.
+25. Every authored `SKILL.md` carries this exact rule: `Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.` Verbatim ports are exempt — `hooks.json` enforces the ask_user ban at runtime. A skill that shapes the reply also asks for: one sentence before the first tool call; a brief update only on an important finding or a change of direction; the outcome first when finishing, detail after.
 26. Flag a skill that asks the model to announce each step before taking it.
 27. Written artifacts match the length the task needs. Flag instructions to add summary sections, recaps, or boilerplate headings.
 
@@ -85,3 +85,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 ## Show the thing
 
 33. Artifact prose shows the thing — the page, the field, the command, the number — one sentence per fact; run narration in an artifact is a defect, its home the commit message. Chat surfaces glyph their fixed slots, shape-distinct rather than color-coded: findings as ⛔ / ⚠️ / ⚖️ headlines over one-line `⚡ Breaks:` / `📍 Proof:` / `🔧 Fix:` slots in the reviewer agents, and the run-narration ledes — `▸` finding / `➜` move mid-run, `✅` / `⛔` at the close — carried by the reply-shape snippet. These carried lines are deliberate, not rule-16/17 findings — live sessions ignored the shape while it was unwritten. Flag a carrier missing its line, and flag an emoji outside a defined slot — that one is decoration.
+
+## Verbatim ports
+
+34. A verbatim port's `SKILL.md` is donor-owned: today `grilling`, `grill-me`, `wait-what` (mattpocock/skills @ 885e2ca, MIT) and `unslop` (cursor/plugins pstack @ 60c641e, MIT), each byte-identical to its donor. Flag any edit to a ported file — a fix belongs upstream or in the port note of a deliberate re-port; `scripts/Compare-SkillToDonor.ps1` proves the identity. Rules 15, 16, 17, 19, 21, and 25 read the donor as authoritative on these files; the structural gate (frontmatter, links, scripts, retired concepts) applies unchanged.
