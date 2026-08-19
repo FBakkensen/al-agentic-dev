@@ -12,7 +12,7 @@
     Exit codes: 0 the skill matches its donor line for line, 2 the diff is
     non-empty, 1 the skill or donor cannot be resolved.
 .EXAMPLE
-    pwsh scripts/Compare-SkillToDonor.ps1 -Skill al-grilling -DonorRef 3b1ed60
+    pwsh scripts/Compare-SkillToDonor.ps1 -Skill grilling -DonorRef 3b1ed60 -DonorPath skills/al-grilling
 .EXAMPLE
     pwsh scripts/Compare-SkillToDonor.ps1 -Skill grilling -DonorDir C:\donors\pocock-skills\grilling
 #>

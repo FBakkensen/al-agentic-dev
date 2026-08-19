@@ -21,7 +21,7 @@ The 1024-character description cap is load-bearing, not style: on copilot CLI 1.
 Ports land with the smallest possible diff against their donor; the diff is the port note and the debug surface. Compare a skill against a git ref in this repo or a local donor checkout:
 
 ```powershell
-pwsh scripts/Compare-SkillToDonor.ps1 -Skill al-grilling -DonorRef 3b1ed60          # donor in this repo's history
+pwsh scripts/Compare-SkillToDonor.ps1 -Skill grilling -DonorRef 3b1ed60 -DonorPath skills/al-grilling  # donor in this repo's history
 pwsh scripts/Compare-SkillToDonor.ps1 -Skill grilling -DonorDir C:\donors\grilling  # external donor checkout
 ```
 
