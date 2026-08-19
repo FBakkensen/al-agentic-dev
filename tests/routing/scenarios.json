@@ -154,6 +154,12 @@
       "prompt": "Merge main into my PR branch and sort out the object-number collisions.",
       "expect": "none",
       "canary": "the sync mechanics live inside slash-only pr-shepherd; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S28",
+      "prompt": "Run the whole loop on the next ready bullet — implement, reshape if needed, review — and pause only where a decision needs me.",
+      "expect": "none",
+      "canary": "orchestrate is slash-only; a run that names it means the disable flag broke"
     }
   ]
 }
