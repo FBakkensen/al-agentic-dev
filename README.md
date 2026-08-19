@@ -43,7 +43,7 @@ Same plugin, no marketplace registration — and no catalog for `copilot plugin 
 
 ```
 copilot plugin list      # al-agentic-dev@al-agentic-dev (v1.3.0)
-copilot skill list       # the 10 skills, under "Plugin skills"
+copilot skill list       # the 11 skills, under "Plugin skills"
 copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn, bc-code-intelligence
 ```
 
@@ -119,5 +119,6 @@ copilot plugin uninstall al-agentic-dev
 | `/unslop` | Cuts AI tells from any writing; applies to every reply and artifact. |
 | `/miner` | Mines session history for repeated failures and steering corrections; proposes standing lessons with evidence, never landing them itself. |
 | `/lookup` | Answers one platform question with a source pointer — Microsoft Learn, bc-code-intelligence, the BCApps clone, or the BCQuality index — and grows the repo's precedent map. |
+| `/implement` | Drives one frontier bullet to landed code — red-green at its pre-agreed seams, /al-build as the checker — and closes on a receipt with the gate verdict and the assumptions ledger. |
 
 Three read-only reviewer agents ride under `agents/` — `al-review-lens`, `al-spec-reviewer`, `al-knowledge-leaf` — ready for the review skills that return in later versions. `grilling`, `grill-me`, `wait-what` (mattpocock/skills, MIT) and `unslop` (pstack, MIT) are verbatim ports: their bodies stay byte-identical to their donors, and a fix belongs upstream.
