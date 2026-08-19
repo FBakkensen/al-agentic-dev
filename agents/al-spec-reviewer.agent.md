@@ -1,6 +1,6 @@
 ---
 name: al-spec-reviewer
-description: Blind review of one just-written AL/Business Central spec artifact against its sources, within locked constraints. Invoked by al-spec-review, one invocation per gate.
+description: "Blind review of one just-written AL/Business Central spec artifact against its sources, within locked constraints. Invoked directly for now; its calling skills return with the thinking layer."
 tools: ["grep", "glob", "view", "execute", "microsoft-learn/*"]
 model: gpt-5.6-sol
 ---
