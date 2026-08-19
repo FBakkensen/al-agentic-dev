@@ -27,6 +27,28 @@
       "prompt": "Refresh the BC quality knowledge base clone and rebuild its knowledge index.",
       "expect": "none",
       "canary": "al-clone-bcquality is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S6",
+      "prompt": "I have a rough plan for a new feature. Stress-test my thinking — interview me until we both understand it.",
+      "expect": "grilling"
+    },
+    {
+      "id": "S7",
+      "prompt": "This release announcement reads like a chatbot wrote it. Cut the AI tells and give it a human voice.",
+      "expect": "unslop"
+    },
+    {
+      "id": "S8",
+      "prompt": "Put my design through a relentless interview before I commit to it.",
+      "expect": "grilling",
+      "note": "grill-me is slash-only and wraps grilling; the model routing to the engine is the designed outcome"
+    },
+    {
+      "id": "S9",
+      "prompt": "Wait, I don't understand where you've got to. Explain that last message again in plain language.",
+      "expect": "none",
+      "canary": "wait-what is slash-only; a run that names it means the disable flag broke"
     }
   ]
 }
