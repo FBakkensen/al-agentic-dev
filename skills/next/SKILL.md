@@ -18,7 +18,7 @@ The BC-anatomy delta since the last transition — objects touched, events publi
 
 ## 3 · Reconcile the living design
 
-The design document is the user's window into the code, kept truthful every loop. Where the design says X and the code does Y: update the design, or fix the code — one question per drift, answered before moving on. Design diffs, never code walls.
+The design document — `docs/design.md` — is the user's window into the code, kept truthful every loop. Where the design says X and the code does Y: update the design, or fix the code — one question per drift, answered before moving on. Design diffs, never code walls.
 
 ## 4 · Drill the consequential
 
@@ -33,7 +33,7 @@ Resolve the landed bullet; graduate new bullets from the fog; prune what fell ou
 - ready → /implement, the spec riding the bullet
 - too unknown → prototype first, then back through this transition
 - hides a decision → /grill-me
-- wrongly cut → reshaped here — move 5 owns the frontier
+- wrongly cut → /scope reshapes the frontier's bones
 - already in the Base App → close the bullet with zero code, the cheapest implementation
 
 ## Close

@@ -14,7 +14,7 @@ The first stop is the receipt's assumptions ledger. Every `verified:` pointer is
 
 ## Two axes, fanned out
 
-Standards and Spec run as parallel al-review-lens invocations — one dimension per invocation, its definition and sources in the prompt; the parent owns judgment. Standards reads the diff against BC idioms and the BCQuality rules — al-knowledge-leaf runs each BCQuality review leaf the diff's domains select from `.bcquality/knowledge-index.json`. Spec reads the diff against what the bullet asked: nothing more, nothing missing. The two verdicts sit side by side, never merged — counts and the worst finding per axis.
+Standards and Spec run as parallel al-review-lens invocations — one dimension per invocation, its definition and sources in the prompt; the parent owns judgment. Standards reads the diff against BC idioms, the repo's `docs/patterns.md` where it exists, and the BCQuality rules — al-knowledge-leaf runs each BCQuality review leaf the diff's domains select from `.bcquality/knowledge-index.json`. Spec reads the diff against what the bullet asked: nothing more, nothing missing. The two verdicts sit side by side, never merged — counts and the worst finding per axis.
 
 ## The anatomy sweep
 
