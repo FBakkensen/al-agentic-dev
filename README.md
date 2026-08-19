@@ -43,7 +43,7 @@ Same plugin, no marketplace registration — and no catalog for `copilot plugin 
 
 ```
 copilot plugin list      # al-agentic-dev@al-agentic-dev (v1.3.0)
-copilot skill list       # the 14 skills, under "Plugin skills"
+copilot skill list       # the 17 skills, under "Plugin skills"
 copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn, bc-code-intelligence
 ```
 
@@ -127,5 +127,8 @@ copilot plugin uninstall al-agentic-dev
 | `/refactor` | Reshapes working code toward a named deepening goal with behavior frozen — subtract first, migrate callers before deleting — and proves the hold with the full gate. |
 | `/review` | Reads a diff ledger-first — standards and spec side by side, the six AL anatomy axes, blast radius proven by running code — and returns a Blocking/Non-Blocking/Suggestion verdict without touching a line. |
 | `/next` | The loop transition: capsule, delta drawn, design reconciled, one grilling round, frontier reshaped and the next bullet sharpened — the frontier in Azure DevOps work items, or docs/frontier.md without that wiring. |
+| `/al-design` | The architecture conversation in BC shapes — modules, seams, tables, extensions — writing the living docs/design.md that /next reconciles. |
+| `/al-event-model` | The living eventing picture — publishers, subscribers, business events through posting — in docs/event-model.md, updated the moment understanding changes. |
+| `/scope` | Cuts the settled design into tracer-bullet work items with blocking edges, quizzes until the cut is approved, and creates the frontier /next maintains. |
 
-Three read-only reviewer agents ride under `agents/` — `al-review-lens` and `al-knowledge-leaf` serve `/review`'s fan-out; `al-spec-reviewer` waits for the thinking layer. `grilling`, `grill-me`, `wait-what` (mattpocock/skills, MIT) and `unslop` (pstack, MIT) are verbatim ports: their bodies stay byte-identical to their donors, and a fix belongs upstream.
+Two read-only reviewer agents ride under `agents/` — `al-review-lens` and `al-knowledge-leaf`, serving `/review`'s fan-out. `grilling`, `grill-me`, `wait-what` (mattpocock/skills, MIT) and `unslop` (pstack, MIT) are verbatim ports: their bodies stay byte-identical to their donors, and a fix belongs upstream.
