@@ -37,4 +37,4 @@ Blast radius: <the safety fact> — proven by <the run> | unproven
 Findings: Blocking / Non-Blocking / Suggestion
 ```
 
-The verdict returns to the caller. The run is done when the ledger stop, both axes or the named skip, all six anatomy axes, and the blast-radius fact appear in it.
+The verdict returns to the caller — posted to the bullet's work item where Azure DevOps is wired, mirrored to `.output/receipts/<diff-scope>.md` always. The run is done when the ledger stop, both axes or the named skip, all six anatomy axes, and the blast-radius fact appear in it.

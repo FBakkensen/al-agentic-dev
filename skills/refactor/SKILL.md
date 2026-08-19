@@ -22,7 +22,7 @@ A reshape that depends on platform behavior not verified in this session: lookup
 
 ## Close
 
-/al-build runs the full gate once, at the end. Behavior held means the per-runner totals match the starting green — or every difference is explained — and the breaking-change baseline stays silent. Commit with a plain descriptive message naming the goal. Emit the receipt and stop — the caller owns the next block.
+/al-build runs the full gate once, at the end. Behavior held means the per-runner totals match the starting green — or every difference is explained — and the breaking-change baseline stays silent. Commit with a plain descriptive message naming the goal. Emit the receipt — posted to the bullet's work item where Azure DevOps is wired, mirrored to `.output/receipts/<goal>.md` always — and stop; the caller owns the next block.
 
 ```
 ## refactor receipt — <goal>

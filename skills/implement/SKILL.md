@@ -26,7 +26,7 @@ A change in behavior beyond the bullet stops the run and surfaces as one plain-t
 
 ## Close
 
-Commit the work with a plain descriptive message naming the bullet. Emit the receipt and stop — the caller owns the next block.
+Commit the work with a plain descriptive message naming the bullet. Emit the receipt — posted to the bullet's work item where Azure DevOps is wired, mirrored to `.output/receipts/<bullet>.md` always — and stop; the caller owns the next block.
 
 ```
 ## implement receipt — <bullet>
