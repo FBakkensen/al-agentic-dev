@@ -94,7 +94,19 @@
       "id": "S17",
       "prompt": "Reshape this working code without changing its behavior.",
       "expect": "none",
-      "canary": "guards the refactor boundary before that skill exists; nothing should catch it today"
+      "canary": "refactor is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S18",
+      "prompt": "Review my diff since main against what the bullet asked — standards and spec side by side.",
+      "expect": "none",
+      "canary": "review is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S19",
+      "prompt": "What could this small change break beyond the files it touches?",
+      "expect": "none",
+      "canary": "blast-radius phrasing lives inside slash-only review; a run that names review means the disable flag broke"
     }
   ]
 }
