@@ -107,6 +107,23 @@
       "prompt": "What could this small change break beyond the files it touches?",
       "expect": "none",
       "canary": "blast-radius phrasing lives inside slash-only review; a run that names review means the disable flag broke"
+    },
+    {
+      "id": "S20",
+      "prompt": "The bullet just landed — run the loop transition: show the delta, reconcile the design, sharpen what's next.",
+      "expect": "none",
+      "canary": "next is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S21",
+      "prompt": "Draw the objects and event flows this branch changed, as boxes and connections.",
+      "expect": "al-visualize"
+    },
+    {
+      "id": "S22",
+      "prompt": "What's next on my plate?",
+      "expect": "none",
+      "canary": "a passing phrase must not trigger the state-moving transition; a run that names next means its flag broke"
     }
   ]
 }
