@@ -225,6 +225,29 @@ Name the outcome, then /al-build.
         $result.Text | Should -Match 'al-build is model-invocable; remove disable-model-invocation'
     }
 
+    It 'accepts a verbatim port without the question rule' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'port-question-rule') -Files @{
+            'wait-what/SKILL.md' = (New-SkillContent -Name 'wait-what' -WithoutQuestionRule)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+
+    It 'accepts the harness token inside a verbatim port only' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'port-harness') -Files @{
+            'unslop/SKILL.md' = (New-SkillContent -Name 'unslop' -ModelInvocable -WithoutQuestionRule -Body 'Cut harness (as metaphor) from prose.')
+            'demo/SKILL.md'   = (New-SkillContent -Body 'Cut harness metaphors.')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'demo/SKILL\.md: uses harness-conditional phrasing'
+        $result.Text | Should -Not -Match 'unslop/SKILL\.md: uses harness-conditional phrasing'
+    }
+
     It 'fails when the name does not match the folder name' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'name-mismatch') -Files @{
             'demo/SKILL.md' = (New-SkillContent -Name 'al-demo')

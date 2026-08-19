@@ -9,8 +9,12 @@
     1-64 characters of lowercase a-z0-9 and single hyphens and equals the folder name
     exactly; description is a non-empty single-line value of at most 1024 characters,
     quoted whenever it contains a colon. Model invocation is the exception: every skill
-    carries disable-model-invocation: true, except the model-invocable two (al-build,
-    al-visualize), which omit the key entirely.
+    carries disable-model-invocation: true, except the model-invocable four (al-build,
+    al-visualize, grilling, unslop), which omit the key entirely.
+    Verbatim ports (grilling, grill-me, wait-what, unslop) ship donor bodies unchanged,
+    so two checks skip them: the plain-text question rule (hooks.json enforces the
+    ask_user ban at runtime) and the harness token scan (unslop lists the word as
+    jargon to cut). Every other check applies to them unchanged.
     Every relative Markdown link in the folder's .md files resolves to a file inside that
     same folder, and only skills/al-build may name a .ps1 file or a scripts/ path — save
     for the per-skill exemptions in $scriptExemptions, each an upstream tool a named skill
@@ -64,7 +68,10 @@ function Get-MarkdownLinkTarget {
 
 $violations = @()
 $root = (Resolve-Path -LiteralPath $SkillsRoot -ErrorAction Stop).Path
-$modelInvocable = @('al-build', 'al-visualize')
+$modelInvocable = @('al-build', 'al-visualize', 'grilling', 'unslop')
+# Verbatim ports ship donor bodies unchanged: the question rule and the harness scan
+# skip them (hooks.json enforces the ask_user ban at runtime); all other checks apply.
+$verbatimPorts = @('grilling', 'grill-me', 'wait-what', 'unslop')
 $questionRule = 'Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.'
 # Per-skill script exemptions, approved one at a time. The key is the skill folder; the
 # value is the exact script paths that skill may name. al-build is exempt wholesale
@@ -109,7 +116,7 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
                     $violations += "$($skill.Name)/SKILL.md: $($skill.Name) is model-invocable; remove disable-model-invocation"
                 }
             } elseif ($flagMatch.Groups[1].Value.Trim() -cne 'true') {
-                $violations += "$($skill.Name)/SKILL.md: disable-model-invocation: true is required (model invocation is the exception; only al-build and al-visualize omit it)"
+                $violations += "$($skill.Name)/SKILL.md: disable-model-invocation: true is required (model invocation is the exception; only al-build, al-visualize, grilling, unslop omit it)"
             }
 
             $name = [regex]::Match($frontmatter, '(?m)^name\s*:\s*(.+?)\s*$').Groups[1].Value.Trim("'", '"')
@@ -177,13 +184,15 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
                     }
                 }
             }
-            if (-not $body.Contains($questionRule)) {
+            if (-not $body.Contains($questionRule) -and $verbatimPorts -cnotcontains $skill.Name) {
                 $violations += "${relative}: missing the required plain-text question rule"
             }
         }
 
-        foreach ($hit in [regex]::Matches([string]$text, 'harness', 'IgnoreCase')) {
-            $violations += "${relative}: uses harness-conditional phrasing ('$($hit.Value)'); name the Copilot tool or agent instead"
+        if ($verbatimPorts -cnotcontains $skill.Name) {
+            foreach ($hit in [regex]::Matches([string]$text, 'harness', 'IgnoreCase')) {
+                $violations += "${relative}: uses harness-conditional phrasing ('$($hit.Value)'); name the Copilot tool or agent instead"
+            }
         }
 
         foreach ($field in [regex]::Matches($body, '(?<![\w-])(status|phase|blocked-on|review|tier|green-gate)\s*:')) {
