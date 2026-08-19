@@ -83,6 +83,18 @@
       "prompt": "Research which BC shape fits this whole feature and write a cited report with diagrams.",
       "expect": "none",
       "canary": "the native /research command's deep ground; a run that names lookup means its description overreaches"
+    },
+    {
+      "id": "S16",
+      "prompt": "Implement the next frontier bullet — its failing-test spec is already on it.",
+      "expect": "none",
+      "canary": "implement is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S17",
+      "prompt": "Reshape this working code without changing its behavior.",
+      "expect": "none",
+      "canary": "guards the refactor boundary before that skill exists; nothing should catch it today"
     }
   ]
 }
