@@ -43,7 +43,7 @@ Same plugin, no marketplace registration — and no catalog for `copilot plugin 
 
 ```
 copilot plugin list      # al-agentic-dev@al-agentic-dev (v1.3.0)
-copilot skill list       # the 8 skills, under "Plugin skills"
+copilot skill list       # the 9 skills, under "Plugin skills"
 copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn
 ```
 
@@ -117,5 +117,6 @@ copilot plugin uninstall al-agentic-dev
 | `/grill-me` | Starts the grilling interview over a plan or design. |
 | `/wait-what` | Stops the flow and re-pitches the last message in plain shared language. |
 | `/unslop` | Cuts AI tells from any writing; applies to every reply and artifact. |
+| `/miner` | Mines session history for repeated failures and steering corrections; proposes standing lessons with evidence, never landing them itself. |
 
 Three read-only reviewer agents ride under `agents/` — `al-review-lens`, `al-spec-reviewer`, `al-knowledge-leaf` — ready for the review skills that return in later versions. `grilling`, `grill-me`, `wait-what` (mattpocock/skills, MIT) and `unslop` (pstack, MIT) are verbatim ports: their bodies stay byte-identical to their donors, and a fix belongs upstream.

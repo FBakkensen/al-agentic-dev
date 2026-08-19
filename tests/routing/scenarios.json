@@ -49,6 +49,24 @@
       "prompt": "Wait, I don't understand where you've got to. Explain that last message again in plain language.",
       "expect": "none",
       "canary": "wait-what is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S10",
+      "prompt": "Mine my session history for recurring AL mistakes and propose standing lessons.",
+      "expect": "none",
+      "canary": "miner is slash-only per decision E (on-demand); a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S11",
+      "prompt": "What did I work on yesterday?",
+      "expect": "none",
+      "canary": "chronicle standup's native ground; a run that names miner means its description overreaches"
+    },
+    {
+      "id": "S12",
+      "prompt": "Add a standing lesson line so I stop repeating this container mistake in future sessions.",
+      "expect": "none",
+      "canary": "miner is slash-only; a run that names it means the disable flag broke"
     }
   ]
 }
