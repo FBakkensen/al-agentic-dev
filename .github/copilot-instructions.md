@@ -2,6 +2,8 @@
 
 This repo ships the GitHub Copilot plugin `al-agentic-dev`: Agent Skills for AL/Business Central development plus packaged custom agents, bundled MCP servers, and the marketplace manifest. Everything here is Copilot-first — skills name Copilot tools, bundled MCP servers, and packaged agents explicitly.
 
+The branch `flemmingbk-skills-v2` rebuilds the set package by package: the old 26-skill pipeline is stripped, each new version ports proven skills from their donors as real work needs them, and `main` keeps shipping the old set untouched until the final merge. Git history is the donor archive — a retired skill returns from a commit, never from a copy.
+
 ## The shipped surface
 
 ```
@@ -13,13 +15,14 @@ skills/<name>/SKILL.md          frontmatter: name, description, disable-model-in
 skills/<name>/<SIBLING>.md      optional format files, inside the same folder only
 skills/al-build/scripts/*.ps1   the build substrate
 skills/al-build/config/         al-build.json
-skills/al-orchestrate/config/   al-orchestrate.json
 agents/<name>.agent.md          packaged custom agents: name, description, tools, model
 ```
 
-The folder name equals the frontmatter `name`; an agent's `name` equals its filename stem, and its `model` pin and `tools` scope are mandatory. A skill reaches outside its folder only by naming another skill — `/al-build` — never by path. Skill names are prefix-free: `al-` marks the AL pipeline family, and a generic name like `babysit-pr` is as valid as `al-build`.
+Four skills ship today: `al-build` — the compile-publish-test gate, provisioning, breaking-change validation, Page Scripting replay, and the container lifecycle, and the contract model everything else copies — plus the two lookup-source clones `al-clone-bcapps` and `al-clone-bcquality`, and `al-visualize`, the steering surface (rebuilt on the app-bundled impeccable skill in a later package). Three read-only reviewer agents ride under `agents/`; their invokers return in later packages.
 
-`disable-model-invocation: true` is the default on every skill: the pipeline is user-driven, so a skill loads only when the user types its slash command. Exactly ten skills omit the flag, each because something must load it without a slash command: `al-build` (invoked mid-run by other skills), `al-grilling` (invoked mid-interview by `al-grill-adr`, `al-event-model`, `al-design`, `al-refine`), `al-knowledge-pass` (the BCQuality pass over a diff — invoked mid-run by `al-code-review` and `al-refactor`), `al-implement` (feedback implementation invoked mid-run by `al-code-review` and `al-refactor`), `al-routing` (the task-state engine — invoked at close by every skill that moves task state, and loaded by `al-next` and `al-scope` for its schema), `al-visualize` (the decision surface — invoked mid-run by `al-design`, `al-event-model`, `al-refine`, `al-scope`, `al-code-review`, `al-quiz`, and at close by every pipeline skill that presents its settled artifact or landed change drawn), `al-spec-review` (the blind spec gate — invoked at close by `al-design`, `al-event-model`, `al-scope`, and `al-refine` to read a just-written spec artifact against its sources), `al-orchestrate` (the feature conductor — invoked at close by `al-scope` so the feature session rolls from scoping into coordination), `al-next` (the plain-language navigator), `al-agentic-dev-overview` (discovery by someone who doesn't know the commands). A new exception names who invokes it.
+The folder name equals the frontmatter `name`; an agent's `name` equals its filename stem, and its `model` pin and `tools` scope are mandatory. A skill reaches outside its folder only by naming another skill — `/al-build` — never by path.
+
+`disable-model-invocation: true` is the default on every skill. Two omit it: `al-build` (changed AL code or another skill's script need invokes it mid-run) and `al-visualize` (invoked when a settled artifact or landed change goes to the user drawn). A new exception names who invokes it.
 
 ## What never ships
 
@@ -27,13 +30,13 @@ The folder name equals the frontmatter `name`; an agent's `name` equals its file
 - A capability paraphrase where a concrete Copilot name exists.
 - A model name in a skill body or skill frontmatter — model pins live in `agents/*.agent.md` only.
 - Skill frontmatter beyond `name`, `description`, `disable-model-invocation` — no `allowed-tools`, `model`, `tools`, `mcp-servers`, `user-invocable` on a skill.
-- A task-state transition outside `al-routing` — a legacy lifecycle field (`status:`, `phase:`, `blocked-on:`, `review:`, `tier:`, `green-gate:`) or an Azure DevOps work-item transition (`State: New|Active|Blocked|Testing|Resolved|Closed`).
+- Task-state ceremony — a lifecycle field (`status:`, `phase:`, `blocked-on:`, `review:`, `tier:`, `green-gate:`), an Azure DevOps work-item transition (`State: New|Active|Blocked|Testing|Resolved|Closed`), or a stage-gate prerequisite. Retired concepts; the gate bans the fields in every folder.
 - A link that leaves the skill folder: `](../`, `](/`, any absolute path.
 - Slash-command files — out of scope until a proven defect asks for them. One hook ships: `hooks.json` denies the `ask_user` tool with a redirect to plain-text questions (its proven defect: a child session hung silently on an `ask_user` call); a new hook needs its own proven defect.
 
 Say so when a change reintroduces one of these.
 
-The PowerShell substrate is the one exception that ships, and `al-build` is its sole invoker. Outside `skills/al-build/`, a `.ps1` filename or a `scripts/` path in a skill body is a defect — that skill calls `/al-build` instead.
+The PowerShell substrate is the one exception that ships, and `al-build` is its sole invoker. Outside `skills/al-build/`, a `.ps1` filename or a `scripts/` path in a skill body is a defect — that skill calls `/al-build` instead. The one listed exemption: `al-clone-bcquality` runs the BCQuality knowledge-index generator inside the checkout it clones.
 
 ## Dev-time files
 
@@ -60,8 +63,8 @@ Dev-time chat in this repo follows the same style the shipped skills ask for:
 
 ## Working here
 
-`main` is PR-only. Branch off a fresh `origin/main` and open a PR with `gh`.
+`main` is PR-only. This set builds on the long-lived `flemmingbk-skills-v2` branch — packages land as commits there, the plugin version incrementing per package, merged to `main` when the set is ready.
 
-Before pushing, run `scripts/Validate-Json.ps1`, `scripts/Validate-PowerShell.ps1`, `scripts/Validate-Skills.ps1`, `scripts/Update-Review.ps1 -Check`, then `Invoke-Pester tests`. CI runs the same five on pushes and pull requests to `main` and `feature/copilot-first-migration`. The gates validate `skills/`, `agents/`, and the plugin manifests; links in `README.md` and `docs/` are deliberately unchecked — not a review finding.
+Before pushing, run `scripts/Validate-Json.ps1`, `scripts/Validate-PowerShell.ps1`, `scripts/Validate-Skills.ps1`, `scripts/Update-Review.ps1 -Check`, then `Invoke-Pester tests`. CI runs the same five on pushes to `main`, `feature/copilot-first-migration`, and `flemmingbk-skills-v2`, and on every pull request. The gates validate `skills/`, `agents/`, and the plugin manifests; links in `README.md` and `docs/` are deliberately unchecked — not a review finding.
 
 `.output/` and `**/secret.json` are gitignored. Never commit build artifacts or secrets.
