@@ -1,6 +1,6 @@
 ---
 name: al-clone-bcapps
-description: Clone Microsoft's W1 application source (BCApps) at the app's resolved BC version into .bcapps/ for reading and searching platform code. The provision task's second step, and runnable anytime the clone is missing or suspect.
+description: Clone Microsoft's W1 application source (BCApps) at the app's resolved BC version into .bcapps/ for reading and searching platform code. Runnable anytime the clone is missing or suspect.
 disable-model-invocation: true
 ---
 
@@ -12,9 +12,8 @@ Symbols say whether a name exists; the clone shows how Microsoft implements it
 ## Precondition
 
 The one dependency is the symbol cache: `symbols.lock.json` must exist for this
-app, meaning a `/al-provision` run has landed at least once. Missing → stop and
-name `/al-provision` as the step that produces it. Task-file state is
-`/al-routing`'s.
+app, meaning a `/al-build` provision run has landed at least once. Missing → stop
+and name that run as the step that produces it.
 
 ## Target
 
@@ -58,7 +57,5 @@ sits on the target branch and every wanted folder is populated in exactly one ch
 
 Name the outcome — the checkouts on their branches, ready to search, or one
 line naming what failed in the terms the developer acts on. Clearing a red is
-the developer's move; re-run this skill afterwards.
-
-Ran as the provision task's step → then `/al-routing`. Ran ad hoc → close back
-into the work that needed the clone; nothing to route.
+the developer's move; re-run this skill afterwards. Close back into the work
+that needed the clone.
