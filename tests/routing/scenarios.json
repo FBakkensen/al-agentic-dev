@@ -124,6 +124,24 @@
       "prompt": "What's next on my plate?",
       "expect": "none",
       "canary": "a passing phrase must not trigger the state-moving transition; a run that names next means its flag broke"
+    },
+    {
+      "id": "S23",
+      "prompt": "Architect this feature in BC shapes — is it master data with entries, or a document flavor?",
+      "expect": "none",
+      "canary": "al-design is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S24",
+      "prompt": "Model who publishes and who subscribes when posting completes.",
+      "expect": "none",
+      "canary": "al-event-model is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S25",
+      "prompt": "Cut the settled design into tracer-bullet work items with blocking edges.",
+      "expect": "none",
+      "canary": "scope is slash-only and creates store state; a run that names it means the disable flag broke"
     }
   ]
 }
