@@ -67,6 +67,22 @@
       "prompt": "Add a standing lesson line so I stop repeating this container mistake in future sessions.",
       "expect": "none",
       "canary": "miner is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S13",
+      "prompt": "Does Modify(false) skip the OnModify trigger? Check before I write this.",
+      "expect": "lookup"
+    },
+    {
+      "id": "S14",
+      "prompt": "Show me how the Base App implements posting preview for a journal.",
+      "expect": "lookup"
+    },
+    {
+      "id": "S15",
+      "prompt": "Research which BC shape fits this whole feature and write a cited report with diagrams.",
+      "expect": "none",
+      "canary": "the native /research command's deep ground; a run that names lookup means its description overreaches"
     }
   ]
 }
