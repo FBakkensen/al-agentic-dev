@@ -43,7 +43,7 @@ Same plugin, no marketplace registration — and no catalog for `copilot plugin 
 
 ```
 copilot plugin list      # al-agentic-dev@al-agentic-dev (v1.12.0)
-copilot skill list       # the 19 skills, under "Plugin skills"
+copilot skill list       # the 20 skills, under "Plugin skills"
 copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn, bc-code-intelligence
 ```
 
@@ -117,7 +117,7 @@ copilot plugin uninstall al-agentic-dev
 | `/al-clone-bcapps` | Clones Microsoft's W1 source at the matching BC version into `.bcapps/` for reading and searching platform code. |
 | `/al-clone-bcquality` | Clones Microsoft's BCQuality knowledge base into `.bcquality/` and builds its knowledge index. |
 | `/al-visualize` | Draws the BC-anatomy delta — objects, events, flows as boxes and connections — on the Copilot app's side-panel canvas; al-next invokes it when the shape changed. |
-| `/al-grilling` | Interviews you in numbered rounds over a plan's design tree until shared understanding — the engine `grill-me` starts. |
+| `/al-grilling` | Interviews you in numbered rounds over a plan's design tree until shared understanding — the engine `al-grill-me` starts. |
 | `/al-grill-me` | Starts the grilling interview over a plan or design. |
 | `/al-wait-what` | Stops the flow and re-pitches the last message in plain shared language. |
 | `/al-unslop` | Cuts AI tells from any writing; applies to every reply and artifact. |
@@ -127,9 +127,10 @@ copilot plugin uninstall al-agentic-dev
 | `/al-refactor` | Reshapes working code toward a named deepening goal with behavior frozen — subtract first, migrate callers before deleting — and proves the hold with the full gate. |
 | `/al-review` | Reads a diff ledger-first — standards and spec side by side, the six AL anatomy axes, blast radius proven by running code — and returns a Blocking/Non-Blocking/Suggestion verdict without touching a line. |
 | `/al-next` | The loop transition: capsule, delta drawn, design reconciled, one grilling round, frontier reshaped and the next bullet sharpened — the frontier in Azure DevOps work items, or docs/frontier.md without that wiring. |
+| `/al-grill-adr` | The pipeline entry: interviews a fresh feature idea until the vocabulary is unambiguous — CONTEXT.md at the repo root, hard-to-reverse business rules as ADRs, big fog charted as decision items on the frontier. |
 | `/al-design` | The architecture conversation in BC shapes — modules, seams, tables, extensions — writing the living docs/design.md that /al-next reconciles. |
 | `/al-event-model` | The living eventing picture — publishers, subscribers, business events through posting — in docs/event-model.md, updated the moment understanding changes. |
-| `/al-scope` | Cuts the settled design into tracer-bullet work items with blocking edges, quizzes until the cut is approved, and creates the frontier /next maintains. |
+| `/al-scope` | Cuts the settled design into tracer-bullet work items with blocking edges, quizzes until the cut is approved, and creates the frontier /al-next maintains. |
 | `/al-pr-shepherd` | Drives one open PR to merge — CI watched, Copilot findings fixed, main merged in with intent-preserving conflict resolution — merging only on your explicit go. |
 | `/al-orchestrate` | Runs one ready bullet through the whole loop — implement, refactor when needed, review — pausing only at declared decisions and ending at the review verdict. |
 

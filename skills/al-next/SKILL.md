@@ -31,6 +31,7 @@ Resolve the landed bullet; graduate new bullets from the fog; prune what fell ou
 ## The exits
 
 - ready → /al-implement, the spec riding the bullet
+- a decision-class item → /al-grill-adr; a decision resolves by conversation, never by /al-implement
 - too unknown → prototype first, then back through this transition
 - hides a decision → /al-grill-me
 - wrongly cut → /al-scope reshapes the frontier's bones
