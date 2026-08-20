@@ -26,7 +26,7 @@ What breaks beyond the diff: callers, subscribers of touched events, data the di
 
 ## Verdict
 
-Every BC name in a finding is confirmed by a lookup in the current session, never recalled. Style nitpicks belong to the analyzers in the build gate, not here. "No blocking issues found" is a legal verdict.
+Every BC name in a finding is confirmed by a lookup in the current session, never recalled. A shape observation appears in this verdict only when the shape will produce wrong behavior — then it is a finding; beauty is never a finding. Consequence-bearing idiom violations — locking, Commit discipline, TransferFields traps — stay findings; a shape observation whose only cost is aesthetics goes to the one Refactor food line. "No blocking issues found" is a legal verdict.
 
 ```
 ## al-review verdict — <diff scope>
@@ -34,7 +34,8 @@ Ledger: re-checked | absent — undeclared assumptions: none | <each one, Blocki
 Standards: <count + worst finding> · Spec: <count + worst finding> | skipped — no bullet
 Anatomy: schema/upgrade · events · permissions · XLF · baseline · tests — news or clear per axis
 Blast radius: <the safety fact> — proven by <the run> | unproven
-Findings: Blocking / Non-Blocking / Suggestion
+Findings: Blocking / Non-Blocking
+Refactor food: none | <one line>
 ```
 
 The verdict returns to the caller — posted to the bullet's work item where Azure DevOps is wired, mirrored to `.output/receipts/<diff-scope>.md` always. The run is done when the ledger stop, both axes or the named skip, all six anatomy axes, and the blast-radius fact appear in it.
