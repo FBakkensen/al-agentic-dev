@@ -12,9 +12,11 @@ In: a diff since a fixed point, its frontier bullet when one exists, and al-impl
 
 The first stop is the receipt's assumptions ledger. Every `verified:` pointer is spot-checked at its source; every `assumed:` claim is judged for the risk it carries. An undeclared assumption the read uncovers — platform behavior the diff depends on that no ledger line names — is the cardinal failure, always Blocking. No receipt → the ledger stop is named absent and the sweep below carries the weight.
 
-## Two axes, fanned out
+## Two axes, side by side
 
-Standards and Spec run as parallel al-review-lens invocations — one dimension per invocation, its definition and sources in the prompt; the parent owns judgment. Standards reads the diff against BC idioms, the repo's `docs/patterns.md` where it exists, and the BCQuality rules — al-knowledge-leaf runs each BCQuality review leaf the diff's domains select from `.bcquality/knowledge-index.json`. Spec reads the diff against what the bullet asked: nothing more, nothing missing. The two verdicts sit side by side, never merged — counts and the worst finding per axis.
+Spec runs as an al-review-lens invocation — the dimension's definition and sources in the prompt; the parent owns judgment. It reads the diff against what the bullet asked: nothing more, nothing missing.
+
+Standards executes the BCQuality Entry protocol: read `.bcquality/skills/entry.md` and follow it over the repo's clone — task-context goal review, inputs pr-diff, technologies [al], all three layers; the index rebuilt as entry.md directs. The dispatched al-code-review runs its leaves per its own execution discipline, one al-knowledge-leaf child per leaf with its domain-filtered index slice. The DO roll-up feeds the verdict mechanically: `domain: style` and aesthetic-only findings land as refactor food; consequence domains — security, upgrade, breaking changes, error handling, events, performance, data modeling — land under the finding classes; DO severity informs, the classes here decide. The parent reads the diff against the repo's `docs/patterns.md` itself where it exists. The two axes sit side by side, never merged — counts and the worst finding per axis, and the roll-up's suppressed count on the Standards line: a skip is named, never hidden.
 
 ## The anatomy sweep
 
@@ -31,7 +33,7 @@ Every BC name in a finding is confirmed by a lookup in the current session, neve
 ```
 ## al-review verdict — <diff scope>
 Ledger: re-checked | absent — undeclared assumptions: none | <each one, Blocking>
-Standards: <count + worst finding> · Spec: <count + worst finding> | skipped — no bullet
+Standards: <count + worst finding + suppressed count> · Spec: <count + worst finding> | skipped — no bullet
 Anatomy: schema/upgrade · events · permissions · XLF · baseline · tests — news or clear per axis
 Blast radius: <the safety fact> — proven by <the run> | unproven
 Findings: Blocking / Non-Blocking
