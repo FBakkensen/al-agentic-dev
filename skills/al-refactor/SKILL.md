@@ -1,12 +1,12 @@
 ---
 name: al-refactor
-description: Reshape working code toward a named deepening goal while behavior stays frozen — subtract first, migrate callers before deleting, prove the hold with the full gate. Reach for it when green code needs a better shape.
+description: Reshape green code in one of two modes — the routine tidy pass after every green (naming, dead scaffolding, duplication, idiom polish), or a named deepening goal that upgrades the run to the full reshape — behavior frozen, the gate proving the hold. Reach for it when code just went green or needs a better shape.
 disable-model-invocation: true
 ---
 
 # al-refactor — same behavior, better shape
 
-In: working code behind a green gate, a named deepening goal, and the living design as context. No goal → name what is missing and stop. Behavior is frozen for the whole run: a change in behavior is a decision point that stops the run and surfaces as one plain-text question — a reshape that changes behavior is not a refactor. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+In: working code behind a green gate and the living design as context. Two modes. No named goal is the routine tidy pass after green — naming, dead scaffolding, duplication, idiom polish; al-implement's `Tidy:` line is the worklist when one rides the bullet, and "nothing to tidy" is a legal one-line close. A named goal upgrades the run to the deepening reshape. Behavior is frozen for the whole run in both modes: a change in behavior is a decision point that stops the run and surfaces as one plain-text question — a reshape that changes behavior is not a refactor. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## Subtract first
 
@@ -14,7 +14,7 @@ Remove dead weight before adding structure: unused procedures and variables, dup
 
 ## The deepening move
 
-Work toward the named goal in caller-safe steps: the new shape lands first, callers migrate one by one, and the old path is deleted only when nothing names it. The smallest structure the goal justifies wins; an interface with a single implementation is indirection, not a seam. Load the idiom capsules matching the work type when they exist — the same seam al-implement loads; today there are none.
+The upgrade path, on a named goal only. Work toward the goal in caller-safe steps: the new shape lands first, callers migrate one by one, and the old path is deleted only when nothing names it. A wide reshape runs expand-contract. The smallest structure the goal justifies wins; an interface with a single implementation is indirection, not a seam. Load the idiom capsules matching the work type when they exist — the same seam al-implement loads; today there are none.
 
 ## Verify or declare
 
@@ -22,11 +22,12 @@ A reshape that depends on platform behavior not verified in this session: lookup
 
 ## Close
 
-/al-build runs the full gate once, at the end. Behavior held means the per-runner totals match the starting green — or every difference is explained — and the breaking-change baseline stays silent. Commit with a plain descriptive message naming the goal. Emit the receipt — posted to the bullet's work item where Azure DevOps is wired, mirrored to `.output/receipts/<goal>.md` always — and stop; the caller owns the next block.
+/al-build runs the full gate once, at the end; a tidy pass that changed nothing skips it — nothing changed, nothing to prove. Behavior held means the per-runner totals match the starting green — or every difference is explained — and the breaking-change baseline stays silent. Commit with a plain descriptive message naming the goal or the tidy. Emit the receipt — posted to the bullet's work item where Azure DevOps is wired, mirrored to `.output/receipts/<goal>.md` always — and stop; the caller owns the next block.
 
 ```
-## al-refactor receipt — <goal>
-Reshaped: one line per move, BC object names exact
+## al-refactor receipt — <goal | tidy>
+Mode: tidy | deepening — <goal>
+Reshaped: one line per move, BC object names exact | nothing to tidy
 Gate: /al-build full-gate verdict — per-runner totals from summary.json
 Behavior held: totals against the starting green + the baseline's silence
 Ledger:

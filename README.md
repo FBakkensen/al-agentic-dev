@@ -124,7 +124,7 @@ copilot plugin uninstall al-agentic-dev
 | `/al-miner` | Mines session history for repeated failures and steering corrections; proposes standing lessons with evidence, never landing them itself. |
 | `/al-lookup` | Answers one platform question with a source pointer — Microsoft Learn, bc-code-intelligence, the BCApps clone, or the BCQuality index — and grows the repo's precedent map. |
 | `/al-implement` | Drives one frontier bullet to landed code — red-green at its pre-agreed seams, /al-build as the checker — and closes on a receipt with the gate verdict and the assumptions ledger. |
-| `/al-refactor` | Reshapes working code toward a named deepening goal with behavior frozen — subtract first, migrate callers before deleting — and proves the hold with the full gate. |
+| `/al-refactor` | Reshapes green code with behavior frozen — the routine tidy pass after every green, or a named deepening goal that upgrades to the full reshape (subtract first, migrate callers before deleting) — and proves the hold with the full gate. |
 | `/al-review` | Reads a diff ledger-first — standards and spec side by side, the six AL anatomy axes, blast radius proven by running code — and returns a Blocking/Non-Blocking/Suggestion verdict without touching a line. |
 | `/al-next` | The loop transition: capsule, delta drawn, design reconciled, one grilling round, frontier reshaped and the next bullet sharpened — the frontier in Azure DevOps work items, or docs/frontier.md without that wiring. |
 | `/al-grill-adr` | The pipeline entry: interviews a fresh feature idea until the vocabulary is unambiguous — CONTEXT.md at the repo root, hard-to-reverse business rules as ADRs, big fog charted as decision items on the frontier. |
@@ -132,6 +132,6 @@ copilot plugin uninstall al-agentic-dev
 | `/al-event-model` | The living eventing picture — publishers, subscribers, business events through posting — in docs/event-model.md, updated the moment understanding changes. |
 | `/al-scope` | Cuts the settled design into tracer-bullet work items with blocking edges, quizzes until the cut is approved, and creates the frontier /al-next maintains. |
 | `/al-pr-shepherd` | Drives one open PR to merge — CI watched, Copilot findings fixed, main merged in with intent-preserving conflict resolution — merging only on your explicit go. |
-| `/al-orchestrate` | Runs one ready bullet through the whole loop — implement, refactor when needed, review — pausing only at declared decisions and ending at the review verdict. |
+| `/al-orchestrate` | Runs one ready bullet through the whole loop — implement, refactor, review, the tidy beat skipped only when implement reports nothing to tidy — pausing only at declared decisions and ending at the review verdict. |
 
 Two read-only reviewer agents ride under `agents/` — `al-review-lens` and `al-knowledge-leaf`, serving `/al-review`'s fan-out. `al-grilling`, `al-grill-me`, `al-wait-what` (mattpocock/skills, MIT) and `al-unslop` (pstack, MIT) are pinned forks: their bodies stay donor text except the al- namespace, provenance pinned at the donor SHAs, and a content fix belongs upstream.

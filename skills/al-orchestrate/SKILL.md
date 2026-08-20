@@ -1,6 +1,6 @@
 ---
 name: al-orchestrate
-description: Drive one ready bullet through the whole loop — implement, refactor when a deepening goal emerged, review — pausing only where a block declares a decision, ending at the review verdict. Type it when a sharpened bullet is ready and you want the loop run for you.
+description: Drive one ready bullet through the whole loop — implement, refactor, review — pausing only where a block declares a decision, ending at the review verdict. Type it when a sharpened bullet is ready and you want the loop run for you.
 disable-model-invocation: true
 ---
 
@@ -10,7 +10,7 @@ In: one sharpened bullet — named in the invocation, or the next ready one from
 
 ## The sequence
 
-/al-implement the bullet → /al-refactor only when the al-implement receipt names a deepening goal → /al-review the diff against the bullet. The loop ends at the review verdict — acting on findings is the user's next move: a repair pass, a re-run, or the merge path through /al-pr-shepherd.
+/al-implement the bullet → /al-refactor → /al-review the diff against the bullet. The refactor beat is skipped only when the al-implement receipt says `Tidy: none` and names no deepening goal — an empty child run buys nothing; a receipt-named goal upgrades the refactor run to the deepening reshape. The loop ends at the review verdict — acting on findings is the user's next move: a repair pass, a re-run, or the merge path through /al-pr-shepherd.
 
 ## The mechanism, by surface
 

@@ -172,6 +172,12 @@
       "prompt": "Two teams use 'batch' to mean different things in this app — settle the term and record it.",
       "expect": "none",
       "canary": "al-grill-adr is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S31",
+      "prompt": "The gate is green — clean this up before we move on.",
+      "expect": "none",
+      "canary": "the tidy pass lives inside slash-only al-refactor; a run that names it means the disable flag broke"
     }
   ]
 }

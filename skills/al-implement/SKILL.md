@@ -31,6 +31,7 @@ Commit the work with a plain descriptive message naming the bullet. Emit the rec
 ```
 ## al-implement receipt — <bullet>
 Built: one line per landed change, BC object names exact
+Tidy: <shape debts noticed in flight — naming, dead scaffolding, duplication, idiom polish | none>
 Gate: /al-build verdict — mode named, per-runner totals from summary.json
 Ledger:
   verified: <claim> — <Learn URL | BCApps file+line | topic id | article path>
