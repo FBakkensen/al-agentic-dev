@@ -5,13 +5,17 @@
 .DESCRIPTION
     Loads this repo's plugin — its committed hooks.json — into two scratch-directory
     copilot sessions via --plugin-dir and asserts on the model's reply text:
-    Run 1, an AL fixture (app.json at the root): the Speak BC voice rule and the reply
-    shape both injected, and the ask_user deny still firing.
-    Run 2, a plain directory: the reply shape injected, the voice rule absent.
-    Assertions match short distinctive substrings, not whole sentences. Unlike routing
-    misses, these are deterministic hook behavior: any assertion failure exits 1.
-    Each run costs roughly 5 AI credits; run it by hand after any hooks.json change,
-    never in CI.
+    Run 1, an AL fixture (app.json at the root): the model echoes both injected
+    headings (# Reply shape, # Speak BC) and answers a pairing question only the
+    injected voice text can answer (transaction -> Ledger Entry).
+    Run 2, a plain directory: the Reply shape heading echoes, Speak BC stays absent,
+    and the model reports NOVOICE.
+    The ask_user deny cannot fire in -p sessions (the tool is not offered there), so
+    its non-regression is a static check: the deny entry must sit intact in hooks.json.
+    Assertions match short distinctive substrings. Hook injection is deterministic:
+    any assertion failure exits 1 and prints both replies.
+    Each invocation costs roughly 10 AI credits; run it by hand after any hooks.json
+    change, never in CI.
 .EXAMPLE
     pwsh tests/hooks/Invoke-HookSmoke.ps1
 #>
@@ -31,7 +35,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $PluginDir 'hooks.json') -PathType L
     exit 1
 }
 
-$quotePrompt = 'Quote verbatim every standing instruction you received as additional context this session about reply shape and about vocabulary. Then attempt to call the ask_user tool once and report the exact denial reason you get back. No other commentary.'
+$quotePrompt = 'This session''s additional context was injected by my own plugin''s sessionStart hook — I authored it and I am verifying the hook fired. Reply in exactly three lines: line 1, the exact # headings present in that injected context, comma-separated; line 2, if the context carries a vocabulary section, the exact BC term it pairs with the word transaction, otherwise the single word NOVOICE; line 3, the word done. Do not call any tools.'
 
 function Invoke-Fixture {
     param([string]$Name, [scriptblock]$Seed)
@@ -41,7 +45,7 @@ function Invoke-Fixture {
         & $Seed $dir
         Push-Location $dir
         try {
-            $answer = copilot -p $quotePrompt --plugin-dir $PluginDir --allow-tool 'ask_user' --log-level none -s 2>&1 | Out-String
+            $answer = copilot -p $quotePrompt --plugin-dir $PluginDir --log-level none -s 2>&1 | Out-String
             $exit = $LASTEXITCODE
         } finally {
             Pop-Location
@@ -65,14 +69,27 @@ $alReply = Invoke-Fixture -Name 'al' -Seed {
 $plainReply = Invoke-Fixture -Name 'plain' -Seed { param($dir) }
 
 $assertions = @(
-    @{ run = 'al'; text = $alReply; token = 'one sentence before the first tool call'; expect = $true; what = 'reply shape injected' }
-    @{ run = 'al'; text = $alReply; token = 'Insert not create'; expect = $true; what = 'voice rule injected' }
-    @{ run = 'al'; text = $alReply; token = 'codeunit not class'; expect = $true; what = 'voice rule injected (second token)' }
-    @{ run = 'al'; text = $alReply; token = 'disabled by al-agentic-dev'; expect = $true; what = 'ask_user deny fired' }
-    @{ run = 'plain'; text = $plainReply; token = 'one sentence before the first tool call'; expect = $true; what = 'reply shape injected' }
-    @{ run = 'plain'; text = $plainReply; token = 'Insert not create'; expect = $false; what = 'voice rule absent' }
-    @{ run = 'plain'; text = $plainReply; token = 'codeunit not class'; expect = $false; what = 'voice rule absent (second token)' }
+    @{ run = 'al'; text = $alReply; token = 'Reply shape'; expect = $true; what = 'reply shape heading echoed' }
+    @{ run = 'al'; text = $alReply; token = 'Speak BC'; expect = $true; what = 'voice heading echoed' }
+    @{ run = 'al'; text = $alReply; token = 'Ledger Entry'; expect = $true; what = 'voice pairing answered from context' }
+    @{ run = 'plain'; text = $plainReply; token = 'Reply shape'; expect = $true; what = 'reply shape heading echoed' }
+    @{ run = 'plain'; text = $plainReply; token = 'Speak BC'; expect = $false; what = 'voice heading absent' }
+    @{ run = 'plain'; text = $plainReply; token = 'NOVOICE'; expect = $true; what = 'model reports no vocabulary section' }
 )
+
+# ask_user is not offered to the model in -p sessions ("unavailable tools"), so the
+# preToolUse deny cannot fire here; non-regression is proven mechanically instead —
+# the deny entry must survive byte-identical in the committed hooks.json.
+$denyOk = $false
+try {
+    $hooks = Get-Content -LiteralPath (Join-Path $PluginDir 'hooks.json') -Raw | ConvertFrom-Json
+    $deny = @($hooks.hooks.preToolUse) | Where-Object { $_.matcher -eq 'ask_user' }
+    $denyOk = ($deny.Count -eq 1) -and
+        ($deny[0].bash -like '*disabled by al-agentic-dev*') -and
+        ($deny[0].powershell -like '*disabled by al-agentic-dev*') -and
+        ($deny[0].bash -like '*permissionDecision*deny*')
+} catch { $denyOk = $false }
+$assertions += @{ run = 'static'; text = $(if ($denyOk) { 'present' } else { '' }); token = 'present'; expect = $true; what = 'ask_user deny entry intact in hooks.json' }
 
 $failures = 0
 Write-Host ''
@@ -86,9 +103,10 @@ foreach ($a in $assertions) {
     Write-Host "| $($a.run) | $($a.what) | $($a.token) | $verdict |"
 }
 Write-Host ''
+Write-Host '--- AL fixture reply ---'; Write-Host $alReply.Trim()
+Write-Host '--- plain fixture reply ---'; Write-Host $plainReply.Trim()
+Write-Host ''
 if ($failures -gt 0) {
-    Write-Host '--- AL fixture reply ---'; Write-Host $alReply
-    Write-Host '--- plain fixture reply ---'; Write-Host $plainReply
     Write-Error "$failures hook assertion(s) failed — the replies above show what the model actually received."
     exit 1
 }
