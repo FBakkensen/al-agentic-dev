@@ -6,9 +6,9 @@ disable-model-invocation: true
 
 # Grill the domain
 
-Interview the user about what the business does until the vocabulary is unambiguous, and record the rules that would be expensive to change later. Your first line names that this run wants a frontier-class model — the user picked the model and weighs the mismatch — then proceed.
+Interview the user about what the business does until the vocabulary is unambiguous, and record the rules that would be expensive to change later.
 
-Writes `CONTEXT.md` at the repo root and accepted ADRs under `docs/adr/`. Reads production, test, and app code to expose conflicts and leaves it unchanged. Git holds those two; the Design story and the slice tree belong to later skills.
+Writes `CONTEXT.md` at the repo root and accepted ADRs under `docs/adr/`. Reads production, test, and app code to expose conflicts and leaves it unchanged. Git holds those two; the design and the frontier belong to later skills.
 
 ## The interview
 
@@ -46,8 +46,12 @@ Where the fork is genuinely open, build out one complete ADR candidate per optio
 
 Accepted lands as `docs/adr/NNNN-slug.md`, taking the lowest number unused on this branch and on main. The shapes are [ADR-FORMAT.md](ADR-FORMAT.md) and [CONTEXT-FORMAT.md](CONTEXT-FORMAT.md).
 
+## When the fog outgrows the session
+
+When the interview surfaces more fog than one session holds — the destination not yet nameable, open decisions piling past what this conversation can settle — name the destination first, in one line the user confirms. Then chart each open decision into the frontier store al-scope and al-next use: Azure DevOps work items through the azure-devops MCP work-item tools, `docs/frontier.md` second-class. A decision item is a question whose resolution is a decision, not a build slice — al-next re-opens /al-grill-adr on it when its turn comes.
+
 ## Close
 
-Name what settled: the terms now in `CONTEXT.md`, and any ADR accepted.
+Name what settled: the terms now in `CONTEXT.md`, and any ADR accepted. Hand the settled delta to the rubber-duck agent — another voice in, the user decides. The GitHub Copilot app engine ships no duck: the pass says the checkpoint skipped.
 Commit what this run wrote — `CONTEXT.md` and any accepted ADR — with a plain descriptive message; a stop mid-interview commits what settled the same way.
 Then continue in this session with /al-event-model — backend-only features go straight to /al-design.

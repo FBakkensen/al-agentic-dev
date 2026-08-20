@@ -1,80 +1,44 @@
 ---
 name: al-implement
-description: Drive one refined task through TDD, one AAA case at a time — red→green, or a green-born test proved by mutation. Run it when the router names a task for implementation, when `/al-code-review` or `/al-refactor` routes a behavioural defect, or to land the red-first repair of a verification-walk defect.
+description: Drive one frontier bullet to landed code through red-green at its pre-agreed seams, closing with a receipt that carries the gate verdict and the assumptions ledger. Reach for it when a bullet is refined and ready to build.
+disable-model-invocation: true
 ---
 
-# Drive one task red → green
+# al-implement — one bullet to landed code
 
-One task per session. Consume its `Test Specification`, stop at green. Your first line names the model class this run wants — the task's stamped tier, standard when absent — and the user, who picked the model, weighs the mismatch. Reshaping the diff is `/al-refactor`'s work, not chained from here. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+In: one frontier bullet — its test spec and pre-agreed seams ride on it — and the living design, which constrains architecture and data structure only; implementation details are yours, discovered in flight. Either input missing → name what is missing and stop. A bullet without seams is a decision point raised now, not a mid-run interview. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
-## Before any code
+## The loop
 
-The task is an Azure DevOps work item under the bound root — `/al-routing` owns its schema; read it through `azure-devops-wit_work_item`. The task this skill takes carries the `al-technical` tag with a populated `Test Specification` in its Description. Missing its specification, `/al-refine` writes it first. Another kind tag is declined — `/al-routing`'s ladder names its skill. Work-item state is `/al-routing`'s; this skill edits only the Description's body blocks, a mid-run contract change landing beside its `✏️ Contract:` comment.
+Red at a pre-agreed seam, the smallest green, then the next vertical slice. Tests exercise behavior through public seams with independent expected values — an assert that restates the implementation proves nothing. Mid-loop checks run /al-build's unit mode; the full gate runs once, at the end. Load the idiom capsules matching the work type when they exist — al-miner grows them; today there are none.
 
-A task whose behaviour is already proved is re-entered by one named repair alone, settled tasks included: a functional fail from a verification run or a behavioural defect routed from `/al-code-review` or `/al-refactor` — its failed check is the red, written as a test at the layer that can catch it. It lands red-first, commits opening with the owning `AB#<id>`, and moves no work-item state. At green, a verification-walk repair resumes `/al-user-verification` at the failed scenario; a `/al-code-review` or `/al-refactor` repair returns to its caller for its gate.
+## Verify or declare
 
-Read the Design story Description and name the seam in BC vocabulary — the procedure to extract, the event to subscribe, the interface to implement, the page action to wire. Production names and signatures arrive minted in the task's `New and Modified Objects`; test codeunit and procedure names are yours to mint.
+About to write code that depends on platform behavior not verified in this session: lookup it, or the claim enters the ledger as assumed. Every BC object, table, field, procedure, event, or enum value name is confirmed by a lookup in the current session, never recalled. BC vocabulary binds every line written — Insert not create, Post not submit, Validate not check, Ledger Entry not transaction, codeunit not class, procedure not method. Reach for the platform before writing code; an interface with a single implementation is indirection, not a seam.
 
-## Writing AL here
+## Stuck goes to the duck
 
-Every BC object, table, field, procedure, event, and enum value name comes from a lookup run in this session — grep the workspace source and symbols, view the declaring files, or search the official BC documentation through the microsoft-learn tools (microsoft_docs_search, microsoft_docs_fetch). Recall is fiction. `.bcapps/` is the intentionally gitignored pattern library, not a name oracle: before shaping a procedure, read how its precedent implements the behaviour — the `Precedent` verdict the task or the Design Modules section carries, or the nearest System Application neighbour — and take its signature shape, error style, and event placement. Missing → stop, naming `/al-clone-bcapps`; a workspace-wide grep skips the gitignored clone, so point grep at `.bcapps/` explicitly and view its files directly. A `reused:` verdict binds: the implementation calls the Microsoft object, and writing a parallel one is a stop below. A name you mint earns a zero-hit collision lookup first: objects against workspace declarations, fields against the target table and its extensions, procedures against the target object.
+The same failure twice, or a result that contradicts the spec, sends the failure evidence to the rubber-duck agent — the task tool's read-only complementary-model critic, agent_type rubber-duck — before a third retry. The GitHub Copilot app engine ships no duck: there the checkpoint skips and the receipt says so.
 
-BCQuality is the intentionally gitignored rule set. `.bcquality/knowledge-index.json` carries one row per article with its `domain` and `keywords`; missing → name `/al-clone-bcquality` and stop. A workspace-wide grep skips the gitignored clone, so point grep at `.bcquality/` explicitly and view its files directly, and the index is one minified line — parse it as JSON rather than reading or searching it by line. Before the first case, narrow to the domains the task touches and read those articles. The articles are written for the container runtime — AL Runner is a non-Microsoft unit runner they do not document — so this skill's runner semantics and test codeunit contract override a colliding article. An article that moved a decision lands as a `🔎 Researched:` bullet in `Contract notes`; elsewhere it stays silent.
+## Decision points
 
-BC vocabulary, in code and in every line written to the work item: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, the record or the API body not the payload, codeunit not class, procedure not method. TDD, red/green, and AAA keep their own names. A name you mint is derived, never invented: its noun from a `CONTEXT.md` term, the BC baseline, or a Design-story Action, Business Event, or Status, its verb from BC's own set, confirmed in `.bcapps/` where the clone is present. A term no source names is a vocabulary gap two interviews missed: settle it as one question, land it in `CONTEXT.md` per its format — committed on its own with a plain descriptive message, apart from the task's `AB#<id>` commits — then continue.
-
-Production thrift: reach for the platform before writing code — a FlowField over a setup table, a table relation or permission entry over validation code, an enum over a hand-rolled status. An `interface` arrives with its second implementation, not before. A deliberate shortcut carries a one-line comment naming its ceiling and the upgrade path. Trust-boundary validation, posting and ledger correctness, and permission checks stay at full strength.
-
-Any `#pragma`, temporary or permanent, requires explicit user approval before it enters the diff.
-
-## One AAA case at a time
-
-Work the cases in the specification's order: every `Unit` case first, then every `Integration` case, ascending coverage ID within each scope. One case reaches green before the next begins.
-
-1. **Scaffold** the test codeunit and the production procedure the case names, empty, build green.
-2. **Red.** Write just enough test to fail on a `Library Assert` call. A compile error, or a runtime error the `Act` never survived, is not a red — clear it, then reach the assertion. Production stays behaviour-free: the delta this case exists to force is unwritten.
-3. **Green.** Write the smallest production change that passes the case, with the test text left as the red had it.
-
-A test born green — the behaviour already exists: a characterization test, a case over code absorbed earlier without a red — takes mutation as its red. Inject one compiling fault into the production site the case targets, watch the test go red, revert the fault, and confirm green. A test no fault forces red is not a real test: strengthen the assertion until it bites, and keep the strengthened text. Per fault, run the case's own scope — a `Unit` case the unit suite, an `Integration` case all tests; the full gate stays at task close. Faults that work: flip a guard, swap `=` for `<>`, widen a comparator, `+` for `-` in money or quantity math, replace a literal with a neighbour, drop `Validate()` for direct assignment, `Modify(true)` → `Modify(false)`. Removing an assignment or inserting an early `exit` fails to compile and wastes the round.
-
-## Unit or Integration is the runner's verdict
-
-AL Runner runs your own tables, fields, triggers, and AL logic for real in-memory, so record behaviour is unit-provable as written — assign fields directly and keep `Library - Sales` and its siblings out of unit tests. Everything inside an `.app` dependency auto-stubs instead: `Sales-Post` executes as a no-op, `GetResponseOrDefault` returns `false`. Where an assertion's truth rides on what a stubbed object really returns, that case is `Integration` — reclassify it rather than wrapping a BaseApp routine in a 1:1 interface built only to stub it. An observable `Commit()` is `Integration` too.
-
-A case that moves to `Integration` mid-cycle earns one `Contract notes` line: what `Unit` could not hold, and the seam that would push it back down. A wrong expected value is a different animal — that changes the `Test Specification` contract: ask the user in chat and wait, then write the settled value into the specification and continue the cycle.
-
-Where current code is too tangled for the Unit seam the case needs, anchor today's behaviour in an Integration characterization test first, extract the seam, then add the Unit case.
-
-## Test codeunit contract
-
-`Subtype = Test`, `TestPermissions = Disabled`, `Access = Internal`. Every `[Test]` calls `Initialize()` as its first statement — that reset is what makes a case portable between AL Runner and the container. `AreNearlyEqual` where `Round()` leaves a residual. A `[TransactionModel]` attribute carries a comment naming the `Commit()` it exists for. Handler wiring, assertion choice, and transaction-model selection follow BCQuality's `testing` articles.
-
-One short PascalCase procedure per case, BaseApp style: `RuleSetWithBlockedRecordThrowsError`. Test-data literals carry UPPER_SNAKE role tokens (`CLONE_BASE_SRC`), distinct across procedures and inside the target field's width.
-
-## Gate once, at task close
-
-Run the full gate through `/al-build -AllTests` after the last case; a gate between `Unit` cases re-proves the same tree. Read a red there by class: a container or publish failure is infrastructure and `/al-build` owns the recovery; a test green under AL Runner and red under the container is a placement or runner-semantics mismatch, not a production defect; anything else is an ordinary regression — repair the production code and re-gate.
-
-## Reconcile, then hand over
-
-At full green, the handoff certifies that the work item's Description matches what landed. Before it:
-
-- Every AAA case header carries its actual AL test procedure name, and every `Covered By` cell names those procedures.
-- `New and Modified Objects` matches the diff — objects, fields, signatures, visibility, placement in the module map.
-- `Scope:` and `Covers:` are final; discoveries land as one-fact bullets in `Contract notes`, each grounding citation among them as `🔎 Researched: <fact> → <source>`.
-- Every `Contract notes:` bullet is one sentence; a bullet that grew a history is rewritten to its surviving decision, the history going to the commit message.
-- A shipped surface is a one-way door: new objects take IDs from the workspace's ID allocator, and a shipped field goes `ObsoleteState: Pending` → `Removed` rather than being renamed in place.
-
-Commit at green opening with the task's `AB#<id>` — the slice review selects its diff by those ids — so the tree is clean for what comes next. Report that committed `HEAD` and the full-gate result to `/al-routing`; it records the clean-gate receipt, including on a repair green.
-
-## Apply a decision, or ask on a new one
-
-Apply and continue: build scaffolding, a permission-set entry, an object ID, a caption, a local rename, a field on an object the task already names, reusing a seam a sibling task established. Where one rests on an assumption nobody blessed, append one line to the Description's `Deviations:` block — never edited away.
-
-A new decision pauses the cycle: ask it in chat as one question and wait. An answer that keeps the task's contract — a production object the assertions require that `New and Modified Objects` never named, a code path that needs its own case rather than an appended assertion, a public-surface rename — lands in the `Test Specification` by this run, and the cycle continues. An answer that reopens the architecture — a new table, a new event publisher, a genuinely new seam, a `.bcapps/` find that Microsoft already ships what the task is building, a BCQuality rule the task's named surface violates, a task that no longer matches the feature Goal — ends the run: roll the working tree back to the last commit and name the owning skill; holding work uncommitted until green is what keeps that rollback clean.
+A change in behavior beyond the bullet stops the run and surfaces as one plain-text question; the answer resumes or reshapes the run. Everything else lands without chat.
 
 ## Close
 
-Name the task green and the behaviour it now proves — one line, no build counts; those live in the commit and the work item. Put the landed change in view through `/al-visualize` as a receipt — the task's product delta, `Deviations:` named; a repair green draws its fix receipt the same way before rejoining its episode.
+Commit the work with a plain descriptive message naming the bullet. Emit the receipt — posted to the bullet's work item where Azure DevOps is wired, mirrored to `.output/receipts/<bullet>.md` always — and stop; the caller owns the next block.
 
-Then `/al-routing`; a repair green returns to its caller inside its episode, following the repair path above.
+```
+## al-implement receipt — <bullet>
+Built: one line per landed change, BC object names exact
+Tidy: <shape debts noticed in flight — naming, dead scaffolding, duplication, idiom polish | none>
+Gate: /al-build verdict — mode named, per-runner totals from summary.json
+Ledger:
+  verified: <claim> — <Learn URL | BCApps file+line | topic id | article path>
+  assumed: <claim> — not verified
+Decision points: none | each one raised and the call made
+Duck: not consulted | <verdict> | absent in this engine — checkpoint skipped
+Commits: <hashes>
+```
+
+The run is done when every landed change appears under Built, every platform dependency sits in the ledger as verified or assumed, and the closing gate is green.

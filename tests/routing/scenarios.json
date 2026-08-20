@@ -1,0 +1,183 @@
+{
+  "note": "Routing smoke scenarios. Each prompt is a user moment; expect names the skill the model should route to, or 'none'. Slash-only skills (disable-model-invocation: true) are invisible to the model by design — their scenarios expect 'none' and act as visibility canaries: a run that names one means its disable flag broke. Later packages append their skills' scenarios here.",
+  "scenarios": [
+    {
+      "id": "S1",
+      "prompt": "I changed a codeunit and its tests. Run the full gate before we move on.",
+      "expect": "al-build"
+    },
+    {
+      "id": "S2",
+      "prompt": "Set up the AL toolchain for this repo: compiler channels, symbols, analyzers, breaking-change baseline.",
+      "expect": "al-build"
+    },
+    {
+      "id": "S3",
+      "prompt": "Draw what we just landed as a picture the PM can steer from, on the side panel.",
+      "expect": "al-visualize"
+    },
+    {
+      "id": "S4",
+      "prompt": "Clone Microsoft's Base App source locally so I can read how posting routines are implemented.",
+      "expect": "none",
+      "canary": "al-clone-bcapps is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S5",
+      "prompt": "Refresh the BC quality knowledge base clone and rebuild its knowledge index.",
+      "expect": "none",
+      "canary": "al-clone-bcquality is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S6",
+      "prompt": "I have a rough plan for a new feature. Stress-test my thinking — interview me until we both understand it.",
+      "expect": "al-grilling"
+    },
+    {
+      "id": "S7",
+      "prompt": "This release announcement reads like a chatbot wrote it. Cut the AI tells and give it a human voice.",
+      "expect": "al-unslop"
+    },
+    {
+      "id": "S8",
+      "prompt": "Put my design through a relentless interview before I commit to it.",
+      "expect": "al-grilling",
+      "note": "al-grill-me is slash-only and wraps al-grilling; the model routing to the engine is the designed outcome"
+    },
+    {
+      "id": "S9",
+      "prompt": "Wait, I don't understand where you've got to. Explain that last message again in plain language.",
+      "expect": "none",
+      "canary": "al-wait-what is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S10",
+      "prompt": "Mine my session history for recurring AL mistakes and propose standing lessons.",
+      "expect": "none",
+      "canary": "al-miner is slash-only per decision E (on-demand); a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S11",
+      "prompt": "What did I work on yesterday?",
+      "expect": "none",
+      "canary": "chronicle standup's native ground; a run that names al-miner means its description overreaches"
+    },
+    {
+      "id": "S12",
+      "prompt": "Add a standing lesson line so I stop repeating this container mistake in future sessions.",
+      "expect": "none",
+      "canary": "al-miner is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S13",
+      "prompt": "Does Modify(false) skip the OnModify trigger? Check before I write this.",
+      "expect": "al-lookup"
+    },
+    {
+      "id": "S14",
+      "prompt": "Show me how the Base App implements posting preview for a journal.",
+      "expect": "al-lookup"
+    },
+    {
+      "id": "S15",
+      "prompt": "Research which BC shape fits this whole feature and write a cited report with diagrams.",
+      "expect": "none",
+      "canary": "the native /research command's deep ground; a run that names al-lookup means its description overreaches"
+    },
+    {
+      "id": "S16",
+      "prompt": "Implement the next frontier bullet — its failing-test spec is already on it.",
+      "expect": "none",
+      "canary": "al-implement is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S17",
+      "prompt": "Reshape this working code without changing its behavior.",
+      "expect": "none",
+      "canary": "al-refactor is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S18",
+      "prompt": "Review my diff since main against what the bullet asked — standards and spec side by side.",
+      "expect": "none",
+      "canary": "al-review is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S19",
+      "prompt": "What could this small change break beyond the files it touches?",
+      "expect": "none",
+      "canary": "blast-radius phrasing lives inside slash-only al-review; a run that names al-review means the disable flag broke"
+    },
+    {
+      "id": "S20",
+      "prompt": "The bullet just landed — run the loop transition: show the delta, reconcile the design, sharpen what's next.",
+      "expect": "none",
+      "canary": "al-next is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S21",
+      "prompt": "Draw the objects and event flows this branch changed, as boxes and connections.",
+      "expect": "al-visualize"
+    },
+    {
+      "id": "S22",
+      "prompt": "What's next on my plate?",
+      "expect": "none",
+      "canary": "a passing phrase must not trigger the state-moving transition; a run that names al-next means its flag broke"
+    },
+    {
+      "id": "S23",
+      "prompt": "Architect this feature in BC shapes — is it master data with entries, or a document flavor?",
+      "expect": "none",
+      "canary": "al-design is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S24",
+      "prompt": "Model who publishes and who subscribes when posting completes.",
+      "expect": "none",
+      "canary": "al-event-model is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S25",
+      "prompt": "Cut the settled design into tracer-bullet work items with blocking edges.",
+      "expect": "none",
+      "canary": "al-scope is slash-only and creates store state; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S26",
+      "prompt": "My PR is ready — watch CI and the Copilot review, fix the findings, keep it synced with main until it can merge.",
+      "expect": "none",
+      "canary": "al-pr-shepherd is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S27",
+      "prompt": "Merge main into my PR branch and sort out the object-number collisions.",
+      "expect": "none",
+      "canary": "the sync mechanics live inside slash-only al-pr-shepherd; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S28",
+      "prompt": "Run the whole loop on the next ready bullet — implement, reshape if needed, review — and pause only where a decision needs me.",
+      "expect": "none",
+      "canary": "al-orchestrate is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S29",
+      "prompt": "I have a fresh feature idea for our BC app — interview me until the vocabulary is unambiguous.",
+      "expect": "none",
+      "canary": "al-grill-adr is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S30",
+      "prompt": "Two teams use 'batch' to mean different things in this app — settle the term and record it.",
+      "expect": "none",
+      "canary": "al-grill-adr is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S31",
+      "prompt": "The gate is green — clean this up before we move on.",
+      "expect": "none",
+      "canary": "the tidy pass lives inside slash-only al-refactor; a run that names it means the disable flag broke"
+    }
+  ]
+}

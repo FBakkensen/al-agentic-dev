@@ -2,7 +2,7 @@
 
 ## What it is for
 
-The gate, and the only skill that runs the PowerShell substrate. Every script in this toolkit lives in `skills/al-build/scripts/` and `/al-build` is their sole invoker — [`/al-provision`](al-provision.md), [`/al-validate-breaking-changes`](al-validate-breaking-changes.md), and [`/al-user-verification`](al-user-verification.md) all reach them by naming this skill, never by naming a path.
+The gate, and the only skill that runs the PowerShell substrate. Every script in this toolkit lives in `skills/al-build/scripts/` and `/al-build` is their sole invoker — any skill that needs a script run reaches it by naming this skill, never by naming a path.
 
 ## When you reach for it
 

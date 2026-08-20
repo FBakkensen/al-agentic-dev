@@ -1,10 +1,10 @@
 # al-agentic-dev
 
-A GitHub Copilot plugin that carries a Microsoft Dynamics 365 Business Central feature from a rough idea to a merged branch — domain interview, event model, architecture, work-item scoping, TDD, mutation testing, code review, and a guided user walk, with a scripted compile-publish-test gate underneath.
+A GitHub Copilot plugin for Microsoft Dynamics 365 Business Central development: a scripted compile-publish-test gate with containers, coverage, Page Scripting replay, and breaking-change validation underneath, plus the two platform-knowledge clones and a visual steering surface.
 
-One install brings the whole surface: twenty-five Agent Skills, three packaged custom agents (`al-review-lens`, `al-spec-reviewer`, `al-knowledge-leaf`), and two bundled MCP servers — NAB AL Tools for XLF translation and Microsoft Learn for current Microsoft documentation.
+One install brings the whole surface: the Agent Skills, two packaged custom agents (`al-review-lens`, `al-knowledge-leaf`), and three bundled MCP servers — NAB AL Tools for XLF translation, Microsoft Learn for current Microsoft documentation, and bc-code-intelligence for BC idioms and patterns.
 
-You drive; nothing auto-chains. A skill that moves a task hands its outcome to `/al-routing`, which records the state and presents the moves that are open. `CONTEXT.md` and `docs/adr/` live in git; the Design story and task state live in Azure DevOps work items under the customer's root work item, bound per repo by `al-ado.json` — so every skill starts cold.
+The set is mid-rebuild: the earlier 26-skill pipeline is retired, and each new plugin version ports proven skills back in as real work needs them. Git history is the donor archive.
 
 ## Requirements
 
@@ -12,8 +12,7 @@ You drive; nothing auto-chains. A skill that moves a task hands its outcome to `
 - GitHub Copilot CLI, authenticated to `9altitudes.ghe.com` (`gh auth status -h 9altitudes.ghe.com`)
 - Docker Desktop, BcContainerHelper, and the .NET SDK — `/al-build`'s scripted toolchain
 - Node.js 22+ with `npx` on PATH — runs the bundled NAB AL Tools MCP server
-- Azure DevOps access, authenticated with `az login` — task state lives in work items
-- In each consumer repo: `al-build.json` at the root for the build gate, and `al-ado.json` naming `organization`, `project`, `rootWorkItemId`, and `areaPath` for the work-item binding
+- In each consumer repo: `al-build.json` at the root for the build gate
 
 The skills other than `/al-build` are prose and need nothing beyond Copilot itself.
 
@@ -43,9 +42,9 @@ Same plugin, no marketplace registration — and no catalog for `copilot plugin 
 ### Verify
 
 ```
-copilot plugin list      # al-agentic-dev@al-agentic-dev (v1.2.1)
-copilot skill list       # the 25 skills, under "Plugin skills"
-copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn
+copilot plugin list      # al-agentic-dev@al-agentic-dev (v1.12.0)
+copilot skill list       # the 20 skills, under "Plugin skills"
+copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn, bc-code-intelligence
 ```
 
 The skills must appear under **Plugin skills**. Any of them listed under *Personal skills* is a leftover legacy copy shadowing the plugin — go to [Migrating from `npx skills add`](#migrating-from-npx-skills-add).
@@ -80,13 +79,13 @@ The auto-install runs when Copilot starts in a trusted checkout of that reposito
 
 ### Azure DevOps MCP server
 
-Task state lives in Azure DevOps work items, so install and authenticate the Azure DevOps MCP server per its own documentation — the pipeline needs its work-item tools available in every session that runs `/al-event-model`, `/al-design`, `/al-routing`, `/al-scope`, `/al-next`, or `/al-orchestrate`. The plugin deliberately does not bundle it: the server connection is yours, not the plugin's.
+The frontier lives in Azure DevOps work items, so install and authenticate the Azure DevOps MCP server per its own documentation — `/al-next` works the work items through its tools. The plugin deliberately does not bundle it: the server connection is yours, not the plugin's. Without it, `/al-next` keeps the frontier in `docs/frontier.md`, explicitly second-class.
 
 ## Migrating from `npx skills add`
 
 Earlier versions of this set installed as loose per-user skill folders. Those copies load **before** plugin skills and silently mask every plugin update, forever — same name, stale text wins, no warning. Remove them once and the plugin takes over.
 
-**1. Detect.** List what the legacy installer left behind (only folders whose names this plugin ships — your other personal skills are untouched):
+**1. Detect.** List what the legacy installer left behind (only folders whose names this set has ever shipped — your other personal skills are untouched):
 
 ```powershell
 $plugin = 'al-agentic-dev-overview','al-build','al-clone-bcapps','al-clone-bcquality','al-code-review',
@@ -108,50 +107,44 @@ foreach ($dir in "$HOME\.agents\skills", "$HOME\.copilot\skills") {
 copilot plugin uninstall al-agentic-dev
 ```
 
-**4. Install fresh** per [Install](#install), then verify: `copilot plugin list` shows the plugin, `copilot skill list` shows all 25 skills under **Plugin skills** and none of them under *Personal skills*, and `copilot mcp list` shows `nab-al-tools` and `microsoft-learn` as plugin servers.
+**4. Install fresh** per [Install](#install), then verify: `copilot plugin list` shows the plugin, `copilot skill list` shows its skills under **Plugin skills** and none of them under *Personal skills*, and `copilot mcp list` shows `nab-al-tools`, `microsoft-learn`, and `bc-code-intelligence` as plugin servers.
 
 ## The skills
 
 | Skill | What it does |
 |---|---|
-| [`/al-agentic-dev-overview`](docs/al-agentic-dev-overview.md) | This tour, plus the user-level reply-shape snippet install. |
-| `/al-routing` | The state engine — records each skill's outcome on the Azure DevOps work items and derives the open moves. |
-| [`/al-next`](docs/al-next.md) | Names the open moves when you resume a session or ask what is next. |
-| [`/al-grill-adr`](docs/al-grill-adr.md) | Grills the idea in BC vocabulary, writes `CONTEXT.md`, earns domain ADRs. |
-| [`/al-event-model`](docs/al-event-model.md) | Settles the user journey on the Design User Story — Role, Action, Business Event, View, Status. |
-| [`/al-design`](docs/al-design.md) | Settles the architecture on the same Design User Story, comparing candidates with you. |
-| [`/al-scope`](docs/al-scope.md) | Cuts the Design story into slices and one work item per unit of work. |
-| `/al-orchestrate` | Conducts a scoped feature from the feature session — spawns slice workspaces, runs each skill as its own conversation, relays questions, merges slice PRs on Clean. |
-| [`/al-refine`](docs/al-refine.md) | Opens one task into a Test Specification or a Verification Plan. |
-| [`/al-implement`](docs/al-implement.md) | Drives one task through TDD — red→green, or a green-born test proved by mutation. |
-| [`/al-refactor`](docs/al-refactor.md) | Reshapes production and test code while the gate stays green. |
-| [`/al-code-review`](docs/al-code-review.md) | Reviews at slice-done and before merge, splitting rework from change requests. |
-| `/al-knowledge-pass` | Runs BCQuality's knowledge pass over a scoped diff; the review skills invoke it mid-run. |
-| `/al-spec-review` | Blind-reads a just-written spec artifact against its sources; the writing skills invoke it at close. |
-| `/al-visualize` | Draws what a run settled or landed as a steering surface on the Copilot app's side-panel canvas. |
-| [`/al-user-verification`](docs/al-user-verification.md) | Walks a slice's verify task with you, one scenario at a time, recordings included. |
-| [`/al-build`](docs/al-build.md) | Compiles, publishes, runs the tests — the gate every other skill reaches through. |
-| [`/al-provision`](docs/al-provision.md) | Runs the provision task's first step, refreshing compiler, symbols, and baseline. |
-| `/al-clone-bcapps` | Runs its second step, cloning Microsoft's W1 source at the matching BC version into `.bcapps/`. |
-| `/al-clone-bcquality` | Runs its third step, cloning Microsoft's BCQuality knowledge base into `.bcquality/`. |
-| [`/al-validate-breaking-changes`](docs/al-validate-breaking-changes.md) | Runs the feature's last task, validating the shipped surface against that baseline. |
-| [`/al-quiz`](docs/al-quiz.md) | Quizzes you on what just landed, one question at a time. |
-| `/al-grilling` | Stress-tests one answer at a time; the interview skills escalate to it. |
-| [`/al-sync-main`](docs/al-sync-main.md) | Syncs the branch with main and renumbers object and field collisions. |
-| `/babysit-pr` | Drives an open PR to a clean review state — Copilot review, findings, CI — and never merges. |
+| [`/al-build`](docs/al-build.md) | Compiles, publishes, runs the tests — plus provisioning, breaking-change validation, Page Scripting replay, and the container lifecycle. |
+| `/al-clone-bcapps` | Clones Microsoft's W1 source at the matching BC version into `.bcapps/` for reading and searching platform code. |
+| `/al-clone-bcquality` | Clones Microsoft's BCQuality knowledge base into `.bcquality/` and builds its knowledge index. |
+| `/al-visualize` | Draws the BC-anatomy delta — objects, events, flows as boxes and connections — on the Copilot app's side-panel canvas; al-next invokes it when the shape changed. |
+| `/al-grilling` | Interviews you in numbered rounds over a plan's design tree until shared understanding — the engine `al-grill-me` starts. |
+| `/al-grill-me` | Starts the grilling interview over a plan or design. |
+| `/al-wait-what` | Stops the flow and re-pitches the last message in plain shared language. |
+| `/al-unslop` | Cuts AI tells from any writing; applies to every reply and artifact. |
+| `/al-miner` | Mines session history for repeated failures and steering corrections; proposes standing lessons with evidence, never landing them itself. |
+| `/al-lookup` | Answers one platform question with a source pointer — Microsoft Learn, bc-code-intelligence, the BCApps clone, or the BCQuality index — and grows the repo's precedent map. |
+| `/al-implement` | Drives one frontier bullet to landed code — red-green at its pre-agreed seams, /al-build as the checker — and closes on a receipt with the gate verdict and the assumptions ledger. |
+| `/al-refactor` | Reshapes green code with behavior frozen — the routine tidy pass after every green, or a named deepening goal that upgrades to the full reshape (subtract first, migrate callers before deleting) — and proves the hold with the full gate. |
+| `/al-review` | Reads a diff ledger-first — standards through the BCQuality Entry protocol, spec side by side, the six AL anatomy axes, blast radius proven by running code — and returns a Blocking/Non-Blocking verdict without touching a line; beauty is never a finding, it lands on the one Refactor food line. |
+| `/al-next` | The loop transition: capsule, delta drawn, design reconciled, one grilling round, frontier reshaped and the next bullet sharpened — the frontier in Azure DevOps work items, or docs/frontier.md without that wiring. |
+| `/al-grill-adr` | The pipeline entry: interviews a fresh feature idea until the vocabulary is unambiguous — CONTEXT.md at the repo root, hard-to-reverse business rules as ADRs, big fog charted as decision items on the frontier. |
+| `/al-design` | The architecture conversation in BC shapes — modules, seams, tables, extensions — writing the living docs/design.md that /al-next reconciles. |
+| `/al-event-model` | The living eventing picture — publishers, subscribers, business events through posting — in docs/event-model.md, updated the moment understanding changes. |
+| `/al-scope` | Cuts the settled design into tracer-bullet work items with blocking edges, quizzes until the cut is approved, and creates the frontier /al-next maintains. |
+| `/al-pr-shepherd` | Drives one open PR to merge — CI watched, Copilot findings fixed, main merged in with intent-preserving conflict resolution — merging only on your explicit go. |
+| `/al-orchestrate` | Runs one ready bullet through the whole loop — implement, refactor, review, the tidy beat skipped only when implement reports nothing to tidy — pausing only at declared decisions and ending at the review verdict. |
 
-## The pipeline
+Two read-only reviewer agents ride under `agents/` — `al-review-lens` and `al-knowledge-leaf`, serving `/al-review`'s fan-out. `al-grilling`, `al-grill-me`, `al-wait-what` (mattpocock/skills, MIT) and `al-unslop` (pstack, MIT) are pinned forks: their bodies stay donor text except the al- namespace, provenance pinned at the donor SHAs, and a content fix belongs upstream.
 
-```
-/al-grill-adr → /al-event-model → /al-design → /al-scope → /al-provision
-   → /al-refine → /al-implement → /al-refactor
-   → /al-code-review → /al-user-verification → /al-validate-breaking-changes
-```
+## The hooks
 
-`/al-event-model` runs for user- or API-facing features only; backend-only features go straight to `/al-design`. `/al-refine` through `/al-refactor` runs once per task; `/al-code-review` and `/al-user-verification` run once per slice, with `/al-code-review` again across the whole feature before merge. `/al-validate-breaking-changes` is the feature's last task. `/al-quiz` and `/al-sync-main` run whenever you want them. From `/al-scope`'s close, `/al-orchestrate` conducts everything after the entry chain — one workspace per slice, one fresh conversation per skill run — and hands you only what needs you.
+`hooks.json` ships two hooks:
 
-Full walkthrough, including the branch points: [docs/pipeline.md](docs/pipeline.md). How a feature ships as a stack of slice PRs, and the two one-time repository settings that stack needs: [docs/stacked-delivery.md](docs/stacked-delivery.md).
+- **ask_user deny** (preToolUse): the ask_user tool is denied with a redirect — questions land in the reply itself, as plain text, with lettered options and the recommendation marked.
+- **Session voice** (sessionStart): every new or resumed session receives the reply-shape rules as additional context, and — only when the working directory is an AL repo (an `app.json` at the root or one directory level deep) — the Speak BC vocabulary rule: Insert not create, Post not submit, Ledger Entry not transaction, and so on. In a non-AL directory the vocabulary rule stays out.
 
-## The reply-shape snippet
+One platform caveat: the Copilot CLI currently honors only the **last** sessionStart `additionalContext` across all hook sources, so a user-level sessionStart context hook and this plugin's cannot both inject today — whichever loads last wins.
 
-`/al-agentic-dev-overview` will, on request, install the reply-shape rules these skills assume — one sentence before the first tool call, one question per message, outcome first when finishing. It writes them to `~/.copilot/copilot-instructions.md` inside `<!-- al-agentic-dev:start -->` / `<!-- al-agentic-dev:end -->` markers, so a re-run rewrites only that block. This is user level only — it never writes into the repository you are working in.
+**Migrating from v1:** earlier versions installed these reply-shape rules as a managed block in `~/.copilot/copilot-instructions.md` (between `<!-- al-agentic-dev:start -->` / `<!-- al-agentic-dev:end -->` markers). Delete that block — the hook replaces it, and the plugin never writes user files.
+
+Re-prove injection after any hooks.json change: `pwsh tests/hooks/Invoke-HookSmoke.ps1` (two paid runs; see tests/README.md).

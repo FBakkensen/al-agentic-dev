@@ -1,6 +1,6 @@
 ---
 name: al-clone-bcquality
-description: Clone Microsoft's BCQuality knowledge base into .bcquality/ and build its knowledge index, so the review leaves and the design chain work from BC-specific rules rather than recall. The provision task's third step, and runnable anytime to refresh the clone.
+description: Clone Microsoft's BCQuality knowledge base into .bcquality/ and build its knowledge index, so the review leaves work from BC-specific rules rather than recall. Runnable anytime to refresh the clone.
 disable-model-invocation: true
 ---
 
@@ -12,9 +12,8 @@ because their absence produces a mistake, one review skill per knowledge domain.
 
 ## Precondition
 
-None beyond the workspace. Run it as the provision task's third step when routed
-there, or ad hoc whenever `.bcquality/` is missing, suspect, or due a refresh.
-Task-file state is `/al-routing`'s.
+None beyond the workspace. Run it whenever `.bcquality/` is missing, suspect, or
+due a refresh.
 
 ## Target
 
@@ -58,7 +57,5 @@ the review leaves it lists, and the index carries a row for every article under 
 
 Name the outcome — the clone on disk at the upstream head with its index, or one line
 naming what failed in the terms the developer acts on. Clearing a red is the
-developer's move; re-run this skill afterwards.
-
-Ran as the provision task's step → then `/al-routing`. Ran ad hoc → close back into the
-work that needed the clone; nothing to route.
+developer's move; re-run this skill afterwards. Close back into the work that
+needed the clone.

@@ -216,13 +216,36 @@ Name the outcome, then /al-build.
 
     It 'fails when a model-invocable skill carries disable-model-invocation' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'flag-on-exception') -Files @{
-            'al-next/SKILL.md' = (New-SkillContent -Name 'al-next')
+            'al-build/SKILL.md' = (New-SkillContent -Name 'al-build')
         }
 
         $result = Invoke-SkillValidator -Root $root
 
         $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'al-next is model-invocable; remove disable-model-invocation'
+        $result.Text | Should -Match 'al-build is model-invocable; remove disable-model-invocation'
+    }
+
+    It 'accepts a pinned fork without the question rule' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'port-question-rule') -Files @{
+            'al-wait-what/SKILL.md' = (New-SkillContent -Name 'al-wait-what' -WithoutQuestionRule)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+
+    It 'accepts the harness token inside a pinned fork only' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'port-harness') -Files @{
+            'al-unslop/SKILL.md' = (New-SkillContent -Name 'al-unslop' -ModelInvocable -WithoutQuestionRule -Body 'Cut harness (as metaphor) from prose.')
+            'demo/SKILL.md'   = (New-SkillContent -Body 'Cut harness metaphors.')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'demo/SKILL\.md: uses harness-conditional phrasing'
+        $result.Text | Should -Not -Match 'al-unslop/SKILL\.md: uses harness-conditional phrasing'
     }
 
     It 'fails when the name does not match the folder name' {
@@ -536,7 +559,7 @@ Describe 'Validate-Skills script-path checks' {
 }
 
 Describe 'Validate-Skills state-home checks' {
-    It 'fails when a skill body states a lifecycle field outside al-routing' -TestCases @(
+    It 'fails when a skill body states a lifecycle field' -TestCases @(
         @{ Case = 'status'; Body = 'Flip `status: done` when the gate is green.'; Expected = "status:" }
         @{ Case = 'phase'; Body = 'Stamp `phase: refined` on the task.'; Expected = "phase:" }
         @{ Case = 'blocked-on'; Body = 'Write blocked-on: with the reason.'; Expected = "blocked-on:" }
@@ -553,7 +576,7 @@ Describe 'Validate-Skills state-home checks' {
         $result = Invoke-SkillValidator -Root $root
 
         $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match "states the lifecycle field '$Expected' outside al-routing"
+        $result.Text | Should -Match "states the lifecycle field '$Expected'; task-state ceremony is retired"
     }
 
     It 'fails when a sibling file states a lifecycle field' {
@@ -565,10 +588,10 @@ Describe 'Validate-Skills state-home checks' {
         $result = Invoke-SkillValidator -Root $root
 
         $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match "demo/FORMAT\.md: states the lifecycle field 'status:' outside al-routing"
+        $result.Text | Should -Match "demo/FORMAT\.md: states the lifecycle field 'status:'"
     }
 
-    It 'fails when a skill body states a work-item transition outside al-routing' -TestCases @(
+    It 'fails when a skill body states a work-item transition' -TestCases @(
         @{ Case = 'resolved'; Body = 'Move the work item to State: Resolved when the gate is green.'; Expected = 'State: Resolved' }
         @{ Case = 'lowercase-field'; Body = 'Set state: Blocked while the edge is open.'; Expected = 'state: Blocked' }
         @{ Case = 'closed'; Body = 'The run ends at State: Closed.'; Expected = 'State: Closed' }
@@ -582,17 +605,18 @@ Describe 'Validate-Skills state-home checks' {
         $result = Invoke-SkillValidator -Root $root
 
         $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match "states the work-item transition '$Expected' outside al-routing"
+        $result.Text | Should -Match "states the work-item transition '$Expected'; task-state ceremony is retired"
     }
 
-    It 'accepts work-item transitions inside al-routing' {
+    It 'fails on work-item transitions in every folder, the old state home included' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'ado-home') -Files @{
-            'al-routing/SKILL.md' = (New-SkillContent -Name 'al-routing' -ModelInvocable -Body 'Move the work item to State: Resolved, then State: Closed.')
+            'al-routing/SKILL.md' = (New-SkillContent -Name 'al-routing' -Body 'Move the work item to State: Resolved, then State: Closed.')
         }
 
         $result = Invoke-SkillValidator -Root $root
 
-        $result.ExitCode | Should -Be 0
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "states the work-item transition 'State: Resolved'"
     }
 
     It 'accepts a state token bound to no work-item value' {
@@ -605,14 +629,15 @@ Describe 'Validate-Skills state-home checks' {
         $result.ExitCode | Should -Be 0
     }
 
-    It 'accepts lifecycle fields inside al-routing' {
+    It 'fails on lifecycle fields in every folder, the old state home included' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'lifecycle-home') -Files @{
-            'al-routing/SKILL.md' = (New-SkillContent -Name 'al-routing' -ModelInvocable -Body 'Stamp `status: done` and `phase: mutated` in one edit.')
+            'al-routing/SKILL.md' = (New-SkillContent -Name 'al-routing' -Body 'Stamp `status: done` and `phase: mutated` in one edit.')
         }
 
         $result = Invoke-SkillValidator -Root $root
 
-        $result.ExitCode | Should -Be 0
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "states the lifecycle field 'status:'"
     }
 
     It 'ignores a lifecycle-shaped token in SKILL.md frontmatter' {

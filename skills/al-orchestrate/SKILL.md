@@ -1,51 +1,25 @@
 ---
 name: al-orchestrate
-description: "Conduct a scoped feature from the feature session: spawn slice workspaces up to the parallel cap, run each pipeline skill as its own fresh conversation with its own model, relay child questions, merge slice PRs on Clean. Use when /al-scope closes on a scoped work-item tree and the session rolls into coordination, or when the user starts or resumes a feature by root work item id."
+description: Drive one ready bullet through the whole loop — implement, refactor, review — pausing only where a block declares a decision, ending at the review verdict. Type it when a sharpened bullet is ready and you want the loop run for you.
+disable-model-invocation: true
 ---
 
-# al-orchestrate — the feature conductor
+# al-orchestrate — one bullet, the whole loop
 
-One session per feature is the user's cockpit. After `/al-scope` lands the tree, this session does no task work itself: it maintains the slice work, hands the user only what needs them, and forwards everything else. Your first line names that this run wants a frontier-class model — the user picked the model and weighs the mismatch. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+In: one sharpened bullet — named in the invocation, or the next ready one from the frontier store (Azure DevOps work items, or `docs/frontier.md`). The orchestrator adds sequencing and nothing else: a human and this skill call each block with the same words, the blocks stay unchanged, and a decision point is never answered here — it passes through to the user verbatim. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
-## Rebuild, never remember
+## The sequence
 
-`/al-orchestrate <root work item id>` starts or resumes coordination, and every run rebuilds the whole picture from durable stores — this conversation is disposable, archived any time, and a fresh run takes over mid-feature. The sources: the work-item tree under the root through the one-hop WIQL sweeps `/al-routing` owns, PR and CI state through `gh`, and the child conversations from the local session store — `session_store_sql`, matched on the slice branch — plus each child's session-state folder under the CLI home. Nothing lives only in this conversation's context.
+/al-implement the bullet → /al-refactor → /al-review the diff against the bullet. The refactor beat is skipped only when the al-implement receipt says `Tidy: none` and names no deepening goal — an empty child run buys nothing; a receipt-named goal upgrades the refactor run to the deepening reshape. The loop ends at the review verdict — acting on findings is the user's next move: a repair pass, a re-run, or the merge path through /al-pr-shepherd.
 
-## One workspace per slice
+## The mechanism, by surface
 
-A ready slice — every Predecessor edge into its story satisfied — gets one workspace: one worktree on the slice branch its story names, cut from its stack base; one BC container through `/al-build`'s container-per-branch; one slice PR for the branch's life. Rework lands in the same workspace, and the workspace is removed when its PR has merged and feature-branch CI is green.
+In the terminal Copilot CLI each block runs as its own headless child run — `copilot -p "/al-implement <bullet>" --plugin-dir <plugin folder>`, and likewise for /al-refactor and /al-review — the literal invocation a human types. Fresh context per block; the receipts in `.output/receipts/` and the diff carry the hand-over. In the GitHub Copilot app, follow each block's SKILL.md from the plugin folder in this session instead, one block at a time, its contract obeyed as written.
 
-Inside the workspace, every skill run on a task is its own fresh conversation, started as a detached shell process:
+## Pauses and resume
 
-```
-copilot -C <worktree> -p "/<skill> <task id>" --model <pick> --allow-all-tools
-```
-
-A resume of a paused conversation repeats `-C <worktree>` and the permission flags — the file-path allowlist comes from the resuming process, not the session, and a bare resume gets its workspace writes denied.
-
-The task's tier tag is the natural input for the model pick from the ladder in `config/al-orchestrate.json` (`parallelCap`, `modelLadder`; a copy at the consumer repo root overrides) — cheap where the conversation drives tools, premium where judgment lives; the packaged agents `al-review-lens`, `al-spec-reviewer`, and `al-knowledge-leaf` keep their own pins inside any conversation. Cross-skill episodes — a walk pausing on a defect, the repair, the resumed walk — are further conversations in the same workspace. Each child closes through `/al-routing` in its own context; the orchestrator never moves work-item state itself.
-
-## The loop
-
-Sweep the tree, spawn ready slices up to `parallelCap`, queue the rest; inside a slice, tasks run in Predecessor order.
-
-- A skill run that plans before it acts starts with `--plan`: read `plan.md` from the child's session-state folder, resume the child with approval when the plan conforms to the task's contract, or send it back naming the mismatch.
-- Advance on artifacts, never on a child's claim: the commit on the slice branch, the state `/al-routing` recorded, the green the gate reported.
-- Merge a slice PR when `/babysit-pr` reports Clean and the slice's walk has passed — a merge commit into the feature branch, never a squash — then update dependent slice branches from it.
-- Escalate to the user, never absorb: human reviewer feedback, verification walks, `/al-quiz`, any stop, and the root-PR ship moment after `/al-sync-main`.
-
-## One cockpit
-
-A child's question arrives in its final response or its event log. Relay it to the user here — plain text, lettered options, recommendation marked — and carry the answer back by resuming that conversation. The user leaves this session only to walk a verification: the container and the canvas live in the slice workspace.
-
-## Sensing
-
-Event-driven first: a finished conversation reports in its process output, a paused one leaves `plan.md` or a question. While any child runs, keep one session automation sweeping every ~5 minutes; clear it when none run. A child silent past a sweep: tail its `events.jsonl` in the session-state folder — a pending question or permission prompt is relayed or nudged, a dead process respawns as a new conversation in the same workspace (the commits survive), anything else escalates with the tail.
-
-## Platform constraint
-
-A conversation that needs the azure-devops MCP server runs as a direct-CLI process or in a user-created session — sessions spawned through the app's session tools get a clamped server set that drops it. The azure-devops server also needs its one-time interactive CLI auth per machine before headless children reach it.
+A block that stops on a declared decision point ends the loop turn: surface the block's question verbatim, wait for the user's answer, resume. Resume is idempotent — position re-derived from the receipts, the frontier store, and git, never from a remembered step; the same wake resumes an interrupted loop days later.
 
 ## Close
 
-The loop pauses on an escalation and resumes on the next event or sweep. It closes when `/al-sync-main` has run and the root PR is ready for the user's ship — the feature is out of coordination — or on a stop naming the blocker.
+The loop receipt: the bullet, each block run with its receipt's core — gate verdict, ledger count, findings — the decision points passed through, and the review verdict. Done when every block in the sequence has its receipt and the verdict sits in front of the user.

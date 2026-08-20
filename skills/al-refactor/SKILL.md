@@ -1,57 +1,40 @@
 ---
 name: al-refactor
-description: Reshape AL production and test code while the tests stay green, behaviour identical. Run it after a task goes green.
+description: Reshape green code in one of two modes — the routine tidy pass after every green (naming, dead scaffolding, duplication, idiom polish), or a named deepening goal that upgrades the run to the full reshape — behavior frozen, the gate proving the hold. Reach for it when code just went green or needs a better shape.
 disable-model-invocation: true
 ---
 
-# Reshape while green
+# al-refactor — same behavior, better shape
 
-The tree is clean and the build is green before the first change. The task is an Azure DevOps work item (`/al-routing`'s schema); work-item state is `/al-routing`'s — this skill reshapes code. Evaluate the task's newest `✅ Gate:` comment per `/al-routing`'s receipt rule — its commit an ancestor of `HEAD`, the diff since it empty. Match → `🔎✅ Green gate reused — AB#1204 @ abc123 (full).`; no match → `🔎🔧 Gate required — no compatible green receipt.`, then run `/al-build -AllTests` green. Reshaping against red is debugging — that belongs in /al-implement. Your first line names that this run wants a standard-class model or above — the user picked the model and weighs the mismatch. The knowledge pass below reads the `.bcquality/` clone: missing → name `/al-clone-bcquality` and stop, before the gate rather than after it. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+In: working code behind a green gate and the living design as context. Two modes. No named goal is the routine tidy pass after green — naming, dead scaffolding, duplication, idiom polish; al-implement's `Tidy:` line is the worklist when one rides the bullet, and "nothing to tidy" is a legal one-line close. A named goal upgrades the run to the deepening reshape. Behavior is frozen for the whole run in both modes: a change in behavior is a decision point that stops the run and surfaces as one plain-text question — a reshape that changes behavior is not a refactor. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
-## The knowledge pass
+## Subtract first
 
-`/al-knowledge-pass` on this task's diff returns the findings, or the one line naming the domain that stopped it; a stop there stops this run. Its findings are reshape candidates like any other, cited by the article behind them.
+Remove dead weight before adding structure: unused procedures and variables, duplicate validation, stub references. Rerun the checks on the simpler base — /al-build's unit mode — before the deepening move. What remains to build is smaller than it looked.
 
-## Improvement dimensions
+## The deepening move
 
-Read the whole diff — a task's full diff, once per task — through each of these:
+The upgrade path, on a named goal only. Work toward the goal in caller-safe steps: the new shape lands first, callers migrate one by one, and the old path is deleted only when nothing names it. A wide reshape runs expand-contract. The smallest structure the goal justifies wins; an interface with a single implementation is indirection, not a seam. Load the idiom capsules matching the work type when they exist — the same seam al-implement loads; today there are none.
 
-- **Simplification** — duplication, dead code, pass-through procedures, generality nothing asked for.
-- **BC platform** — code reinventing what BaseApp, the System Application, or the platform already does.
-- **Structure** — decision logic separated from the reads and writes around it, so the decisions are testable without a database; depth over indirection; coupling weakened, or localised in one module where it cannot be.
-- **Terminology** — every introduced name tracing to a `CONTEXT.md` term, the BC baseline, or a Design-story Action, Business Event, or Status, its verb to BC's own set — an untraceable name is a finding — and names agreeing with the ADRs, the Design story, and the task's `New and Modified Objects`; artifact prose the diff touched (task bodies, the Design Description) answers to the same vocabulary as the code.
-- **Performance shape** — a lookup hoisted out of a loop, a filtered read replacing a scan, fields loaded selectively. The structural kind, not one-line tweaks.
+## Verify or declare
 
-Each dimension runs as one `al-review-lens` invocation through the task tool — the dimension's definition, the task's diff scope, and its sources in the prompt — the invocations parallelized in one batch. A returned `clean` names its dimension judged; each returned finding enters the finding rule below.
-
-## Apply
-
-One reshape at a time, each commit opening with the owning task's `AB#<id>`, running the gate with `/al-build -AllTests` after each. Red reverts that step, and recovery comes before the next one.
-
-- Renames and seam introduction land first — they touch many call sites and conflict with anything queued behind them.
-- Extract a helper on the third occurrence, not the second. Below that, leave the duplication and say so. Logic with a rightful home — a BaseApp or System Application helper, an existing module's internal helper — moves there and the canonical one is reused.
-- Production and tests reshape together. A test added mid-reshape — a baseline on legacy code with no covering tests, a case on a branch the reshape uncovers — passes against current code first, so the regression signal stays honest. Unit tests on a module the reshape dissolves are deleted, not relayered.
-- Rename freely what this branch introduced — `git log origin/main..HEAD` names it — and what is internal-only. A rename touching a public symbol that predates the branch is not a reshape; it follows the finding rule below.
-- `[HandlerFunctions('...')]` names a test procedure inside a string literal that symbol tools do not see: grep the workspace for that literal before renaming a test procedure, and update the AAA case header and `Covered By` in the same change.
-
-## Findings
-
-A defect needs no user decision: fix it in this run. A behavioural defect routes to `/al-implement`, which writes the missing case, watches it fail on a real assertion, then makes it pass. A provably non-semantic defect lands directly.
-
-A change request would override a decision the user already made, or establish missing business or architecture intent. Interview every change request before implementing any ruling, one per message, highest impact first. Explain the impact, choice, consequences, and recommendation. Name modules, boundaries, public objects, interfaces, events, or other AL concepts when they make the current or proposed architecture legible; keep paths, line numbers, private procedures, code snippets, lookup mechanics, and knowledge-article details out unless the user asks. One answer settles only the request in front of the user.
-
-After every request is settled, apply its ruling: **Do it now** lands on the defect terms above; **Write a task** creates one per `/al-routing`'s schema; **Keep the current behaviour** records the ruling in the decision artifact. Create a task only when the user chose one. Each ruling lands as it settles: a created task is a work item and needs no repo commit; an artifact ruling commits with a plain descriptive message. Technical evidence belongs in the resulting commit or the work item's comments.
-
-## Writing AL
-
-Every BC object, table, field, procedure, event, and enum value name comes from a lookup in this session — grep the workspace, or view the symbols. Recall is not evidence. `.bcapps/` is the intentionally gitignored pattern library: read how the nearest System Application or `src/Apps/W1` code shapes what you are reshaping toward, and lift that shape. Missing → stop, naming `/al-clone-bcapps`; a workspace-wide grep skips the gitignored clone, so point grep at `.bcapps/` explicitly and view its files directly.
-
-Use BC vocabulary: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, the record or the API body not the payload, procedure not method, codeunit not class — and a codeunit is named for the behaviour it owns, never a Manager or Handler.
-
-Reach for the platform before writing code — a field plus a FlowField over a setup table and a management codeunit, a table relation over validation code, an enum over a hand-rolled status. An AL `interface` arrives with its second implementing codeunit, never in anticipation of one. A shortcut with a known limit carries a one-line comment naming the ceiling and the upgrade path.
+A reshape that depends on platform behavior not verified in this session: lookup it, or the claim enters the ledger as assumed. Every BC object, table, field, procedure, event, or enum value name is confirmed by a lookup in the current session, never recalled. BC vocabulary binds every line written — Insert not create, Post not submit, Validate not check, Ledger Entry not transaction, codeunit not class, procedure not method.
 
 ## Close
 
-Report the reshape and defects fixed at module, pattern, and seam altitude, naming the invariant that held and the dimensions and leaves that came back clean. Report the committed `HEAD` from the last durable full green when this run reshaped code; a no-change pass retains its incoming receipt. Report each change request by impact, ruling, and outcome. A run that reshaped code or landed a fix also goes up through `/al-visualize` as a receipt of the reshape; a run that changed nothing closes plain.
+/al-build runs the full gate once, at the end; a tidy pass that changed nothing skips it — nothing changed, nothing to prove. Behavior held means the per-runner totals match the starting green — or every difference is explained — and the breaking-change baseline stays silent. Commit with a plain descriptive message naming the goal or the tidy. Emit the receipt — posted to the bullet's work item where Azure DevOps is wired, mirrored to `.output/receipts/<goal>.md` always — and stop; the caller owns the next block.
 
-Then `/al-routing`.
+```
+## al-refactor receipt — <goal | tidy>
+Mode: tidy | deepening — <goal>
+Reshaped: one line per move, BC object names exact | nothing to tidy
+Gate: /al-build full-gate verdict — per-runner totals from summary.json
+Behavior held: totals against the starting green + the baseline's silence
+Ledger:
+  verified: <claim> — <Learn URL | BCApps file+line | topic id | article path>
+  assumed: <claim> — not verified
+Decision points: none | each one raised and the call made
+Commits: <hashes>
+```
+
+The run is done when every move appears under Reshaped, nothing names the deleted paths, and the closing gate is green with the baseline silent.
