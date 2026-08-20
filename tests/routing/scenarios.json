@@ -160,6 +160,18 @@
       "prompt": "Run the whole loop on the next ready bullet — implement, reshape if needed, review — and pause only where a decision needs me.",
       "expect": "none",
       "canary": "al-orchestrate is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S29",
+      "prompt": "I have a fresh feature idea for our BC app — interview me until the vocabulary is unambiguous.",
+      "expect": "none",
+      "canary": "al-grill-adr is slash-only; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S30",
+      "prompt": "Two teams use 'batch' to mean different things in this app — settle the term and record it.",
+      "expect": "none",
+      "canary": "al-grill-adr is slash-only; a run that names it means the disable flag broke"
     }
   ]
 }
