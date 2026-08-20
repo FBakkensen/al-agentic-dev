@@ -11,10 +11,11 @@
     quoted whenever it contains a colon. Model invocation is the exception: every skill
     carries disable-model-invocation: true, except the model-invocable five (al-build,
     al-visualize, al-grilling, al-unslop, al-lookup), which omit the key entirely.
-    Verbatim ports (al-grilling, al-grill-me, al-wait-what, al-unslop) ship donor bodies
-    unchanged beyond the al- namespace, so two checks skip them: the plain-text question
-    rule (hooks.json enforces the ask_user ban at runtime) and the harness token scan
-    (al-unslop lists the word as jargon to cut). Every other check applies to them unchanged.
+    Verbatim ports — now pinned forks (al-grilling, al-grill-me, al-wait-what, al-unslop) —
+    ship donor bodies unchanged beyond the al- namespace, so two checks skip them: the
+    plain-text question rule (hooks.json enforces the ask_user ban at runtime) and the
+    harness token scan (al-unslop lists the word as jargon to cut). Every other check
+    applies to them unchanged.
     Every relative Markdown link in the folder's .md files resolves to a file inside that
     same folder, and only skills/al-build may name a .ps1 file or a scripts/ path — save
     for the per-skill exemptions in $scriptExemptions, each an upstream tool a named skill
@@ -69,7 +70,7 @@ function Get-MarkdownLinkTarget {
 $violations = @()
 $root = (Resolve-Path -LiteralPath $SkillsRoot -ErrorAction Stop).Path
 $modelInvocable = @('al-build', 'al-visualize', 'al-grilling', 'al-unslop', 'al-lookup')
-# Verbatim ports ship donor bodies unchanged beyond the al- namespace: the question rule
+# Pinned forks ship donor bodies unchanged beyond the al- namespace: the question rule
 # and the harness scan skip them (hooks.json enforces the ask_user ban at runtime); all
 # other checks apply.
 $verbatimPorts = @('al-grilling', 'al-grill-me', 'al-wait-what', 'al-unslop')

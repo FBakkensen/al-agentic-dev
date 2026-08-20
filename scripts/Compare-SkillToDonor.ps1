@@ -3,18 +3,21 @@
 .SYNOPSIS
     Compares a skill folder against its donor and reports the diff.
 .DESCRIPTION
-    Ports land with the smallest possible diff against their donor, and that diff is
-    the debug surface when a ported skill misbehaves. This script materializes the
-    donor — a git ref in this repo (-DonorRef, with -DonorPath when the donor lived
-    at a different path) or a local directory such as an external donor checkout
-    (-DonorDir) — and runs git diff --no-index against the skill folder, ignoring
-    CR/LF differences so a Windows checkout compares clean against committed LF.
+    Ports land as pinned forks: the body stays donor text except the al- namespace, and
+    the diff against the donor is the port note and the debug surface when a ported
+    skill misbehaves. This script materializes the donor — a git ref in this repo
+    (-DonorRef, with -DonorPath when the donor lived at a different path) or a local
+    directory such as an external donor checkout (-DonorDir) — and runs git diff
+    --no-index against the skill folder, ignoring CR/LF differences so a Windows
+    checkout compares clean against committed LF. On a pinned fork the expected report
+    is exit 2 with exactly the namespace hunks — the frontmatter name line and any
+    renamed sibling reference — and nothing else.
     Exit codes: 0 the skill matches its donor line for line, 2 the diff is
     non-empty, 1 the skill or donor cannot be resolved.
 .EXAMPLE
-    pwsh scripts/Compare-SkillToDonor.ps1 -Skill grilling -DonorRef 3b1ed60 -DonorPath skills/al-grilling
+    pwsh scripts/Compare-SkillToDonor.ps1 -Skill al-grilling -DonorRef 3b1ed60
 .EXAMPLE
-    pwsh scripts/Compare-SkillToDonor.ps1 -Skill grilling -DonorDir C:\donors\pocock-skills\grilling
+    pwsh scripts/Compare-SkillToDonor.ps1 -Skill al-grilling -DonorDir C:\donors\pocock-skills\grilling
 #>
 [CmdletBinding(DefaultParameterSetName = 'Ref')]
 param(

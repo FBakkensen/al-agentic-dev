@@ -225,7 +225,7 @@ Name the outcome, then /al-build.
         $result.Text | Should -Match 'al-build is model-invocable; remove disable-model-invocation'
     }
 
-    It 'accepts a verbatim port without the question rule' {
+    It 'accepts a pinned fork without the question rule' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'port-question-rule') -Files @{
             'al-wait-what/SKILL.md' = (New-SkillContent -Name 'al-wait-what' -WithoutQuestionRule)
         }
@@ -235,7 +235,7 @@ Name the outcome, then /al-build.
         $result.ExitCode | Should -Be 0
     }
 
-    It 'accepts the harness token inside a verbatim port only' {
+    It 'accepts the harness token inside a pinned fork only' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'port-harness') -Files @{
             'al-unslop/SKILL.md' = (New-SkillContent -Name 'al-unslop' -ModelInvocable -WithoutQuestionRule -Body 'Cut harness (as metaphor) from prose.')
             'demo/SKILL.md'   = (New-SkillContent -Body 'Cut harness metaphors.')

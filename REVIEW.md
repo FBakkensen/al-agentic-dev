@@ -14,7 +14,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 4. No relative link leaves the skill folder. Flag `](../`, `](/`, and any absolute path.
    - Correct: `See [RECORDING-FORMAT.md](RECORDING-FORMAT.md).`
    - Incorrect: `See [recording-grammar.md](../../references/recording-grammar.md).`
-5. Another skill is named, never linked, and every slash reference resolves to a folder under `skills/`. Names are prefix-free — `al-` marks the AL family and a bare name is as valid; an `al-`prefixed reference that matches no folder is a defect the gate catches.
+5. Another skill is named, never linked, and every slash reference resolves to a folder under `skills/`. Every skill this plugin ships is `al-`prefixed — the namespace is the plugin's mark; an `al-`prefixed reference that matches no folder is a defect the gate catches.
    - Correct: `Run the gate with /al-build.`
    - Incorrect: `Run [al-build](../al-build/SKILL.md).`
 6. Scripts are run only by the skill that owns them. Outside `skills/al-build/`, flag any `.ps1` filename or `scripts/` path; the skill calls `/al-build` instead. One skill at a time may be exempted for one named script that upstream owns and it runs inside a checkout it clones — today `al-clone-bcquality` and the BCQuality knowledge-index generator, listed in the validator. Flag a new exemption that arrives without that approval, and flag an exempted skill naming any other script.
@@ -37,7 +37,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## Length and density
 
-15. A `SKILL.md` body is at most 60 lines — 80 for `al-build`, and donor length wins on a verbatim port. Flag anything longer and name what to cut.
+15. A `SKILL.md` body is at most 60 lines — 80 for `al-build`, and donor length wins on a pinned fork. Flag anything longer and name what to cut.
 16. Flag any sentence the model already obeys without it. "Be thorough", "think carefully", "read the file before editing" change nothing and cost tokens.
 17. Flag one meaning stated in two places inside a skill. Each rule has one authoritative home.
 18. Flag verification scaffolding: "verify your work", "double-check", "re-read before responding", "use a subagent to confirm". Models self-verify; the instruction produces over-verification and wasted tokens.
@@ -86,6 +86,6 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 33. Artifact prose shows the thing — the page, the field, the command, the number — one sentence per fact; run narration in an artifact is a defect, its home the commit message. Chat surfaces glyph their fixed slots, shape-distinct rather than color-coded: findings as `⛔` Blocking / `⚖️` Non-Blocking / `⚠️` Suggestion headlines over one-line `⚡ Breaks:` / `📍 Proof:` / `🔧 Fix:` slots in the reviewer agents — the set-wide verdict grammar, "no blocking issues found" a legal verdict — and the run-narration ledes — `▸` finding / `➜` move mid-run, `✅` / `⛔` at the close — carried by the reply-shape snippet. These carried lines are deliberate, not rule-16/17 findings — live sessions ignored the shape while it was unwritten. Flag a carrier missing its line, and flag an emoji outside a defined slot — that one is decoration.
 
-## Verbatim ports
+## Pinned forks
 
-34. A verbatim port's `SKILL.md` is donor-owned: today `al-grilling`, `al-grill-me`, `al-wait-what` (mattpocock/skills @ 885e2ca, MIT) and `al-unslop` (cursor/plugins pstack @ 60c641e, MIT), each byte-identical to its donor. Flag any edit to a ported file — a fix belongs upstream or in the port note of a deliberate re-port; `scripts/Compare-SkillToDonor.ps1` proves the identity. Rules 15, 16, 17, 19, 21, and 25 read the donor as authoritative on these files; the structural gate (frontmatter, links, scripts, retired concepts) applies unchanged.
+34. A ported skill is a pinned fork: today `al-grilling`, `al-grill-me`, `al-wait-what` (mattpocock/skills @ 885e2ca, MIT) and `al-unslop` (cursor/plugins pstack @ 60c641e, MIT). The body stays donor text except the al- namespace — the frontmatter `name:` line and any port-internal reference to a renamed sibling; `scripts/Compare-SkillToDonor.ps1` against the donor SHA is expected to show exactly those namespace hunks and nothing else. Flag any other diff — a content fix belongs upstream or in the port note of a deliberate re-port. Rules 15, 16, 17, 19, 21, and 25 read the donor as authoritative on these files; the structural gate (frontmatter, links, scripts, retired concepts) applies unchanged.
