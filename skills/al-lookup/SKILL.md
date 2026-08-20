@@ -1,9 +1,9 @@
 ---
-name: lookup
+name: al-lookup
 description: "One platform question in, a sourced answer out in seconds. Use when about to write AL that depends on platform behavior not verified in this session — trigger and validation semantics, posting touchpoints, locking — or when a Base App precedent, a BC idiom, or a review rule needs a citation."
 ---
 
-# lookup — the sourced answer
+# al-lookup — the sourced answer
 
 One question in, one sourced answer out, in seconds. When looking up costs one call, looking it up is less work than faking a citation. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
@@ -39,7 +39,7 @@ A fresh answer appends its row to `docs/precedent-map.md` — append only; the d
 
 ## Deep questions go to /research
 
-A whole-feature shape question — which BC pattern, which tables and extensions, which Base App seams — belongs to the native /research command, with the `.bcapps/` and `.bcquality/` paths named in its prompt. lookup stays the in-flight fast path.
+A whole-feature shape question — which BC pattern, which tables and extensions, which Base App seams — belongs to the native /research command, with the `.bcapps/` and `.bcquality/` paths named in its prompt. al-lookup stays the in-flight fast path.
 
 ## Close
 

@@ -1,10 +1,10 @@
 ---
-name: miner
+name: al-miner
 description: "Mine session history for repeated failures and steering corrections, then propose standing lessons with evidence: instructions-file lines and idiom-capsule candidates. Reach for it after a stretch of sessions worth learning from."
 disable-model-invocation: true
 ---
 
-# miner — lessons from real history
+# al-miner — lessons from real history
 
 Turn session history into standing improvements. The history already holds the training data: every retry after a compile error, every mistake repeated across sessions, every moment the user grabbed the wheel. `/chronicle` owns the mechanics it already ships; this skill adds only what it lacks. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
@@ -27,7 +27,7 @@ Turn session history into standing improvements. The history already holds the t
 
 ## Propose, never land
 
-Every run ends in one proposals file — `.output/miner/proposals-<date>.md` — and changes nothing else: no shelf write, no capsule file, no repo edit. Each proposal carries the shelf it targets, the proposed line or candidate, the evidence — count, date span, session ids — and the evidence method: the exact query or search terms, so a reviewer reruns it. A count in a proposal is the number its written method returns — a threshold or filter behind a number belongs in the query itself. Verify each proposal against the platform through lookup before proposing; until the lookup block ships, mark every proposal "history-evidenced, Learn-unverified". Applying a line is the user's act, after the run.
+Every run ends in one proposals file — `.output/al-miner/proposals-<date>.md` — and changes nothing else: no shelf write, no capsule file, no repo edit. Each proposal carries the shelf it targets, the proposed line or candidate, the evidence — count, date span, session ids — and the evidence method: the exact query or search terms, so a reviewer reruns it. A count in a proposal is the number its written method returns — a threshold or filter behind a number belongs in the query itself. Verify each proposal against the platform through /al-lookup before proposing; until that verification runs, mark every proposal "history-evidenced, Learn-unverified". Applying a line is the user's act, after the run.
 
 ## Close
 

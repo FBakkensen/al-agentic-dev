@@ -14,7 +14,7 @@ The model changes the moment understanding changes, never batched: a discovery l
 
 ## The living model
 
-The artifact is `docs/event-model.md`, committed with a plain descriptive message: the journey — document to posting to entries — with the events that fire at each step, each publisher with its subscribers, and the seams left deliberately open. A mid-feature discovery legally rewrites it; re-entry from next's drill is a normal move.
+The artifact is `docs/event-model.md`, committed with a plain descriptive message: the journey — document to posting to entries — with the events that fire at each step, each publisher with its subscribers, and the seams left deliberately open. A mid-feature discovery legally rewrites it; re-entry from al-next's drill is a normal move.
 
 ## Pass end
 

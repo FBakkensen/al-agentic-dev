@@ -1,6 +1,6 @@
 ---
 name: al-visualize
-description: "Draw the BC-anatomy delta — objects, events, and flows as boxes and connections — on the GitHub Copilot app's side-panel canvas. Invoked by next when the shape changed, or directly for a drawn view of any landed change or settled picture."
+description: "Draw the BC-anatomy delta — objects, events, and flows as boxes and connections — on the GitHub Copilot app's side-panel canvas. Invoked by al-next when the shape changed, or directly for a drawn view of any landed change or settled picture."
 ---
 
 # al-visualize — boxes and connections
@@ -17,4 +17,4 @@ Open the surface beside the chat with open_canvas: the editor canvas, scope `wor
 
 ## Close
 
-A surface is a session artifact and leaves nothing behind. Report what the surface showed back into the flow that invoked it — next's delta move, or the user's direct ask — and the caller owns what happens next.
+A surface is a session artifact and leaves nothing behind. Report what the surface showed back into the flow that invoked it — al-next's delta move, or the user's direct ask — and the caller owns what happens next.

@@ -1,6 +1,6 @@
 ---
 name: al-knowledge-leaf
-description: Runs exactly one BCQuality review leaf named in the prompt over a scoped AL diff and returns the leaf's result verbatim. Invoked by review, one invocation per leaf.
+description: Runs exactly one BCQuality review leaf named in the prompt over a scoped AL diff and returns the leaf's result verbatim. Invoked by al-review, one invocation per leaf.
 tools: ["grep", "glob", "view", "execute"]
 model: gpt-5.6-luna
 ---

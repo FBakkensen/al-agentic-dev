@@ -1,20 +1,20 @@
 ---
-name: orchestrate
+name: al-orchestrate
 description: Drive one ready bullet through the whole loop — implement, refactor when a deepening goal emerged, review — pausing only where a block declares a decision, ending at the review verdict. Type it when a sharpened bullet is ready and you want the loop run for you.
 disable-model-invocation: true
 ---
 
-# orchestrate — one bullet, the whole loop
+# al-orchestrate — one bullet, the whole loop
 
 In: one sharpened bullet — named in the invocation, or the next ready one from the frontier store (Azure DevOps work items, or `docs/frontier.md`). The orchestrator adds sequencing and nothing else: a human and this skill call each block with the same words, the blocks stay unchanged, and a decision point is never answered here — it passes through to the user verbatim. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## The sequence
 
-/implement the bullet → /refactor only when the implement receipt names a deepening goal → /review the diff against the bullet. The loop ends at the review verdict — acting on findings is the user's next move: a repair pass, a re-run, or the merge path through /pr-shepherd.
+/al-implement the bullet → /al-refactor only when the al-implement receipt names a deepening goal → /al-review the diff against the bullet. The loop ends at the review verdict — acting on findings is the user's next move: a repair pass, a re-run, or the merge path through /al-pr-shepherd.
 
 ## The mechanism, by surface
 
-In the terminal Copilot CLI each block runs as its own headless child run — `copilot -p "/implement <bullet>" --plugin-dir <plugin folder>`, and likewise for /refactor and /review — the literal invocation a human types. Fresh context per block; the receipts in `.output/receipts/` and the diff carry the hand-over. In the GitHub Copilot app, follow each block's SKILL.md from the plugin folder in this session instead, one block at a time, its contract obeyed as written.
+In the terminal Copilot CLI each block runs as its own headless child run — `copilot -p "/al-implement <bullet>" --plugin-dir <plugin folder>`, and likewise for /al-refactor and /al-review — the literal invocation a human types. Fresh context per block; the receipts in `.output/receipts/` and the diff carry the hand-over. In the GitHub Copilot app, follow each block's SKILL.md from the plugin folder in this session instead, one block at a time, its contract obeyed as written.
 
 ## Pauses and resume
 

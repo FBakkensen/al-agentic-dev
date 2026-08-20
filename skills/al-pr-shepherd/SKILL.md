@@ -1,10 +1,10 @@
 ---
-name: pr-shepherd
+name: al-pr-shepherd
 description: Drive one open pull request to merge — watch CI and the Copilot review, fix findings, keep the branch synced with main, resolve conflicts intent-preserving — merging only on your explicit go. Reach for it when a PR is ready for review, and until it lands.
 disable-model-invocation: true
 ---
 
-# pr-shepherd — one PR to landed
+# al-pr-shepherd — one PR to landed
 
 In: one open pull request — the current branch's, or the number named in the invocation; not exactly one match → stop and say why. Out: the PR merged on the user's explicit go, or a blocked-with-reason receipt. Fix-forward on the PR branch is this skill's work; everything irreversible or human-facing is the user's. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
@@ -21,7 +21,7 @@ Re-read the PR as it is now — required checks, workflow runs, inline review th
 Then act, one class at a time:
 
 1. **Human feedback** → stop the automation and ask the user; never auto-reply, auto-resolve, or change code for it.
-2. **An actionable Copilot finding** → two classes. A local repair — contained, within what the PR already promises — is fixed, gated through /al-build's relevant mode, committed, pushed, replied to, resolved. A comment that widens what the PR promises is a bullet, not a fix: surface it, propose it for /scope or /next to place, and wait.
+2. **An actionable Copilot finding** → two classes. A local repair — contained, within what the PR already promises — is fixed, gated through /al-build's relevant mode, committed, pushed, replied to, resolved. A comment that widens what the PR promises is a bullet, not a fix: surface it, propose it for /al-scope or /al-next to place, and wait.
 3. **A required check red because of the PR** → diagnose and fix the root cause under the same gate rules, push, reply. An infrastructure, access, or flaky failure stops with the blocker named.
 4. **Behind main** → merge origin/main INTO the PR branch as a merge commit — a rebase rewrites what reviewers saw. Conflicts resolve by preserving both intents, each side traced to its primary sources: commits, PRs, issues. The mechanical AL collision — the same object or field number claimed by both sides with no overlapping logic — keeps both declarations and renumbers the branch-new number within its idRanges bucket, verified by a workspace scan, never recall. A conflict that reveals a design decision — one concept modeled twice, conflicting logic in one object — stops for the user. /al-build -AllTests gates the synced tree before the push.
 5. **Copilot review requested or running** → wait by ending the turn; the automation wakes the next pass.

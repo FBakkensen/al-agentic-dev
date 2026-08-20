@@ -1,10 +1,10 @@
 ---
-name: refactor
+name: al-refactor
 description: Reshape working code toward a named deepening goal while behavior stays frozen — subtract first, migrate callers before deleting, prove the hold with the full gate. Reach for it when green code needs a better shape.
 disable-model-invocation: true
 ---
 
-# refactor — same behavior, better shape
+# al-refactor — same behavior, better shape
 
 In: working code behind a green gate, a named deepening goal, and the living design as context. No goal → name what is missing and stop. Behavior is frozen for the whole run: a change in behavior is a decision point that stops the run and surfaces as one plain-text question — a reshape that changes behavior is not a refactor. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
@@ -14,7 +14,7 @@ Remove dead weight before adding structure: unused procedures and variables, dup
 
 ## The deepening move
 
-Work toward the named goal in caller-safe steps: the new shape lands first, callers migrate one by one, and the old path is deleted only when nothing names it. The smallest structure the goal justifies wins; an interface with a single implementation is indirection, not a seam. Load the idiom capsules matching the work type when they exist — the same seam implement loads; today there are none.
+Work toward the named goal in caller-safe steps: the new shape lands first, callers migrate one by one, and the old path is deleted only when nothing names it. The smallest structure the goal justifies wins; an interface with a single implementation is indirection, not a seam. Load the idiom capsules matching the work type when they exist — the same seam al-implement loads; today there are none.
 
 ## Verify or declare
 
@@ -25,7 +25,7 @@ A reshape that depends on platform behavior not verified in this session: lookup
 /al-build runs the full gate once, at the end. Behavior held means the per-runner totals match the starting green — or every difference is explained — and the breaking-change baseline stays silent. Commit with a plain descriptive message naming the goal. Emit the receipt — posted to the bullet's work item where Azure DevOps is wired, mirrored to `.output/receipts/<goal>.md` always — and stop; the caller owns the next block.
 
 ```
-## refactor receipt — <goal>
+## al-refactor receipt — <goal>
 Reshaped: one line per move, BC object names exact
 Gate: /al-build full-gate verdict — per-runner totals from summary.json
 Behavior held: totals against the starting green + the baseline's silence

@@ -1,12 +1,12 @@
 ---
-name: review
+name: al-review
 description: Read a diff against its bullet and the BC ground — ledger first, standards and spec side by side, blast radius proven by running code — and return a verdict without touching a line. Reach for it when a diff is ready for judgment.
 disable-model-invocation: true
 ---
 
-# review — verdict, never edits
+# al-review — verdict, never edits
 
-In: a diff since a fixed point, its frontier bullet when one exists, and implement's receipt when one exists. A diff without a bullet is a legal run — the Spec axis is skipped and named in the verdict, never invented. Review returns findings and edits nothing; fixes belong to the execution blocks. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+In: a diff since a fixed point, its frontier bullet when one exists, and al-implement's receipt when one exists. A diff without a bullet is a legal run — the Spec axis is skipped and named in the verdict, never invented. Review returns findings and edits nothing; fixes belong to the execution blocks. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## Ledger first
 
@@ -29,7 +29,7 @@ What breaks beyond the diff: callers, subscribers of touched events, data the di
 Every BC name in a finding is confirmed by a lookup in the current session, never recalled. Style nitpicks belong to the analyzers in the build gate, not here. "No blocking issues found" is a legal verdict.
 
 ```
-## review verdict — <diff scope>
+## al-review verdict — <diff scope>
 Ledger: re-checked | absent — undeclared assumptions: none | <each one, Blocking>
 Standards: <count + worst finding> · Spec: <count + worst finding> | skipped — no bullet
 Anatomy: schema/upgrade · events · permissions · XLF · baseline · tests — news or clear per axis

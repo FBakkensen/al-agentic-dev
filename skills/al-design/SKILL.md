@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # al-design — the shape before the code
 
-A human conversation, never automated: sketch the shape before code, and when implementation reports repeated friction, the sketch is wrong — redesign here rather than bolt on guards. The conversation owns architecture and data structure only — which tables and extensions, which Base App seams — and never pre-decides implementation details; those are implement's, discovered in flight. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+A human conversation, never automated: sketch the shape before code, and when implementation reports repeated friction, the sketch is wrong — redesign here rather than bolt on guards. The conversation owns architecture and data structure only — which tables and extensions, which Base App seams — and never pre-decides implementation details; those are al-implement's, discovered in flight. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## Speak in BC shapes
 
@@ -18,7 +18,7 @@ A module earns its place by hiding substantial behavior behind a small interface
 
 ## The living design
 
-The artifact is `docs/design.md`, committed with a plain descriptive message: the feature's BC shape in one sentence, the module map with a one-line interface each, the seams with both adapters named, the tables and extensions, and the open questions. A mid-feature discovery legally rewrites it — re-entry from next's drill is a normal move, not an exception. next reconciles this document against the code every loop.
+The artifact is `docs/design.md`, committed with a plain descriptive message: the feature's BC shape in one sentence, the module map with a one-line interface each, the seams with both adapters named, the tables and extensions, and the open questions. A mid-feature discovery legally rewrites it — re-entry from al-next's drill is a normal move, not an exception. al-next reconciles this document against the code every loop.
 
 ## Pass end
 

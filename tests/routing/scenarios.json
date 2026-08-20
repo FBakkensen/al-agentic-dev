@@ -31,88 +31,88 @@
     {
       "id": "S6",
       "prompt": "I have a rough plan for a new feature. Stress-test my thinking — interview me until we both understand it.",
-      "expect": "grilling"
+      "expect": "al-grilling"
     },
     {
       "id": "S7",
       "prompt": "This release announcement reads like a chatbot wrote it. Cut the AI tells and give it a human voice.",
-      "expect": "unslop"
+      "expect": "al-unslop"
     },
     {
       "id": "S8",
       "prompt": "Put my design through a relentless interview before I commit to it.",
-      "expect": "grilling",
-      "note": "grill-me is slash-only and wraps grilling; the model routing to the engine is the designed outcome"
+      "expect": "al-grilling",
+      "note": "al-grill-me is slash-only and wraps al-grilling; the model routing to the engine is the designed outcome"
     },
     {
       "id": "S9",
       "prompt": "Wait, I don't understand where you've got to. Explain that last message again in plain language.",
       "expect": "none",
-      "canary": "wait-what is slash-only; a run that names it means the disable flag broke"
+      "canary": "al-wait-what is slash-only; a run that names it means the disable flag broke"
     },
     {
       "id": "S10",
       "prompt": "Mine my session history for recurring AL mistakes and propose standing lessons.",
       "expect": "none",
-      "canary": "miner is slash-only per decision E (on-demand); a run that names it means the disable flag broke"
+      "canary": "al-miner is slash-only per decision E (on-demand); a run that names it means the disable flag broke"
     },
     {
       "id": "S11",
       "prompt": "What did I work on yesterday?",
       "expect": "none",
-      "canary": "chronicle standup's native ground; a run that names miner means its description overreaches"
+      "canary": "chronicle standup's native ground; a run that names al-miner means its description overreaches"
     },
     {
       "id": "S12",
       "prompt": "Add a standing lesson line so I stop repeating this container mistake in future sessions.",
       "expect": "none",
-      "canary": "miner is slash-only; a run that names it means the disable flag broke"
+      "canary": "al-miner is slash-only; a run that names it means the disable flag broke"
     },
     {
       "id": "S13",
       "prompt": "Does Modify(false) skip the OnModify trigger? Check before I write this.",
-      "expect": "lookup"
+      "expect": "al-lookup"
     },
     {
       "id": "S14",
       "prompt": "Show me how the Base App implements posting preview for a journal.",
-      "expect": "lookup"
+      "expect": "al-lookup"
     },
     {
       "id": "S15",
       "prompt": "Research which BC shape fits this whole feature and write a cited report with diagrams.",
       "expect": "none",
-      "canary": "the native /research command's deep ground; a run that names lookup means its description overreaches"
+      "canary": "the native /research command's deep ground; a run that names al-lookup means its description overreaches"
     },
     {
       "id": "S16",
       "prompt": "Implement the next frontier bullet — its failing-test spec is already on it.",
       "expect": "none",
-      "canary": "implement is slash-only; a run that names it means the disable flag broke"
+      "canary": "al-implement is slash-only; a run that names it means the disable flag broke"
     },
     {
       "id": "S17",
       "prompt": "Reshape this working code without changing its behavior.",
       "expect": "none",
-      "canary": "refactor is slash-only; a run that names it means the disable flag broke"
+      "canary": "al-refactor is slash-only; a run that names it means the disable flag broke"
     },
     {
       "id": "S18",
       "prompt": "Review my diff since main against what the bullet asked — standards and spec side by side.",
       "expect": "none",
-      "canary": "review is slash-only; a run that names it means the disable flag broke"
+      "canary": "al-review is slash-only; a run that names it means the disable flag broke"
     },
     {
       "id": "S19",
       "prompt": "What could this small change break beyond the files it touches?",
       "expect": "none",
-      "canary": "blast-radius phrasing lives inside slash-only review; a run that names review means the disable flag broke"
+      "canary": "blast-radius phrasing lives inside slash-only al-review; a run that names al-review means the disable flag broke"
     },
     {
       "id": "S20",
       "prompt": "The bullet just landed — run the loop transition: show the delta, reconcile the design, sharpen what's next.",
       "expect": "none",
-      "canary": "next is slash-only; a run that names it means the disable flag broke"
+      "canary": "al-next is slash-only; a run that names it means the disable flag broke"
     },
     {
       "id": "S21",
@@ -123,7 +123,7 @@
       "id": "S22",
       "prompt": "What's next on my plate?",
       "expect": "none",
-      "canary": "a passing phrase must not trigger the state-moving transition; a run that names next means its flag broke"
+      "canary": "a passing phrase must not trigger the state-moving transition; a run that names al-next means its flag broke"
     },
     {
       "id": "S23",
@@ -141,25 +141,25 @@
       "id": "S25",
       "prompt": "Cut the settled design into tracer-bullet work items with blocking edges.",
       "expect": "none",
-      "canary": "scope is slash-only and creates store state; a run that names it means the disable flag broke"
+      "canary": "al-scope is slash-only and creates store state; a run that names it means the disable flag broke"
     },
     {
       "id": "S26",
       "prompt": "My PR is ready — watch CI and the Copilot review, fix the findings, keep it synced with main until it can merge.",
       "expect": "none",
-      "canary": "pr-shepherd is slash-only; a run that names it means the disable flag broke"
+      "canary": "al-pr-shepherd is slash-only; a run that names it means the disable flag broke"
     },
     {
       "id": "S27",
       "prompt": "Merge main into my PR branch and sort out the object-number collisions.",
       "expect": "none",
-      "canary": "the sync mechanics live inside slash-only pr-shepherd; a run that names it means the disable flag broke"
+      "canary": "the sync mechanics live inside slash-only al-pr-shepherd; a run that names it means the disable flag broke"
     },
     {
       "id": "S28",
       "prompt": "Run the whole loop on the next ready bullet — implement, reshape if needed, review — and pause only where a decision needs me.",
       "expect": "none",
-      "canary": "orchestrate is slash-only; a run that names it means the disable flag broke"
+      "canary": "al-orchestrate is slash-only; a run that names it means the disable flag broke"
     }
   ]
 }
