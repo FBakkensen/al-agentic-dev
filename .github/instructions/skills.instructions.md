@@ -9,10 +9,10 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 ## Copilot-first surface
 
 1. Skill frontmatter has at most three keys: `name`, `description`, `disable-model-invocation`. Tool access and model pins live in `agents/*.agent.md`, never in skill frontmatter — flag `allowed-tools`, `model`, `tools`, `mcp-servers`, `user-invocable` on a skill.
-2. Model invocation is the exception. Every skill carries `disable-model-invocation: true` unless something must load it without a slash command — today `al-build` (changed AL code or another skill's script need invokes it mid-run), `al-visualize` (al-next invokes it when the shape changed; the user calls it directly for a drawn view), `al-grilling` (the interview engine `al-grill-me` starts and grill trigger phrases reach), `al-unslop` (the donor says it must always apply), and `al-lookup` (verify-or-declare is a mid-write reflex; the writing and review skills invoke it in-flight). Flag a skill missing the flag, and flag a new exception that doesn't name who invokes it.
+2. Model invocation is the exception. Every skill carries `disable-model-invocation: true` unless something must load it without a slash command — today `al-build` (changed AL code or another skill's script need invokes it mid-run), `al-visualize` (al-next invokes it when the shape changed; the user calls it directly for a drawn view), `al-grilling` (the interview engine `al-grill-me` starts and grill trigger phrases reach), `al-unslop` (the donor says it must always apply), `al-lookup` (verify-or-declare is a mid-write reflex; the writing and review skills invoke it in-flight), and `al-walkthrough` (the user's walk demand — walk the slice, show me it works — reaches it). Flag a skill missing the flag, and flag a new exception that doesn't name who invokes it.
 3. The folder name equals `name`.
 4. No relative link leaves the skill folder. Flag `](../`, `](/`, and any absolute path.
-   - Correct: `See [RECORDING-FORMAT.md](RECORDING-FORMAT.md).`
+   - Correct: `See [SURFACE.md](SURFACE.md).`
    - Incorrect: `See [recording-grammar.md](../../references/recording-grammar.md).`
 5. Another skill is named, never linked, and every slash reference resolves to a folder under `skills/`. Every skill this plugin ships is `al-`prefixed — the namespace is the plugin's mark; an `al-`prefixed reference that matches no folder is a defect the gate catches.
    - Correct: `Run the gate with /al-build.`
@@ -30,7 +30,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## The description: router on the model-invocable skills, menu line on the rest
 
-11. On the model-invocable skills (`al-build`, `al-visualize`, `al-grilling`, `al-unslop`, `al-lookup`) the description says what the skill does and the state that should trigger it, in terms the model can match against the work in front of it: `Use when AL production or test code has changed and the change needs the gate`.
+11. On the model-invocable skills (`al-build`, `al-visualize`, `al-grilling`, `al-unslop`, `al-lookup`, `al-walkthrough`) the description says what the skill does and the state that should trigger it, in terms the model can match against the work in front of it: `Use when AL production or test code has changed and the change needs the gate`.
 12. On those skills, one trigger per distinct branch. Flag synonyms that rename a single branch.
 13. On those skills, flag identity restated from the body. The description spends its budget on triggers.
 14. On a `disable-model-invocation: true` skill the description is one line for the human scanning the `/` menu — what it does and when to reach for it, in plain words. Flag state grammar and trigger syntax there; the model never reads it.
@@ -76,7 +76,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## AL grounding
 
-31. Every BC object, table, field, procedure, event, enum value, or dialog text a skill or agent shows, writes, or judges is confirmed by a lookup in the current session, never recalled. BC vocabulary rides with it on every line written into code or a receipt — Insert not create, Post not submit, Validate not check, Ledger Entry not transaction, codeunit not class, procedure not method — and so does production-AL thrift: reach for the platform before writing code, and an interface with a single implementation is a finding. Today `al-visualize`, the two reviewer agents, `al-implement`, `al-refactor`, `al-review`, `al-design`, and `al-event-model` carry the grounding rule; flag its absence in any new skill that writes, shows, or judges AL.
+31. Every BC object, table, field, procedure, event, enum value, or dialog text a skill or agent shows, writes, or judges is confirmed by a lookup in the current session, never recalled. BC vocabulary rides with it on every line written into code or a receipt — Insert not create, Post not submit, Validate not check, Ledger Entry not transaction, codeunit not class, procedure not method — and so does production-AL thrift: reach for the platform before writing code, and an interface with a single implementation is a finding. Today `al-visualize`, the two reviewer agents, `al-implement`, `al-refactor`, `al-review`, `al-design`, `al-event-model`, and `al-walkthrough` carry the grounding rule; flag its absence in any new skill that writes, shows, or judges AL.
 
 ## Commit discipline
 

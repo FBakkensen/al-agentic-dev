@@ -109,7 +109,7 @@ Name the outcome, then /al-build.
 
     It 'fails when SKILL.md is missing' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'no-skill-md') -Files @{
-            'demo/RECORDING-FORMAT.md' = '# Recording format'
+            'demo/NOTES-FORMAT.md' = '# Notes format'
         }
 
         $result = Invoke-SkillValidator -Root $root
@@ -499,9 +499,9 @@ Describe 'Validate-Skills script-path checks' {
         $result.ExitCode | Should -Be 0
     }
 
-    It 'accepts pagescripts/ outside al-build' {
-        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'script-pagescripts') -Files @{
-            'demo/SKILL.md' = (New-SkillContent -Body 'Recordings land under pagescripts/recordings/ in the repo.')
+    It 'accepts a folder name that merely contains scripts/ outside al-build' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'script-substring') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body 'Notes land under postscripts/archive/ in the repo.')
         }
 
         $result = Invoke-SkillValidator -Root $root
@@ -676,7 +676,7 @@ Describe 'Validate-Skills skill-reference checks' {
     }
 
     It 'ignores skill-shaped tokens inside paths and filenames' {
-        $body = 'Read .output/TestResults/<dir>/al-runner.xml and pagescripts/al-thing/notes.md for context.'
+        $body = 'Read .output/TestResults/<dir>/al-runner.xml and artifacts/al-thing/notes.md for context.'
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'ref-path') -Files @{
             'demo/SKILL.md' = (New-SkillContent -Body $body)
         }

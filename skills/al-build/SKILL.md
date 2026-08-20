@@ -1,6 +1,6 @@
 ---
 name: al-build
-description: "Runs the scripted AL/Business Central toolchain: the compile-publish-test gate, provisioning, breaking-change validation, page-script replay, and the container lifecycle. Use when AL production or test code has changed and the change needs the gate before the task moves on, and whenever another skill needs one of these scripts run — this skill is their only invoker."
+description: "Runs the scripted AL/Business Central toolchain: the compile-publish-test gate, provisioning, breaking-change validation, and the container lifecycle. Use when AL production or test code has changed and the change needs the gate before the task moves on, and whenever another skill needs one of these scripts run — this skill is their only invoker."
 ---
 
 # al-build
@@ -41,8 +41,6 @@ Other artifacts: `.output/TestResults/<dir>/al-runner.xml` and `last.xml` (unit 
 |---|---|
 | `provision.ps1` | Per-feature setup: installs the stable and prerelease AL compiler channels side by side under the tool cache, downloads symbol packages for every app, refreshes the ALCops analyzers, and — when `breakingChange.enabled` — caches the previous release as the breaking-change baseline. `-UpdateCompiler` forces a clean reinstall. |
 | `validate-breaking-changes.ps1` | The heavyweight AppSource-style check the compile-time cop cannot do: per-country, install and upgrade, against the cached baseline. Reads the cache and never downloads — an empty cache stops with *run provision.ps1*. Exit codes are contract: `0` no break, `3` breaking change, `4` prerequisite missing, `1` environment failure. Feature-end or pre-release, never the inner loop. |
-| `import-pagescript.ps1` | Moves a downloaded Page Scripting recording into `pagescripts/recordings/` under the convention name passed as `-TargetName`, creating the folders when missing; `-Force` overwrites a prior take. Prints the repo-relative path to hand to `pagescript-replay.ps1 -File`. |
-| `pagescript-replay.ps1` | Replays Page Scripting recordings against the container. Bare, it replays every `.yml` under `pagescripts/recordings/`; `-File <path>` replays one. `-Force` republishes first. [RECORDING-FORMAT.md](RECORDING-FORMAT.md) is the recording grammar — read it to coach a repeatable take or to read the `.yml` behind a red replay. |
 | `publish-apps.ps1` | Clean republish with no build and no tests: unpublishes every app dependency-reversed, then force-publishes in dependency order. Needs compiled `.app` artifacts already present. Loads a fresh container before a human walk. |
 | `new-bc-container.ps1` | Creates and configures the golden BC container — one per BC version. |
 | `commit-bc-container.ps1` | Commits the stopped golden container to the snapshot image. A machine restart comes first — a stopped container still holds files locked that the commit needs released — and only the user can take it: ask, wait for their confirmation, then run the commit. |

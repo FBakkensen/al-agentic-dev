@@ -178,6 +178,16 @@
       "prompt": "The gate is green — clean this up before we move on.",
       "expect": "none",
       "canary": "the tidy pass lives inside slash-only al-refactor; a run that names it means the disable flag broke"
+    },
+    {
+      "id": "S32",
+      "prompt": "The slice is green — walk it in the web client and show me it works.",
+      "expect": "al-walkthrough"
+    },
+    {
+      "id": "S33",
+      "prompt": "Let's do a walkthrough of the template export before I demo it to the customer.",
+      "expect": "al-walkthrough"
     }
   ]
 }

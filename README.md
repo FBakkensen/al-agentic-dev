@@ -1,6 +1,6 @@
 # al-agentic-dev
 
-A GitHub Copilot plugin for Microsoft Dynamics 365 Business Central development: a scripted compile-publish-test gate with containers, coverage, Page Scripting replay, and breaking-change validation underneath, plus the two platform-knowledge clones and a visual steering surface.
+A GitHub Copilot plugin for Microsoft Dynamics 365 Business Central development: a scripted compile-publish-test gate with containers, coverage, and breaking-change validation underneath, plus the two platform-knowledge clones and a visual steering surface.
 
 One install brings the whole surface: the Agent Skills, two packaged custom agents (`al-review-lens`, `al-knowledge-leaf`), and three bundled MCP servers — NAB AL Tools for XLF translation, Microsoft Learn for current Microsoft documentation, and bc-code-intelligence for BC idioms and patterns.
 
@@ -14,7 +14,7 @@ The set is mid-rebuild: the earlier 26-skill pipeline is retired, and each new p
 - Node.js 22+ with `npx` on PATH — runs the bundled NAB AL Tools MCP server
 - In each consumer repo: `al-build.json` at the root for the build gate
 
-The skills other than `/al-build` are prose and need nothing beyond Copilot itself.
+The skills other than `/al-build` are prose and need nothing beyond Copilot itself — except `/al-walkthrough`, which needs the one-time [Web Client walkthrough](#web-client-walkthrough-business-central-mcp) install.
 
 ## Install
 
@@ -81,6 +81,35 @@ The auto-install runs when Copilot starts in a trusted checkout of that reposito
 
 The frontier lives in Azure DevOps work items, so install and authenticate the Azure DevOps MCP server per its own documentation — `/al-next` works the work items through its tools. The plugin deliberately does not bundle it: the server connection is yours, not the plugin's. Without it, `/al-next` keeps the frontier in `docs/frontier.md`, explicitly second-class.
 
+### Web Client walkthrough (business-central-mcp)
+
+`/al-walkthrough` drives the running Web Client through [business-central-mcp](https://github.com/SShadowS/business-central-mcp) (MIT, BC27/BC28 wire-compatible) — the client's native WebSocket protocol, structured field reads, no browser. The plugin deliberately does not bundle this one either: the container URL and credentials it needs are your machine's. One-time, user-level: add the `business-central` entry to `~/.copilot/mcp-config.json` (merge into `mcpServers` when the file already has one), and keep the key name `business-central` — tool ids derive from it (`business-central-bc_open_page` and so on):
+
+```json
+{
+  "mcpServers": {
+    "business-central": {
+      "type": "stdio",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-Command",
+        "$n=(git rev-parse --abbrev-ref HEAD) -replace '[/\\\\]','-' -replace '[^\\w-]',''; $c=@{username='admin';password='P@ssw0rd'}; $f=Join-Path (git rev-parse --show-toplevel) 'al-build.json'; if(Test-Path $f){$j=(Get-Content $f -Raw|ConvertFrom-Json).container; if($j.username){$c.username=$j.username}; if($j.password){$c.password=$j.password}}; $env:BC_BASE_URL='http://'+$n+'/BC'; $env:BC_USERNAME=$c.username; $env:BC_PASSWORD=$c.password; $env:BC_APPLICATION_ID='NAV'; [Console]::OutputEncoding=[Text.Encoding]::UTF8; npx -y business-central-mcp"
+      ]
+    }
+  }
+}
+```
+
+The inline wrapper resolves everything per session at launch, in the session's working directory: the agent container name from the current git branch, sanitized exactly as `/al-build` does (`/` and `\` become `-`, every other non-word character drops); the credentials from the consumer repo's root `al-build.json` (`container.username` / `container.password`, defaulting to `admin` / `P@ssw0rd`); then `BC_BASE_URL=http://<container>/BC`.
+
+Two behaviors worth knowing:
+
+- `BC_APPLICATION_ID=NAV` is load-bearing on the on-prem BcContainerHelper artifacts `/al-build` provisions. With the default `FIN`, sign-in and the WebSocket upgrade succeed and the session then dies inside the OpenSession RPC with `NavCancelCredentialPromptException` — a misleading failure the package's own README documents.
+- The server starts fine with no container up: the session loads, the `bc_*` tools appear, and only their calls fail until the branch container exists. No restart is needed once it does.
+
+Verify from a consumer repo whose branch container is up: `bc_list_companies` answers with the container's companies.
+
 ## Migrating from `npx skills add`
 
 Earlier versions of this set installed as loose per-user skill folders. Those copies load **before** plugin skills and silently mask every plugin update, forever — same name, stale text wins, no warning. Remove them once and the plugin takes over.
@@ -113,7 +142,7 @@ copilot plugin uninstall al-agentic-dev
 
 | Skill | What it does |
 |---|---|
-| [`/al-build`](docs/al-build.md) | Compiles, publishes, runs the tests — plus provisioning, breaking-change validation, Page Scripting replay, and the container lifecycle. |
+| [`/al-build`](docs/al-build.md) | Compiles, publishes, runs the tests — plus provisioning, breaking-change validation, and the container lifecycle. |
 | `/al-clone-bcapps` | Clones Microsoft's W1 source at the matching BC version into `.bcapps/` for reading and searching platform code. |
 | `/al-clone-bcquality` | Clones Microsoft's BCQuality knowledge base into `.bcquality/` and builds its knowledge index. |
 | `/al-visualize` | Draws the BC-anatomy delta — objects, events, flows as boxes and connections — on the Copilot app's side-panel canvas; al-next invokes it when the shape changed. |
@@ -126,6 +155,7 @@ copilot plugin uninstall al-agentic-dev
 | `/al-implement` | Drives one frontier bullet to landed code — red-green at its pre-agreed seams, /al-build as the checker — and closes on a receipt with the gate verdict and the assumptions ledger. |
 | `/al-refactor` | Reshapes green code with behavior frozen — the routine tidy pass after every green, or a named deepening goal that upgrades to the full reshape (subtract first, migrate callers before deleting) — and proves the hold with the full gate. |
 | `/al-review` | Reads a diff ledger-first — standards through the BCQuality Entry protocol, spec side by side, the six AL anatomy axes, blast radius proven by running code — and returns a Blocking/Non-Blocking verdict without touching a line; beauty is never a finding, it lands on the one Refactor food line. |
+| `/al-walkthrough` | Walks a landed slice in the running Web Client through `business-central-mcp` — scenarios confirmed with you first, observed vs expected verbatim per scenario, closing with pass/fail and a hand-reproduction recipe. |
 | `/al-next` | The loop transition: capsule, delta drawn, design reconciled, one grilling round, frontier reshaped and the next bullet sharpened — the frontier in Azure DevOps work items, or docs/frontier.md without that wiring. |
 | `/al-grill-adr` | The pipeline entry: interviews a fresh feature idea until the vocabulary is unambiguous — CONTEXT.md at the repo root, hard-to-reverse business rules as ADRs, big fog charted as decision items on the frontier. |
 | `/al-design` | The architecture conversation in BC shapes — modules, seams, tables, extensions — writing the living docs/design.md that /al-next reconciles. |
@@ -135,6 +165,8 @@ copilot plugin uninstall al-agentic-dev
 | `/al-orchestrate` | Runs one ready bullet through the whole loop — implement, refactor, review, the tidy beat skipped only when implement reports nothing to tidy — pausing only at declared decisions and ending at the review verdict. |
 
 Two read-only reviewer agents ride under `agents/` — `al-review-lens` and `al-knowledge-leaf`, serving `/al-review`'s fan-out. `al-grilling`, `al-grill-me`, `al-wait-what` (mattpocock/skills, MIT) and `al-unslop` (pstack, MIT) are pinned forks: their bodies stay donor text except the al- namespace, provenance pinned at the donor SHAs, and a content fix belongs upstream.
+
+**Migrating from v1:** the Page Scripting recording and replay machinery is gone — `/al-walkthrough` through `business-central-mcp` replaces the slice-end verification walk.
 
 ## The hooks
 
