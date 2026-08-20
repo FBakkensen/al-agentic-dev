@@ -12,7 +12,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 2. Model invocation is the exception. Every skill carries `disable-model-invocation: true` unless something must load it without a slash command — today `al-build` (changed AL code or another skill's script need invokes it mid-run), `al-visualize` (al-next invokes it when the shape changed; the user calls it directly for a drawn view), `al-grilling` (the interview engine `al-grill-me` starts and grill trigger phrases reach), `al-unslop` (the donor says it must always apply), and `al-lookup` (verify-or-declare is a mid-write reflex; the writing and review skills invoke it in-flight). Flag a skill missing the flag, and flag a new exception that doesn't name who invokes it.
 3. The folder name equals `name`.
 4. No relative link leaves the skill folder. Flag `](../`, `](/`, and any absolute path.
-   - Correct: `See [RECORDING-FORMAT.md](RECORDING-FORMAT.md).`
+   - Correct: `See [SURFACE.md](SURFACE.md).`
    - Incorrect: `See [recording-grammar.md](../../references/recording-grammar.md).`
 5. Another skill is named, never linked, and every slash reference resolves to a folder under `skills/`. Every skill this plugin ships is `al-`prefixed — the namespace is the plugin's mark; an `al-`prefixed reference that matches no folder is a defect the gate catches.
    - Correct: `Run the gate with /al-build.`

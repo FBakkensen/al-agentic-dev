@@ -227,7 +227,7 @@ Describe 'Get-GateMetricsSummary' {
         # Old clean-tree entry outside any -SinceDays window
         Add-FixtureEntry @{ timestamp = '2020-01-01 00:00:00'; task = 'test'; gate = 'full'; outcome = 'passed'; totalSec = 600; dirty = @{ app = 0; tests = 0; other = 0 } }
         # Non-gate task: excluded by the task filter
-        Add-FixtureEntry @{ timestamp = $recent; task = 'pagescript-replay'; totalSec = 90 }
+        Add-FixtureEntry @{ timestamp = $recent; task = 'publish-apps'; totalSec = 90 }
         # Malformed + blank lines: skipped, never crash
         Add-Content -Path $script:SummaryLog -Value '{"timestamp": "2026-' -Encoding UTF8
         Add-Content -Path $script:SummaryLog -Value '' -Encoding UTF8

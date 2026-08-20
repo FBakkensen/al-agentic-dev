@@ -93,7 +93,6 @@ Do not install or patch the helper directly in the branch container; that leaves
 |---|---|
 | `provision.ps1` | Per-feature refresh: compiler channels, symbol packages, analyzers, breaking-change baseline. |
 | `validate-breaking-changes.ps1` | Per-country install-and-upgrade validation against the cached baseline. |
-| `pagescript-replay.ps1` | Replays Page Scripting recordings against the container. |
 | `publish-apps.ps1` | Clean republish, no build and no tests. |
 | `new-bc-container.ps1`, `commit-bc-container.ps1`, `new-agent-container.ps1` | The container lifecycle — one sequence, once per BC version; it also establishes the exact coverage helper. |
 | `prune.ps1` | Removes agent containers for dead branches or ones unused past seven days. |

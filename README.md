@@ -1,6 +1,6 @@
 # al-agentic-dev
 
-A GitHub Copilot plugin for Microsoft Dynamics 365 Business Central development: a scripted compile-publish-test gate with containers, coverage, Page Scripting replay, and breaking-change validation underneath, plus the two platform-knowledge clones and a visual steering surface.
+A GitHub Copilot plugin for Microsoft Dynamics 365 Business Central development: a scripted compile-publish-test gate with containers, coverage, and breaking-change validation underneath, plus the two platform-knowledge clones and a visual steering surface.
 
 One install brings the whole surface: the Agent Skills, two packaged custom agents (`al-review-lens`, `al-knowledge-leaf`), and three bundled MCP servers — NAB AL Tools for XLF translation, Microsoft Learn for current Microsoft documentation, and bc-code-intelligence for BC idioms and patterns.
 
@@ -113,7 +113,7 @@ copilot plugin uninstall al-agentic-dev
 
 | Skill | What it does |
 |---|---|
-| [`/al-build`](docs/al-build.md) | Compiles, publishes, runs the tests — plus provisioning, breaking-change validation, Page Scripting replay, and the container lifecycle. |
+| [`/al-build`](docs/al-build.md) | Compiles, publishes, runs the tests — plus provisioning, breaking-change validation, and the container lifecycle. |
 | `/al-clone-bcapps` | Clones Microsoft's W1 source at the matching BC version into `.bcapps/` for reading and searching platform code. |
 | `/al-clone-bcquality` | Clones Microsoft's BCQuality knowledge base into `.bcquality/` and builds its knowledge index. |
 | `/al-visualize` | Draws the BC-anatomy delta — objects, events, flows as boxes and connections — on the Copilot app's side-panel canvas; al-next invokes it when the shape changed. |
