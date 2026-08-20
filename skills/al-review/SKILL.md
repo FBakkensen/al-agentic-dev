@@ -28,7 +28,7 @@ What breaks beyond the diff: callers, subscribers of touched events, data the di
 
 ## Verdict
 
-Every BC name in a finding is confirmed by a lookup in the current session, never recalled. A shape observation appears in this verdict only when the shape will produce wrong behavior — then it is a finding; beauty is never a finding. Consequence-bearing idiom violations — locking, Commit discipline, TransferFields traps — stay findings; a shape observation whose only cost is aesthetics goes to the one Refactor food line. "No blocking issues found" is a legal verdict.
+Every BC name in a finding is confirmed by a lookup in the current session, never recalled. A shape observation appears in this verdict only when the shape will produce wrong behavior — then it is a finding; beauty is never a finding. Consequence-bearing idiom violations — locking, Commit discipline, TransferFields traps — stay findings; a shape observation whose only cost is aesthetics goes to the one Refactor food line. A generic-CS name on a shipped surface — an object, table, field, procedure, or event name — is a finding, not refactor food: AL names are permanent API, and a wrong name produces wrong integrations and a breaking rename later. "No blocking issues found" is a legal verdict.
 
 ```
 ## al-review verdict — <diff scope>
