@@ -31,7 +31,7 @@ verified: <claim> — <source pointer>
 assumed: <claim> — not verified
 ```
 
-A valid pointer is a Learn URL, a BCApps file and line, a bc-code-intelligence topic id, or a BCQuality article path. Writing skills carry these entries in their receipts; review reads the ledger first.
+A valid pointer is a Learn URL, a BCApps file and line, a bc-code-intelligence topic id, or a BCQuality article path. Writing skills carry these entries in their receipts; al-review reads the ledger first.
 
 ## Append to the map
 

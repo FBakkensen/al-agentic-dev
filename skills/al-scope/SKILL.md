@@ -18,7 +18,7 @@ Present the cut — the bullets, the edges, what was deliberately left out — a
 
 ## Land the frontier
 
-The approved bullets land in the store: Azure DevOps work items with native blocking links, through the azure-devops MCP work-item tools; without that wiring, `docs/frontier.md` — one bullet per line with its state and `after:` edges, second-class. scope creates the frontier; next maintains it from here.
+The approved bullets land in the store: Azure DevOps work items with native blocking links, through the azure-devops MCP work-item tools; without that wiring, `docs/frontier.md` — one bullet per line with its state and `after:` edges, second-class. al-scope creates the frontier; al-next maintains it from here.
 
 ## Pass end
 
