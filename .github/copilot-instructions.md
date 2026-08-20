@@ -9,7 +9,7 @@ The branch `flemmingbk-skills-v2` rebuilds the set package by package: the old 2
 ```
 plugin.json                     the plugin manifest: name, version, skills/, agents/, hooks, .mcp.json
 .mcp.json                       bundled MCP servers, each with a tools allowlist
-hooks.json                      the shipped hook: preToolUse denies the ask_user tool
+hooks.json                      the shipped hooks: preToolUse denies ask_user; sessionStart injects the reply shape, plus the Speak BC voice rule in AL repos
 .github/plugin/marketplace.json the marketplace manifest the plugin installs through
 skills/<name>/SKILL.md          frontmatter: name, description, disable-model-invocation
 skills/<name>/<SIBLING>.md      optional format files, inside the same folder only
@@ -32,7 +32,7 @@ The folder name equals the frontmatter `name`; an agent's `name` equals its file
 - Skill frontmatter beyond `name`, `description`, `disable-model-invocation` — no `allowed-tools`, `model`, `tools`, `mcp-servers`, `user-invocable` on a skill.
 - Task-state ceremony — a lifecycle field (`status:`, `phase:`, `blocked-on:`, `review:`, `tier:`, `green-gate:`), an Azure DevOps work-item transition (`State: New|Active|Blocked|Testing|Resolved|Closed`), or a stage-gate prerequisite. Retired concepts; the gate bans the fields in every folder.
 - A link that leaves the skill folder: `](../`, `](/`, any absolute path.
-- Slash-command files — out of scope until a proven defect asks for them. One hook ships: `hooks.json` denies the `ask_user` tool with a redirect to plain-text questions (its proven defect: a child session hung silently on an `ask_user` call); a new hook needs its own proven defect.
+- Slash-command files — out of scope until a proven defect asks for them. Two hooks ship in `hooks.json`, each on its own proven defect: the preToolUse ask_user deny (a child session hung silently on an `ask_user` call) and the sessionStart voice injection (generic CS names leaked into work items and review conclusions, and the v1 reply-shape block in the user's `~/.copilot/copilot-instructions.md` was orphaned when its installer skill retired); a new hook needs its own proven defect.
 
 Say so when a change reintroduces one of these.
 

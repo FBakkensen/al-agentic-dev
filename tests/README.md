@@ -1,6 +1,6 @@
 # The smoke harness
 
-Two tiers guard the plugin surface. The static tier is deterministic and runs in CI; the routing tier costs AI credits and runs by hand.
+Three tiers guard the plugin surface. The static tier is deterministic and runs in CI; the routing and hook tiers cost AI credits and run by hand.
 
 ## Static tier — deterministic, CI-run
 
@@ -36,6 +36,14 @@ pwsh tests/routing/Invoke-RoutingSmoke.ps1
 One batched `copilot -p` run: it loads this checkout's plugin, asks which skill the model would route each scenario in `scenarios.json` to, and prints a pass/miss table. A miss is a signal to inspect — LLM routing varies, so re-run before treating one as real; the script exits 0 on misses and 1 only on mechanical failure. Each run costs roughly 5 AI credits, which is why the file is not named `*.Tests.ps1`: Pester and CI never discover it.
 
 Every package that adds skills appends its scenarios to `tests/routing/scenarios.json`. Slash-only skills (`disable-model-invocation: true`) are invisible to the model by design — write their scenarios with `"expect": "none"`; they then double as canaries that fail loudly if a disable flag ever breaks.
+
+## Hook tier — two paid runs, by hand
+
+```powershell
+pwsh tests/hooks/Invoke-HookSmoke.ps1
+```
+
+Two `copilot -p` runs against this checkout's committed `hooks.json`: an AL fixture (an `app.json` at the scratch root) where the reply shape, the Speak BC voice rule, and the ask_user deny must all show in the model's reply, and a plain directory where the reply shape must show and the voice rule must not. Assertions match short distinctive substrings ("Insert not create", "one sentence before the first tool call", "disabled by al-agentic-dev"). Hook injection is deterministic, so unlike routing misses any assertion failure exits 1 and prints both replies. Roughly 10 AI credits per invocation; run it after any hooks.json change.
 
 ## Loading this checkout's plugin in isolation
 

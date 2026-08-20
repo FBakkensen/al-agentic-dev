@@ -135,3 +135,16 @@ copilot plugin uninstall al-agentic-dev
 | `/al-orchestrate` | Runs one ready bullet through the whole loop — implement, refactor, review, the tidy beat skipped only when implement reports nothing to tidy — pausing only at declared decisions and ending at the review verdict. |
 
 Two read-only reviewer agents ride under `agents/` — `al-review-lens` and `al-knowledge-leaf`, serving `/al-review`'s fan-out. `al-grilling`, `al-grill-me`, `al-wait-what` (mattpocock/skills, MIT) and `al-unslop` (pstack, MIT) are pinned forks: their bodies stay donor text except the al- namespace, provenance pinned at the donor SHAs, and a content fix belongs upstream.
+
+## The hooks
+
+`hooks.json` ships two hooks:
+
+- **ask_user deny** (preToolUse): the ask_user tool is denied with a redirect — questions land in the reply itself, as plain text, with lettered options and the recommendation marked.
+- **Session voice** (sessionStart): every new or resumed session receives the reply-shape rules as additional context, and — only when the working directory is an AL repo (an `app.json` at the root or one directory level deep) — the Speak BC vocabulary rule: Insert not create, Post not submit, Ledger Entry not transaction, and so on. In a non-AL directory the vocabulary rule stays out.
+
+One platform caveat: the Copilot CLI currently honors only the **last** sessionStart `additionalContext` across all hook sources, so a user-level sessionStart context hook and this plugin's cannot both inject today — whichever loads last wins.
+
+**Migrating from v1:** earlier versions installed these reply-shape rules as a managed block in `~/.copilot/copilot-instructions.md` (between `<!-- al-agentic-dev:start -->` / `<!-- al-agentic-dev:end -->` markers). Delete that block — the hook replaces it, and the plugin never writes user files.
+
+Re-prove injection after any hooks.json change: `pwsh tests/hooks/Invoke-HookSmoke.ps1` (two paid runs; see tests/README.md).
