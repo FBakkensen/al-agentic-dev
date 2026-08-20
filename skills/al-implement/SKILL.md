@@ -10,7 +10,7 @@ In: one frontier bullet — its test spec and pre-agreed seams ride on it — an
 
 ## The loop
 
-Red at a pre-agreed seam, the smallest green, then the next vertical slice. Tests exercise behavior through public seams with independent expected values — an assert that restates the implementation proves nothing. Mid-loop checks run /al-build's unit mode; the full gate runs once, at the end. Load the idiom capsules matching the work type when they exist — al-miner grows them; today there are none.
+Work the test spec in seam-clusters — the AAA cases that share one seam and one Arrange, cut from the spec in flight. Each cluster earns its red as one batch before its green. Every /al-build run executes the full suite, so pipeline the proofs: one run confirms the previous cluster green and the next cluster red — N clusters cost N+1 runs, regression riding every run. Name unit mode while the cluster's tests run under AL Runner; name the full gate when they need the container. A test that arrives green at its red run is checked against existing coverage — redundant drops, live earns a mutation proof: break the implementation, watch the red, restore. Tests exercise behavior through public seams with independent expected values — an assert that restates the implementation proves nothing. Load the idiom capsules matching the work type when they exist — al-miner grows them; today there are none.
 
 ## Verify or declare
 
@@ -26,7 +26,7 @@ A change in behavior beyond the bullet stops the run and surfaces as one plain-t
 
 ## Close
 
-Commit the work with a plain descriptive message naming the bullet. Emit the receipt — posted to the bullet's work item where Azure DevOps is wired, mirrored to `.output/receipts/<bullet>.md` always — and stop; the caller owns the next block.
+The closing gate is the last full-gate green run that no edit follows — any change after it, however small, reopens the gate. Commit the work with a plain descriptive message naming the bullet. Emit the receipt — posted to the bullet's work item where Azure DevOps is wired, mirrored to `.output/receipts/<bullet>.md` always — and stop; the caller owns the next block.
 
 ```
 ## al-implement receipt — <bullet>

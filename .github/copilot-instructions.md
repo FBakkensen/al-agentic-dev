@@ -2,7 +2,7 @@
 
 This repo ships the GitHub Copilot plugin `al-agentic-dev`: Agent Skills for AL/Business Central development plus packaged custom agents, bundled MCP servers, and the marketplace manifest. Everything here is Copilot-first — skills name Copilot tools, bundled MCP servers, and packaged agents explicitly.
 
-The branch `flemmingbk-skills-v2` rebuilds the set package by package: the old 26-skill pipeline is stripped, each new version ports proven skills from their donors as real work needs them, and `main` keeps shipping the old set untouched until the final merge. Git history is the donor archive — a retired skill returns from a commit, never from a copy.
+The set was rebuilt package by package on `flemmingbk-skills-v2`, since merged to `main`. Git history is the donor archive — a retired skill returns from a commit, never from a copy.
 
 ## The shipped surface
 
@@ -63,7 +63,7 @@ Dev-time chat in this repo follows the same style the shipped skills ask for:
 
 ## Working here
 
-`main` is PR-only. This set builds on the long-lived `flemmingbk-skills-v2` branch — packages land as commits there, the plugin version incrementing per package, merged to `main` when the set is ready.
+`main` is PR-only. A change lands on a fresh feature branch and merges through a PR, the plugin version incrementing per package.
 
 Before pushing, run `scripts/Validate-Json.ps1`, `scripts/Validate-PowerShell.ps1`, `scripts/Validate-Skills.ps1`, `scripts/Update-Review.ps1 -Check`, then `Invoke-Pester tests`. CI runs the same five on pushes to `main`, `feature/copilot-first-migration`, and `flemmingbk-skills-v2`, and on every pull request. The gates validate `skills/`, `agents/`, and the plugin manifests; links in `README.md` and `docs/` are deliberately unchecked — not a review finding.
 
