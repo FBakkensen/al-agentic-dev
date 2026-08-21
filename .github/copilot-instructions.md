@@ -22,7 +22,7 @@ Twenty-one skills ship today. Four are the AL survivors: `al-build` — the comp
 
 The folder name equals the frontmatter `name`; an agent's `name` equals its filename stem, and its `model` pin and `tools` scope are mandatory. A skill reaches outside its folder only by naming another skill — `/al-build` — never by path.
 
-`disable-model-invocation: true` is the default on every skill. Six omit it: `al-build` (changed AL code or another skill's script need invokes it mid-run), `al-visualize` (al-next invokes it when the shape changed; the user calls it directly for a drawn view), `al-grilling` (the interview engine `al-grill-me` starts and grill trigger phrases reach), `al-unslop` (the donor says it must always apply), `al-lookup` (verify-or-declare is a mid-write reflex; the writing and review skills invoke it in-flight), and `al-walkthrough` (the user's walk demand — walk the slice, show me it works — reaches it). A new exception names who invokes it.
+`disable-model-invocation: true` is the default on every skill. Seven omit it: `al-build` (changed AL code or another skill's script need invokes it mid-run), `al-visualize` (al-next invokes it when the shape changed; the user calls it directly for a drawn view), `al-grilling` (the interview engine `al-grill-me` starts and grill trigger phrases reach), `al-unslop` (the donor says it must always apply), `al-lookup` (verify-or-declare is a mid-write reflex; the writing and review skills invoke it in-flight), `al-walkthrough` (the user's walk demand — walk the slice, show me it works — reaches it), and `al-pr-shepherd` (a request to create, shepherd, or continue an open PR reaches it). A new exception names who invokes it.
 
 ## What never ships
 

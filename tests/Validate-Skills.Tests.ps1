@@ -216,13 +216,13 @@ Name the outcome, then /al-build.
 
     It 'fails when a model-invocable skill carries disable-model-invocation' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'flag-on-exception') -Files @{
-            'al-build/SKILL.md' = (New-SkillContent -Name 'al-build')
+            'al-pr-shepherd/SKILL.md' = (New-SkillContent -Name 'al-pr-shepherd')
         }
 
         $result = Invoke-SkillValidator -Root $root
 
         $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'al-build is model-invocable; remove disable-model-invocation'
+        $result.Text | Should -Match 'al-pr-shepherd is model-invocable; remove disable-model-invocation'
     }
 
     It 'accepts a remaining pinned fork without the question rule' {
