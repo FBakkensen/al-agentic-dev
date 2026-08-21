@@ -43,7 +43,7 @@ Every package that adds skills appends its scenarios to `tests/routing/scenarios
 pwsh tests/hooks/Invoke-HookSmoke.ps1
 ```
 
-Two `copilot -p` runs against this checkout's committed `hooks.json`: an AL fixture (an `app.json` at the scratch root) where the reply shape, the Speak BC voice rule, and the ask_user deny must all show in the model's reply, and a plain directory where the reply shape must show and the voice rule must not. Assertions match short distinctive substrings ("Insert not create", "one sentence before the first tool call", "disabled by al-agentic-dev"). Hook injection is deterministic, so unlike routing misses any assertion failure exits 1 and prints both replies. Roughly 10 AI credits per invocation; run it after any hooks.json change.
+Two `copilot -p` runs against this checkout's committed `hooks.json`: an AL fixture (an `app.json` at the scratch root) where the reply shape, the Speak BC voice rule, and the ask_user deny must all show in the model's reply, and a plain directory where the reply shape and its exact `➜ ▸ ✅ ⛔` glyphs must show while the voice rule stays absent. Assertions match short distinctive substrings ("Insert not create", "one sentence before the first tool call", "disabled by al-agentic-dev"). Hook injection is deterministic, so unlike routing misses any assertion failure exits 1 and prints both replies. Roughly 10 AI credits per invocation; run it after any hooks.json change.
 
 ## Loading this checkout's plugin in isolation
 
