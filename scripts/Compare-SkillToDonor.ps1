@@ -15,9 +15,9 @@
     Exit codes: 0 the skill matches its donor line for line, 2 the diff is
     non-empty, 1 the skill or donor cannot be resolved.
 .EXAMPLE
-    pwsh scripts/Compare-SkillToDonor.ps1 -Skill al-grilling -DonorRef 3b1ed60
+    pwsh scripts/Compare-SkillToDonor.ps1 -Skill al-grill-me -DonorRef 688915f -DonorPath skills/grill-me
 .EXAMPLE
-    pwsh scripts/Compare-SkillToDonor.ps1 -Skill al-grilling -DonorDir C:\donors\pocock-skills\grilling
+    pwsh scripts/Compare-SkillToDonor.ps1 -Skill al-grill-me -DonorDir C:\donors\pocock-skills\grill-me
 #>
 [CmdletBinding(DefaultParameterSetName = 'Ref')]
 param(

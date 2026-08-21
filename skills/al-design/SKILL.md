@@ -8,6 +8,10 @@ disable-model-invocation: true
 
 A human conversation, never automated: sketch the shape before code, and when implementation reports repeated friction, the sketch is wrong — redesign here rather than bolt on guards. The conversation owns architecture and data structure only — which tables and extensions, which Base App seams — and never pre-decides implementation details; those are al-implement's, discovered in flight. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
+## Connect the dots
+
+Ask one substantive question per message. Before it, name the earlier answers and verified facts that cause or constrain it, translated from tactical names into business concepts and relationships. Use one compact text diagram or table when flow, grouping, sequence, boundaries, ownership, or competing consequences are easier seen than described. Explain why the decision comes next. Each option states what changes, what stays possible, and where responsibility lands, plus material risk or reversibility when relevant; mark the recommendation. Exact AL names are secondary coordinates when they help locate, distinguish, or verify something.
+
 ## Speak in BC shapes
 
 The first question of any pass: which canonical shape is this — master data with entries, a document flavor, a journal plus a posting extension, setup, dimensions, a number series? The vocabulary lives in `docs/patterns.md`: the canonical BC shapes, each with this repo's own example once one exists — created lazily, and when a shape gains its first example here, this pass writes that line. Every Base App seam, table, or object the conversation names is verified through lookup, never recalled.

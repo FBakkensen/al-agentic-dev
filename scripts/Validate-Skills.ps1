@@ -11,7 +11,7 @@
     quoted whenever it contains a colon. Model invocation is the exception: every skill
     carries disable-model-invocation: true, except the model-invocable six (al-build,
     al-visualize, al-grilling, al-unslop, al-lookup, al-walkthrough), which omit the key entirely.
-    Verbatim ports — now pinned forks (al-grilling, al-grill-me, al-wait-what, al-unslop) —
+    Verbatim ports — now pinned forks (al-grill-me, al-unslop) —
     ship donor bodies unchanged beyond the al- namespace, so two checks skip them: the
     plain-text question rule (hooks.json enforces the ask_user ban at runtime) and the
     harness token scan (al-unslop lists the word as jargon to cut). Every other check
@@ -73,7 +73,7 @@ $modelInvocable = @('al-build', 'al-visualize', 'al-grilling', 'al-unslop', 'al-
 # Pinned forks ship donor bodies unchanged beyond the al- namespace: the question rule
 # and the harness scan skip them (hooks.json enforces the ask_user ban at runtime); all
 # other checks apply.
-$verbatimPorts = @('al-grilling', 'al-grill-me', 'al-wait-what', 'al-unslop')
+$verbatimPorts = @('al-grill-me', 'al-unslop')
 $questionRule = 'Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.'
 # Per-skill script exemptions, approved one at a time. The key is the skill folder; the
 # value is the exact script paths that skill may name. al-build is exempt wholesale

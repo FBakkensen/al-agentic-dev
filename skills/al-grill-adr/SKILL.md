@@ -12,7 +12,7 @@ Writes `CONTEXT.md` at the repo root and accepted ADRs under `docs/adr/`. Reads 
 
 ## The interview
 
-Ask one question per message: one line naming what the answer locks in, then the question, then lettered options of one line each, the recommendation first and marked. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+Ask one substantive question per message. Before it, name what the answer will lock in, then name the earlier answers and verified facts that cause or constrain it, translated from tactical names into business concepts and relationships. Use one compact text diagram or table when flow, grouping, sequence, boundaries, ownership, or competing consequences are easier seen than described. Explain why the decision comes next. Each option states what changes, what stays possible, and where responsibility lands, plus material risk or reversibility when relevant; put the recommendation first and mark it. Exact AL names are secondary coordinates when they help locate, distinguish, or verify something. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 - **A fact is answered, not asked.** Grep the workspace, read the official BC documentation through the microsoft-learn tools (microsoft_docs_search, microsoft_docs_fetch), say what you found, move on.
 - **A strategic decision is asked.** Strategic means `CONTEXT.md` or an ADR locks it in and the next skill consumes it.
