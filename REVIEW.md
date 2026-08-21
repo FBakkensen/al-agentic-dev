@@ -31,7 +31,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 ## The description: router on every skill
 
 11. On every skill, the description says what it does and the state that should trigger it, in terms the model can match against the work in front of it: `Use when AL production or test code has changed and the change needs the gate`.
-12. On those skills, one trigger per distinct branch. Flag synonyms that rename a single branch.
+12. On every skill, one trigger per distinct branch. Flag synonyms that rename a single branch.
 13. On every skill, flag identity restated from the body. The description spends its budget on triggers.
 14. Every skill description is model-facing; it is never a menu-only summary.
 
