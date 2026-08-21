@@ -1,7 +1,6 @@
 ---
 name: al-next
-description: The loop transition — show what landed, reconcile the living design, drill the consequential, reshape the frontier, sharpen the next bullet. Type it when a bullet lands and the next move needs choosing.
-disable-model-invocation: true
+description: Use when a frontier bullet has landed and the next move needs choosing.
 ---
 
 # al-next — the gate between loops

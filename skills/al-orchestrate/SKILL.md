@@ -1,7 +1,6 @@
 ---
 name: al-orchestrate
-description: Drive one ready bullet through the whole loop — implement, refactor, review — pausing only where a block declares a decision, ending at the review verdict. Type it when a sharpened bullet is ready and you want the loop run for you.
-disable-model-invocation: true
+description: Use when a sharpened frontier bullet should run through implement, refactor, and review as one loop.
 ---
 
 # al-orchestrate — one bullet, the whole loop

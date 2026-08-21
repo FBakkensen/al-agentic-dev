@@ -1,7 +1,6 @@
 ---
 name: al-grill-adr
-description: Interview to settle a feature's domain vocabulary in CONTEXT.md and record hard-to-reverse business rules as ADRs. The pipeline entry — run it on a fresh AL/Business Central feature idea.
-disable-model-invocation: true
+description: Use when a fresh AL/Business Central feature idea needs domain vocabulary settled and hard-to-reverse business rules recorded.
 ---
 
 # Grill the domain

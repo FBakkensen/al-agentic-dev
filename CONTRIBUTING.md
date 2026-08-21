@@ -35,7 +35,7 @@ When adding or modifying a skill:
 1. Follow the existing skill structure:
    ```
    skills/skill-name/
-   ├── SKILL.md          # frontmatter: name, description, disable-model-invocation
+   ├── SKILL.md          # frontmatter: name, description
    ├── SOME-FORMAT.md    # optional sibling files, referenced relatively
    └── scripts/          # al-build only
    ```

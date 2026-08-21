@@ -1,7 +1,6 @@
 ---
 name: al-miner
-description: "Mine session history for repeated failures and steering corrections, then propose standing lessons with evidence: instructions-file lines and idiom-capsule candidates. Reach for it after a stretch of sessions worth learning from."
-disable-model-invocation: true
+description: Use when the user asks to mine session history for repeated failures or steering corrections and propose standing lessons.
 ---
 
 # al-miner — lessons from real history

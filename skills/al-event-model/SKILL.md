@@ -1,7 +1,6 @@
 ---
 name: al-event-model
-description: The living event model — who publishes, who subscribes, which business events fire on the journey through posting. Open it when the eventing shape matters, and whenever understanding changes.
-disable-model-invocation: true
+description: Use when a feature's eventing shape needs mapping, or when new understanding changes its publishers, subscribers, or posting events.
 ---
 
 # al-event-model — the eventing picture

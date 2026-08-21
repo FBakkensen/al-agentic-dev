@@ -11,7 +11,7 @@ plugin.json                     the plugin manifest: name, version, skills/, age
 .mcp.json                       bundled MCP servers, each with a tools allowlist
 hooks.json                      the shipped hooks: preToolUse denies ask_user; sessionStart injects the reply shape, plus the Speak BC voice rule in AL repos
 .github/plugin/marketplace.json the marketplace manifest the plugin installs through
-skills/<name>/SKILL.md          frontmatter: name, description, disable-model-invocation
+skills/<name>/SKILL.md          frontmatter: name, description
 skills/<name>/<SIBLING>.md      optional format files, inside the same folder only
 skills/al-build/scripts/*.ps1   the build substrate
 skills/al-build/config/         al-build.json
@@ -22,14 +22,14 @@ Twenty-one skills ship today. Four are the AL survivors: `al-build` — the comp
 
 The folder name equals the frontmatter `name`; an agent's `name` equals its filename stem, and its `model` pin and `tools` scope are mandatory. A skill reaches outside its folder only by naming another skill — `/al-build` — never by path.
 
-`disable-model-invocation: true` is the default on every skill. Seven omit it: `al-build` (changed AL code or another skill's script need invokes it mid-run), `al-visualize` (al-next invokes it when the shape changed; the user calls it directly for a drawn view), `al-grilling` (the interview engine `al-grill-me` starts and grill trigger phrases reach), `al-unslop` (the donor says it must always apply), `al-lookup` (verify-or-declare is a mid-write reflex; the writing and review skills invoke it in-flight), `al-walkthrough` (the user's walk demand — walk the slice, show me it works — reaches it), and `al-pr-shepherd` (a request to create, shepherd, or continue an open PR reaches it). A new exception names who invokes it.
+Every skill is model-invocable. Skill frontmatter omits `disable-model-invocation`, and every description carries the trigger branches that let the model reach it.
 
 ## What never ships
 
 - The word "harness" and harness-conditional phrasing — the gate fails it; name the Copilot tool, MCP server, or packaged agent instead. The pinned `al-unslop` fork is the one exemption: its own rules name the word as jargon to cut.
 - A capability paraphrase where a concrete Copilot name exists.
 - A model name in a skill body or skill frontmatter — model pins live in `agents/*.agent.md` only.
-- Skill frontmatter beyond `name`, `description`, `disable-model-invocation` — no `allowed-tools`, `model`, `tools`, `mcp-servers`, `user-invocable` on a skill.
+- Skill frontmatter beyond `name` and `description` — no `allowed-tools`, `model`, `tools`, `mcp-servers`, `user-invocable`, or `disable-model-invocation` on a skill.
 - Task-state ceremony — a lifecycle field (`status:`, `phase:`, `blocked-on:`, `review:`, `tier:`, `green-gate:`), an Azure DevOps work-item transition (`State: New|Active|Blocked|Testing|Resolved|Closed`), or a stage-gate prerequisite. Retired concepts; the gate bans the fields in every folder.
 - A link that leaves the skill folder: `](../`, `](/`, any absolute path.
 - Slash-command files — out of scope until a proven defect asks for them. Two hooks ship in `hooks.json`, each on its own proven defect: the preToolUse ask_user deny (a child session hung silently on an `ask_user` call) and the sessionStart voice injection (generic CS names leaked into work items and review conclusions, and the v1 reply-shape block in the user's `~/.copilot/copilot-instructions.md` was orphaned when its installer skill retired); a new hook needs its own proven defect.

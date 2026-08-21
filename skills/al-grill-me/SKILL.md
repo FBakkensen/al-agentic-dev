@@ -1,7 +1,6 @@
 ---
 name: al-grill-me
-description: A relentless interview to sharpen a plan or design.
-disable-model-invocation: true
+description: Use when a plan or design needs a relentless interview before implementation.
 ---
 
 Call the Skill tool with "al-grilling".

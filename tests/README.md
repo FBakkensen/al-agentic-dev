@@ -35,7 +35,7 @@ pwsh tests/routing/Invoke-RoutingSmoke.ps1
 
 One batched `copilot -p` run: it loads this checkout's plugin, asks which skill the model would route each scenario in `scenarios.json` to, and prints a pass/miss table. A miss is a signal to inspect — LLM routing varies, so re-run before treating one as real; the script exits 0 on misses and 1 only on mechanical failure. Each run costs roughly 5 AI credits, which is why the file is not named `*.Tests.ps1`: Pester and CI never discover it.
 
-Every package that adds skills appends its scenarios to `tests/routing/scenarios.json`. Slash-only skills (`disable-model-invocation: true`) are invisible to the model by design — write their scenarios with `"expect": "none"`; they then double as canaries that fail loudly if a disable flag ever breaks.
+Every package that adds skills appends its scenarios to `tests/routing/scenarios.json`. Every skill is model-invocable, so a matching scenario names the skill; `"expect": "none"` is reserved for a genuine non-match.
 
 ## Hook tier — two paid runs, by hand
 

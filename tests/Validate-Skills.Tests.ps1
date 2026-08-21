@@ -27,17 +27,15 @@ BeforeAll {
             [string]$Name = 'demo',
             [string]$Body = 'Name the outcome.',
             [string]$QuestionRule = 'Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.',
-            [switch]$ModelInvocable,
             [switch]$WithoutQuestionRule
         )
 
-        $flagLine = if ($ModelInvocable) { '' } else { "disable-model-invocation: true`n" }
         $questionLine = if ($WithoutQuestionRule) { '' } else { "$QuestionRule`n`n" }
         return @"
 ---
 name: $Name
 description: "Do the thing. Use when a task is at phase: implemented."
-$flagLine---
+---
 
 # $Name
 
@@ -98,7 +96,7 @@ Name the outcome, then /al-build.
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'good') -Files @{
             'demo/SKILL.md'     = (New-SkillContent -Body $body)
             'demo/FORMAT.md'    = '# Format'
-            'al-build/SKILL.md' = (New-SkillContent -Name 'al-build' -ModelInvocable -Body 'Run scripts/test.ps1 and provision.ps1.')
+            'al-build/SKILL.md' = (New-SkillContent -Name 'al-build' -Body 'Run scripts/test.ps1 and provision.ps1.')
         }
 
         $result = Invoke-SkillValidator -Root $root
@@ -121,7 +119,7 @@ Name the outcome, then /al-build.
     It 'fails when a skill omits the plain-text question rule' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'no-question-rule') -Files @{
             'demo/SKILL.md'     = (New-SkillContent -WithoutQuestionRule)
-            'al-build/SKILL.md' = (New-SkillContent -Name 'al-build' -ModelInvocable)
+            'al-build/SKILL.md' = (New-SkillContent -Name 'al-build')
         }
 
         $result = Invoke-SkillValidator -Root $root
@@ -184,7 +182,7 @@ Name the outcome, then /al-build.
         $result = Invoke-SkillValidator -Root $root
 
         $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'frontmatter keys must be name, description, and optionally disable-model-invocation'
+        $result.Text | Should -Match 'frontmatter keys must be name and description'
     }
 
     It 'fails when a frontmatter key differs from the lowercase key only by case' {
@@ -195,34 +193,23 @@ Name the outcome, then /al-build.
         $result = Invoke-SkillValidator -Root $root
 
         $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'frontmatter keys must be name, description, and optionally disable-model-invocation'
+        $result.Text | Should -Match 'frontmatter keys must be name and description'
     }
 
-    It 'fails when a skill omits disable-model-invocation' -TestCases @(
-        @{ Case = 'missing-flag'; Frontmatter = "name: demo`ndescription: `"Do the thing.`"" }
-        @{ Case = 'flag-false'; Frontmatter = "name: demo`ndescription: `"Do the thing.`"`ndisable-model-invocation: false" }
+    It 'fails when a skill carries disable-model-invocation' -TestCases @(
+        @{ Case = 'flag-true'; Flag = 'true' }
+        @{ Case = 'flag-false'; Flag = 'false' }
     ) {
-        param($Case, $Frontmatter)
+        param($Case, $Flag)
 
         $root = New-SkillsRoot -Root (Join-Path $TestDrive "flag-$Case") -Files @{
-            'demo/SKILL.md' = "---`n$Frontmatter`n---`n`n# demo`n"
+            'demo/SKILL.md' = "---`nname: demo`ndescription: `"Do the thing.`"`ndisable-model-invocation: $Flag`n---`n`n# demo`n"
         }
 
         $result = Invoke-SkillValidator -Root $root
 
         $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'disable-model-invocation: true is required'
-    }
-
-    It 'fails when a model-invocable skill carries disable-model-invocation' {
-        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'flag-on-exception') -Files @{
-            'al-pr-shepherd/SKILL.md' = (New-SkillContent -Name 'al-pr-shepherd')
-        }
-
-        $result = Invoke-SkillValidator -Root $root
-
-        $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'al-pr-shepherd is model-invocable; remove disable-model-invocation'
+        $result.Text | Should -Match 'all skills are model-invocable; remove disable-model-invocation'
     }
 
     It 'accepts a remaining pinned fork without the question rule' {
@@ -248,7 +235,7 @@ Name the outcome, then /al-build.
 
     It 'accepts the harness token inside a pinned fork only' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'port-harness') -Files @{
-            'al-unslop/SKILL.md' = (New-SkillContent -Name 'al-unslop' -ModelInvocable -WithoutQuestionRule -Body 'Cut harness (as metaphor) from prose.')
+            'al-unslop/SKILL.md' = (New-SkillContent -Name 'al-unslop' -WithoutQuestionRule -Body 'Cut harness (as metaphor) from prose.')
             'demo/SKILL.md'   = (New-SkillContent -Body 'Cut harness metaphors.')
         }
 
@@ -523,7 +510,7 @@ Describe 'Validate-Skills script-path checks' {
     It 'exempts al-build by folder, not by content' {
         $body = 'Run scripts/test.ps1 for the gate.'
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'script-exemption') -Files @{
-            'al-build/SKILL.md' = (New-SkillContent -Name 'al-build' -ModelInvocable -Body $body)
+            'al-build/SKILL.md' = (New-SkillContent -Name 'al-build' -Body $body)
             'demo/SKILL.md'     = (New-SkillContent -Body $body)
         }
 
@@ -678,7 +665,7 @@ Describe 'Validate-Skills skill-reference checks' {
     It 'accepts a reference to an existing skill' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'ref-existing') -Files @{
             'demo/SKILL.md'     = (New-SkillContent -Body 'Run the gate with /al-build.')
-            'al-build/SKILL.md' = (New-SkillContent -Name 'al-build' -ModelInvocable -Body 'Run scripts/test.ps1.')
+            'al-build/SKILL.md' = (New-SkillContent -Name 'al-build' -Body 'Run scripts/test.ps1.')
         }
 
         $result = Invoke-SkillValidator -Root $root

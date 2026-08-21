@@ -1,7 +1,6 @@
 ---
 name: al-implement
-description: Drive one frontier bullet to landed code through red-green at its pre-agreed seams, closing with a receipt that carries the gate verdict and the assumptions ledger. Reach for it when a bullet is refined and ready to build.
-disable-model-invocation: true
+description: Use when a refined frontier bullet has a test spec and pre-agreed seams and is ready to build.
 ---
 
 # al-implement — one bullet to landed code

@@ -4,13 +4,12 @@
     Validates every skills/ folder as a Copilot-first Agent Skill and every
     agents/*.agent.md as a packaged custom agent.
 .DESCRIPTION
-    Skills: each folder holds a SKILL.md whose frontmatter carries the keys name and
-    description, constrained per the Agent Skills specification (agentskills.io): name is
-    1-64 characters of lowercase a-z0-9 and single hyphens and equals the folder name
+    Skills: each folder holds a SKILL.md whose frontmatter carries exactly the keys name
+    and description, constrained per the Agent Skills specification (agentskills.io): name
+    is 1-64 characters of lowercase a-z0-9 and single hyphens and equals the folder name
     exactly; description is a non-empty single-line value of at most 1024 characters,
-    quoted whenever it contains a colon. Model invocation is the exception: every skill
-    carries disable-model-invocation: true, except the model-invocable seven (al-build,
-    al-visualize, al-grilling, al-unslop, al-lookup, al-walkthrough, al-pr-shepherd), which omit the key entirely.
+    quoted whenever it contains a colon. Every skill is model-invocable, so
+    disable-model-invocation is not accepted.
     Verbatim ports — now pinned forks (al-grill-me, al-unslop) —
     ship donor bodies unchanged beyond the al- namespace, so two checks skip them: the
     plain-text question rule (hooks.json enforces the ask_user ban at runtime) and the
@@ -69,7 +68,6 @@ function Get-MarkdownLinkTarget {
 
 $violations = @()
 $root = (Resolve-Path -LiteralPath $SkillsRoot -ErrorAction Stop).Path
-$modelInvocable = @('al-build', 'al-visualize', 'al-grilling', 'al-unslop', 'al-lookup', 'al-walkthrough', 'al-pr-shepherd')
 # Pinned forks ship donor bodies unchanged beyond the al- namespace: the question rule
 # and the harness scan skip them (hooks.json enforces the ask_user ban at runtime); all
 # other checks apply.
@@ -104,21 +102,17 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
             $frontmatter = $lines[1..($close - 1)] -join "`n"
             $keys = @([regex]::Matches($frontmatter, '(?m)^([A-Za-z][\w-]*)\s*:') |
                 ForEach-Object { $_.Groups[1].Value })
-            $allowedKeys = @('name', 'description', 'disable-model-invocation')
+            $allowedKeys = @('name', 'description')
             $unknownKeys = @($keys | Where-Object { $allowedKeys -cnotcontains $_ })
             $duplicateKeys = @($keys | Group-Object | Where-Object Count -gt 1)
             if ($unknownKeys.Count -gt 0 -or $duplicateKeys.Count -gt 0 -or
                 $keys -cnotcontains 'name' -or $keys -cnotcontains 'description') {
-                $violations += "$($skill.Name)/SKILL.md: frontmatter keys must be name, description, and optionally disable-model-invocation (found: $($keys -join ', '))"
+                $violations += "$($skill.Name)/SKILL.md: frontmatter keys must be name and description (found: $($keys -join ', '))"
             }
 
             $flagMatch = [regex]::Match($frontmatter, '(?m)^disable-model-invocation\s*:\s*(.+?)\s*$')
-            if ($modelInvocable -ccontains $skill.Name) {
-                if ($flagMatch.Success) {
-                    $violations += "$($skill.Name)/SKILL.md: $($skill.Name) is model-invocable; remove disable-model-invocation"
-                }
-            } elseif ($flagMatch.Groups[1].Value.Trim() -cne 'true') {
-                $violations += "$($skill.Name)/SKILL.md: disable-model-invocation: true is required (model invocation is the exception; only al-build, al-visualize, al-grilling, al-unslop, al-lookup, al-walkthrough, al-pr-shepherd omit it)"
+            if ($flagMatch.Success) {
+                $violations += "$($skill.Name)/SKILL.md: all skills are model-invocable; remove disable-model-invocation"
             }
 
             $name = [regex]::Match($frontmatter, '(?m)^name\s*:\s*(.+?)\s*$').Groups[1].Value.Trim("'", '"')
