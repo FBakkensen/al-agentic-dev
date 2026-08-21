@@ -21,8 +21,8 @@ The 1024-character description cap is load-bearing, not style: on copilot CLI 1.
 Ports land as pinned forks — donor text except the al- namespace; the diff against the donor is the port note and the debug surface. Compare a skill against a git ref in this repo or a local donor checkout:
 
 ```powershell
-pwsh scripts/Compare-SkillToDonor.ps1 -Skill al-grilling -DonorRef 3b1ed60  # donor in this repo's history
-pwsh scripts/Compare-SkillToDonor.ps1 -Skill al-grilling -DonorDir C:\donors\grilling  # external donor checkout
+pwsh scripts/Compare-SkillToDonor.ps1 -Skill al-grill-me -DonorRef 688915f -DonorPath skills/grill-me  # donor in this repo's history
+pwsh scripts/Compare-SkillToDonor.ps1 -Skill al-grill-me -DonorDir C:\donors\pocock-skills\grill-me  # external donor checkout
 ```
 
 Exit 0 identical, 2 diverged (diff printed), 1 unresolvable. On a pinned fork the expected report is exit 2 with exactly the namespace hunks — the frontmatter `name:` line and any renamed sibling reference — and nothing else; any other hunk is a finding. `-DonorPath` overrides the in-ref path when the donor lived elsewhere than `skills/<name>`.

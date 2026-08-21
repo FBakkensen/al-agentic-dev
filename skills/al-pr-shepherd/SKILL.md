@@ -1,7 +1,6 @@
 ---
 name: al-pr-shepherd
 description: Drive one open pull request to merge — watch CI and the Copilot review, fix findings, keep the branch synced with main, resolve conflicts intent-preserving — merging only on your explicit go. Reach for it when a PR is ready for review, and until it lands.
-disable-model-invocation: true
 ---
 
 # al-pr-shepherd — one PR to landed

@@ -5,18 +5,14 @@ description: Grill the user relentlessly about a plan, decision, or idea. Use wh
 
 Interview the user relentlessly until you reach a shared understanding. Map this as a **design tree**: every decision branches into the decisions that hang off it.
 
-Work the tree in **rounds**. The **frontier** is every decision whose prerequisites are already settled: the questions you can ask _now_ without guessing at answers you haven't heard yet. Ask the whole frontier in one round: number each question and give your recommended answer. Then wait for the user's answers before the next round.
+Work the tree one decision at a time. Ask only a decision whose prerequisites are settled, then use that answer to rebuild the situation before choosing the next question. Finding facts is your job: inspect the conversation, artifacts, workspace, and available sources rather than asking the user for something you can establish.
 
-Each question should be formatted like so:
+## Connect the dots
 
-```
-❓ **Q1** - **<question title>**: <question body, might be multiple paragraphs, including multiple choices>
+Before each substantive question, name the earlier answers and verified facts that cause or constrain it. Translate tactical names into business concepts and relationships; exact object, field, procedure, or work-item names are secondary coordinates when they help locate, distinguish, or verify something.
 
-➡️ <your recommended answer>
-```
+Make the situation visible. Use one compact text diagram or table when flow, grouping, sequence, boundaries, ownership, or competing consequences are easier seen than described. Then explain why this decision comes next. Each option states what changes, what stays possible, and where responsibility lands, plus material risk or reversibility when relevant. Mark the recommended option and give the reason.
 
-Each round the user answers reshapes the tree: settled decisions push the frontier outward and unblock questions that depended on them. Recompute the frontier and ask the next round. A question whose answer depends on another question still open in this round belongs to a _later_ round, not this one.
+Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
-Finding _facts_ is your job, never the user's. When a frontier question needs a fact from the environment (filesystem, tools, etc.), dispatch a sub-agent to find it; don't ask the user for anything you could look up yourself. Don't block on it: a running exploration is an unsettled prerequisite, so only the questions downstream of it wait for the sub-agent to report; ask the rest of the frontier now. The _decisions_ are the user's: put each to them and wait.
-
-The session is done when the frontier is empty: every branch of the design tree visited, nothing left silently assumed. Do not act on it until the user confirms you have reached a shared understanding.
+The session is done when every branch of the design tree is answered, explicitly parked, or ruled out of scope. Do not act on it until the user confirms the shared understanding.

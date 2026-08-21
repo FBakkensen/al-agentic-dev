@@ -9,7 +9,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 ## Copilot-first surface
 
 1. Skill frontmatter has at most three keys: `name`, `description`, `disable-model-invocation`. Tool access and model pins live in `agents/*.agent.md`, never in skill frontmatter — flag `allowed-tools`, `model`, `tools`, `mcp-servers`, `user-invocable` on a skill.
-2. Model invocation is the exception. Every skill carries `disable-model-invocation: true` unless something must load it without a slash command — today `al-build` (changed AL code or another skill's script need invokes it mid-run), `al-visualize` (al-next invokes it when the shape changed; the user calls it directly for a drawn view), `al-grilling` (the interview engine `al-grill-me` starts and grill trigger phrases reach), `al-unslop` (the donor says it must always apply), `al-lookup` (verify-or-declare is a mid-write reflex; the writing and review skills invoke it in-flight), and `al-walkthrough` (the user's walk demand — walk the slice, show me it works — reaches it). Flag a skill missing the flag, and flag a new exception that doesn't name who invokes it.
+2. Model invocation is the exception. Every skill carries `disable-model-invocation: true` unless something must load it without a slash command — today `al-build` (changed AL code or another skill's script need invokes it mid-run), `al-visualize` (al-next invokes it when the shape changed; the user calls it directly for a drawn view), `al-grilling` (the interview engine `al-grill-me` starts and grill trigger phrases reach), `al-unslop` (the donor says it must always apply), `al-lookup` (verify-or-declare is a mid-write reflex; the writing and review skills invoke it in-flight), `al-walkthrough` (the user's walk demand — walk the slice, show me it works — reaches it), and `al-pr-shepherd` (a request to create, shepherd, or continue an open PR reaches it). Flag a skill missing the flag, and flag a new exception that doesn't name who invokes it.
 3. The folder name equals `name`.
 4. No relative link leaves the skill folder. Flag `](../`, `](/`, and any absolute path.
    - Correct: `See [SURFACE.md](SURFACE.md).`
@@ -30,7 +30,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## The description: router on the model-invocable skills, menu line on the rest
 
-11. On the model-invocable skills (`al-build`, `al-visualize`, `al-grilling`, `al-unslop`, `al-lookup`, `al-walkthrough`) the description says what the skill does and the state that should trigger it, in terms the model can match against the work in front of it: `Use when AL production or test code has changed and the change needs the gate`.
+11. On the model-invocable skills (`al-build`, `al-visualize`, `al-grilling`, `al-unslop`, `al-lookup`, `al-walkthrough`, `al-pr-shepherd`) the description says what the skill does and the state that should trigger it, in terms the model can match against the work in front of it: `Use when AL production or test code has changed and the change needs the gate`.
 12. On those skills, one trigger per distinct branch. Flag synonyms that rename a single branch.
 13. On those skills, flag identity restated from the body. The description spends its budget on triggers.
 14. On a `disable-model-invocation: true` skill the description is one line for the human scanning the `/` menu — what it does and when to reach for it, in plain words. Flag state grammar and trigger syntax there; the model never reads it.
@@ -61,7 +61,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## Reply shape a skill asks for
 
-25. Every authored `SKILL.md` carries this exact rule: `Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.` Pinned forks are exempt — `hooks.json` enforces the ask_user ban at runtime. A skill that shapes the reply also asks for: one sentence before the first tool call; a brief update only on an important finding or a change of direction; the outcome first when finishing, detail after.
+25. Every authored `SKILL.md` carries this exact rule: `Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.` The pinned forks `al-grill-me` and `al-unslop` are exempt — `hooks.json` enforces the ask_user ban at runtime. A skill that shapes the reply also asks for: one sentence before the first tool call; a brief update only on an important finding or a change of direction; the outcome first when finishing, detail after.
 26. Flag a skill that asks the model to announce each step before taking it.
 27. Written artifacts match the length the task needs. Flag instructions to add summary sections, recaps, or boilerplate headings.
 
@@ -88,4 +88,4 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## Pinned forks
 
-34. A ported skill is a pinned fork: today `al-grilling`, `al-grill-me`, `al-wait-what` (mattpocock/skills @ 885e2ca, MIT) and `al-unslop` (cursor/plugins pstack @ 60c641e, MIT). The body stays donor text except the al- namespace — the frontmatter `name:` line and any port-internal reference to a renamed sibling; `scripts/Compare-SkillToDonor.ps1` against the donor SHA is expected to show exactly those namespace hunks and nothing else. Flag any other diff — a content fix belongs upstream or in the port note of a deliberate re-port. Rules 15, 16, 17, 19, 21, and 25 read the donor as authoritative on these files; the structural gate (frontmatter, links, scripts, retired concepts) applies unchanged.
+34. A ported skill is a pinned fork: today `al-grill-me` (mattpocock/skills @ 885e2ca, MIT) and `al-unslop` (cursor/plugins pstack @ 60c641e, MIT). The body stays donor text except the al- namespace — the frontmatter `name:` line and any port-internal reference to a renamed sibling; `scripts/Compare-SkillToDonor.ps1` against the donor SHA is expected to show exactly those namespace hunks and nothing else. Flag any other diff — a content fix belongs upstream or in the port note of a deliberate re-port. Rules 15, 16, 17, 19, 21, and 25 read the donor as authoritative on these files; the structural gate (frontmatter, links, scripts, retired concepts) applies unchanged.

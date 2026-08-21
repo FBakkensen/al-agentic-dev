@@ -216,23 +216,34 @@ Name the outcome, then /al-build.
 
     It 'fails when a model-invocable skill carries disable-model-invocation' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'flag-on-exception') -Files @{
-            'al-build/SKILL.md' = (New-SkillContent -Name 'al-build')
+            'al-pr-shepherd/SKILL.md' = (New-SkillContent -Name 'al-pr-shepherd')
         }
 
         $result = Invoke-SkillValidator -Root $root
 
         $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'al-build is model-invocable; remove disable-model-invocation'
+        $result.Text | Should -Match 'al-pr-shepherd is model-invocable; remove disable-model-invocation'
     }
 
-    It 'accepts a pinned fork without the question rule' {
+    It 'accepts a remaining pinned fork without the question rule' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'port-question-rule') -Files @{
-            'al-wait-what/SKILL.md' = (New-SkillContent -Name 'al-wait-what' -WithoutQuestionRule)
+            'al-grill-me/SKILL.md' = (New-SkillContent -Name 'al-grill-me' -WithoutQuestionRule)
         }
 
         $result = Invoke-SkillValidator -Root $root
 
         $result.ExitCode | Should -Be 0
+    }
+
+    It 'requires the question rule in an owned former fork' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'former-port-question-rule') -Files @{
+            'al-wait-what/SKILL.md' = (New-SkillContent -Name 'al-wait-what' -WithoutQuestionRule)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'al-wait-what/SKILL\.md: missing the required plain-text question rule'
     }
 
     It 'accepts the harness token inside a pinned fork only' {

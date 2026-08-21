@@ -8,6 +8,10 @@ disable-model-invocation: true
 
 One conversation, five moves, always with you: agents draft the material; the conversation is never skipped. The frontier lives in Azure DevOps work items with native blocking links, worked through the azure-devops MCP work-item tools; a repo without that wiring degrades to `docs/frontier.md` — one bullet per line with its state and `after:` edges — named second-class, because edges drift in files and ADO is the home when wired. The tracker tax lands here: every create, resolve, split, and re-link is this skill's work, never the developer's. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
+## Connect the dots
+
+Ask one substantive question per message. Before it, name the earlier answers and verified facts that cause or constrain it, translated from tactical names into business concepts and relationships. Use one compact text diagram or table when flow, grouping, sequence, boundaries, ownership, or competing consequences are easier seen than described. Explain why the decision comes next. Each option states what changes, what stays possible, and where responsibility lands, plus material risk or reversibility when relevant; mark the recommendation. Exact AL names are secondary coordinates when they help locate, distinguish, or verify something.
+
 ## 1 · The capsule
 
 Open with where we are: the store in use, the bullet that landed, the receipts since the last transition — the bullet's work-item comments where ADO is wired, `.output/receipts/` always — and one concrete next move. Branches and PRs are verified live with git and gh, never recalled.
@@ -22,7 +26,7 @@ The design document — `docs/design.md` — is the user's window into the code,
 
 ## 4 · Drill the consequential
 
-The /al-grilling engine runs one numbered round — recommendations attached, the whole frontier of open questions at once — fed by the receipts' assumptions ledgers and the loop's surprises.
+The /al-grilling engine asks one consequential decision at a time, fed by the receipts' assumptions ledgers, the loop's surprises, and every answer already settled.
 
 ## 5 · Reshape and sharpen
 
