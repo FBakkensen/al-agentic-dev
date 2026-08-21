@@ -1,7 +1,6 @@
 ---
 name: al-scope
-description: Cut the settled design into tracer-bullet work items with blocking edges — synthesized from what is already answered, quizzed until the cut is approved, landed in the frontier store. Type it when the design is settled and no frontier exists yet.
-disable-model-invocation: true
+description: Use when a settled design needs cutting into approved tracer-bullet work items with blocking edges.
 ---
 
 # al-scope — the frontier is born

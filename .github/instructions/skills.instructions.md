@@ -8,8 +8,8 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## Copilot-first surface
 
-1. Skill frontmatter has at most three keys: `name`, `description`, `disable-model-invocation`. Tool access and model pins live in `agents/*.agent.md`, never in skill frontmatter — flag `allowed-tools`, `model`, `tools`, `mcp-servers`, `user-invocable` on a skill.
-2. Model invocation is the exception. Every skill carries `disable-model-invocation: true` unless something must load it without a slash command — today `al-build` (changed AL code or another skill's script need invokes it mid-run), `al-visualize` (al-next invokes it when the shape changed; the user calls it directly for a drawn view), `al-grilling` (the interview engine `al-grill-me` starts and grill trigger phrases reach), `al-unslop` (the donor says it must always apply), `al-lookup` (verify-or-declare is a mid-write reflex; the writing and review skills invoke it in-flight), `al-walkthrough` (the user's walk demand — walk the slice, show me it works — reaches it), and `al-pr-shepherd` (a request to create, shepherd, or continue an open PR reaches it). Flag a skill missing the flag, and flag a new exception that doesn't name who invokes it.
+1. Skill frontmatter has exactly two keys: `name` and `description`. Tool access and model pins live in `agents/*.agent.md`, never in skill frontmatter — flag `allowed-tools`, `model`, `tools`, `mcp-servers`, `user-invocable`, and `disable-model-invocation` on a skill.
+2. Every skill is model-invocable. Omit `disable-model-invocation` from every SKILL.md, and write each description with the trigger branches that let the model reach it.
 3. The folder name equals `name`.
 4. No relative link leaves the skill folder. Flag `](../`, `](/`, and any absolute path.
    - Correct: `See [SURFACE.md](SURFACE.md).`
@@ -28,12 +28,12 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 9. Every `agents/*.agent.md` carries exactly four frontmatter keys — `name`, `description`, `tools`, `model`. `name` equals the filename stem and meets the skill name spec (1–64 characters of lowercase a-z0-9 and single hyphens). `description` is a non-empty single line, quoted when it carries a colon. `model` is a non-empty pin — silent model fallback is the defect the pin exists to stop. `tools` is a non-empty list scoped to what the agent needs.
 10. A fixed delegation point names its agent. Flag a delegation left as "a subagent" where a packaged agent exists for that job.
 
-## The description: router on the model-invocable skills, menu line on the rest
+## The description: router on every skill
 
-11. On the model-invocable skills (`al-build`, `al-visualize`, `al-grilling`, `al-unslop`, `al-lookup`, `al-walkthrough`, `al-pr-shepherd`) the description says what the skill does and the state that should trigger it, in terms the model can match against the work in front of it: `Use when AL production or test code has changed and the change needs the gate`.
+11. On every skill, the description says what it does and the state that should trigger it, in terms the model can match against the work in front of it: `Use when AL production or test code has changed and the change needs the gate`.
 12. On those skills, one trigger per distinct branch. Flag synonyms that rename a single branch.
-13. On those skills, flag identity restated from the body. The description spends its budget on triggers.
-14. On a `disable-model-invocation: true` skill the description is one line for the human scanning the `/` menu — what it does and when to reach for it, in plain words. Flag state grammar and trigger syntax there; the model never reads it.
+13. On every skill, flag identity restated from the body. The description spends its budget on triggers.
+14. Every skill description is model-facing; it is never a menu-only summary.
 
 ## Length and density
 

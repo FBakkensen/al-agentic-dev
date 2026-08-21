@@ -1,7 +1,6 @@
 ---
 name: al-clone-bcquality
-description: Clone Microsoft's BCQuality knowledge base into .bcquality/ and build its knowledge index, so the review leaves work from BC-specific rules rather than recall. Runnable anytime to refresh the clone.
-disable-model-invocation: true
+description: Clone Microsoft's BCQuality knowledge base when it is missing, suspect, or due for refresh before a review.
 ---
 
 # /al-clone-bcquality — the BC quality knowledge base

@@ -1,7 +1,6 @@
 ---
 name: al-clone-bcapps
-description: Clone Microsoft's W1 application source (BCApps) at the app's resolved BC version into .bcapps/ for reading and searching platform code. Runnable anytime the clone is missing or suspect.
-disable-model-invocation: true
+description: Clone Microsoft's BCApps source when the checkout is missing or suspect and platform implementation needs reading at the app's resolved BC version.
 ---
 
 # /al-clone-bcapps — the platform source clone

@@ -1,7 +1,6 @@
 ---
 name: al-design
-description: The architecture conversation in BC shapes — master data, document, journal and posting — settling modules, seams, tables, and extensions into the living design document. Open it for a new feature's shape, or re-open it when discovery bends the old one.
-disable-model-invocation: true
+description: Use when a new feature needs its BC shape settled, or when discovery bends the existing design.
 ---
 
 # al-design — the shape before the code

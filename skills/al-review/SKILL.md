@@ -1,7 +1,6 @@
 ---
 name: al-review
-description: Read a diff against its bullet and the BC ground — ledger first, standards and spec side by side, blast radius proven by running code — and return a verdict without touching a line. Reach for it when a diff is ready for judgment.
-disable-model-invocation: true
+description: Use when a diff is ready for judgment against its bullet, BC standards, and the AL ground.
 ---
 
 # al-review — verdict, never edits

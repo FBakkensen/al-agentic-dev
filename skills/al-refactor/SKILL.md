@@ -1,7 +1,6 @@
 ---
 name: al-refactor
-description: Reshape green code in one of two modes — the routine tidy pass after every green (naming, dead scaffolding, duplication, idiom polish), or a named deepening goal that upgrades the run to the full reshape — behavior frozen, the gate proving the hold. Reach for it when code just went green or needs a better shape.
-disable-model-invocation: true
+description: Use when green code needs a tidy pass, or when a named deepening reshape must preserve behavior.
 ---
 
 # al-refactor — same behavior, better shape
