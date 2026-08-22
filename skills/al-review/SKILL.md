@@ -1,42 +1,54 @@
 ---
 name: al-review
-description: Use when a diff is ready for judgment against its bullet, BC standards, and the AL ground.
+description: Use after AL implementation or refactoring when the diff needs a ledger-first verdict against Gherkin, AAA proof, and module contracts without editing code.
 ---
 
-# al-review — verdict, never edits
+# al-review - judge the landed slice
 
-In: a diff since a fixed point, its frontier bullet when one exists, and al-implement's receipt when one exists. A diff without a bullet is a legal run — the Spec axis is skipped and named in the verdict, never invented. Review returns findings and edits nothing; fixes belong to the execution blocks. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+In: the diff, receipt, and the executable Feature itself or a child User Story plus its parent Feature. Read the executable item's reviewed `Test specification`. Read-only: report evidence and make no code, work-item, or design edits.
+
+Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Usually ask none: report findings, and make uncertainty explicit.
 
 ## Ledger first
 
-The first stop is the receipt's assumptions ledger. Every `verified:` pointer is spot-checked at its source; every `assumed:` claim is judged for the risk it carries. An undeclared assumption the read uncovers — platform behavior the diff depends on that no ledger line names — is the cardinal failure, always Blocking. No receipt → the ledger stop is named absent and the sweep below carries the weight.
+Read the receipt's `verified:` / `assumed:` entries first. Spot-check every verified pointer. An undeclared platform assumption that behavior depends on is Blocking; an unresolved declared assumption is classified by its consequence.
 
-## Two axes, side by side
+## Inspect the contracts
 
-Spec runs as an al-review-lens invocation — the dimension's definition and sources in the prompt; the parent owns judgment. It reads the diff against what the bullet asked: nothing more, nothing missing.
+Trace every changed call site, data flow, commit boundary, subscriber, and proof surface. Confirm every BC object, table, field, procedure, event, enum value, dialog text, or platform claim through lookup in this session.
 
-Standards executes the BCQuality Entry protocol: read `.bcquality/skills/entry.md` and follow it over the repo's clone — task-context goal review, inputs pr-diff, technologies [al], all three layers; the index rebuilt as entry.md directs. The dispatched al-code-review runs its leaves per its own execution discipline, one al-knowledge-leaf child per leaf with its domain-filtered index slice. The DO roll-up feeds the verdict mechanically: `domain: style` and aesthetic-only findings land as refactor food; consequence domains — security, upgrade, breaking changes, error handling, events, performance, data modeling — land under the finding classes; DO severity informs, the classes here decide. The parent reads the diff against the repo's `docs/patterns.md` itself where it exists. The two axes sit side by side, never merged — counts and the worst finding per axis, and the roll-up's suppressed count on the Standards line: a skip is named, never hidden.
+Judge:
 
-## The anatomy sweep
+- every Gherkin scenario reaches its named BPMN outcome
+- the Gherkin and AAA proof start from the Feature's Trigger and cover its Success and Minimal guarantees
+- AAA cases cover the scenario branches with independent expected values
+- tests exercise the caller-visible module interface rather than private internals
+- Building Block Level 1 ownership matches the code
+- Level 2, when present, matches proven internals; its absence is valid for a simple module
+- permissions, translations, upgrade impact, and breaking surface are covered
 
-The parent sweeps the six AL anatomy axes itself, never one agent per axis: schema/upgrade, events, permissions, XLF translations, breaking-change baseline, tests. Each axis lands in the verdict named with news or closed as clear.
+Run /al-build in `UnitTestOnly` mode for missing unit evidence or `AllTests` mode for missing integration evidence.
 
-## Blast radius
+## Parallel lenses
 
-What breaks beyond the diff: callers, subscribers of touched events, data the diff reshapes, flows that reach the changed objects without naming them. Name the one safety fact most of the risk hangs on and prove it by running code — a focused test or an /al-build run — never by prose. Unproven stays named unproven.
+Dispatch `al-review-lens` once with one dimension named `Feature contract`, its full definition being the seven checks above, the diff scope, work items, receipt, and relevant sources.
+
+For standards, read `.bcquality/skills/entry.md` and follow its Entry protocol with goal `review`, inputs `pr-diff`, technologies `[al]`, and all three layers. Dispatch one `al-knowledge-leaf` per selected leaf with the leaf path, diff scope, READ and DO paths, and domain-filtered index slice its contract requires.
+
+These parallelize in full-capability subagents; when subagents are unavailable, apply them in one pass. Deduplicate by root cause.
 
 ## Verdict
 
-Every BC name in a finding is confirmed by a lookup in the current session, never recalled. A shape observation appears in this verdict only when the shape will produce wrong behavior — then it is a finding; beauty is never a finding. Consequence-bearing idiom violations — locking, Commit discipline, TransferFields traps — stay findings; a shape observation whose only cost is aesthetics goes to the one Refactor food line. A generic-CS name on a shipped surface — an object, table, field, procedure, or event name — is a finding, not refactor food: AL names are permanent API, and a wrong name produces wrong integrations and a breaking rename later. "No blocking issues found" is a legal verdict.
+Report only actionable findings:
 
-```
-## al-review verdict — <diff scope>
-Ledger: re-checked | absent — undeclared assumptions: none | <each one, Blocking>
-Standards: <count + worst finding + suppressed count> · Spec: <count + worst finding> | skipped — no bullet
-Anatomy: schema/upgrade · events · permissions · XLF · baseline · tests — news or clear per axis
-Blast radius: <the safety fact> — proven by <the run> | unproven
-Findings: Blocking / Non-Blocking
-Refactor food: none | <one line>
-```
+`⛔ Blocking - <title>` or `⚖️ Non-Blocking - <title>`
 
-The verdict returns to the caller — posted to the bullet's work item where Azure DevOps is wired, mirrored to `.output/receipts/<diff-scope>.md` always. The run is done when the ledger stop, both axes or the named skip, all six anatomy axes, and the blast-radius fact appear in it.
+Then one line each:
+
+`⚡ Breaks:` violated behavior or contract
+
+`📍 Proof:` file, line, test, work-item section, or verified platform evidence
+
+`🔧 Fix:` smallest complete correction
+
+End with the verdict: `blocking`, `non-blocking only`, or `no blocking issues found`. One optional `Refactor food:` line is the only home for aesthetics.

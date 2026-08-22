@@ -1,24 +1,44 @@
 ---
 name: al-orchestrate
-description: Use when a sharpened frontier bullet should run through implement, refactor, and review as one loop.
+description: Use when one executable AL Feature or Vertical slice has reviewed AAA and needs implementation, bounded refactoring, and read-only review coordinated across child sessions.
 ---
 
-# al-orchestrate — one bullet, the whole loop
+# al-orchestrate - run the execution loop
 
-In: one sharpened bullet — named in the invocation, or the next ready one from the frontier store (Azure DevOps work items, or `docs/frontier.md`). The orchestrator adds sequencing and nothing else: a human and this skill call each block with the same words, the blocks stay unchanged, and a decision point is never answered here — it passes through to the user verbatim. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+In: the executable Feature itself, or a child User Story and its parent Feature, with reviewed Gherkin and `Test specification`, plus any explicit deepening goal. If AAA is not reviewed, return `/al-test-design` as the next move and stop.
 
-## The sequence
+Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update only on an important finding, a decision point, or a changed direction.
 
-/al-implement the bullet → /al-refactor → /al-review the diff against the bullet. The refactor beat is skipped only when the al-implement receipt says `Tidy: none` and names no deepening goal — an empty child run buys nothing; a receipt-named goal upgrades the refactor run to the deepening reshape. The loop ends at the review verdict — acting on findings is the user's next move: a repair pass, a re-run, or the merge path through /al-pr-shepherd.
+## Run one owner at a time
 
-## The mechanism, by surface
+1. Launch a child session for /al-implement with the work-item ID, repository, Feature contract, and exact receipt path.
+2. Read its result, branch, commit, and full receipt content.
+3. Unless the receipt says `Tidy: none` and the invocation names no deepening goal, launch a fresh /al-refactor child stacked on the implementation branch; pass the receipt content, reviewed AAA, Feature, and deepening goal in its kickoff.
+4. When refactor ran, read its branch, commit, and updated receipt content; otherwise keep the implementation branch and receipt.
+5. Launch a fresh /al-review child stacked on the latest writing branch; pass the executable work item, parent Feature, diff base, and receipt content in its kickoff.
+6. After each blocking repair, launch another fresh /al-review child on the repaired branch; repeat until the verdict has no blocking findings.
+7. When the `Test specification` names walkthrough proof, launch /al-walkthrough on the latest writing branch after the blocking-free review and require evidence for every such case.
 
-In the terminal Copilot CLI each block runs as its own headless child run — `copilot -p "/al-implement <bullet>" --plugin-dir <plugin folder>`, and likewise for /al-refactor and /al-review — the literal invocation a human types. Fresh context per block; the receipts in `.output/receipts/` and the diff carry the hand-over. In the GitHub Copilot app, follow each block's SKILL.md from the plugin folder in this session instead, one block at a time, its contract obeyed as written.
+In the GitHub Copilot app, use `create_session` with kickoff mode `autopilot`, then `get_session` and `send_session_message`, with the stacked branches above. `.output/` is ignored, so later app children receive receipt content explicitly rather than by path.
 
-## Pauses and resume
+In the terminal Copilot CLI, give each block a UUID and run it sequentially in the current worktree as a fresh headless process: `copilot -p "/al-implement <work-item>" --session-id <uuid> --allow-all-tools --no-ask-user --plugin-dir <plugin-folder>`, then the same shape for /al-refactor when required, /al-review, and /al-walkthrough when required. The shared worktree, commits, and receipt path carry state; one process runs at a time.
 
-A block that stops on a declared decision point ends the loop turn: surface the block's question verbatim, wait for the user's answer, resume. Resume is idempotent — position re-derived from the receipts, the frontier store, and git, never from a remembered step; the same wake resumes an interrupted loop days later.
+Each writing child commits before returning; review remains read-only.
+
+## Pass through decisions
+
+When a child raises a real decision, quote it to the user with its options and recommendation. After the answer, send it back to the same child session and continue. Do not reinterpret the choice.
+
+In the CLI, resume that child with `copilot --resume=<uuid> -p "<answer>" --allow-all-tools --no-ask-user --plugin-dir <plugin-folder>`.
+
+## React to evidence
+
+- A red implementation or gate result returns to the owning child.
+- A blocking review finding returns to a fresh implementation or refactor child with the exact proof and fix requirement, then to step 6.
+- A walkthrough mismatch returns to a writing child, then a fresh review and walkthrough.
+- `non-blocking only` or `no blocking issues found` ends the review-repair loop; step 7 still runs when walkthrough proof is required.
+- A module-contract dispute returns to the user rather than being decided by orchestration.
 
 ## Close
 
-The loop receipt: the bullet, each block run with its receipt's core — gate verdict, ledger count, findings — the decision points passed through, and the review verdict. Done when every block in the sequence has its receipt and the verdict sits in front of the user.
+Finish with the executable item, commits, receipt, gate result, review verdict, walkthrough evidence when required, and whether Level 2 changed. Outcome first; no extra summary.

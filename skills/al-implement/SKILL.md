@@ -1,43 +1,43 @@
 ---
 name: al-implement
-description: Use when a refined frontier bullet has a test spec and pre-agreed seams and is ready to build.
+description: Use when an executable Feature or Vertical slice has reviewed Gherkin, AAA test specification, and module contracts ready to implement in AL.
 ---
 
-# al-implement — one bullet to landed code
+# al-implement - prove the slice
 
-In: one frontier bullet — its test spec and pre-agreed seams ride on it — and the living design, which constrains architecture and data structure only; implementation details are yours, discovered in flight. Either input missing → name what is missing and stop. A bullet without seams is a decision point raised now, not a mid-run interview. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+In: the executable Feature itself, or a child User Story and its parent Feature. Read the executable item's reviewed `Test specification` and the Feature's process and Building Block Level 1. If the AAA seam or expected value is unresolved, return that question to /al-test-design before editing code.
 
-## The loop
+Before editing, trace the narrow path through the workspace. Search for an existing module, event, interface, fixture, and pattern first. Confirm every BC object, table, field, procedure, event, enum value, and dialog text through lookup in this session.
 
-Work the test spec in seam-clusters — the AAA cases that share one seam and one Arrange, cut from the spec in flight. Each cluster earns its red as one batch before its green. Every /al-build run executes the full suite, so pipeline the proofs: one run confirms the previous cluster green and the next cluster red — N clusters cost N+1 runs, regression riding every run. Name unit mode while the cluster's tests run under AL Runner; name the full gate when they need the container. A test that arrives green at its red run is checked against existing coverage — redundant drops, live earns a mutation proof: break the implementation, watch the red, restore. Tests exercise behavior through public seams with independent expected values — an assert that restates the implementation proves nothing. Load the idiom capsules matching the work type when they exist — al-miner grows them; today there are none.
+Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update only on an important finding or a changed direction.
 
-## Verify or declare
+## Contract
 
-About to write code that depends on platform behavior not verified in this session: lookup it, or the claim enters the ledger as assumed. Every BC object, table, field, procedure, event, or enum value name is confirmed by a lookup in the current session, never recalled. BC vocabulary binds every line written — Insert not create, Post not submit, Validate not check, Ledger Entry not transaction, codeunit not class, procedure not method. Reach for the platform before writing code; an interface with a single implementation is indirection, not a seam.
+- Gherkin defines observable business behavior.
+- AAA defines the reviewed proof seam and expected values.
+- Building Block Level 1 defines caller-visible module ownership.
+- Private object layout remains an implementation decision.
 
-## Stuck goes to the duck
+## Red
 
-The same failure twice, or a result that contradicts the spec, sends the failure evidence to the rubber-duck agent — the task tool's read-only complementary-model critic, agent_type rubber-duck — before a third retry. The GitHub Copilot app engine ships no duck: there the checkpoint skips and the receipt says so.
+Implement each unit or integration AAA case through the named module interface. One Gherkin scenario may need several tests. Run /al-build in `UnitTestOnly` mode for unit proof or `AllTests` mode for integration proof; a new automated proof goes red for the intended reason. If existing behavior and an existing test already prove the case, record that evidence instead of adding a duplicate test.
 
-## Decision points
+A walkthrough-only case does not enter the automated red step. Keep it in the receipt for /al-walkthrough.
 
-A change in behavior beyond the bullet stops the run and surfaces as one plain-text question; the answer resumes or reshapes the run. Everything else lands without chat.
+## Green
+
+Write the smallest production change that makes the proof green. Keep business writes on validated or posting paths, reuse Base App seams, preserve quality properties, and avoid an AL interface with one implementation.
+
+Run the same /al-build mode until green, then run /al-build in `AllTests` mode. A red result remains red until the output names its exact cause.
+
+## Document proven internals
+
+After green, inspect each changed Level 1 module. Add arc42 Building Block Level 2 to the Feature only when implementation revealed stable internal building blocks and interfaces worth preserving. Ask /al-visualize for editable source and PNG. When attachment upload is unavailable, show both paths and exact manual attach steps, then resume after the user supplies the attachment URLs. A simple module needs no Level 2.
+
+## Receipt
+
+Write `.output/receipts/<bullet-id>.md` with the work-item ID, tests, objects changed, `Tidy: none` or exact tidy candidates, Level 2 decision, gate result, evidence, and `verified:` / `assumed:` ledger entries. Add the same evidence as a work-item comment when Azure DevOps tools are available.
 
 ## Close
 
-The closing gate is the last full-gate green run that no edit follows — any change after it, however small, reopens the gate. Commit the work with a plain descriptive message naming the bullet. Emit the receipt — posted to the bullet's work item where Azure DevOps is wired, mirrored to `.output/receipts/<bullet>.md` always — and stop; the caller owns the next block.
-
-```
-## al-implement receipt — <bullet>
-Built: one line per landed change, BC object names exact
-Tidy: <shape debts noticed in flight — naming, dead scaffolding, duplication, idiom polish | none>
-Gate: /al-build verdict — mode named, per-runner totals from summary.json
-Ledger:
-  verified: <claim> — <Learn URL | BCApps file+line | topic id | article path>
-  assumed: <claim> — not verified
-Decision points: none | each one raised and the call made
-Duck: not consulted | <verdict> | absent in this engine — checkpoint skipped
-Commits: <hashes>
-```
-
-The run is done when every landed change appears under Built, every platform dependency sits in the ledger as verified or assumed, and the closing gate is green.
+Commit code and tracked documentation with a plain descriptive message at every exit. Finish outcome first: what changed, what proves it, which module interface stayed stable, and whether Level 2 was added. Stop with the exact red reason when any proof is unresolved.

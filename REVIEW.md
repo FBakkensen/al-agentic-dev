@@ -72,15 +72,15 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## Retired concepts
 
-30. Task-state ceremony is retired with the old pipeline. Flag a lifecycle field (`status:`, `phase:`, `blocked-on:`, `review:`, `tier:`, `green-gate:`), an Azure DevOps work-item transition (`State: Resolved`), a stage-gate prerequisite, or a routing hand-off in any skill or agent — the gate bans the fields mechanically; the concept ban is wider. Flag choreography whose only reader is documentation, and flag a skill that needs the world prepared before it can act.
+30. Task-state ceremony is retired with the old pipeline. Flag a lifecycle field (`status:`, `phase:`, `blocked-on:`, `review:`, `tier:`, `green-gate:`), an Azure DevOps work-item transition (`State: Resolved`), or an abstract stage gate — the gate bans the fields mechanically; the concept ban is wider. A concrete artifact may require user agreement before the next skill consumes it, and a skill may name that next consumer. Flag routing whose only purpose is advancing a named stage, choreography whose only reader is documentation, and a skill that requires ceremonial state rather than a concrete input.
 
 ## AL grounding
 
-31. Every BC object, table, field, procedure, event, enum value, or dialog text a skill or agent shows, writes, or judges is confirmed by a lookup in the current session, never recalled. BC vocabulary rides with it on every line written into code or a receipt — Insert not create, Post not submit, Validate not check, Ledger Entry not transaction, codeunit not class, procedure not method — and so does production-AL thrift: reach for the platform before writing code, and an interface with a single implementation is a finding. Today `al-visualize`, the two reviewer agents, `al-implement`, `al-refactor`, `al-review`, `al-design`, `al-event-model`, and `al-walkthrough` carry the grounding rule; flag its absence in any new skill that writes, shows, or judges AL.
+31. Every BC object, table, field, procedure, event, enum value, or dialog text a skill or agent shows, writes, or judges is confirmed by a lookup in the current session, never recalled. BC vocabulary rides with it on every line written into code or a receipt — Insert not create, Post not submit, Validate not check, Ledger Entry not transaction, codeunit not class, procedure not method — and so does production-AL thrift: reach for the platform before writing code, and an interface with a single implementation is a finding. Today `al-visualize`, the two reviewer agents, `al-implement`, `al-refactor`, `al-review`, `al-test-design`, `al-design`, `al-event-model`, and `al-walkthrough` carry the grounding rule; flag its absence in any new skill that writes, shows, or judges AL.
 
 ## Commit discipline
 
-32. A skill that writes repo files commits its own writes at every exit — clean close, fail pause, or open-question stop — with a plain descriptive message. Flag a writing skill with no commit line. Two sanctioned append-only exceptions ride the developer's next commit instead: the precedent map (al-lookup's append) and the frontier file (al-scope's creation and al-next's maintenance in file mode).
+32. A skill that writes repo files commits its own writes at every exit — clean close, fail pause, or open-question stop — with a plain descriptive message. Flag a writing skill with no commit line. The precedent map is the one sanctioned append-only exception: al-lookup's row rides the developer's next commit.
 
 ## Show the thing
 

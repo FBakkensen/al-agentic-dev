@@ -37,6 +37,8 @@ Desktop.ini
 
 # Build output (test results, etc.)
 .output/
+.impeccable/
+/testResults.xml
 
 # Secrets
 **/secret.json

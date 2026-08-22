@@ -1,20 +1,39 @@
 ---
 name: al-visualize
-description: "Draw the BC-anatomy delta — objects, events, and flows as boxes and connections — on the GitHub Copilot app's side-panel canvas. Invoked by al-next when the shape changed, or directly for a drawn view of any landed change or settled picture."
+description: Use when settled BPMN, arc42 Runtime View, Building Block View, or BC-anatomy delta content needs an editable diagram and Azure DevOps-safe PNG.
 ---
 
-# al-visualize — boxes and connections
+# al-visualize - render the settled view
 
-The reader is the architect steering agents: show the product's shape, never the work. The content is BC anatomy — objects in BC shapes (master data, documents, journals, posting, entries), the calls, events, and flows between them — drawn when the shape changed, skipped when it did not. A procedure or codeunit name alone is not information; it means something with its context and connections visible. [SURFACE.md](SURFACE.md) is the artifact contract: layers, furniture, pictures. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+In: settled semantic content from /al-event-model, /al-design, /al-implement, /al-refactor, or /al-next. The calling skill owns meaning; this skill owns layout and portable renderings.
 
-## Ground every fact
+Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Usually ask none. Before the first tool call, write one sentence. Update only on an important finding or changed direction.
 
-Every BC object, table, field, procedure, event, enum value, or dialog text shown is confirmed by a lookup in the current session, never recalled. A fact nobody can trace to something real is decoration and gets cut.
+## Choose the notation
 
-## Render and present
+- **Business process:** BPMN 2.0 source and PNG.
+- **Runtime View:** sequence-style SVG source and PNG.
+- **Building Block View:** arc42 box-and-connection SVG source and PNG.
+- **BC-anatomy delta:** changed objects, schema, events, permissions, translations, tests, and external edges as SVG source and PNG.
 
-Open the surface beside the chat with open_canvas: the editor canvas, scope `workspace`, one stable instance per topic, the full artifact traveling in the open call — the artifact is virtual to the app, never a repo file, and an update re-opens the same instance with the new content. Open at the essence and disclose detail on demand — the reader scrolls into depth, per the contract. The visual craft belongs to the impeccable skill the GitHub Copilot app bundles — no design rules live here. The bare terminal CLI ships neither the canvas nor impeccable: state the delta as text in the reply and continue — no error raised, no file written.
+Keep one notation per diagram. Use stable IDs and labels so source diffs remain readable.
+
+## Ground the content
+
+Every BC object, table, field, procedure, event, enum value, and dialog text shown comes from a lookup in this session. Preserve domain terms and module names exactly as the owning artifact states them.
+
+## Render
+
+When canvas tools are available, use `list_canvas_capabilities`, `open_canvas`, and `invoke_canvas_action`. On either the GitHub Copilot app or bare CLI without them, write the SVG directly and invoke an installed `msedge`, `chrome`, or `chromium` with `--headless --screenshot` to produce the PNG; for BPMN, keep the `.bpmn` source beside the equivalent SVG rendering. If neither canvas nor a named browser executable exists, return that exact blocker and do not claim a publishable diagram.
+
+Lay out the main flow left to right, keep crossings rare, show module interfaces at boundaries, and make gateway labels and end outcomes readable at Azure DevOps Description width.
+
+Write artifacts under `.output/diagrams/<slug>/`. Keep editable source beside a PNG snapshot. These are ignored build artifacts and are never committed.
+
+## Check the handoff
+
+The source reopens without missing nodes. The PNG contains every source node, readable labels, and no clipped edges. Return both absolute paths plus alt text to the calling skill; that skill attaches them and embeds the PNG.
 
 ## Close
 
-A surface is a session artifact and leaves nothing behind. Report what the surface showed back into the flow that invoked it — al-next's delta move, or the user's direct ask — and the caller owns what happens next.
+On success, finish with the rendered view, source path, PNG path, and the one architectural fact the picture makes visible. In the GitHub Copilot app, open or focus the canvas; in the CLI, print the verified artifact paths. On the named renderer blocker, finish with that blocker and the editable source path only.
