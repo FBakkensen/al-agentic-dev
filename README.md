@@ -2,7 +2,7 @@
 
 A GitHub Copilot plugin for Microsoft Dynamics 365 Business Central development: a scripted compile-publish-test gate with containers, coverage, and breaking-change validation underneath, plus the two platform-knowledge clones and a visual steering surface.
 
-One install brings the whole surface: the Agent Skills, two packaged custom agents (`al-review-lens`, `al-knowledge-leaf`), and three bundled MCP servers — NAB AL Tools for XLF translation, Microsoft Learn for current Microsoft documentation, and bc-code-intelligence for BC idioms and patterns.
+One install brings the whole surface: the Agent Skills, two packaged custom agents (`al-review-lens`, `al-knowledge-leaf`), and four bundled MCP servers. NAB AL Tools handles XLF translation, Microsoft Learn supplies current Microsoft documentation, bc-code-intelligence covers BC idioms and patterns, and business-central-mcp drives the Web Client.
 
 The set is mid-rebuild: the earlier 26-skill pipeline is retired, and each new plugin version ports proven skills back in as real work needs them. Git history is the donor archive.
 
@@ -11,10 +11,10 @@ The set is mid-rebuild: the earlier 26-skill pipeline is retired, and each new p
 - Windows, PowerShell 7.2+
 - GitHub Copilot CLI, authenticated to `9altitudes.ghe.com` (`gh auth status -h 9altitudes.ghe.com`)
 - Docker Desktop, BcContainerHelper, and the .NET SDK — `/al-build`'s scripted toolchain
-- Node.js 22+ with `npx` on PATH — runs the bundled NAB AL Tools MCP server
+- Company Portal-managed Node.js 20+ at `C:\Program Files\nodejs` — runs the bundled stdio MCP servers
 - In each consumer repo: `al-build.json` at the root for the build gate
 
-The planning flow uses Azure DevOps work-item tools when available. `/al-event-model` installs its locked BPMN renderer on first use, and `/al-walkthrough` needs the one-time [Web Client walkthrough](#web-client-walkthrough-business-central-mcp) install.
+The planning flow uses Azure DevOps work-item tools when available. `/al-event-model` installs its locked BPMN renderer on first use.
 
 ## Install
 
@@ -42,9 +42,9 @@ Same plugin, no marketplace registration — and no catalog for `copilot plugin 
 ### Verify
 
 ```
-copilot plugin list      # al-agentic-dev@al-agentic-dev (v2.4.4)
+copilot plugin list      # al-agentic-dev@al-agentic-dev (v2.4.6)
 copilot skill list       # the 22 skills, under "Plugin skills"
-copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn, bc-code-intelligence
+copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn, bc-code-intelligence, business-central
 ```
 
 The skills must appear under **Plugin skills**. Any of them listed under *Personal skills* is a leftover legacy copy shadowing the plugin — go to [Migrating from `npx skills add`](#migrating-from-npx-skills-add).
@@ -83,30 +83,13 @@ The Feature and its direct Vertical-slice children live in Azure DevOps work ite
 
 ### Web Client walkthrough (business-central-mcp)
 
-`/al-walkthrough` drives the running Web Client through [business-central-mcp](https://github.com/SShadowS/business-central-mcp) (MIT, BC27/BC28 wire-compatible) — the client's native WebSocket protocol, structured field reads, no browser. The plugin deliberately does not bundle this one either: the container URL and credentials it needs are your machine's. One-time, user-level: add the `business-central` entry to `~/.copilot/mcp-config.json` (merge into `mcpServers` when the file already has one), and keep the key name `business-central` — tool ids derive from it (`business-central-bc_open_page` and so on):
+`/al-walkthrough` drives the running Web Client through the bundled [business-central-mcp](https://github.com/SShadowS/business-central-mcp) package. It uses the client's native WebSocket protocol and structured field reads, with no browser.
 
-```json
-{
-  "mcpServers": {
-    "business-central": {
-      "type": "stdio",
-      "command": "pwsh",
-      "args": [
-        "-NoProfile",
-        "-Command",
-        "$n=(git rev-parse --abbrev-ref HEAD) -replace '[/\\\\]','-' -replace '[^\\w-]',''; $c=@{username='admin';password='P@ssw0rd'}; $f=Join-Path (git rev-parse --show-toplevel) 'al-build.json'; if(Test-Path $f){$j=(Get-Content $f -Raw|ConvertFrom-Json).container; if($j.username){$c.username=$j.username}; if($j.password){$c.password=$j.password}}; $env:BC_BASE_URL='http://'+$n+'/BC'; $env:BC_USERNAME=$c.username; $env:BC_PASSWORD=$c.password; $env:BC_APPLICATION_ID='NAV'; [Console]::OutputEncoding=[Text.Encoding]::UTF8; npx -y business-central-mcp"
-      ]
-    }
-  }
-}
-```
+At MCP process startup, the plugin launcher reads the consumer repository's `al-build.json` through `/al-build`'s `Get-BuildConfig`. The same branch sanitizer, `ALBT_*` overrides, tenant, server instance, and credentials therefore select both the build container and the Web Client connection. `BC_APPLICATION_ID=NAV` is set for the on-prem BcContainerHelper artifacts.
 
-The inline wrapper resolves everything per session at launch, in the session's working directory: the agent container name from the current git branch, sanitized exactly as `/al-build` does (`/` and `\` become `-`, every other non-word character drops); the credentials from the consumer repo's root `al-build.json` (`container.username` / `container.password`, defaulting to `admin` / `P@ssw0rd`); then `BC_BASE_URL=http://<container>/BC`.
+The MCP process keeps its logs and state under `~/.copilot/business-central-mcp/<repository>/<container>/`, outside the consumer repository. It does not probe Docker or connect to Business Central until a tool call. `/al-walkthrough` runs `/al-build` before opening the client.
 
-Two behaviors worth knowing:
-
-- `BC_APPLICATION_ID=NAV` is load-bearing on the on-prem BcContainerHelper artifacts `/al-build` provisions. With the default `FIN`, sign-in and the WebSocket upgrade succeed and the session then dies inside the OpenSession RPC with `NavCancelCredentialPromptException` — a misleading failure the package's own README documents.
-- The server starts fine with no container up: the session loads, the `bc_*` tools appear, and only their calls fail until the branch container exists. No restart is needed once it does.
+The branch and container binding lasts for the MCP process. After changing branches, restart the MCP server or Copilot session before running `/al-walkthrough`.
 
 Verify from a consumer repo whose branch container is up: `bc_list_companies` answers with the container's companies.
 
@@ -136,7 +119,7 @@ foreach ($dir in "$HOME\.agents\skills", "$HOME\.copilot\skills") {
 copilot plugin uninstall al-agentic-dev
 ```
 
-**4. Install fresh** per [Install](#install), then verify: `copilot plugin list` shows the plugin, `copilot skill list` shows its skills under **Plugin skills** and none of them under *Personal skills*, and `copilot mcp list` shows `nab-al-tools`, `microsoft-learn`, and `bc-code-intelligence` as plugin servers.
+**4. Install fresh** per [Install](#install), then verify: `copilot plugin list` shows the plugin, `copilot skill list` shows its skills under **Plugin skills** and none of them under *Personal skills*, and `copilot mcp list` shows `nab-al-tools`, `microsoft-learn`, `bc-code-intelligence`, and `business-central` as plugin servers.
 
 ## The skills
 

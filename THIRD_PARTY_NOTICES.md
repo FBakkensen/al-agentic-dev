@@ -19,3 +19,9 @@ The `/al-event-model` rendering procedure installs these packages at runtime:
 - `Puppeteer`, licensed under Apache-2.0
 
 The renderer keeps the bpmn.io footer and project logo enabled.
+
+## business-central-mcp
+
+The bundled `business-central` MCP server starts `business-central-mcp` at runtime.
+
+Copyright SShadowS and contributors. The package is licensed under the MIT License. See <https://github.com/SShadowS/business-central-mcp>.
