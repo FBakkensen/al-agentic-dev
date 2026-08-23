@@ -33,9 +33,13 @@ assumed: <claim> — not verified
 
 A valid pointer is a Learn URL, a BCApps file and line, a bc-code-intelligence topic id, or a BCQuality article path. Writing skills carry these entries in their receipts; al-review reads the ledger first.
 
-## Append to the map
+## Own the map change
 
-A fresh answer appends its row to `docs/precedent-map.md` — append only; the developer's next commit carries the row.
+Whether /al-lookup runs standalone or inside another skill, it owns every change it makes to `docs/precedent-map.md`. A map hit writes and commits nothing. A search with no sourced answer writes and commits nothing.
+
+For a fresh answer, require a clean map path before writing; a dirty path stops the run before the map changes. Append the row, stage only `docs/precedent-map.md`, then run `git commit --only -m "Record AL precedent" -- docs/precedent-map.md`. Return only after that commit contains no other path and the map path is clean; all other working-tree and index changes stay untouched.
+
+If the commit fails, remove this run's map change from both the index and working tree without touching any other path, then report the exact error. The caller receives the ledger line, never ownership of a dirty map change.
 
 ## Deep questions go to /research
 
@@ -43,4 +47,4 @@ A whole-feature shape question — which BC pattern, which tables and extensions
 
 ## Close
 
-State the answer with its pointer, name the map row appended or the map hit reused, and hand the ledger line to the caller. Invoked by the user directly, that one answer is the whole run.
+State the answer with its pointer, name the map commit or the map hit reused, and hand the ledger line to the caller. Invoked by the user directly, that one answer is the whole run.

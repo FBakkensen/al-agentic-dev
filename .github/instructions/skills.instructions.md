@@ -80,7 +80,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## Commit discipline
 
-32. A skill that writes repo files commits its own writes at every exit — clean close, fail pause, or open-question stop — with a plain descriptive message. Flag a writing skill with no commit line. The precedent map is the one sanctioned append-only exception: al-lookup's row rides the developer's next commit.
+32. A skill that writes repo files commits its own writes at every exit — clean close, fail pause, or open-question stop — with a plain descriptive message. Flag a writing skill with no commit line.
 
 ## Show the thing
 

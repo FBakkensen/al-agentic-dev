@@ -17,4 +17,22 @@ Describe 'Skill workflow contracts' {
         $orchestrate | Should -Not -Match 'Tidy: none'
         $refactor | Should -Match '`Tidy: none` or the exact reshapes'
     }
+
+    It 'keeps precedent map ownership with al-lookup' {
+        $lookup = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-lookup' 'SKILL.md') -Raw
+        $mapContracts = @(Get-ChildItem -LiteralPath $script:SkillsRoot -Filter '*.md' -Recurse |
+            Select-String -SimpleMatch 'docs/precedent-map.md' |
+            Select-Object -ExpandProperty Path -Unique)
+
+        $lookup | Should -Match 'Whether /al-lookup runs standalone or inside another skill'
+        $lookup | Should -Match 'A map hit writes and commits nothing'
+        $lookup | Should -Match 'A search with no sourced answer writes and commits nothing'
+        $lookup | Should -Match 'a dirty path stops the run before the map changes'
+        $lookup | Should -Match 'git commit --only -m "Record AL precedent" -- docs/precedent-map\.md'
+        $lookup | Should -Match "remove this run's map change from both the index and working tree"
+        $lookup | Should -Match 'never ownership of a dirty map change'
+        $lookup | Should -Not -Match "developer's next commit"
+        @($mapContracts).Count | Should -Be 1
+        $mapContracts[0] | Should -Be (Join-Path $script:SkillsRoot 'al-lookup' 'SKILL.md')
+    }
 }

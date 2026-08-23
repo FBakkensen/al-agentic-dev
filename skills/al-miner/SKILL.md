@@ -26,7 +26,7 @@ Turn session history into standing improvements. The history already holds the t
 
 ## Propose, never land
 
-Every run ends in one proposals file — `.output/al-miner/proposals-<date>.md` — and changes nothing else: no shelf write, no capsule file, no repo edit. Each proposal carries the shelf it targets, the proposed line or candidate, the evidence — count, date span, session ids — and the evidence method: the exact query or search terms, so a reviewer reruns it. A count in a proposal is the number its written method returns — a threshold or filter behind a number belongs in the query itself. Verify each proposal against the platform through /al-lookup before proposing; until that verification runs, mark every proposal "history-evidenced, Learn-unverified". Applying a line is the user's act, after the run.
+Every run's own output is one proposals file — `.output/al-miner/proposals-<date>.md` — with no shelf or capsule write. Each proposal carries the shelf it targets, the proposed line or candidate, the evidence — count, date span, session ids — and the evidence method: the exact query or search terms, so a reviewer reruns it. A count in a proposal is the number its written method returns — a threshold or filter behind a number belongs in the query itself. Verify each proposal against the platform through /al-lookup before proposing; until that verification runs, mark every proposal "history-evidenced, Learn-unverified". Applying a line is the user's act, after the run.
 
 ## Close
 
