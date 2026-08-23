@@ -40,8 +40,8 @@ Keep the change markers in the receipt and executable-item comment. Add or updat
 
 ## Receipt
 
-Write `.output/receipts/<work-item-id>.md` with the work-item ID, implementation-map paths and alt text, tests, objects changed, `Tidy: none` or exact tidy candidates, Level 2 decision, gate result, evidence, and `verified:` / `assumed:` ledger entries. Add the PNG and the same evidence to the executable-item comment when Azure DevOps tools are available.
+Write `.output/receipts/<work-item-id>.md` with the work-item ID, implementation-map paths and alt text, tests, objects changed, Level 2 decision, gate result, evidence, and `verified:` / `assumed:` ledger entries. Add the PNG and the same evidence to the executable-item comment when Azure DevOps tools are available.
 
 ## Close
 
-Commit code and tracked documentation with a plain descriptive message at every exit. Finish outcome first: what changed, what proves it, where the implementation map is attached, which module interface stayed stable, and whether Feature Level 2 changed. Stop with the exact red reason when any proof is unresolved.
+Commit code and tracked documentation with a plain descriptive message at every exit. Finish outcome first: what changed, what proves it, where the implementation map is attached, which module interface stayed stable, and whether Feature Level 2 changed. Name /al-refactor as the next move. Stop with the exact red reason when any proof is unresolved.
