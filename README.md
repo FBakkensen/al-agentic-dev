@@ -14,7 +14,7 @@ The set is mid-rebuild: the earlier 26-skill pipeline is retired, and each new p
 - Node.js 22+ with `npx` on PATH — runs the bundled NAB AL Tools MCP server
 - In each consumer repo: `al-build.json` at the root for the build gate
 
-The skills other than `/al-build` are prose. The planning flow uses Azure DevOps work-item tools when available; `/al-walkthrough` needs the one-time [Web Client walkthrough](#web-client-walkthrough-business-central-mcp) install.
+The planning flow uses Azure DevOps work-item tools when available. `/al-event-model` installs its locked BPMN renderer on first use, and `/al-walkthrough` needs the one-time [Web Client walkthrough](#web-client-walkthrough-business-central-mcp) install.
 
 ## Install
 
@@ -42,7 +42,7 @@ Same plugin, no marketplace registration — and no catalog for `copilot plugin 
 ### Verify
 
 ```
-copilot plugin list      # al-agentic-dev@al-agentic-dev (v2.3.0)
+copilot plugin list      # al-agentic-dev@al-agentic-dev (v2.4.0)
 copilot skill list       # the 22 skills, under "Plugin skills"
 copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn, bc-code-intelligence
 ```
@@ -117,7 +117,7 @@ Earlier versions of this set installed as loose per-user skill folders. Those co
 **1. Detect.** List what the legacy installer left behind (only folders whose names this set has ever shipped — your other personal skills are untouched):
 
 ```powershell
-$plugin = 'al-agentic-dev-overview','al-build','al-clone-bcapps','al-clone-bcquality','al-code-review',
+$plugin = 'al-agentic-dev-overview','al-arc42','al-build','al-clone-bcapps','al-clone-bcquality','al-code-review',
   'al-design','al-event-model','al-grill-adr','al-grilling','al-implement','al-knowledge-pass','al-next',
   'al-orchestrate','al-provision','al-quiz','al-refactor','al-refine','al-routing','al-scope','al-spec-review',
   'al-sync-main','al-user-verification','al-validate-breaking-changes','al-visualize','babysit-pr'
@@ -145,7 +145,7 @@ copilot plugin uninstall al-agentic-dev
 | [`/al-build`](docs/al-build.md) | Compiles, publishes, runs the tests — plus provisioning, breaking-change validation, and the container lifecycle. |
 | `/al-clone-bcapps` | Clones Microsoft's W1 source at the matching BC version into `.bcapps/` for reading and searching platform code. |
 | `/al-clone-bcquality` | Clones Microsoft's BCQuality knowledge base into `.bcquality/` and builds its knowledge index. |
-| `/al-visualize` | Renders settled BPMN, arc42 Runtime Views, Building Block Views, and BC-anatomy deltas as editable source plus Azure DevOps-safe PNGs. |
+| `/al-arc42` | Applies the official arc42 v9.0-EN subset to Level 1, Runtime View, and proven Level 2 content, then writes a local architecture review HTML and Azure DevOps artifacts. |
 | `/al-grilling` | Interviews you one consequential decision at a time, rebuilding the context and visual relationships from each earlier answer. |
 | `/al-grill-me` | Starts the grilling interview over a plan or design. |
 | `/al-wait-what` | Stops the flow and reconnects the last message to prior decisions with plain language and a useful visual. |
@@ -153,7 +153,7 @@ copilot plugin uninstall al-agentic-dev
 | `/al-miner` | Mines session history for repeated failures and steering corrections; proposes standing lessons with evidence, never landing them itself. |
 | `/al-lookup` | Answers one platform question with a source pointer — Microsoft Learn, bc-code-intelligence, the BCApps clone, or the BCQuality index — and grows the repo's precedent map. |
 | `/al-grill-adr` | Anchors one Azure DevOps Feature, preserves the original request verbatim, settles domain vocabulary, and records hard-to-reverse business rules. |
-| `/al-event-model` | Adds the process contract, exhaustive BPMN process map, and an arc42 Runtime View when interaction order needs explanation. |
+| `/al-event-model` | Adds the process contract and exhaustive BPMN map, renders it through locked bpmn-js tooling into local review HTML, and supplies Runtime scenarios to `/al-arc42`. |
 | `/al-design` | Defines deep-module boundaries and the arc42 Building Block Level 1 with black box contracts; implementation details stay open. |
 | `/al-scope` | Keeps an only slice on the Feature; with several, creates one direct child User Story per proven outcome, each with Gherkin Acceptance Criteria. |
 | `/al-test-design` | Turns approved Gherkin into a user-reviewed AAA test specification at the caller-visible module interface before implementation. |
@@ -166,6 +166,8 @@ copilot plugin uninstall al-agentic-dev
 | `/al-orchestrate` | Runs one executable item with reviewed AAA through implementation, bounded refactoring, and read-only review in child sessions. |
 
 Two read-only reviewer agents ride under `agents/` — `al-review-lens` and `al-knowledge-leaf`, serving `/al-review`'s fan-out. `al-grill-me` (mattpocock/skills, MIT) and `al-unslop` (pstack, MIT) are pinned forks: their bodies stay donor text except the al- namespace, provenance pinned at the donor SHAs, and a content fix belongs upstream. `al-grilling` and `al-wait-what` began with the mattpocock donor text and are now maintained here.
+
+Third-party formats and runtime dependencies are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 **Migrating from v1:** the Page Scripting recording and replay machinery is gone — `/al-walkthrough` through `business-central-mcp` replaces the slice-end verification walk.
 

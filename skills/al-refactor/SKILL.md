@@ -28,7 +28,7 @@ Reduce hidden complexity behind the existing caller-visible interface. Keep owne
 
 Run /al-build in `UnitTestOnly` mode after a unit-only edit or `AllTests` mode after an integration edit, then finish in `AllTests` mode. Restore the last green shape when an edit weakens behavior or the module contract.
 
-If internal building blocks changed, update or remove the Feature's arc42 Level 2 so it matches the landed code; ask /al-visualize for refreshed source and PNG. When attachment upload is unavailable, show both paths and exact manual attach steps, then resume after the user supplies the attachment URLs. Routine tidy that leaves the internal map unchanged does not touch Level 2.
+If internal building blocks changed, update or remove the Feature's arc42 Level 2 so it matches the landed code; ask /al-arc42 for refreshed local HTML, SVG, and PNG. When attachment upload is unavailable, show both artifact paths and exact manual attach steps, then resume after the user supplies the attachment URLs. Routine tidy that leaves the internal map unchanged does not touch Level 2.
 
 ## Close
 

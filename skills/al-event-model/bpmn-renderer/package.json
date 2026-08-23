@@ -1,0 +1,12 @@
+{
+  "name": "@al-agentic-dev/bpmn-renderer",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Pinned runtime dependencies for BPMN review artifacts.",
+  "license": "MIT",
+  "dependencies": {
+    "bpmn-js": "18.25.1",
+    "bpmn-to-image": "0.10.0",
+    "puppeteer": "24.34.0"
+  }
+}

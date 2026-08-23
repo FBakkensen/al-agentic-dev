@@ -29,7 +29,7 @@ Use the arc42 Building Block View, Level 1:
 - Important Interfaces
 - one black box description per important module: Purpose/Responsibility, Interface(s), and only relevant optional fields
 
-Ask /al-visualize for editable source and an Azure DevOps-safe PNG. Embed the PNG and the black box text in the Feature Description; attach the source. Detect attachment upload separately from work-item editing; when upload is unavailable, show both artifact paths and exact manual attach steps, then resume after the user supplies the attachment URLs. Level 1 records intended boundaries. Level 2 waits for implementation evidence.
+Ask /al-arc42 to apply the official template and create the local architecture review HTML, editable SVG, and Azure DevOps-safe PNG. The user reviews the HTML before publication. Embed the PNG and black box text in the Feature Description; attach the SVG. Detect attachment upload separately from work-item editing; when upload is unavailable, show both artifact paths and exact manual attach steps, then resume after the user supplies the attachment URLs. Level 1 records intended boundaries. Level 2 waits for implementation evidence.
 
 ## Close
 

@@ -21,11 +21,13 @@ Extend the Feature Description with:
 
 Use BPMN 2.0 for roles, actions, gateways, records, exceptions, decisions, and named outcomes. Every gateway is exhaustive or carries a default. Every path reaches a stable named end event that /al-scope can map to Gherkin later.
 
-Create editable BPMN source and ask /al-visualize to render its Azure DevOps-safe PNG. Attach both to the Feature and embed the PNG in its Description. Detect attachment upload separately from work-item editing; when upload is unavailable, show the two artifact paths and exact manual attach steps, then resume after the user supplies the attachment URLs.
+Follow [BPMN.md](BPMN.md). Create the editable BPMN source, render SVG and PNG from that source, and write the local process review HTML. The user reviews the HTML before publication.
+
+Attach the BPMN source and PNG to the Feature and embed the PNG in its Description. Detect attachment upload separately from work-item editing; when upload is unavailable, show the two artifact paths and exact manual attach steps, then resume after the user supplies the attachment URLs.
 
 ## Runtime View
 
-Add an arc42 Runtime View only when module call order, ownership, or a transaction boundary remains unclear after the BPMN map. Use verified module and interface names. Omit it when it would repeat the process map.
+Add an arc42 Runtime View only when module call order, ownership, or a transaction boundary remains unclear after the BPMN map. Use verified module and interface names. Omit it when it would repeat the process map. Ask /al-arc42 to apply the official format and create the local architecture review HTML.
 
 ## Grounding
 
@@ -33,4 +35,4 @@ Every Business Central object, field, action, event, enum value, or dialog text 
 
 ## Close
 
-The pass ends when Trigger, both guarantees, every BPMN path, and any necessary Runtime View agree with the original request. The user confirms the result in the Feature. No `docs/event-model.md` copy is created.
+The pass ends when Trigger, both guarantees, every BPMN path, and any necessary Runtime View agree with the original request. The user confirms the local HTML before the Feature update. No `docs/event-model.md` copy is created.

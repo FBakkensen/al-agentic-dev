@@ -11,7 +11,7 @@ Ask one substantive question per message. Connect it to the Feature, the landed 
 
 ## Show what landed
 
-Name the executable item and its receipts. Show the BC-anatomy delta: objects touched, schema, events, permissions, translations, tests, and the caller-visible behavior now present. Ask /al-visualize to draw a changed shape.
+Name the executable item and its receipts. Show the BC-anatomy delta as a compact table: objects touched, schema, events, permissions, translations, tests, and the caller-visible behavior now present.
 
 ## Reconcile the Feature
 

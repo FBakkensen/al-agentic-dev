@@ -57,7 +57,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 23. Each step ends on a condition that can be checked, and where it matters, an exhaustive one.
     - Correct: `every modified object appears in the change list`
     - Incorrect: `produce a change list`
-24. A skill closes by naming its outcome back into the work that invoked it — `al-build` on its gate verdict, the clone skills on the clone ready or the red named, `al-visualize` on what the surface settled. Flag a table of conditional exits, and flag a close that hands off to a skill that no longer exists.
+24. A skill closes by naming its outcome back into the work that invoked it — `al-build` on its gate verdict, the clone skills on the clone ready or the red named, `al-arc42` on the formatted view and local HTML. Flag a table of conditional exits, and flag a close that hands off to a skill that no longer exists.
 
 ## Reply shape a skill asks for
 
@@ -76,7 +76,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## AL grounding
 
-31. Every BC object, table, field, procedure, event, enum value, or dialog text a skill or agent shows, writes, or judges is confirmed by a lookup in the current session, never recalled. BC vocabulary rides with it on every line written into code or a receipt — Insert not create, Post not submit, Validate not check, Ledger Entry not transaction, codeunit not class, procedure not method — and so does production-AL thrift: reach for the platform before writing code, and an interface with a single implementation is a finding. Today `al-visualize`, the two reviewer agents, `al-implement`, `al-refactor`, `al-review`, `al-test-design`, `al-design`, `al-event-model`, and `al-walkthrough` carry the grounding rule; flag its absence in any new skill that writes, shows, or judges AL.
+31. Every BC object, table, field, procedure, event, enum value, or dialog text a skill or agent shows, writes, or judges is confirmed by a lookup in the current session, never recalled. BC vocabulary rides with it on every line written into code or a receipt — Insert not create, Post not submit, Validate not check, Ledger Entry not transaction, codeunit not class, procedure not method — and so does production-AL thrift: reach for the platform before writing code, and an interface with a single implementation is a finding. Today `al-arc42`, the two reviewer agents, `al-implement`, `al-refactor`, `al-review`, `al-test-design`, `al-design`, `al-event-model`, and `al-walkthrough` carry the grounding rule; flag its absence in any new skill that writes, shows, or judges AL.
 
 ## Commit discipline
 

@@ -32,7 +32,7 @@ Run the same /al-build mode until green, then run /al-build in `AllTests` mode. 
 
 ## Document proven internals
 
-After green, inspect each changed Level 1 module. Add arc42 Building Block Level 2 to the Feature only when implementation revealed stable internal building blocks and interfaces worth preserving. Ask /al-visualize for editable source and PNG. When attachment upload is unavailable, show both paths and exact manual attach steps, then resume after the user supplies the attachment URLs. A simple module needs no Level 2.
+After green, inspect each changed Level 1 module. Add arc42 Building Block Level 2 to the Feature only when implementation revealed stable internal building blocks and interfaces worth preserving. Ask /al-arc42 to apply the official template and create the local architecture review HTML, editable SVG, and PNG. When attachment upload is unavailable, show both artifact paths and exact manual attach steps, then resume after the user supplies the attachment URLs. A simple module needs no Level 2.
 
 ## Receipt
 

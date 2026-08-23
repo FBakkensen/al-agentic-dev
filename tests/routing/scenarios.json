@@ -14,7 +14,8 @@
     {
       "id": "S3",
       "prompt": "Draw what we just landed as a picture the PM can steer from, on the side panel.",
-      "expect": "al-visualize"
+      "expect": "none",
+      "note": "The retired generic visualization skill no longer owns landed-change pictures."
     },
     {
       "id": "S4",
@@ -108,7 +109,8 @@
     {
       "id": "S21",
       "prompt": "Draw the objects and event flows this branch changed, as boxes and connections.",
-      "expect": "al-visualize"
+      "expect": "none",
+      "note": "A generic BC-anatomy drawing is not part of the streamlined work-item flow."
     },
     {
       "id": "S22",
@@ -183,8 +185,13 @@
     },
     {
       "id": "S36",
-      "prompt": "Render this settled BPMN and arc42 module map as editable sources and PNGs for Azure DevOps.",
-      "expect": "al-visualize"
+      "prompt": "Apply the official arc42 template to this settled Building Block Level 1 and create the local architecture review HTML.",
+      "expect": "al-arc42"
+    },
+    {
+      "id": "S37",
+      "prompt": "Format this proven internal module structure as arc42 Level 2 and show me the local HTML before Azure DevOps.",
+      "expect": "al-arc42"
     }
   ]
 }
