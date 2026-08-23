@@ -7,7 +7,15 @@ description: Use when an executable Feature or Vertical slice has agreed Gherkin
 
 In: the executable Feature itself, or a child User Story and its parent Feature. Read the executable item's Gherkin and the Feature's Trigger, Success guarantee, Minimal guarantee, and module contracts. This pass chooses how tests prove the behavior. It writes no AL code.
 
-Ask one substantive question per message. Show the test seam, missing cases, expected values, and proof level affected by the choice. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+## Connect the dots
+
+Treat the interview as a decision tree. Resolve facts from the work items, workspace, and lookup before asking. Ask only a decision whose prerequisite facts and earlier choices are settled.
+
+Before each substantive question, rebuild the situation from the affected Gherkin scenario, Feature guarantees, module contract, verified platform behavior, and earlier answers. Show the current scenario-to-case map and the gap that causes the question; use one compact text diagram or table when the relationship is easier seen than described. Explain why this decision comes next.
+
+Each option states which Arrange, Act, Assert, or Proof changes, what remains provable, and where proof responsibility lands, plus material risk or reversibility when relevant. Put the recommendation first, mark it, and give the reason. Use the answer to revise the map before choosing the next question.
+
+Ask one substantive question per message. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## Choose the seam
 
