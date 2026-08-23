@@ -42,7 +42,7 @@ Same plugin, no marketplace registration — and no catalog for `copilot plugin 
 ### Verify
 
 ```
-copilot plugin list      # al-agentic-dev@al-agentic-dev (v2.4.3)
+copilot plugin list      # al-agentic-dev@al-agentic-dev (v2.4.4)
 copilot skill list       # the 22 skills, under "Plugin skills"
 copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn, bc-code-intelligence
 ```
