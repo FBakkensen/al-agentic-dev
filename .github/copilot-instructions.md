@@ -9,7 +9,7 @@ The set was rebuilt package by package on `flemmingbk-skills-v2`, since merged t
 ```
 plugin.json                     the plugin manifest: name, version, skills/, agents/, hooks, .mcp.json
 .mcp.json                       bundled MCP servers, each with a tools allowlist
-hooks.json                      the shipped hooks: preToolUse denies ask_user; sessionStart injects the reply shape, plus the Speak BC voice rule in AL repos
+hooks.json                      the shipped hooks: preToolUse denies ask_user; sessionStart injects the reply shape, the al-unslop reminder, and the Speak BC voice rule in AL repos
 .github/plugin/marketplace.json the marketplace manifest the plugin installs through
 skills/<name>/SKILL.md          frontmatter: name, description
 skills/<name>/<SIBLING>.md      optional format files, inside the same folder only
@@ -33,7 +33,7 @@ Every skill is model-invocable. Skill frontmatter omits `disable-model-invocatio
 - Skill frontmatter beyond `name` and `description` — no `allowed-tools`, `model`, `tools`, `mcp-servers`, `user-invocable`, or `disable-model-invocation` on a skill.
 - Task-state ceremony — a lifecycle field (`status:`, `phase:`, `blocked-on:`, `review:`, `tier:`, `green-gate:`), an Azure DevOps work-item transition (`State: New|Active|Blocked|Testing|Resolved|Closed`), or an abstract stage gate. A concrete artifact may require user agreement before its consumer runs; that is contract readiness, not lifecycle state. The gate bans the fields in every folder.
 - A link that leaves the skill folder: `](../`, `](/`, any absolute path.
-- Slash-command files — out of scope until a proven defect asks for them. Two hooks ship in `hooks.json`, each on its own proven defect: the preToolUse ask_user deny (a child session hung silently on an `ask_user` call) and the sessionStart voice injection (generic CS names leaked into work items and review conclusions, and the v1 reply-shape block in the user's `~/.copilot/copilot-instructions.md` was orphaned when its installer skill retired); a new hook needs its own proven defect.
+- Slash-command files — out of scope until a proven defect asks for them. Two hooks ship in `hooks.json`, each on its own proven defect: the preToolUse ask_user deny (a child session hung silently on an `ask_user` call) and the sessionStart context injection (generic CS names leaked into work items and review conclusions, the v1 reply-shape block in the user's `~/.copilot/copilot-instructions.md` was orphaned when its installer skill retired, and the al-unslop always-apply contract must be present before any reply is written); a new hook needs its own proven defect.
 
 Say so when a change reintroduces one of these.
 
