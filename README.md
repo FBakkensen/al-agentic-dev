@@ -2,7 +2,7 @@
 
 A GitHub Copilot plugin for Microsoft Dynamics 365 Business Central development: a scripted compile-publish-test gate with containers, coverage, and breaking-change validation underneath, plus the two platform-knowledge clones and a visual steering surface.
 
-One install brings the whole surface: the Agent Skills, two packaged custom agents (`al-review-lens`, `al-knowledge-leaf`), and four bundled MCP servers. NAB AL Tools handles XLF translation, Microsoft Learn supplies current Microsoft documentation, bc-code-intelligence covers BC idioms and patterns, and business-central-mcp drives the Web Client.
+One install brings the Agent Skills, two packaged custom agents (`al-review-lens`, `al-knowledge-leaf`), and three bundled MCP servers. NAB AL Tools handles XLF translation, Microsoft Learn supplies current Microsoft documentation, and bc-code-intelligence covers BC idioms and patterns.
 
 The set is mid-rebuild: the earlier 26-skill pipeline is retired, and each new plugin version ports proven skills back in as real work needs them. Git history is the donor archive.
 
@@ -42,9 +42,9 @@ Same plugin, no marketplace registration — and no catalog for `copilot plugin 
 ### Verify
 
 ```
-copilot plugin list      # al-agentic-dev@al-agentic-dev (v2.4.6)
+copilot plugin list      # al-agentic-dev@al-agentic-dev (v2.4.7)
 copilot skill list       # the 22 skills, under "Plugin skills"
-copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn, bc-code-intelligence, business-central
+copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn, bc-code-intelligence
 ```
 
 The skills must appear under **Plugin skills**. Any of them listed under *Personal skills* is a leftover legacy copy shadowing the plugin — go to [Migrating from `npx skills add`](#migrating-from-npx-skills-add).
@@ -81,15 +81,13 @@ The auto-install runs when Copilot starts in a trusted checkout of that reposito
 
 The Feature and its direct Vertical-slice children live in Azure DevOps work items, so install and authenticate the Azure DevOps MCP server per its own documentation. The plugin deliberately does not bundle it: the server connection is yours, not the plugin's. Without it, planning skills show the exact work-item fields needed and stop; they do not create a competing file-based design record.
 
-### Web Client walkthrough (business-central-mcp)
+### Web Client walkthrough
 
-`/al-walkthrough` drives the running Web Client through the bundled [business-central-mcp](https://github.com/SShadowS/business-central-mcp) package. It uses the client's native WebSocket protocol and structured field reads, with no browser.
+`/al-walkthrough` requires the consumer repository to declare a Business Central workspace MCP for each worktree. The MCP must expose its `bc_*` Web Client tools in the Copilot session and use the worktree's branch and `al-build.json` configuration.
 
-At MCP process startup, the plugin launcher reads the consumer repository's `al-build.json` through `/al-build`'s `Get-BuildConfig`. The same branch sanitizer, `ALBT_*` overrides, tenant, server instance, and credentials therefore select both the build container and the Web Client connection. `BC_APPLICATION_ID=NAV` is set for the on-prem BcContainerHelper artifacts.
+Keep that MCP declaration in the consumer repository. A user-level MCP starts without one authoritative AL repository, while concurrent worktrees can require different containers and configuration.
 
-The MCP process keeps its logs and state under `~/.copilot/business-central-mcp/<repository>/<container>/`, outside the consumer repository. It does not probe Docker or connect to Business Central until a tool call. `/al-walkthrough` runs `/al-build` before opening the client.
-
-The branch and container binding lasts for the MCP process. After changing branches, restart the MCP server or Copilot session before running `/al-walkthrough`.
+After changing branches or `al-build.json`, restart the workspace MCP or Copilot session before running `/al-walkthrough`.
 
 Verify from a consumer repo whose branch container is up: `bc_list_companies` answers with the container's companies.
 
@@ -119,7 +117,7 @@ foreach ($dir in "$HOME\.agents\skills", "$HOME\.copilot\skills") {
 copilot plugin uninstall al-agentic-dev
 ```
 
-**4. Install fresh** per [Install](#install), then verify: `copilot plugin list` shows the plugin, `copilot skill list` shows its skills under **Plugin skills** and none of them under *Personal skills*, and `copilot mcp list` shows `nab-al-tools`, `microsoft-learn`, `bc-code-intelligence`, and `business-central` as plugin servers.
+**4. Install fresh** per [Install](#install), then verify: `copilot plugin list` shows the plugin, `copilot skill list` shows its skills under **Plugin skills** and none of them under *Personal skills*, and `copilot mcp list` shows `nab-al-tools`, `microsoft-learn`, and `bc-code-intelligence` as plugin servers.
 
 ## The skills
 
@@ -143,7 +141,7 @@ copilot plugin uninstall al-agentic-dev
 | `/al-implement` | Implements reviewed AAA cases through the Level 1 interface, runs `/al-build`, writes the receipt, and adds Level 2 only when code proves stable internals. |
 | `/al-refactor` | Tidies green code or performs a named deepening reshape with behavior frozen, updating Level 2 only when internal structure changes. |
 | `/al-review` | Returns a read-only verdict against Gherkin, AAA proof, Level 1 ownership, and the accuracy or justified absence of Level 2. |
-| `/al-walkthrough` | Walks Gherkin scenarios in the running Web Client through `business-central-mcp`, preserving observed versus expected evidence. |
+| `/al-walkthrough` | Walks Gherkin scenarios in the running Web Client through the consumer repository's workspace MCP, preserving observed versus expected evidence. |
 | `/al-next` | Reconciles landed code, Feature design, direct child slices, receipts, and the next executable item without creating implementation work items. |
 | `/al-pr-shepherd` | Drives one open PR to merge — CI watched, Copilot findings fixed, main merged in with intent-preserving conflict resolution — merging only on your explicit go. |
 | `/al-orchestrate` | Runs one executable item with reviewed AAA through implementation, bounded refactoring, and read-only review in child sessions. |
@@ -152,7 +150,7 @@ Two read-only reviewer agents ride under `agents/` — `al-review-lens` and `al-
 
 Third-party formats and runtime dependencies are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-**Migrating from v1:** the Page Scripting recording and replay machinery is gone — `/al-walkthrough` through `business-central-mcp` replaces the slice-end verification walk.
+**Migrating from v1:** the Page Scripting recording and replay machinery is gone — `/al-walkthrough` through the consumer repository's workspace MCP replaces the slice-end verification walk.
 
 ## The hooks
 
