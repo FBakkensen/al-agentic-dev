@@ -1,11 +1,11 @@
 ---
 name: al-walkthrough
-description: Use when an implemented Feature or Vertical slice needs its Gherkin scenarios walked in a running Business Central Web Client with the bundled business-central-mcp server.
+description: Use when an implemented Feature or Vertical slice needs its Gherkin scenarios walked in a running Business Central Web Client and the consumer repository supplies a Business Central workspace MCP for the current worktree.
 ---
 
 # al-walkthrough - walk the slice
 
-In: the implemented executable Feature itself, or a child User Story and its parent Feature. The bundled `business-central` MCP server drives the Web Client. This pass observes Gherkin behavior; AAA unit and integration cases remain build evidence.
+In: the implemented executable Feature itself, or a child User Story and its parent Feature. The consumer repository must supply a workspace MCP that exposes the `bc_*` Web Client tools for the current worktree. This pass observes Gherkin behavior; AAA unit and integration cases remain build evidence.
 
 ## Confirm the walk
 
@@ -15,9 +15,9 @@ Ask every question in the reply itself, as plain text — never through a questi
 
 ## Walk through Business Central
 
-The bundled server binds to the current branch container when its MCP process starts. After changing branches, restart the MCP or Copilot session before the walk. Run /al-build in `AllTests` mode with forced republish into that container. Record the commit and deployed app version before the first scenario.
+The repository workspace MCP owns the branch and container binding. After changing branches or its configuration, restart the MCP or Copilot session before the walk. Run /al-build in `AllTests` mode with forced republish into that container. Record the commit and deployed app version before the first scenario.
 
-Use the `business-central` MCP server to open the Web Client and exercise each confirmed scenario as a user would. Before relying on any page, action, field, enum value, dialog, or resulting record, confirm it through the current client or a lookup in this session.
+Use the repository's Business Central workspace MCP to open the Web Client and exercise each confirmed scenario as a user would. Before relying on any page, action, field, enum value, dialog, or resulting record, confirm it through the current client or a lookup in this session.
 
 For each step report:
 

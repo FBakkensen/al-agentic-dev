@@ -42,32 +42,6 @@
         "analyze_al_code",
         "set_workspace_info"
       ]
-    },
-    "business-central": {
-      "type": "stdio",
-      "command": "pwsh",
-      "args": [
-        "-NoLogo",
-        "-NoProfile",
-        "-NonInteractive",
-        "-Command",
-        "& (Join-Path $env:COPILOT_PLUGIN_ROOT 'skills\\al-build\\scripts\\start-business-central-mcp.ps1')"
-      ],
-      "tools": [
-        "bc_open_page",
-        "bc_read_data",
-        "bc_write_data",
-        "bc_execute_action",
-        "bc_close_page",
-        "bc_search_pages",
-        "bc_navigate",
-        "bc_respond_dialog",
-        "bc_switch_company",
-        "bc_list_companies",
-        "bc_run_report",
-        "bc_wizard_navigate",
-        "bc_lookup"
-      ]
     }
   }
 }
