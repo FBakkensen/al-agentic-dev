@@ -13,15 +13,15 @@ Ask every question in the reply itself, as plain text — never through a questi
 
 1. Launch a child session for /al-implement with the work-item ID, repository, Feature contract, and exact receipt path.
 2. Read its result, branch, commit, and full receipt content.
-3. Unless the receipt says `Tidy: none` and the invocation names no deepening goal, launch a fresh /al-refactor child stacked on the implementation branch; pass the receipt content, reviewed AAA, Feature, and deepening goal in its kickoff.
-4. When refactor ran, read its branch, commit, and updated receipt content; otherwise keep the implementation branch and receipt.
+3. Launch a fresh /al-refactor child stacked on the implementation branch; pass the receipt content, reviewed AAA, Feature, and any named deepening goal in its kickoff.
+4. Read its branch, commit, and updated receipt content.
 5. Launch a fresh /al-review child stacked on the latest writing branch; pass the executable work item, parent Feature, diff base, and receipt content in its kickoff.
 6. After each blocking repair, launch another fresh /al-review child on the repaired branch; repeat until the verdict has no blocking findings.
 7. When the `Test specification` names walkthrough proof, launch /al-walkthrough on the latest writing branch after the blocking-free review and require evidence for every such case.
 
 In the GitHub Copilot app, use `create_session` with kickoff mode `autopilot`, then `get_session` and `send_session_message`, with the stacked branches above. `.output/` is ignored, so later app children receive receipt content explicitly rather than by path.
 
-In the terminal Copilot CLI, give each block a UUID and run it sequentially in the current worktree as a fresh headless process: `copilot -p "/al-implement <work-item>" --session-id <uuid> --allow-all-tools --no-ask-user --plugin-dir <plugin-folder>`, then the same shape for /al-refactor when required, /al-review, and /al-walkthrough when required. The shared worktree, commits, and receipt path carry state; one process runs at a time.
+In the terminal Copilot CLI, give each block a UUID and run it sequentially in the current worktree as a fresh headless process: `copilot -p "/al-implement <work-item>" --session-id <uuid> --allow-all-tools --no-ask-user --plugin-dir <plugin-folder>`, then the same shape for /al-refactor, /al-review, and /al-walkthrough when required. The shared worktree, commits, and receipt path carry state; one process runs at a time.
 
 Each writing child commits before returning; review remains read-only.
 
