@@ -36,7 +36,7 @@ After green, inspect each changed Level 1 module. Add arc42 Building Block Level
 
 ## Receipt
 
-Write `.output/receipts/<bullet-id>.md` with the work-item ID, tests, objects changed, `Tidy: none` or exact tidy candidates, Level 2 decision, gate result, evidence, and `verified:` / `assumed:` ledger entries. Add the same evidence as a work-item comment when Azure DevOps tools are available.
+Write `.output/receipts/<work-item-id>.md` with the work-item ID, tests, objects changed, `Tidy: none` or exact tidy candidates, Level 2 decision, gate result, evidence, and `verified:` / `assumed:` ledger entries. Add the same evidence as a work-item comment when Azure DevOps tools are available.
 
 ## Close
 
