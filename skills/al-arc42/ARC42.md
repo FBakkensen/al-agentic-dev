@@ -76,4 +76,9 @@ Repeat only for architecturally relevant use cases, critical external interfaces
 - Level 1 is written before implementation and records intended module contracts.
 - Runtime View is written only when interaction order, ownership, or a transaction boundary needs explanation.
 - Level 2 is written after implementation and only for relevant, stable internal structure.
+- An implementation change map is an overlay on these Building Block views, not another arc42 heading.
+- One affected Level 1 module uses a Level 2 white box. Several affected modules use a Level 1 impact overview plus the Level 2 white boxes needed to explain internal object relations.
+- A change overlay includes every changed production AL object, immediate unchanged collaborators needed for context, and changed tests in a separate Proof group.
+- Overlay nodes are marked `Added`, `Changed`, `Existing`, or `Removed`; edges name the exact procedure, event, interface implementation, or Read/Insert/Modify relation.
+- The executable-item receipt and comment keep the change overlay. The Feature keeps only stable current-state Level 2 content without change markers.
 - The local HTML and Azure DevOps Feature use these headings and field order without synonyms.

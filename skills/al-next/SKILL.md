@@ -11,11 +11,11 @@ Ask one substantive question per message. Connect it to the Feature, the landed 
 
 ## Show what landed
 
-Name the executable item and its receipts. Show the BC-anatomy delta as a compact table: objects touched, schema, events, permissions, translations, tests, and the caller-visible behavior now present.
+Name the executable item and its receipts. Show its connected-object change map before the BC-anatomy delta table. The map explains how changed production objects connect and keeps tests in a separate Proof group. The table covers objects touched, schema, events, permissions, translations, tests, and the caller-visible behavior now present.
 
 ## Reconcile the Feature
 
-Compare the code with the Feature's BPMN, Runtime View, Building Block Level 1, black boxes, and Level 2 when present. Report code drift and send the correction to /al-implement or /al-refactor. Update the Feature when implementation proved a better internal shape. A Level 2 change records actual structure; it never rewrites the agreed business outcome.
+Compare the code with the Feature's BPMN, Runtime View, Building Block Level 1, black boxes, and Level 2 when present. Compare the executable-item change map with the landed diff. Report drift and send the correction to /al-implement or /al-refactor. Update the Feature when implementation proved a better stable internal shape. A Level 2 change records current structure; the executable-item map records what changed.
 
 ## Reconcile the slices
 

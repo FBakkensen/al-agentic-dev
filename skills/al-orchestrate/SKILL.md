@@ -41,4 +41,4 @@ In the CLI, resume that child with `copilot --resume=<uuid> -p "<answer>" --allo
 
 ## Close
 
-Finish with the executable item, commits, receipt, gate result, review verdict, walkthrough evidence when required, and whether Level 2 changed. Outcome first; no extra summary.
+Finish with the executable item, commits, receipt, connected-object change map, gate result, review verdict, walkthrough evidence when required, and whether Feature Level 2 changed. Outcome first; no extra summary.
