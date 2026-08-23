@@ -1,39 +1,35 @@
 ---
 name: al-refactor
-description: Use when green code needs a tidy pass, or when a named deepening reshape must preserve behavior.
+description: Use after a green AL implementation when it needs a bounded tidy pass, or when the user names a deeper module reshape whose behavior must stay fixed.
 ---
 
-# al-refactor — same behavior, better shape
+# al-refactor - improve the shape
 
-In: working code behind a green gate and the living design as context. Two modes. No named goal is the routine tidy pass after green — naming, dead scaffolding, duplication, idiom polish; al-implement's `Tidy:` line is the worklist when one rides the bullet, and "nothing to tidy" is a legal one-line close. A named goal upgrades the run to the deepening reshape. Behavior is frozen for the whole run in both modes: a change in behavior is a decision point that stops the run and surfaces as one plain-text question — a reshape that changes behavior is not a refactor. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+In: the green implementation, reviewed AAA specification, receipt, and the Feature that is executable itself or parents the child User Story. Choose one mode:
 
-## Subtract first
+- **Tidy:** local duplication, names, extraction, data access, readability, or dead structure in the changed slice.
+- **Deepening:** only on an explicit user request that names the module boundary to reshape.
 
-Remove dead weight before adding structure: unused procedures and variables, duplicate validation, stub references. Rerun the checks on the simpler base — /al-build's unit mode — before the deepening move. What remains to build is smaller than it looked.
+Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update only on an important finding or changed direction.
 
-## The deepening move
+## Freeze behavior
 
-The upgrade path, on a named goal only. Work toward the goal in caller-safe steps: the new shape lands first, callers migrate one by one, and the old path is deleted only when nothing names it. A wide reshape runs expand-contract. The smallest structure the goal justifies wins; an interface with a single implementation is indirection, not a seam. Load the idiom capsules matching the work type when they exist — the same seam al-implement loads; today there are none.
+Gherkin, reviewed AAA expected values, and the Level 1 module interface are fixed. Read the diff and receipt, then trace consumers before moving a seam. Confirm every BC object, field, event, enum value, or test library used through lookup in this session.
 
-## Verify or declare
+## Tidy
 
-A reshape that depends on platform behavior not verified in this session: lookup it, or the claim enters the ledger as assumed. Every BC object, table, field, procedure, event, or enum value name is confirmed by a lookup in the current session, never recalled. BC vocabulary binds every line written — Insert not create, Post not submit, Validate not check, Ledger Entry not transaction, codeunit not class, procedure not method.
+Stay inside changed files and immediate seams. Prefer canonical BC patterns and Base App helpers. An interface with one implementation is a finding; collapse it unless a second implementation or stable external contract proves the seam.
+
+## Deepening
+
+Reduce hidden complexity behind the existing caller-visible interface. Keep ownership singular, test through that interface, and make internals replaceable. A proposed Level 1 interface change returns to /al-design and the user before refactoring.
+
+## Prove
+
+Run /al-build in `UnitTestOnly` mode after a unit-only edit or `AllTests` mode after an integration edit, then finish in `AllTests` mode. Restore the last green shape when an edit weakens behavior or the module contract.
+
+If internal building blocks changed, update or remove the Feature's arc42 Level 2 so it matches the landed code; ask /al-arc42 for refreshed local HTML, SVG, and PNG. When attachment upload is unavailable, show both artifact paths and exact manual attach steps, then resume after the user supplies the attachment URLs. Routine tidy that leaves the internal map unchanged does not touch Level 2.
 
 ## Close
 
-/al-build runs the full gate once, at the end; a tidy pass that changed nothing skips it — nothing changed, nothing to prove. Behavior held means the per-runner totals match the starting green — or every difference is explained — and the breaking-change baseline stays silent. Commit with a plain descriptive message naming the goal or the tidy. Emit the receipt — posted to the bullet's work item where Azure DevOps is wired, mirrored to `.output/receipts/<goal>.md` always — and stop; the caller owns the next block.
-
-```
-## al-refactor receipt — <goal | tidy>
-Mode: tidy | deepening — <goal>
-Reshaped: one line per move, BC object names exact | nothing to tidy
-Gate: /al-build full-gate verdict — per-runner totals from summary.json
-Behavior held: totals against the starting green + the baseline's silence
-Ledger:
-  verified: <claim> — <Learn URL | BCApps file+line | topic id | article path>
-  assumed: <claim> — not verified
-Decision points: none | each one raised and the call made
-Commits: <hashes>
-```
-
-The run is done when every move appears under Reshaped, nothing names the deleted paths, and the closing gate is green with the baseline silent.
+Update the receipt with `Tidy: none` or the exact reshapes, test evidence, gate result, Level 2 delta, and any new `verified:` / `assumed:` entries. Commit changes with a plain descriptive message at every exit. Finish outcome first; stop with the exact red reason when the gate does not pass.

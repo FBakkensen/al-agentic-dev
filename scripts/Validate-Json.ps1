@@ -23,16 +23,18 @@ param(
 $RepoRoot = (Resolve-Path -LiteralPath $RepoRoot -ErrorAction Stop).Path
 $errors = @()
 
-Get-ChildItem -Path $RepoRoot -Recurse -Filter "*.json" | ForEach-Object {
+Get-ChildItem -Path $RepoRoot -Recurse -Filter "*.json" |
+    Where-Object { $_.FullName -notmatch '[\\/]node_modules[\\/]' } |
+    ForEach-Object {
     $file = $_
     try {
-        $null = Get-Content $file.FullName -Raw | ConvertFrom-Json
+        $null = Get-Content $file.FullName -Raw | ConvertFrom-Json -AsHashtable
         Write-Host "OK: $($file.FullName)" -ForegroundColor Green
     } catch {
         $errors += "FAIL: $($file.FullName) - $($_.Exception.Message)"
         Write-Host "FAIL: $($file.FullName)" -ForegroundColor Red
     }
-}
+    }
 
 function Read-PluginJson {
     param([Parameter(Mandatory = $true)][string]$Path, [Parameter(Mandatory = $true)][string]$Label)

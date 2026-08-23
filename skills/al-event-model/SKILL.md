@@ -1,24 +1,38 @@
 ---
 name: al-event-model
-description: Use when a feature's eventing shape needs mapping, or when new understanding changes its publishers, subscribers, or posting events.
+description: Use when an Azure DevOps Feature needs its business process contract, BPMN process map, or arc42 Runtime View defined or revised.
 ---
 
-# al-event-model — the eventing picture
+# al-event-model - map the business process
 
-A human conversation about who raises what and who listens: publishers and subscribers, integration events and business events, the journey a document takes through posting, and the moments other code may hook. BC vocabulary binds every line — Post not submit, Ledger Entry not transaction, codeunit not class. Every event, publisher, and object named is verified through lookup — the Base App's own events first; an invented event earns its place only where the Base App leaves no seam. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+In: the original Azure DevOps Feature and the settled domain vocabulary. Read the request verbatim. Model what the business observes; AL publishers, subscribers, codeunits, and private procedures are design or implementation evidence, not the business process. If Azure DevOps work-item tools are unavailable, show the exact Description update and attachment set, then stop without creating a substitute record.
 
-## Connect the dots
+Ask one substantive question per message. Connect it to earlier answers and verified facts, and show the affected path when a picture makes the choice clearer. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
-Ask one substantive question per message. Before it, name the earlier answers and verified facts that cause or constrain it, translated from tactical names into business concepts and relationships. Use one compact text diagram or table when flow, grouping, sequence, boundaries, ownership, or competing consequences are easier seen than described. Explain why the decision comes next. Each option states what changes, what stays possible, and where responsibility lands, plus material risk or reversibility when relevant; mark the recommendation. Exact AL names are secondary coordinates when they help locate, distinguish, or verify something.
+## Process contract
 
-## Update immediately
+Extend the Feature Description with:
 
-The model changes the moment understanding changes, never batched: a discovery lands in the document before the conversation moves on. Drift between the model and the conversation is the failure this rule exists to kill.
+- **Trigger:** the business event that starts the process.
+- **Success guarantee:** what is observably true on the successful path.
+- **Minimal guarantee:** what remains true on every stopped or failed path.
 
-## The living model
+## BPMN process map
 
-The artifact is `docs/event-model.md`, committed with a plain descriptive message: the journey — document to posting to entries — with the events that fire at each step, each publisher with its subscribers, and the seams left deliberately open. A mid-feature discovery legally rewrites it; re-entry from al-next's drill is a normal move.
+Use BPMN 2.0 for roles, actions, gateways, records, exceptions, decisions, and named outcomes. Every gateway is exhaustive or carries a default. Every path reaches a stable named end event that /al-scope can map to Gherkin later.
 
-## Pass end
+Follow [BPMN.md](BPMN.md). Create the editable BPMN source, render SVG and PNG from that source, and write the local process review HTML. The user reviews the HTML before publication.
 
-Hand the pass's model delta to the rubber-duck agent — another voice in, the user decides. The GitHub Copilot app engine ships no duck: the pass says the checkpoint skipped. The session continues in the conversation that opened it.
+Attach the BPMN source and PNG to the Feature and embed the PNG in its Description. Detect attachment upload separately from work-item editing; when upload is unavailable, show the two artifact paths and exact manual attach steps, then resume after the user supplies the attachment URLs.
+
+## Runtime View
+
+Add an arc42 Runtime View only when module call order, ownership, or a transaction boundary remains unclear after the BPMN map. Use verified module and interface names. Omit it when it would repeat the process map. Ask /al-arc42 to apply the official format and create the local architecture review HTML.
+
+## Grounding
+
+Every Business Central object, field, action, event, enum value, or dialog text shown is confirmed through lookup in this session. Speak BC on every line.
+
+## Close
+
+The pass ends when Trigger, both guarantees, every BPMN path, and any necessary Runtime View agree with the original request. The user confirms the local HTML before the Feature update. No `docs/event-model.md` copy is created.

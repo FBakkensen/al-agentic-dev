@@ -1,45 +1,33 @@
 ---
 name: al-next
-description: Use when a frontier bullet has landed and the next move needs choosing.
+description: Use when a Feature or Vertical slice has landed and its Azure DevOps design, evidence, or next executable slice needs reconciling.
 ---
 
-# al-next — the gate between loops
+# al-next - reconcile the feature
 
-One conversation, five moves, always with you: agents draft the material; the conversation is never skipped. The frontier lives in Azure DevOps work items with native blocking links, worked through the azure-devops MCP work-item tools; a repo without that wiring degrades to `docs/frontier.md` — one bullet per line with its state and `after:` edges — named second-class, because edges drift in files and ADO is the home when wired. The tracker tax lands here: every create, resolve, split, and re-link is this skill's work, never the developer's. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+In: the Azure DevOps Feature, its child User Stories when present, work-item comments, receipts, and the landed diff. Azure DevOps is the design record; `.output/receipts/` mirrors execution evidence. If Azure DevOps work-item tools are unavailable, show the exact reconciliation update and stop without creating a substitute record.
 
-## Connect the dots
+Ask one substantive question per message. Connect it to the Feature, the landed behavior, and verified code facts. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
-Ask one substantive question per message. Before it, name the earlier answers and verified facts that cause or constrain it, translated from tactical names into business concepts and relationships. Use one compact text diagram or table when flow, grouping, sequence, boundaries, ownership, or competing consequences are easier seen than described. Explain why the decision comes next. Each option states what changes, what stays possible, and where responsibility lands, plus material risk or reversibility when relevant; mark the recommendation. Exact AL names are secondary coordinates when they help locate, distinguish, or verify something.
+## Show what landed
 
-## 1 · The capsule
+Name the executable item and its receipts. Show the BC-anatomy delta as a compact table: objects touched, schema, events, permissions, translations, tests, and the caller-visible behavior now present.
 
-Open with where we are: the store in use, the bullet that landed, the receipts since the last transition — the bullet's work-item comments where ADO is wired, `.output/receipts/` always — and one concrete next move. Branches and PRs are verified live with git and gh, never recalled.
+## Reconcile the Feature
 
-## 2 · Show what now exists
+Compare the code with the Feature's BPMN, Runtime View, Building Block Level 1, black boxes, and Level 2 when present. Report code drift and send the correction to /al-implement or /al-refactor. Update the Feature when implementation proved a better internal shape. A Level 2 change records actual structure; it never rewrites the agreed business outcome.
 
-The BC-anatomy delta since the last transition — objects touched, events published and subscribed, schema changes, the flow in pattern terms — every claim quoting the diff it comes from. When the shape changed, al-visualize draws it as boxes and connections.
+## Reconcile the slices
 
-## 3 · Reconcile the living design
+Exactly one total slice stays on the Feature. With two or more, the Feature is their container and every slice is a direct child User Story. Add a newly proven slice only after the user approves its independent outcome and Gherkin. Remove or merge a slice whose separate value disappeared. Never create grandchildren or work items for modules, tests, diagrams, or implementation tasks.
 
-The design document — `docs/design.md` — is the user's window into the code, kept truthful every loop. Where the design says X and the code does Y: update the design, or fix the code — one question per drift, answered before moving on. Design diffs, never code walls.
+## Choose the next move
 
-## 4 · Drill the consequential
-
-The /al-grilling engine asks one consequential decision at a time, fed by the receipts' assumptions ledgers, the loop's surprises, and every answer already settled.
-
-## 5 · Reshape and sharpen
-
-Resolve the landed bullet; graduate new bullets from the fog; prune what fell out of scope; re-link the blocking edges. Then sharpen the next bullet, effort scaled to it — a trivial bullet gets one line: the test spec naming the behavior that proves it done and the cheapest decisive seam; bullet-scoped Base App precedent through al-lookup; a mini design when the bullet warrants one. The spec lives on the bullet — the work item's description in ADO, an indented block under the bullet's line in `docs/frontier.md`. A non-trivial spec goes to the rubber-duck agent before the /al-implement exit — another voice in, the user decides; the GitHub Copilot app engine ships no duck, and the close says so when the checkpoint skips.
-
-## The exits
-
-- ready → /al-implement, the spec riding the bullet
-- a decision-class item → /al-grill-adr; a decision resolves by conversation, never by /al-implement
-- too unknown → prototype first, then back through this transition
-- hides a decision → /al-grill-me
-- wrongly cut → /al-scope reshapes the frontier's bones
-- already in the Base App → close the bullet with zero code, the cheapest implementation
+- An executable item without reviewed AAA goes to /al-test-design.
+- An executable item with reviewed AAA goes to /al-orchestrate or /al-implement.
+- A hard-to-reverse business decision goes to /al-grill-adr.
+- An unclear outcome gets a prototype before the hierarchy changes.
 
 ## Close
 
-Name the exit taken, the store updated, and where the spec now lives. The transition is done when the landed bullet is resolved in the store, every graduated and pruned bullet is written there, and the next bullet carries its spec.
+Post reconciliation evidence as Feature or User Story comments. Name the Feature, the executable item, and the chosen next skill. The pass ends when the Description, child hierarchy, comments, and landed code tell one story.

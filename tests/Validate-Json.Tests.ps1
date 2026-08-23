@@ -82,6 +82,26 @@ Describe 'Validate-Json plugin surface' {
         $result.Text | Should -Match 'All JSON files validated successfully'
     }
 
+    It 'accepts an npm lockfile with an empty root package key' {
+        $root = New-PluginRepo -Root (Join-Path $TestDrive 'npm-lock')
+        Set-Content -LiteralPath (Join-Path $root 'package-lock.json') -Encoding utf8 -Value @'
+{
+  "name": "fixture",
+  "lockfileVersion": 3,
+  "packages": {
+    "": {
+      "name": "fixture"
+    }
+  }
+}
+'@
+
+        $result = Invoke-JsonValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+        $result.Text | Should -Match 'All JSON files validated successfully'
+    }
+
     It 'fails when a plugin surface file is missing' -TestCases @(
         @{ Case = 'plugin'; Remove = 'plugin.json'; Expected = 'plugin\.json is missing' }
         @{ Case = 'mcp'; Remove = '.mcp.json'; Expected = '\.mcp\.json is missing' }

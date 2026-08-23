@@ -1,56 +1,29 @@
 ---
 name: al-grill-adr
-description: Use when a fresh AL/Business Central feature idea needs domain vocabulary settled and hard-to-reverse business rules recorded.
+description: Use when a fresh AL/Business Central feature idea needs its original Azure DevOps Feature anchored, domain vocabulary settled, or hard-to-reverse business rules recorded.
 ---
 
-# Grill the domain
+# al-grill-adr - anchor the feature
 
-Interview the user about what the business does until the vocabulary is unambiguous, and record the rules that would be expensive to change later.
+In: a fresh user request, with an Azure DevOps Feature when one already exists. Establish that Feature before downstream design. If Azure DevOps work-item tools are unavailable, show the exact Feature fields needed and stop; no substitute design file becomes another source of truth.
 
-Writes `CONTEXT.md` at the repo root and accepted ADRs under `docs/adr/`. Reads production, test, and app code to expose conflicts and leaves it unchanged. Git holds those two; the design and the frontier belong to later skills.
+Before publication, show the exact `Original request` block and ask the user to confirm it. Preserve every non-sensitive word verbatim; replace only credentials, tokens, private keys, secret paths, or third-party personal data with `[REDACTED: <reason>]`. The title may become a concise business outcome.
 
-## The interview
+Ask one substantive question per message. Before it, name what the answer will lock in, then name the earlier answers and verified facts that cause or constrain it. Use one compact text diagram or table when relationships are easier seen than described. Each option states what changes, what stays possible, and where responsibility lands; put the recommendation first and mark it. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
-Ask one substantive question per message. Before it, name what the answer will lock in, then name the earlier answers and verified facts that cause or constrain it, translated from tactical names into business concepts and relationships. Use one compact text diagram or table when flow, grouping, sequence, boundaries, ownership, or competing consequences are easier seen than described. Explain why the decision comes next. Each option states what changes, what stays possible, and where responsibility lands, plus material risk or reversibility when relevant; put the recommendation first and mark it. Exact AL names are secondary coordinates when they help locate, distinguish, or verify something. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+## Settle the domain
 
-- **A fact is answered, not asked.** Grep the workspace, read the official BC documentation through the microsoft-learn tools (microsoft_docs_search, microsoft_docs_fetch), say what you found, move on.
-- **A strategic decision is asked.** Strategic means `CONTEXT.md` or an ADR locks it in and the next skill consumes it.
-- **A tactical decision is made and named in one line** — where an entry sits, which of two equivalent phrasings lands. Naming it is what makes it overridable.
-- **Write each answer down the moment it resolves.** Mid-session `CONTEXT.md` is working state: reorder it, leave it half-built. Batching an hour of settled answers into one write at the close loses the hour to compaction.
-- **Escalate to /al-grilling when the answer itself needs pressure** — a requirement that shifts each time it is restated, a preference with no reason under it, a scope claim that would commit the feature. Carry what it surfaces back into the interview.
+- A fact is answered from the workspace or official BC documentation, not asked.
+- A strategic decision is asked. Record project vocabulary in `CONTEXT.md` and hard-to-reverse business rules in accepted ADRs.
+- A tactical decision is made and named in one line so the user can override it.
+- Write each settled answer immediately. Open decisions stay in the Feature conversation; they do not become work items.
 
-## What to ask
-
-- **Which term here means two things?** Record what this project narrows, extends, renames, or names that Microsoft doesn't: one sentence on what it *is*, plus the aliases it displaces.
-- **Which concrete BC scenario forces a boundary to be precise?** Partial posting, reversal, correction, dimension inheritance, multi-company, an AppSource constraint.
-- **What is the user not asking because they don't know to ask it?** Name the adjacent BC behaviour or standard pattern they show no sign of having considered, and let them decide whether it matters. An unclaimed one is where the implementation guesses later.
-- **Where does the stated behaviour disagree with the code?** Read the code where it can answer; ask the user what code cannot tell — intent, direction, why a constraint exists. Name the conflict and leave the resolution to them.
-
-Speak BC throughout: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, No. not ID. Every object, table, field, procedure, event, or enum name landing in `CONTEXT.md` or an ADR comes from a lookup made in this session — recall is not evidence.
-
-The thread is done when nothing is left to decide: every question it surfaced is answered in `CONTEXT.md` or an ADR, explicitly parked, or ruled out of scope — and the user confirms it.
+Ask which term means two things, which concrete BC scenario forces the boundary to be precise, which adjacent standard behavior matters, and where the requested behavior disagrees with the code. Every BC object, table, field, procedure, event, or enum name written into `CONTEXT.md` or an ADR comes from a lookup in this session.
 
 ## When a rule earns an ADR
 
-Offer one inline, inside the question it came out of, when all four hold:
-
-- hard to reverse — shipped data, a partner integration, a behavioural contract
-- surprising to a reader who lacks the context
-- a real trade-off, with alternatives someone could reasonably have picked
-- domain — a rule about what the business does, rather than how the code is shaped
-
-Three of four earns none: say so in one line and keep going. A question that feels architectural has a domain constraint behind it; grill that one and leave the shape to /al-design.
-
-Where the fork is genuinely open, build out one complete ADR candidate per option and present them together for the user to pick.
-
-Accepted lands as `docs/adr/NNNN-slug.md`, taking the lowest number unused on this branch and on main. The shapes are [ADR-FORMAT.md](ADR-FORMAT.md) and [CONTEXT-FORMAT.md](CONTEXT-FORMAT.md).
-
-## When the fog outgrows the session
-
-When the interview surfaces more fog than one session holds — the destination not yet nameable, open decisions piling past what this conversation can settle — name the destination first, in one line the user confirms. Then chart each open decision into the frontier store al-scope and al-next use: Azure DevOps work items through the azure-devops MCP work-item tools, `docs/frontier.md` second-class. A decision item is a question whose resolution is a decision, not a build slice — al-next re-opens /al-grill-adr on it when its turn comes.
+Offer an ADR when the decision is hard to reverse, surprising without context, has a real alternative, and governs business behavior. Architecture and data shape belong to /al-design.
 
 ## Close
 
-Name what settled: the terms now in `CONTEXT.md`, and any ADR accepted. Hand the settled delta to the rubber-duck agent — another voice in, the user decides. The GitHub Copilot app engine ships no duck: the pass says the checkpoint skipped.
-Commit what this run wrote — `CONTEXT.md` and any accepted ADR — with a plain descriptive message; a stop mid-interview commits what settled the same way.
-Then continue in this session with /al-event-model — backend-only features go straight to /al-design.
+The pass ends when the original Feature exists, its publishable request is confirmed and preserved, and every surfaced domain question is answered, parked in the Feature conversation, or ruled out. Commit `CONTEXT.md` and accepted ADRs with a plain descriptive message at every exit. Continue with /al-event-model.

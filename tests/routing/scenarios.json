@@ -14,7 +14,8 @@
     {
       "id": "S3",
       "prompt": "Draw what we just landed as a picture the PM can steer from, on the side panel.",
-      "expect": "al-visualize"
+      "expect": "none",
+      "note": "The retired generic visualization skill no longer owns landed-change pictures."
     },
     {
       "id": "S4",
@@ -81,7 +82,7 @@
     },
     {
       "id": "S16",
-      "prompt": "Implement the next frontier bullet — its failing-test spec is already on it.",
+      "prompt": "Implement this Vertical slice — its Gherkin, reviewed AAA test specification, and module contract are ready.",
       "expect": "al-implement"
     },
     {
@@ -91,7 +92,7 @@
     },
     {
       "id": "S18",
-      "prompt": "Review my diff since main against what the bullet asked — standards and spec side by side.",
+      "prompt": "Review my diff against its Gherkin, AAA proof, and module contracts.",
       "expect": "al-review"
     },
     {
@@ -102,13 +103,14 @@
     },
     {
       "id": "S20",
-      "prompt": "The bullet just landed — run the loop transition: show the delta, reconcile the design, sharpen what's next.",
+      "prompt": "The slice just landed — reconcile the Feature design, direct child slices, and receipts, then identify the next executable item.",
       "expect": "al-next"
     },
     {
       "id": "S21",
       "prompt": "Draw the objects and event flows this branch changed, as boxes and connections.",
-      "expect": "al-visualize"
+      "expect": "none",
+      "note": "A generic BC-anatomy drawing is not part of the streamlined work-item flow."
     },
     {
       "id": "S22",
@@ -118,17 +120,17 @@
     },
     {
       "id": "S23",
-      "prompt": "Architect this feature in BC shapes — is it master data with entries, or a document flavor?",
+      "prompt": "Define the deep modules and arc42 Building Block Level 1 for this BC Feature.",
       "expect": "al-design"
     },
     {
       "id": "S24",
-      "prompt": "Model who publishes and who subscribes when posting completes.",
+      "prompt": "Define the process contract and draw an exhaustive BPMN map for this Feature.",
       "expect": "al-event-model"
     },
     {
       "id": "S25",
-      "prompt": "Cut the settled design into tracer-bullet work items with blocking edges.",
+      "prompt": "Cut this Feature into independently useful Vertical slices with Gherkin and no implementation work items.",
       "expect": "al-scope"
     },
     {
@@ -143,12 +145,12 @@
     },
     {
       "id": "S28",
-      "prompt": "Run the whole loop on the next ready bullet — implement, reshape if needed, review — and pause only where a decision needs me.",
+      "prompt": "Run this executable item with reviewed AAA through implementation, bounded refactoring, and review.",
       "expect": "al-orchestrate"
     },
     {
       "id": "S29",
-      "prompt": "I have a fresh feature idea for our BC app — interview me until the vocabulary is unambiguous.",
+      "prompt": "Anchor my original request as one Azure DevOps Feature, then interview me until the vocabulary is unambiguous.",
       "expect": "al-grill-adr"
     },
     {
@@ -170,6 +172,26 @@
       "id": "S33",
       "prompt": "Let's do a walkthrough of the template export before I demo it to the customer.",
       "expect": "al-walkthrough"
+    },
+    {
+      "id": "S34",
+      "prompt": "The slice's Gherkin is approved. Design the AAA cases with me before implementation.",
+      "expect": "al-test-design"
+    },
+    {
+      "id": "S35",
+      "prompt": "I want to review the test seam, missing cases, expected values, and proof level before any AL code is written.",
+      "expect": "al-test-design"
+    },
+    {
+      "id": "S36",
+      "prompt": "Apply the official arc42 template to this settled Building Block Level 1 and create the local architecture review HTML.",
+      "expect": "al-arc42"
+    },
+    {
+      "id": "S37",
+      "prompt": "Format this proven internal module structure as arc42 Level 2 and show me the local HTML before Azure DevOps.",
+      "expect": "al-arc42"
     }
   ]
 }
