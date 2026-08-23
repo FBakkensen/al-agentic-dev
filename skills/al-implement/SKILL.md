@@ -30,14 +30,18 @@ Write the smallest production change that makes the proof green. Keep business w
 
 Run the same /al-build mode until green, then run /al-build in `AllTests` mode. A red result remains red until the output names its exact cause.
 
-## Document proven internals
+## Map what landed
 
-After green, inspect each changed Level 1 module. Add arc42 Building Block Level 2 to the Feature only when implementation revealed stable internal building blocks and interfaces worth preserving. Ask /al-arc42 to apply the official template and create the local architecture review HTML, editable SVG, and PNG. When attachment upload is unavailable, show both artifact paths and exact manual attach steps, then resume after the user supplies the attachment URLs. A simple module needs no Level 2.
+After green, trace the landed production path from its caller through every changed AL object to the records, events, and module interfaces it uses. Create a connected-object change map from the code, never from the changed-file list. Include every changed production object, only the unchanged neighbours needed to explain its connections, and a separate Proof group for changed test objects. Mark each object `Added`, `Changed`, `Existing`, or `Removed`. Label every edge with the exact procedure, event, interface implementation, or Read/Insert/Modify relation. A changed object with no explained connection remains unresolved.
+
+Ask /al-arc42 to render the map. For one affected Level 1 module, use a Building Block Level 2 white box. For several affected Level 1 modules, use a Level 1 impact overview plus a Level 2 white box for each module whose object relations need explanation. Add a Runtime View only when call order, a transaction boundary, or an error path matters.
+
+Keep the change markers in the receipt and executable-item comment. Add or update the Feature's Level 2 only when the implementation map reveals stable internal building blocks or interfaces worth preserving; publish that current-state view without change markers. A simple module may need the implementation map but no Feature Level 2. Ask /al-arc42 for the local HTML, editable SVG, PNG, alt text, and publishable fragments. When attachment upload is unavailable, show the artifact paths and exact manual attach steps, then resume after the user supplies the attachment URLs.
 
 ## Receipt
 
-Write `.output/receipts/<work-item-id>.md` with the work-item ID, tests, objects changed, `Tidy: none` or exact tidy candidates, Level 2 decision, gate result, evidence, and `verified:` / `assumed:` ledger entries. Add the same evidence as a work-item comment when Azure DevOps tools are available.
+Write `.output/receipts/<work-item-id>.md` with the work-item ID, implementation-map paths and alt text, tests, objects changed, `Tidy: none` or exact tidy candidates, Level 2 decision, gate result, evidence, and `verified:` / `assumed:` ledger entries. Add the PNG and the same evidence to the executable-item comment when Azure DevOps tools are available.
 
 ## Close
 
-Commit code and tracked documentation with a plain descriptive message at every exit. Finish outcome first: what changed, what proves it, which module interface stayed stable, and whether Level 2 was added. Stop with the exact red reason when any proof is unresolved.
+Commit code and tracked documentation with a plain descriptive message at every exit. Finish outcome first: what changed, what proves it, where the implementation map is attached, which module interface stayed stable, and whether Feature Level 2 changed. Stop with the exact red reason when any proof is unresolved.

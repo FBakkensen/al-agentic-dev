@@ -24,6 +24,7 @@ Judge:
 - AAA cases cover the scenario branches with independent expected values
 - tests exercise the caller-visible module interface rather than private internals
 - Building Block Level 1 ownership matches the code
+- the implementation change map includes every changed production object, explains every connection, and separates proof objects
 - Level 2, when present, matches proven internals; its absence is valid for a simple module
 - permissions, translations, upgrade impact, and breaking surface are covered
 
@@ -31,7 +32,7 @@ Run /al-build in `UnitTestOnly` mode for missing unit evidence or `AllTests` mod
 
 ## Parallel lenses
 
-Dispatch `al-review-lens` once with one dimension named `Feature contract`, its full definition being the seven checks above, the diff scope, work items, receipt, and relevant sources.
+Dispatch `al-review-lens` once with one dimension named `Feature contract`, its full definition being the checks above, the diff scope, work items, receipt, and relevant sources.
 
 For standards, read `.bcquality/skills/entry.md` and follow its Entry protocol with goal `review`, inputs `pr-diff`, technologies `[al]`, and all three layers. Dispatch one `al-knowledge-leaf` per selected leaf with the leaf path, diff scope, READ and DO paths, and domain-filtered index slice its contract requires.
 

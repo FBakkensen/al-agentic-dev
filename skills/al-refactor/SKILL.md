@@ -28,8 +28,8 @@ Reduce hidden complexity behind the existing caller-visible interface. Keep owne
 
 Run /al-build in `UnitTestOnly` mode after a unit-only edit or `AllTests` mode after an integration edit, then finish in `AllTests` mode. Restore the last green shape when an edit weakens behavior or the module contract.
 
-If internal building blocks changed, update or remove the Feature's arc42 Level 2 so it matches the landed code; ask /al-arc42 for refreshed local HTML, SVG, and PNG. When attachment upload is unavailable, show both artifact paths and exact manual attach steps, then resume after the user supplies the attachment URLs. Routine tidy that leaves the internal map unchanged does not touch Level 2.
+Regenerate the receipt's connected-object change map from the final diff so it shows the landed shape rather than the pre-refactor shape. If stable internal building blocks changed, update or remove the Feature's arc42 Level 2 so it matches the landed code. Ask /al-arc42 for refreshed local HTML, SVG, PNG, alt text, and publishable fragments. When attachment upload is unavailable, show the artifact paths and exact manual attach steps, then resume after the user supplies the attachment URLs. Routine tidy can change the receipt map without changing Feature Level 2.
 
 ## Close
 
-Update the receipt with `Tidy: none` or the exact reshapes, test evidence, gate result, Level 2 delta, and any new `verified:` / `assumed:` entries. Commit changes with a plain descriptive message at every exit. Finish outcome first; stop with the exact red reason when the gate does not pass.
+Update the receipt with the final implementation map, `Tidy: none` or the exact reshapes, test evidence, gate result, Feature Level 2 delta, and any new `verified:` / `assumed:` entries. Commit changes with a plain descriptive message at every exit. Finish outcome first; stop with the exact red reason when the gate does not pass.

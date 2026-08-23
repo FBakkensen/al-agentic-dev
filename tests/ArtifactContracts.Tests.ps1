@@ -46,6 +46,21 @@ Describe 'Architecture artifact contracts' {
         $template | Should -Match 'Runtime View'
     }
 
+    It 'maps every implementation before deciding whether Level 2 belongs on the Feature' {
+        $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
+        $arc42 = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-arc42' 'SKILL.md') -Raw
+        $template = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-arc42' 'ARC42.md') -Raw
+        $review = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-review' 'SKILL.md') -Raw
+
+        $implement | Should -Match 'connected-object change map'
+        $implement | Should -Match 'every changed production object'
+        $implement | Should -Match 'simple module may need the implementation map but no Feature Level 2'
+        $arc42 | Should -Match 'change overlay on the Building Block View'
+        $arc42 | Should -Match 'Level 1 impact overview'
+        $template | Should -Match 'executable-item receipt and comment keep the change overlay'
+        $review | Should -Match 'implementation change map includes every changed production object'
+    }
+
     It 'contains no shipped skill reference to al-visualize' {
         $references = Get-ChildItem -LiteralPath $script:SkillsRoot -Filter '*.md' -Recurse |
             Select-String -Pattern '/al-visualize'
