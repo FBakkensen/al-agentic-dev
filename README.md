@@ -157,7 +157,7 @@ Third-party formats and runtime dependencies are listed in [THIRD_PARTY_NOTICES.
 `hooks.json` ships two hooks:
 
 - **ask_user deny** (preToolUse): the ask_user tool is denied with a redirect — questions land in the reply itself, as plain text, with lettered options and the recommendation marked.
-- **Session context** (sessionStart): every new or resumed session receives the reply-shape rules and an instruction to invoke `/al-unslop` before writing any reply or artifact. When the working directory is an AL repo (an `app.json` at the root or one directory level deep), the Speak BC vocabulary rule also applies: Insert not create, Post not submit, Ledger Entry not transaction, and so on. In a non-AL directory the vocabulary rule stays out.
+- **Session context** (sessionStart): every new or resumed session receives the reply-shape rules. When the working directory is an AL repo (an `app.json` at the root or one directory level deep), the Speak BC vocabulary rule also applies: Insert not create, Post not submit, Ledger Entry not transaction, and so on. In a non-AL directory the vocabulary rule stays out.
 
 One platform caveat: the Copilot CLI currently honors only the **last** sessionStart `additionalContext` across all hook sources, so a user-level sessionStart context hook and this plugin's cannot both inject today — whichever loads last wins.
 
