@@ -296,17 +296,49 @@ function Get-ToolCacheRoot {
     return Join-Path -Path $userHome -ChildPath '.bc-tool-cache'
 }
 
+function Get-CheckoutFingerprint {
+    <#
+    .SYNOPSIS
+        Get a stable fingerprint for the current checkout path
+    #>
+    [CmdletBinding()]
+    param()
+
+    $checkoutRoot = Get-GitRepoRoot
+    if (-not $checkoutRoot) {
+        throw 'Unable to determine checkout root for symbol cache.'
+    }
+
+    $resolvedRoot = (Resolve-Path -LiteralPath $checkoutRoot -ErrorAction Stop).Path
+    $normalizedRoot = [IO.Path]::TrimEndingDirectorySeparator([IO.Path]::GetFullPath($resolvedRoot))
+    if ($IsWindows) {
+        $normalizedRoot = $normalizedRoot.ToLowerInvariant()
+    }
+
+    $sha256 = [Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = [Text.Encoding]::UTF8.GetBytes($normalizedRoot)
+        $hash = $sha256.ComputeHash($bytes)
+    } finally {
+        $sha256.Dispose()
+    }
+
+    return [Convert]::ToHexString($hash).Substring(0, 12).ToLowerInvariant()
+}
+
 function Get-SymbolCacheRoot {
     <#
     .SYNOPSIS
-        Get root directory for BC symbol package cache
+        Get the current checkout's root directory for BC symbol package cache
     #>
     $userHome = $env:HOME
     if (-not $userHome -and $env:USERPROFILE) { $userHome = $env:USERPROFILE }
     if (-not $userHome) {
         throw 'Unable to determine home directory for symbol cache. Ensure HOME or USERPROFILE environment variable is set.'
     }
-    return Join-Path -Path $userHome -ChildPath '.bc-symbol-cache'
+
+    $sharedRoot = Join-Path -Path $userHome -ChildPath '.bc-symbol-cache'
+    return Join-Path -Path $sharedRoot -ChildPath (Get-CheckoutFingerprint)
 }
 
 function Get-AppRuntimeMajor {

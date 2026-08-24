@@ -2,11 +2,11 @@
 
 <#+
 .SYNOPSIS
-    Downloads Business Central symbol packages required by app.json into a shared cache.
+    Downloads Business Central symbol packages required by app.json into the current checkout's cache.
 
 .DESCRIPTION
     Parses app.json to resolve application/platform versions and dependencies, ensures the
-    corresponding NuGet packages exist in the cache, and maintains a symbols.lock.json manifest.
+    corresponding NuGet packages exist in the checkout-scoped cache, and maintains a symbols.lock.json manifest.
 
 .PARAMETER AppDir
     Directory that contains app.json (defaults to "app" like build.ps1). You can also set
