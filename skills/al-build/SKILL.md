@@ -39,7 +39,7 @@ Other artifacts: `.output/TestResults/<dir>/al-runner.xml` and `last.xml` (unit 
 
 | Script | What it does |
 |---|---|
-| `provision.ps1` | Per-feature setup: installs the stable and prerelease AL compiler channels side by side under the tool cache, downloads symbol packages for every app, refreshes the ALCops analyzers, and — when `breakingChange.enabled` — caches the previous release as the breaking-change baseline. `-UpdateCompiler` forces a clean reinstall. |
+| `provision.ps1` | Per-feature setup: installs the stable and prerelease AL compiler channels side by side under the tool cache, downloads symbol packages for every app into a cache keyed by checkout path, refreshes the ALCops analyzers, and — when `breakingChange.enabled` — caches the previous release as the breaking-change baseline. `-UpdateCompiler` forces a clean reinstall. |
 | `validate-breaking-changes.ps1` | The heavyweight AppSource-style check the compile-time cop cannot do: per-country, install and upgrade, against the cached baseline. Reads the cache and never downloads — an empty cache stops with *run provision.ps1*. Exit codes are contract: `0` no break, `3` breaking change, `4` prerequisite missing, `1` environment failure. Feature-end or pre-release, never the inner loop. |
 | `publish-apps.ps1` | Clean republish with no build and no tests: unpublishes every app dependency-reversed, then force-publishes in dependency order. Needs compiled `.app` artifacts already present. Loads a fresh container before a human walk. |
 | `new-bc-container.ps1` | Creates and configures the golden BC container — one per BC version. |
