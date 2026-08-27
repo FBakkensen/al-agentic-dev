@@ -42,8 +42,8 @@ Same plugin, no marketplace registration — and no catalog for `copilot plugin 
 ### Verify
 
 ```
-copilot plugin list      # al-agentic-dev@al-agentic-dev (v2.4.7)
-copilot skill list       # the 22 skills, under "Plugin skills"
+copilot plugin list      # al-agentic-dev@al-agentic-dev (v2.4.10)
+copilot skill list       # the 23 skills, under "Plugin skills"
 copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn, bc-code-intelligence
 ```
 
@@ -133,6 +133,7 @@ copilot plugin uninstall al-agentic-dev
 | `/al-unslop` | Cuts AI tells from any writing; applies to every reply and artifact. |
 | `/al-miner` | Mines session history for repeated failures and steering corrections; proposes standing lessons with evidence, never landing them itself. |
 | `/al-lookup` | Answers one platform question with a source pointer — Microsoft Learn, bc-code-intelligence, the BCApps clone, or the BCQuality index — and grows the repo's precedent map. |
+| `/al-azure-devops-attachments` | Uploads local files through Azure CLI credentials, attaches them to an Azure DevOps work item, and guides the user through authentication when needed. |
 | `/al-grill-adr` | Anchors one Azure DevOps Feature, preserves the original request verbatim, settles domain vocabulary, and records hard-to-reverse business rules. |
 | `/al-event-model` | Adds the process contract and exhaustive BPMN map, renders it through locked bpmn-js tooling into local review HTML, and supplies Runtime scenarios to `/al-arc42`. |
 | `/al-design` | Defines deep-module boundaries and the arc42 Building Block Level 1 with black box contracts; implementation details stay open. |

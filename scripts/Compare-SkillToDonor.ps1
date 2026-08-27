@@ -21,27 +21,43 @@
 #>
 [CmdletBinding(DefaultParameterSetName = 'Ref')]
 param(
-    [Parameter(Mandatory = $true)]
     [string]$Skill,
 
-    [Parameter(Mandatory = $true, ParameterSetName = 'Ref')]
+    [Parameter(ParameterSetName = 'Ref')]
     [string]$DonorRef,
 
     [Parameter(ParameterSetName = 'Ref')]
     [string]$DonorPath,
 
-    [Parameter(Mandatory = $true, ParameterSetName = 'Dir')]
+    [Parameter(ParameterSetName = 'Dir')]
     [string]$DonorDir,
 
     [string]$SkillsRoot = (Join-Path $PSScriptRoot '..' 'skills')
 )
 
-$ErrorActionPreference = 'Stop'
+function Invoke-SkillDonorComparison {
+    [CmdletBinding(DefaultParameterSetName = 'Ref')]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Skill,
 
+        [Parameter(Mandatory = $true, ParameterSetName = 'Ref')]
+        [string]$DonorRef,
+
+        [Parameter(ParameterSetName = 'Ref')]
+        [string]$DonorPath,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Dir')]
+        [string]$DonorDir,
+
+        [string]$SkillsRoot = (Join-Path $PSScriptRoot '..' 'skills')
+    )
+
+$script:DonorComparisonExitCode = 1
 $skillDir = Join-Path $SkillsRoot $Skill
 if (-not (Test-Path -LiteralPath $skillDir -PathType Container)) {
     Write-Error "Skill folder not found: $skillDir"
-    exit 1
+    return
 }
 $skillDir = (Resolve-Path -LiteralPath $skillDir).Path
 
@@ -50,7 +66,7 @@ try {
     if ($PSCmdlet.ParameterSetName -eq 'Dir') {
         if (-not (Test-Path -LiteralPath $DonorDir -PathType Container)) {
             Write-Error "Donor directory not found: $DonorDir"
-            exit 1
+            return
         }
         $donor = (Resolve-Path -LiteralPath $DonorDir).Path
     } else {
@@ -59,7 +75,7 @@ try {
         $entries = @(git -C $repoRoot ls-tree -r --name-only $DonorRef -- $DonorPath 2>$null)
         if ($LASTEXITCODE -ne 0 -or $entries.Count -eq 0) {
             Write-Error "Donor not found at ${DonorRef}:${DonorPath}"
-            exit 1
+            return
         }
         $stage = Join-Path ([System.IO.Path]::GetTempPath()) "donor-$([guid]::NewGuid())"
         New-Item -ItemType Directory -Path $stage | Out-Null
@@ -67,18 +83,18 @@ try {
         git -C $repoRoot archive --format=tar -o $tarFile $DonorRef -- $DonorPath
         if ($LASTEXITCODE -ne 0) {
             Write-Error "git archive failed for ${DonorRef}:${DonorPath}"
-            exit 1
+            return
         }
         tar -xf $tarFile -C $stage
         if ($LASTEXITCODE -ne 0) {
             Write-Error "tar extraction failed for $tarFile"
-            exit 1
+            return
         }
         Remove-Item -LiteralPath $tarFile
         $donor = Join-Path $stage ($DonorPath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
         if (-not (Test-Path -LiteralPath $donor -PathType Container)) {
             Write-Error "Donor extraction produced no folder at $donor"
-            exit 1
+            return
         }
     }
 
@@ -86,16 +102,24 @@ try {
     $diffExit = $LASTEXITCODE
     if ($diffExit -eq 0) {
         Write-Host "Identical: $Skill matches its donor." -ForegroundColor Green
-        exit 0
+        $script:DonorComparisonExitCode = 0
+        return
     }
     if ($diffExit -eq 1) {
         Write-Host "Differs: $Skill diverges from its donor; the diff above is the port note." -ForegroundColor Yellow
-        exit 2
+        $script:DonorComparisonExitCode = 2
+        return
     }
     Write-Error "git diff failed with exit code $diffExit"
-    exit 1
 } finally {
     if ($stage -and (Test-Path -LiteralPath $stage)) {
         Remove-Item -LiteralPath $stage -Recurse -Force -Confirm:$false
     }
+}
+}
+
+if ($MyInvocation.InvocationName -ne '.') {
+    $ErrorActionPreference = 'Stop'
+    Invoke-SkillDonorComparison @PSBoundParameters
+    exit $script:DonorComparisonExitCode
 }

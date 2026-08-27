@@ -23,7 +23,7 @@ Use BPMN 2.0 for roles, actions, gateways, records, exceptions, decisions, and n
 
 Follow [BPMN.md](BPMN.md). Create the editable BPMN source, render SVG and PNG from that source, and write the local process review HTML. The user reviews the HTML before publication.
 
-Attach the BPMN source and PNG to the Feature and embed the PNG in its Description. Detect attachment upload separately from work-item editing; when upload is unavailable, show the two artifact paths and exact manual attach steps, then resume after the user supplies the attachment URLs.
+Ask /al-azure-devops-attachments to attach the BPMN source and PNG to the Feature, then embed its verified PNG URL in the Description. Missing MCP attachment support is not a blocker; authentication trouble stays with that skill until the Azure CLI token works.
 
 ## Runtime View
 

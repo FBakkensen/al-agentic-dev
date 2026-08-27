@@ -2,6 +2,7 @@
 
 BeforeAll {
     $script:ValidatorPath = (Resolve-Path (Join-Path $PSScriptRoot '..' 'scripts' 'Validate-Json.ps1')).Path
+    . $script:ValidatorPath
 
     function New-PluginRepo {
         param(
@@ -64,6 +65,29 @@ BeforeAll {
             [string]$Root
         )
 
+        $output = @(
+            & {
+                Invoke-JsonValidation -RepoRoot $Root -ErrorAction Continue
+            } *>&1
+        )
+        $exitCode = [int]$output[-1]
+        $text = if ($output.Count -gt 1) {
+            @($output[0..($output.Count - 2)] | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
+        } else {
+            ''
+        }
+        return [pscustomobject]@{
+            ExitCode = $exitCode
+            Text     = $text
+        }
+    }
+
+    function Invoke-JsonValidatorProcess {
+        param(
+            [Parameter(Mandatory = $true)]
+            [string]$Root
+        )
+
         $output = & pwsh -NoProfile -File $script:ValidatorPath -RepoRoot $Root 2>&1
         return [pscustomobject]@{
             ExitCode = $LASTEXITCODE
@@ -72,13 +96,13 @@ BeforeAll {
     }
 }
 
-Describe 'Validate-Json plugin surface' {
+Describe 'Validate-Json plugin surface' -Tag 'Unit' {
     It 'passes a well-formed plugin surface' {
         $root = New-PluginRepo -Root (Join-Path $TestDrive 'good')
 
         $result = Invoke-JsonValidator -Root $root
 
-        $result.ExitCode | Should -Be 0
+        $result.ExitCode | Should -Be 0 -Because $result.Text
         $result.Text | Should -Match 'All JSON files validated successfully'
     }
 
@@ -93,12 +117,13 @@ Describe 'Validate-Json plugin surface' {
       "name": "fixture"
     }
   }
+
 }
 '@
 
         $result = Invoke-JsonValidator -Root $root
 
-        $result.ExitCode | Should -Be 0
+        $result.ExitCode | Should -Be 0 -Because $result.Text
         $result.Text | Should -Match 'All JSON files validated successfully'
     }
 
@@ -183,5 +208,19 @@ Describe 'Validate-Json plugin surface' {
 
         $result.ExitCode | Should -Be 1
         $result.Text | Should -Match 'FAIL:.*broken\.json'
+    }
+}
+
+Describe 'Validate-Json process wrapper' -Tag 'Process' {
+    It 'returns zero for a valid plugin surface' {
+        $root = New-PluginRepo -Root (Join-Path $TestDrive 'process-good')
+
+        (Invoke-JsonValidatorProcess -Root $root).ExitCode | Should -Be 0
+    }
+
+    It 'returns nonzero for an invalid plugin surface' {
+        $root = New-PluginRepo -Root (Join-Path $TestDrive 'process-bad') -Remove @('plugin.json')
+
+        (Invoke-JsonValidatorProcess -Root $root).ExitCode | Should -Be 1
     }
 }

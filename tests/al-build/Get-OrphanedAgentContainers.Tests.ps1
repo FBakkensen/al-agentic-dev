@@ -20,7 +20,7 @@ BeforeAll {
     }
 }
 
-Describe 'Get-OrphanedAgentContainers — cross-clone isolation' {
+Describe 'Get-OrphanedAgentContainers — cross-clone isolation' -Tag 'Process' {
     BeforeAll {
         $script:OriginalHome = $env:HOME
         $script:OriginalUserProfile = $env:USERPROFILE
@@ -89,7 +89,7 @@ Describe 'Get-OrphanedAgentContainers — cross-clone isolation' {
     }
 }
 
-Describe 'Get-GitRepoIdentifier — worktree consistency' {
+Describe 'Get-GitRepoIdentifier — worktree consistency' -Tag 'Process' {
     BeforeAll {
         $script:OriginalHome = $env:HOME
         $script:OriginalUserProfile = $env:USERPROFILE

@@ -36,7 +36,7 @@ After green, trace the landed production path from its caller through every chan
 
 Ask /al-arc42 to render the map. For one affected Level 1 module, use a Building Block Level 2 white box. For several affected Level 1 modules, use a Level 1 impact overview plus a Level 2 white box for each module whose object relations need explanation. Add a Runtime View only when call order, a transaction boundary, or an error path matters.
 
-Keep the change markers in the receipt and executable-item comment. Add or update the Feature's Level 2 only when the implementation map reveals stable internal building blocks or interfaces worth preserving; publish that current-state view without change markers. A simple module may need the implementation map but no Feature Level 2. Ask /al-arc42 for the local HTML, editable SVG, PNG, alt text, and publishable fragments. When attachment upload is unavailable, show the artifact paths and exact manual attach steps, then resume after the user supplies the attachment URLs.
+Keep the change markers in the receipt and executable-item comment. Add or update the Feature's Level 2 only when the implementation map reveals stable internal building blocks or interfaces worth preserving; publish that current-state view without change markers. A simple module may need the implementation map but no Feature Level 2. Ask /al-arc42 for the local HTML, editable SVG, PNG, alt text, and publishable fragments. Ask /al-azure-devops-attachments to attach the PNG and SVG, and use its verified URLs in the comment and Feature fragment. Missing MCP attachment support is not a blocker; authentication trouble stays with that skill until the Azure CLI token works.
 
 ## Receipt
 

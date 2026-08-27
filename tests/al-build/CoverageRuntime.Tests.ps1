@@ -861,15 +861,52 @@ Export-ModuleMember -Function 'Write-BcCoverageArtifacts'
 
         $oldScenarioPath = [Environment]::GetEnvironmentVariable('TEST_PS1_SCENARIO_PATH', 'Process')
         $oldStatePath = [Environment]::GetEnvironmentVariable('TEST_PS1_STATE_PATH', 'Process')
+        $runner = $null
 
         try {
             [Environment]::SetEnvironmentVariable('TEST_PS1_SCENARIO_PATH', $Harness.ScenarioPath, 'Process')
             [Environment]::SetEnvironmentVariable('TEST_PS1_STATE_PATH', $Harness.StatePath, 'Process')
 
-            $pwsh = Join-Path $PSHOME 'pwsh.exe'
-            $coverageArg = if ($Coverage) { ' -Coverage' } else { '' }
-            $modeArg = if ($UnitTestOnly) { ' -UnitTestOnly' } else { ' -AllTests' }
-            $output = & $pwsh -NoProfile -Command "Set-Location '$($Harness.Root)'; & '$($Harness.TestScript)'$coverageArg$modeArg" 2>&1
+            $runner = [PowerShell]::Create()
+            $scriptBlock = @'
+param(
+    [string]$WorkingDirectory,
+    [string]$TestScript,
+    [bool]$RunCoverage,
+    [bool]$RunUnitTestOnly
+)
+
+& {
+    $script:GateExitCode = 1
+    try {
+        Set-Location -LiteralPath $WorkingDirectory
+        . $TestScript
+        Invoke-TestGate -Coverage:$RunCoverage -UnitTestOnly:$RunUnitTestOnly -AllTests:(-not $RunUnitTestOnly)
+    } catch {
+        Write-Output $_.ToString()
+    } finally {
+        [pscustomobject]@{
+            TestPs1HarnessVerdict = $true
+            ExitCode = [int]$script:GateExitCode
+        }
+    }
+} *>&1
+'@
+            $null = $runner.AddScript($scriptBlock).
+                AddArgument($Harness.Root).
+                AddArgument($Harness.TestScript).
+                AddArgument([bool]$Coverage).
+                AddArgument([bool]$UnitTestOnly)
+            $output = @($runner.Invoke())
+            $verdict = $output |
+                Where-Object { $_.PSObject.Properties.Name -contains 'TestPs1HarnessVerdict' } |
+                Select-Object -Last 1
+            $visibleOutput = @(
+                $output | Where-Object {
+                    $_.PSObject.Properties.Name -notcontains 'TestPs1HarnessVerdict'
+                }
+                $runner.Streams.Error
+            )
             $events = @()
             if (Test-Path -LiteralPath $Harness.StatePath) {
                 $events = @(
@@ -880,9 +917,40 @@ Export-ModuleMember -Function 'Write-BcCoverageArtifacts'
             }
 
             [pscustomobject]@{
+                ExitCode = if ($verdict) { [int]$verdict.ExitCode } else { 1 }
+                Output = $visibleOutput
+                Events = $events
+            }
+        } finally {
+            if ($runner) { $runner.Dispose() }
+            [Environment]::SetEnvironmentVariable('TEST_PS1_SCENARIO_PATH', $oldScenarioPath, 'Process')
+            [Environment]::SetEnvironmentVariable('TEST_PS1_STATE_PATH', $oldStatePath, 'Process')
+        }
+    }
+
+    function Invoke-TestPs1ProcessHarness {
+        param(
+            [Parameter(Mandatory)]
+            $Harness,
+
+            [switch]$Coverage,
+            [switch]$UnitTestOnly
+        )
+
+        $oldScenarioPath = [Environment]::GetEnvironmentVariable('TEST_PS1_SCENARIO_PATH', 'Process')
+        $oldStatePath = [Environment]::GetEnvironmentVariable('TEST_PS1_STATE_PATH', 'Process')
+
+        try {
+            [Environment]::SetEnvironmentVariable('TEST_PS1_SCENARIO_PATH', $Harness.ScenarioPath, 'Process')
+            [Environment]::SetEnvironmentVariable('TEST_PS1_STATE_PATH', $Harness.StatePath, 'Process')
+
+            $pwsh = Join-Path $PSHOME 'pwsh.exe'
+            $coverageArg = if ($Coverage) { ' -Coverage' } else { '' }
+            $modeArg = if ($UnitTestOnly) { ' -UnitTestOnly' } else { ' -AllTests' }
+            $output = & $pwsh -NoProfile -Command "Set-Location '$($Harness.Root)'; & '$($Harness.TestScript)'$coverageArg$modeArg" 2>&1
+            [pscustomobject]@{
                 ExitCode = $LASTEXITCODE
                 Output = @($output)
-                Events = $events
             }
         } finally {
             [Environment]::SetEnvironmentVariable('TEST_PS1_SCENARIO_PATH', $oldScenarioPath, 'Process')
@@ -2304,7 +2372,7 @@ Describe 'Gate-wide atomic staging' {
     }
 }
 
-Describe 'test.ps1 coverage integration' {
+Describe 'test.ps1 coverage integration' -Tag 'Process' {
     It 'rejects -Coverage -UnitTestOnly before loading configuration' {
         $testScript = Join-Path $script:ScriptsDir 'test.ps1'
         $pwsh = Join-Path $PSHOME 'pwsh.exe'
@@ -2571,7 +2639,7 @@ Describe 'test.ps1 coverage integration' {
     }
 }
 
-Describe 'test.ps1 startup cleanup' {
+Describe 'test.ps1 startup cleanup' -Tag 'Process' {
     It 'clears stale final, raw, and temporary coverage artifacts on a disabled invocation' {
         $harness = New-TestPs1Harness -TestAppNames @('container-tests')
         $coverageRoot = Split-Path $harness.RawPath -Parent
@@ -2655,7 +2723,17 @@ Describe 'test.ps1 startup cleanup' {
     }
 }
 
-Describe 'test.ps1 malformed config ordering' {
+Describe 'test.ps1 malformed config ordering' -Tag 'Process' {
+    It 'reports a script load failure as nonzero' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests')
+        "throw 'script load failed boom'" | Set-Content -LiteralPath $harness.TestScript
+
+        $result = Invoke-TestPs1Harness $harness
+
+        $result.ExitCode | Should -Be 1
+        ($result.Output -join "`n") | Should -Match 'script load failed boom'
+    }
+
     It 'still runs startup cleanup but writes no summary.json when config fails to load' {
         $harness = New-TestPs1Harness -TestAppNames @('container-tests') -ConfigThrows
         Add-StaleResultsMarker -Harness $harness
@@ -2678,7 +2756,7 @@ Describe 'build-operations.psm1 no longer performs local per-run JUnit cleanup' 
     }
 }
 
-Describe 'test.ps1 coverage summary lifecycle' {
+Describe 'test.ps1 coverage summary lifecycle' -Tag 'Process' {
     It 'writes a disabled coverage block when -Coverage is not specified' {
         $harness = New-TestPs1Harness -TestAppNames @('container-tests')
 
@@ -2851,5 +2929,22 @@ Describe 'test.ps1 coverage summary lifecycle' {
         $summary.totals.container.testsPassed | Should -Be 1
         ($summary.runs | Where-Object { $_.runner -eq 'container' }).appName | Should -Be 'container-tests'
         ($summary.runs | Where-Object { $_.runner -eq 'al-runner' }).appName | Should -Be 'unit-tests'
+    }
+}
+
+Describe 'test.ps1 process wrapper' -Tag 'Process' {
+    It 'returns the successful gate exit code' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests')
+
+        (Invoke-TestPs1ProcessHarness $harness).ExitCode | Should -Be 0
+    }
+
+    It 'returns a nonzero gate exit code after an unhandled failure' {
+        $harness = New-TestPs1Harness -TestAppNames @('container-tests') -FailBuild
+
+        $result = Invoke-TestPs1ProcessHarness $harness
+
+        $result.ExitCode | Should -Not -Be 0
+        ($result.Output -join "`n") | Should -Match 'build failed boom'
     }
 }

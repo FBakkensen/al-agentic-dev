@@ -61,6 +61,45 @@ Describe 'Architecture artifact contracts' {
         $review | Should -Match 'implementation change map includes every changed production object'
     }
 
+    It 'owns Azure DevOps attachment upload in one skill' {
+        $attachmentSkill = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-azure-devops-attachments' 'SKILL.md') -Raw
+
+        $attachmentSkill | Should -Match 'az account get-access-token'
+        $attachmentSkill | Should -Match '--tenant 3c2c919b-877a-4cd6-be64-b25bbdaee76f'
+        $attachmentSkill | Should -Match 'az login --tenant 3c2c919b-877a-4cd6-be64-b25bbdaee76f'
+        $attachmentSkill | Should -Match '--allow-no-subscriptions'
+        $attachmentSkill | Should -Match 'application/octet-stream'
+        $attachmentSkill | Should -Match "relation-type 'Attached File'"
+        $attachmentSkill | Should -Match 'removing spaces'
+        $attachmentSkill | Should -Match 'CLI name `Attached File` and the WIT name `AttachedFile` both match'
+        $attachmentSkill | Should -Match 'apply the same relation-type normalization'
+        $attachmentSkill | Should -Match 'WIT JSON Patch with `test /rev`'
+        $attachmentSkill | Should -Match 'remove matching `/relations/<index>` paths in descending order'
+        $attachmentSkill | Should -Match 'work-item show --expand relations'
+        $attachmentSkill | Should -Match 'Authentication failure never becomes a manual-upload handoff'
+
+        foreach ($caller in @('al-event-model', 'al-design', 'al-implement', 'al-refactor')) {
+            $content = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $caller 'SKILL.md') -Raw
+            $content | Should -Match '/al-azure-devops-attachments'
+            $content | Should -Not -Match 'manual attach'
+        }
+    }
+
+    It 'runs Pester once with compact mode-aware output' {
+        $runner = Get-Content -LiteralPath (Join-Path $script:RepoRoot 'scripts' 'Invoke-Tests.ps1') -Raw
+        $instructions = Get-Content -LiteralPath (
+            Join-Path $script:RepoRoot '.github' 'copilot-instructions.md'
+        ) -Raw
+
+        ([regex]::Matches($runner, '(?m)^\s*Invoke-Pester -Configuration ')).Count | Should -Be 1
+        $runner | Should -Match '\$config\.Output\.Verbosity = ''None'''
+        $runner | Should -Match '\$config\.Filter\.ExcludeTag = @\(''Process'', ''LiveFixture''\)'
+        $runner | Should -Match '''Process''\s*\{\s*\$config\.Filter\.Tag = @\(''Process''\)'
+        $runner | Should -Match '''LiveFixture''\s*\{\s*\$config\.Filter\.Tag = @\(''LiveFixture''\)'
+        $instructions | Should -Match 'task agent pinned to `gpt-5\.6-luna`'
+        $instructions | Should -Match 'runs `scripts/Invoke-Tests\.ps1` once'
+    }
+
     It 'contains no shipped skill reference to al-visualize' {
         $references = Get-ChildItem -LiteralPath $script:SkillsRoot -Filter '*.md' -Recurse |
             Select-String -Pattern '/al-visualize'

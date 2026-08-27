@@ -28,7 +28,7 @@ Reduce hidden complexity behind the existing caller-visible interface. Keep owne
 
 Run /al-build in `UnitTestOnly` mode after a unit-only edit or `AllTests` mode after an integration edit, then finish in `AllTests` mode. Restore the last green shape when an edit weakens behavior or the module contract.
 
-Regenerate the receipt's connected-object change map from the final diff so it shows the landed shape rather than the pre-refactor shape. If stable internal building blocks changed, update or remove the Feature's arc42 Level 2 so it matches the landed code. Ask /al-arc42 for refreshed local HTML, SVG, PNG, alt text, and publishable fragments. When attachment upload is unavailable, show the artifact paths and exact manual attach steps, then resume after the user supplies the attachment URLs. Routine tidy can change the receipt map without changing Feature Level 2.
+Regenerate the receipt's connected-object change map from the final diff so it shows the landed shape rather than the pre-refactor shape. If stable internal building blocks changed, update or remove the Feature's arc42 Level 2 so it matches the landed code. Ask /al-arc42 for refreshed local HTML, SVG, PNG, alt text, and publishable fragments. Ask /al-azure-devops-attachments to attach the refreshed PNG and SVG, and use its verified URLs in the receipt and Feature fragment. Missing MCP attachment support is not a blocker; authentication trouble stays with that skill until the Azure CLI token works. Routine tidy can change the receipt map without changing Feature Level 2.
 
 ## Close
 

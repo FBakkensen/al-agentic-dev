@@ -163,7 +163,7 @@ function Read-LiveCoverageFixtureMetadata {
     }
 }
 
-Describe 'Live BC code coverage fixture' {
+Describe 'Live BC code coverage fixture' -Tag 'LiveFixture' {
     It 'records the live environment and helper contract without host details' {
         Test-LiveCoverageFixtureMetadata -Metadata $script:Metadata | Should -BeTrue
         $script:Metadata.schemaVersion | Should -Be 1
@@ -270,34 +270,12 @@ Describe 'Live BC code coverage fixture' {
     }
 
     It 'pins the raw schema, numeric enum codes, and distinct per-test payloads' {
-        $requiredFields = @(
-            'ObjectTypeCode',
-            'ObjectTypeName',
-            'ObjectId',
-            'LineNumber',
-            'LineTypeCode',
-            'LineTypeName',
-            'CoverageStatusCode',
-            'CoverageStatusName',
-            'HitCount',
-            'SourceLine'
-        )
         foreach ($payloadPath in $script:PayloadPaths) {
-            [xml]$document = Get-Content -LiteralPath $payloadPath -Raw
-            $document.CodeCoverage.SchemaVersion | Should -Be '1'
-            @($document.CodeCoverage.CoverageLine).Count | Should -BeGreaterThan 0
-            foreach ($record in @($document.CodeCoverage.CoverageLine)) {
-                foreach ($field in $requiredFields) {
-                    $record.PSObject.Properties.Name | Should -Contain $field
-                }
-                foreach ($field in @('ObjectTypeCode', 'ObjectId', 'LineNumber',
-                    'LineTypeCode', 'CoverageStatusCode', 'HitCount')) {
-                    $value = 0
-                    [int]::TryParse([string]$record.$field, [ref]$value) | Should -BeTrue
-                }
-                [string]::IsNullOrWhiteSpace([string]$record.LineTypeName) | Should -BeFalse
-            }
+            { Test-BcCoveragePayload -Path $payloadPath } | Should -Not -Throw
         }
+        @($script:Records | Where-Object {
+            [string]::IsNullOrWhiteSpace($_.LineTypeName)
+        }).Count | Should -Be 0
 
         (Get-FileHash -LiteralPath $script:PayloadPaths[0]).Hash |
             Should -Not -Be (Get-FileHash -LiteralPath $script:PayloadPaths[1]).Hash

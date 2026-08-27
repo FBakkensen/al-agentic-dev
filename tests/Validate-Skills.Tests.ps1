@@ -2,6 +2,7 @@
 
 BeforeAll {
     $script:ValidatorPath = (Resolve-Path (Join-Path $PSScriptRoot '..' 'scripts' 'Validate-Skills.ps1')).Path
+    . $script:ValidatorPath
 
     function New-SkillsRoot {
         param(
@@ -74,6 +75,32 @@ $Body
         )
 
         if (-not $AgentsRoot) { $AgentsRoot = Join-Path $Root '_no-agents' }
+        $output = @(
+            & {
+                Invoke-SkillsValidation -SkillsRoot $Root -AgentsRoot $AgentsRoot -ErrorAction Continue
+            } *>&1
+        )
+        $exitCode = [int]$output[-1]
+        $text = if ($output.Count -gt 1) {
+            @($output[0..($output.Count - 2)] | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
+        } else {
+            ''
+        }
+        return [pscustomobject]@{
+            ExitCode = $exitCode
+            Text     = $text
+        }
+    }
+
+    function Invoke-SkillValidatorProcess {
+        param(
+            [Parameter(Mandatory = $true)]
+            [string]$Root,
+
+            [string]$AgentsRoot
+        )
+
+        if (-not $AgentsRoot) { $AgentsRoot = Join-Path $Root '_no-agents' }
         $output = & pwsh -NoProfile -File $script:ValidatorPath -SkillsRoot $Root -AgentsRoot $AgentsRoot 2>&1
         return [pscustomobject]@{
             ExitCode = $LASTEXITCODE
@@ -82,7 +109,7 @@ $Body
     }
 }
 
-Describe 'Validate-Skills structure checks' {
+Describe 'Validate-Skills structure checks' -Tag 'Unit' {
     It 'passes a well-formed skills root' {
         $body = @'
 Read [FORMAT.md](FORMAT.md) before writing, and see https://example.test/docs.
@@ -327,7 +354,7 @@ Name the outcome, then /al-build.
     }
 }
 
-Describe 'Validate-Skills link checks' {
+Describe 'Validate-Skills link checks' -Tag 'Unit' {
     It 'fails on a link that leaves the skill folder' -TestCases @(
         @{ Case = 'parent'; Target = '../al-build/SKILL.md' }
         @{ Case = 'absolute'; Target = '/skills/demo/FORMAT.md' }
@@ -452,7 +479,7 @@ Describe 'Validate-Skills link checks' {
     }
 }
 
-Describe 'Validate-Skills script-path checks' {
+Describe 'Validate-Skills script-path checks' -Tag 'Unit' {
     It 'fails when a skill outside al-build names a script' -TestCases @(
         @{ Case = 'ps1'; Body = 'Run test.ps1 to gate the change.'; Expected = 'test\.ps1' }
         @{ Case = 'scripts-path'; Body = 'Entry points live in scripts/ for this skill.'; Expected = 'scripts/' }
@@ -556,7 +583,7 @@ Describe 'Validate-Skills script-path checks' {
     }
 }
 
-Describe 'Validate-Skills state-home checks' {
+Describe 'Validate-Skills state-home checks' -Tag 'Unit' {
     It 'fails when a skill body states a lifecycle field' -TestCases @(
         @{ Case = 'status'; Body = 'Flip `status: done` when the gate is green.'; Expected = "status:" }
         @{ Case = 'phase'; Body = 'Stamp `phase: refined` on the task.'; Expected = "phase:" }
@@ -650,7 +677,7 @@ Describe 'Validate-Skills state-home checks' {
     }
 }
 
-Describe 'Validate-Skills skill-reference checks' {
+Describe 'Validate-Skills skill-reference checks' -Tag 'Unit' {
     It 'fails when a body names a skill that has no folder' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'ref-missing') -Files @{
             'demo/SKILL.md' = (New-SkillContent -Body 'Name the outcome, then /al-nonexistent.')
@@ -706,7 +733,7 @@ Describe 'Validate-Skills skill-reference checks' {
     }
 }
 
-Describe 'Validate-Skills harness checks' {
+Describe 'Validate-Skills harness checks' -Tag 'Unit' {
     It 'fails a harness-neutral leftover in a skill body' -TestCases @(
         @{ Case = 'conditional'; Body = 'If your harness supports subagents, these parallelize in full-capability subagents; otherwise apply them in one pass.' }
         @{ Case = 'casing'; Body = 'Whatever browser capability the Harness offers.' }
@@ -747,7 +774,7 @@ Describe 'Validate-Skills harness checks' {
     }
 }
 
-Describe 'Validate-Skills agent checks' {
+Describe 'Validate-Skills agent checks' -Tag 'Unit' {
     BeforeAll {
         function New-AgentsRoot {
             param(
@@ -885,7 +912,7 @@ Describe 'Validate-Skills agent checks' {
     }
 }
 
-Describe 'Validate-Skills reporting' {
+Describe 'Validate-Skills reporting' -Tag 'Unit' {
     It 'reports every violation, not only the first' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'many-violations') -Files @{
             'alpha/SKILL.md' = (New-SkillContent -Name 'wrong-name' -Body 'See [Format](FORMAT.md).')
@@ -898,5 +925,23 @@ Describe 'Validate-Skills reporting' {
         $result.Text | Should -Match "name 'wrong-name' does not match the folder name"
         $result.Text | Should -Match 'alpha/SKILL\.md: link target does not exist: FORMAT\.md'
         $result.Text | Should -Match 'beta: SKILL\.md is missing'
+    }
+}
+
+Describe 'Validate-Skills process wrapper' -Tag 'Process' {
+    It 'returns zero for a valid skill root' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'process-good') -Files @{
+            'demo/SKILL.md' = (New-SkillContent)
+        }
+
+        (Invoke-SkillValidatorProcess -Root $root).ExitCode | Should -Be 0
+    }
+
+    It 'returns nonzero for an invalid skill root' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'process-bad') -Files @{
+            'demo/NOTES.md' = '# Missing SKILL.md'
+        }
+
+        (Invoke-SkillValidatorProcess -Root $root).ExitCode | Should -Be 1
     }
 }
