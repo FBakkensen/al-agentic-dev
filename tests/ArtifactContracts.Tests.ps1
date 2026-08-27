@@ -70,6 +70,9 @@ Describe 'Architecture artifact contracts' {
         $attachmentSkill | Should -Match '--allow-no-subscriptions'
         $attachmentSkill | Should -Match 'application/octet-stream'
         $attachmentSkill | Should -Match "relation-type 'Attached File'"
+        $attachmentSkill | Should -Match 'removing spaces'
+        $attachmentSkill | Should -Match 'CLI name `Attached File` and the WIT name `AttachedFile` both match'
+        $attachmentSkill | Should -Match 'apply the same relation-type normalization'
         $attachmentSkill | Should -Match 'WIT JSON Patch with `test /rev`'
         $attachmentSkill | Should -Match 'remove matching `/relations/<index>` paths in descending order'
         $attachmentSkill | Should -Match 'work-item show --expand relations'

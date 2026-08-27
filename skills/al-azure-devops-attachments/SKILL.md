@@ -23,7 +23,7 @@ Explain that Azure DevOps needs no Azure subscription. Stop until the user confi
 
 ## Upload and relate
 
-Read the work item with `az boards work-item show --expand relations` before mutation. For every existing `AttachedFile` relation whose name matches an input filename, preserve its index for replacement.
+Read the work item with `az boards work-item show --expand relations` before mutation. Normalize each relation type by removing spaces so the CLI name `Attached File` and the WIT name `AttachedFile` both match. For every matching attachment whose name matches an input filename, preserve its index for replacement.
 
 Upload every file as binary with `Invoke-RestMethod -Method Post`, a Bearer token, `Content-Type: application/octet-stream`, and:
 
@@ -35,6 +35,6 @@ With no matching filename, add the returned URL with `az boards work-item relati
 
 ## Verify and return
 
-Read the work item again with `--expand relations`. Finish only when every requested filename appears exactly once as `AttachedFile` and its URL is the one returned by this upload.
+Read the work item again with `--expand relations` and apply the same relation-type normalization. Finish only when every requested filename appears exactly once as an attachment and its URL is the one returned by this upload.
 
 Return the work-item ID, revision, and verified attachment names and URLs to the caller. Finish outcome first; on failure, name the exact command and error.
