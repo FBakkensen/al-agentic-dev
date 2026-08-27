@@ -66,6 +66,13 @@ function Get-MarkdownLinkTarget {
     }
 }
 
+function Invoke-SkillsValidation {
+    [CmdletBinding()]
+    param(
+        [string]$SkillsRoot = (Join-Path $PSScriptRoot '..' 'skills'),
+        [string]$AgentsRoot = (Join-Path $PSScriptRoot '..' 'agents')
+    )
+
 $violations = @()
 $root = (Resolve-Path -LiteralPath $SkillsRoot -ErrorAction Stop).Path
 # Pinned forks ship donor bodies unchanged beyond the al- namespace: the question rule
@@ -306,7 +313,13 @@ foreach ($agent in $agentFiles) {
 if ($violations.Count -gt 0) {
     $violations | ForEach-Object { Write-Host "FAIL: $_" -ForegroundColor Red }
     Write-Error "$($violations.Count) skill violation(s) found."
-    exit 1
+    return 1
 }
 
 Write-Host "`nAll skills validated successfully." -ForegroundColor Cyan
+return 0
+}
+
+if ($MyInvocation.InvocationName -ne '.') {
+    exit (Invoke-SkillsValidation -SkillsRoot $SkillsRoot -AgentsRoot $AgentsRoot)
+}

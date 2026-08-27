@@ -20,8 +20,14 @@ param(
     [string]$RepoRoot = (Join-Path $PSScriptRoot '..')
 )
 
+function Invoke-JsonValidation {
+    [CmdletBinding()]
+    param(
+        [string]$RepoRoot = (Join-Path $PSScriptRoot '..')
+    )
+
 $RepoRoot = (Resolve-Path -LiteralPath $RepoRoot -ErrorAction Stop).Path
-$errors = @()
+$script:jsonValidationErrors = @()
 
 Get-ChildItem -Path $RepoRoot -Recurse -Filter "*.json" |
     Where-Object { $_.FullName -notmatch '[\\/]node_modules[\\/]' } |
@@ -31,7 +37,7 @@ Get-ChildItem -Path $RepoRoot -Recurse -Filter "*.json" |
         $null = Get-Content $file.FullName -Raw | ConvertFrom-Json -AsHashtable
         Write-Host "OK: $($file.FullName)" -ForegroundColor Green
     } catch {
-        $errors += "FAIL: $($file.FullName) - $($_.Exception.Message)"
+        $script:jsonValidationErrors += "FAIL: $($file.FullName) - $($_.Exception.Message)"
         Write-Host "FAIL: $($file.FullName)" -ForegroundColor Red
     }
     }
@@ -40,13 +46,13 @@ function Read-PluginJson {
     param([Parameter(Mandatory = $true)][string]$Path, [Parameter(Mandatory = $true)][string]$Label)
 
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
-        $script:errors += "FAIL: $Label is missing"
+        $script:jsonValidationErrors += "FAIL: $Label is missing"
         return $null
     }
     try {
         return Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
     } catch {
-        $script:errors += "FAIL: $Label does not parse - $($_.Exception.Message)"
+        $script:jsonValidationErrors += "FAIL: $Label does not parse - $($_.Exception.Message)"
         return $null
     }
 }
@@ -57,14 +63,14 @@ $marketplacePath = Join-Path $RepoRoot '.github' 'plugin' 'marketplace.json'
 
 $plugin = Read-PluginJson -Path $pluginPath -Label 'plugin.json'
 if ($plugin) {
-    if (-not $plugin.name) { $errors += 'FAIL: plugin.json - name must be non-empty' }
-    if (-not $plugin.version) { $errors += 'FAIL: plugin.json - version must be non-empty' }
+    if (-not $plugin.name) { $script:jsonValidationErrors += 'FAIL: plugin.json - name must be non-empty' }
+    if (-not $plugin.version) { $script:jsonValidationErrors += 'FAIL: plugin.json - version must be non-empty' }
     foreach ($pathKey in @('skills', 'agents', 'mcpServers')) {
         $value = $plugin.$pathKey
         if (-not $value) {
-            $errors += "FAIL: plugin.json - $pathKey must name a path"
+            $script:jsonValidationErrors += "FAIL: plugin.json - $pathKey must name a path"
         } elseif (-not (Test-Path -LiteralPath (Join-Path $RepoRoot $value))) {
-            $errors += "FAIL: plugin.json - $pathKey path does not exist: $value"
+            $script:jsonValidationErrors += "FAIL: plugin.json - $pathKey path does not exist: $value"
         }
     }
 }
@@ -73,37 +79,37 @@ $mcp = Read-PluginJson -Path $mcpPath -Label '.mcp.json'
 if ($mcp) {
     $servers = @($mcp.mcpServers.PSObject.Properties | Where-Object { $null -ne $_ })
     if (-not $mcp.mcpServers -or $servers.Count -eq 0) {
-        $errors += 'FAIL: .mcp.json - mcpServers must carry at least one server'
+        $script:jsonValidationErrors += 'FAIL: .mcp.json - mcpServers must carry at least one server'
     }
     foreach ($server in $servers) {
         if (-not $server.Value.type) {
-            $errors += "FAIL: .mcp.json - server '$($server.Name)' must carry a type"
+            $script:jsonValidationErrors += "FAIL: .mcp.json - server '$($server.Name)' must carry a type"
         }
         if (-not $server.Value.tools) {
-            $errors += "FAIL: .mcp.json - server '$($server.Name)' must carry a non-empty tools allowlist"
+            $script:jsonValidationErrors += "FAIL: .mcp.json - server '$($server.Name)' must carry a non-empty tools allowlist"
         }
     }
 }
 
 $marketplace = Read-PluginJson -Path $marketplacePath -Label '.github/plugin/marketplace.json'
 if ($marketplace) {
-    if (-not $marketplace.name) { $errors += 'FAIL: marketplace.json - name must be non-empty' }
+    if (-not $marketplace.name) { $script:jsonValidationErrors += 'FAIL: marketplace.json - name must be non-empty' }
     $plugins = @($marketplace.plugins | Where-Object { $null -ne $_ })
     if ($plugins.Count -eq 0) {
-        $errors += 'FAIL: marketplace.json - plugins must carry at least one entry'
+        $script:jsonValidationErrors += 'FAIL: marketplace.json - plugins must carry at least one entry'
     }
     foreach ($entry in $plugins) {
         if (-not $entry.name) {
-            $errors += 'FAIL: marketplace.json - every plugins entry must name a plugin'
+            $script:jsonValidationErrors += 'FAIL: marketplace.json - every plugins entry must name a plugin'
             continue
         }
         if (-not $entry.source) {
-            $errors += "FAIL: marketplace.json - plugin '$($entry.name)' must carry a source path"
+            $script:jsonValidationErrors += "FAIL: marketplace.json - plugin '$($entry.name)' must carry a source path"
             continue
         }
         $sourcePath = Join-Path $RepoRoot $entry.source
         if (-not (Test-Path -LiteralPath $sourcePath)) {
-            $errors += "FAIL: marketplace.json - plugin '$($entry.name)' source does not exist: $($entry.source)"
+            $script:jsonValidationErrors += "FAIL: marketplace.json - plugin '$($entry.name)' source does not exist: $($entry.source)"
             continue
         }
         $sourceManifest = Join-Path $sourcePath 'plugin.json'
@@ -111,14 +117,14 @@ if ($marketplace) {
             try {
                 $manifest = Get-Content -LiteralPath $sourceManifest -Raw | ConvertFrom-Json
                 if ($entry.name -cne $manifest.name) {
-                    $errors += "FAIL: marketplace.json - plugin '$($entry.name)' does not match the manifest name '$($manifest.name)' at $($entry.source)"
+                    $script:jsonValidationErrors += "FAIL: marketplace.json - plugin '$($entry.name)' does not match the manifest name '$($manifest.name)' at $($entry.source)"
                 }
                 if ($entry.version -and $manifest.version -and ($entry.version -cne $manifest.version)) {
-                    $errors += "FAIL: marketplace.json - plugin '$($entry.name)' version '$($entry.version)' does not match the manifest version '$($manifest.version)' at $($entry.source)"
+                    $script:jsonValidationErrors += "FAIL: marketplace.json - plugin '$($entry.name)' version '$($entry.version)' does not match the manifest version '$($manifest.version)' at $($entry.source)"
                 }
                 $metadataVersion = $marketplace.metadata.version
                 if ($entry.source -eq './' -and $metadataVersion -and $manifest.version -and ($metadataVersion -cne $manifest.version)) {
-                    $errors += "FAIL: marketplace.json - metadata version '$metadataVersion' does not match the manifest version '$($manifest.version)' at $($entry.source)"
+                    $script:jsonValidationErrors += "FAIL: marketplace.json - metadata version '$metadataVersion' does not match the manifest version '$($manifest.version)' at $($entry.source)"
                 }
             } catch {
                 # The syntax sweep or the plugin.json check reports the parse failure.
@@ -127,9 +133,15 @@ if ($marketplace) {
     }
 }
 
-if ($errors.Count -gt 0) {
-    $errors | ForEach-Object { Write-Error $_ }
-    exit 1
+if ($script:jsonValidationErrors.Count -gt 0) {
+    $script:jsonValidationErrors | ForEach-Object { Write-Error $_ }
+    return 1
 }
 
 Write-Host "`nAll JSON files validated successfully." -ForegroundColor Cyan
+return 0
+}
+
+if ($MyInvocation.InvocationName -ne '.') {
+    exit (Invoke-JsonValidation -RepoRoot $RepoRoot)
+}

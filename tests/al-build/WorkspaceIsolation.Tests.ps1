@@ -75,7 +75,7 @@ AfterAll {
     $env:USERPROFILE = $script:OriginalUserProfile
 }
 
-Describe 'Workspace symbol-cache isolation' {
+Describe 'Workspace symbol-cache isolation' -Tag 'Process' {
     It 'returns a stable checkout-scoped cache root' {
         Push-Location $script:CheckoutA
         try {

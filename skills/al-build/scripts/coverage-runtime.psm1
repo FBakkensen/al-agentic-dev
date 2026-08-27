@@ -505,14 +505,20 @@ function Test-BcCoveragePayload {
         'HitCount'
     )
     foreach ($record in $records) {
+        $fields = @{}
+        foreach ($childNode in $record.ChildNodes) {
+            if (-not $fields.ContainsKey($childNode.LocalName)) {
+                $fields[$childNode.LocalName] = $childNode
+            }
+        }
         foreach ($fieldName in $requiredFields) {
-            if (-not ($record.ChildNodes | Where-Object { $_.LocalName -eq $fieldName })) {
+            if (-not $fields.ContainsKey($fieldName)) {
                 throw "Coverage payload '$Path' record is missing '$fieldName'."
             }
         }
         foreach ($fieldName in $numericFields) {
             $value = 0
-            $field = @($record.ChildNodes | Where-Object { $_.LocalName -eq $fieldName })[0]
+            $field = $fields[$fieldName]
             if (-not [int]::TryParse([string]$field.InnerText, [ref]$value)) {
                 throw "Coverage payload '$Path' record field '$fieldName' is not an integer."
             }

@@ -192,6 +192,11 @@
       "id": "S37",
       "prompt": "Format this proven internal module structure as arc42 Level 2 and show me the local HTML before Azure DevOps.",
       "expect": "al-arc42"
+    },
+    {
+      "id": "S38",
+      "prompt": "Attach these local PNG and SVG files to Azure DevOps User Story 32717. Use the CLI if the MCP cannot upload them.",
+      "expect": "al-azure-devops-attachments"
     }
   ]
 }

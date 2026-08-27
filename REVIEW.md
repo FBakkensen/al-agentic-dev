@@ -89,3 +89,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 ## Pinned forks
 
 34. A ported skill is a pinned fork: today `al-grill-me` (mattpocock/skills @ 885e2ca, MIT) and `al-unslop` (cursor/plugins pstack @ 60c641e, MIT). The body stays donor text except the al- namespace — the frontmatter `name:` line and any port-internal reference to a renamed sibling; `scripts/Compare-SkillToDonor.ps1` against the donor SHA is expected to show exactly those namespace hunks and nothing else. Flag any other diff — a content fix belongs upstream or in the port note of a deliberate re-port. Rules 15, 16, 17, 19, 21, and 25 read the donor as authoritative on these files; the structural gate (frontmatter, links, scripts, retired concepts) applies unchanged.
+
+## Azure DevOps attachments
+
+35. A skill that publishes local files to an Azure DevOps work item calls `/al-azure-devops-attachments`. Flag manual-upload fallback and any claim that missing MCP attachment support blocks publication. Azure CLI authentication failure pauses for the exact user-run login command; after authentication, the skill resumes upload and verifies every `AttachedFile` relation.
