@@ -14,7 +14,15 @@ Ask every question in the reply itself, as plain text — never through a questi
 
 ## Freeze behavior
 
-Gherkin, reviewed AAA expected values, and the Level 1 module interface are fixed. Read the diff and receipt, then trace consumers before moving a seam. Confirm every BC object, field, event, enum value, or test library used through lookup in this session.
+Gherkin, reviewed AAA expected values and proof levels, and the Level 1 module interface are fixed. Read the accepted `Current-to-final proof map`, diff, and receipt, then trace consumers before moving a seam. Confirm every BC object, field, event, enum value, or test library used through lookup in this session.
+
+## Reshape the proof
+
+Inspect the affected proof set as if all current requirements had existed when its tests were first written. Compare the landed tests with the accepted proof map. Correct avoidable layers, overlaps, and chronology-shaped tests inside the affected tests and shared helpers; leave unrelated proof alone.
+
+Before changing an existing test, run /al-build in `UnitTestOnly` mode for unit proof or `AllTests` mode for integration proof and require its current scope green. Keep production unchanged while applying proof-preserving reshapes, account for every existing business assertion unless the current requirement explicitly replaces it, then rerun the same mode green. A behavior, expected-value, or proof-level change returns to /al-test-design and the user.
+
+Every new or materially reshaped proof born green takes mutation as its red. Inject one compiling fault into the production site the proof targets, require red, revert the fault, and confirm green. If no fault forces red, strengthen the assertion until it does.
 
 ## Tidy
 

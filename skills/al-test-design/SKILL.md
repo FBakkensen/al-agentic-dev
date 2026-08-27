@@ -21,11 +21,15 @@ Ask one substantive question per message. Ask every question in the reply itself
 
 Test through the smallest caller-visible module interface that proves the Gherkin behavior. Do not split tests by private procedure or internal object. A deep module's internals may change while its contract stays green.
 
+Before proposing cases, search the repository for existing proof by affected module interface, objects, business terms, fixtures, and assertions. Inventory the affected proof set: every existing test procedure and shared test helper needed by the changed Gherkin paths. Widen the search until every path's current proof is known; leave unrelated behavior out.
+
+Design that proof set as if all current requirements had existed when its tests were first written. Keep, reshape, combine, split, or replace existing tests; add a test only for a distinct remaining case. The final set must not preserve requirement history through layered or overlapping tests.
+
 Confirm every Business Central object, table, field, action, procedure, event, enum value, and dialog text through lookup in this session. Reach for standard test libraries and fixtures before inventing helpers.
 
 ## Write AAA cases
 
-Add a `Test specification` section to the executable work item. Each case has:
+Add a `Test specification` section to the executable work item. Start with a `Current-to-final proof map`: for each existing or final test, name the existing test procedure or `none`, the business behavior already proved, its final AAA case or cases, and `keep`, `reshape`, `combine`, `split`, `replace`, or `add`. Every existing proof stays mapped unless the current requirement explicitly replaces it. Each case has:
 
 - **Arrange:** required business data, setup, permissions, and starting state.
 - **Act:** one verified caller-visible action.
@@ -34,7 +38,7 @@ Add a `Test specification` section to the executable work item. Each case has:
 
 One Gherkin scenario may require several AAA cases. Every Gherkin scenario maps to at least one case, and every applicable Trigger-to-outcome path, business branch, boundary, guarantee, and meaningful failure path appears in the map.
 
-Keep object layout, private seams, helper design, and production implementation out. Name exact expected records, field values, errors, notifications, and side effects where the platform contract supports them.
+Keep production object layout, private seams, helper design, and production implementation out. Name exact expected records, field values, errors, notifications, and side effects where the platform contract supports them.
 
 ## Review with the user
 

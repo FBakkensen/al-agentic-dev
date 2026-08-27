@@ -5,9 +5,9 @@ description: Use when an executable Feature or Vertical slice has reviewed Gherk
 
 # al-implement - prove the slice
 
-In: the executable Feature itself, or a child User Story and its parent Feature. Read the executable item's reviewed `Test specification` and the Feature's process and Building Block Level 1. If the AAA seam or expected value is unresolved, return that question to /al-test-design before editing code.
+In: the executable Feature itself, or a child User Story and its parent Feature. Read the executable item's reviewed `Test specification`, including its `Current-to-final proof map`, and the Feature's process and Building Block Level 1. If the AAA seam, existing-proof disposition, or expected value is unresolved, return that question to /al-test-design before editing code.
 
-Before editing, trace the narrow path through the workspace. Search for an existing module, event, interface, fixture, and pattern first. Confirm every BC object, table, field, procedure, event, enum value, and dialog text through lookup in this session.
+Before editing, trace the narrow path through the workspace. Search for an existing module, event, interface, test, fixture, and pattern first. Confirm every BC object, table, field, procedure, event, enum value, and dialog text through lookup in this session.
 
 Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update only on an important finding or a changed direction.
 
@@ -18,9 +18,13 @@ Ask every question in the reply itself, as plain text — never through a questi
 - Building Block Level 1 defines caller-visible module ownership.
 - Private object layout remains an implementation decision.
 
-## Red
+## Shape the proof
 
-Implement each unit or integration AAA case through the named module interface. One Gherkin scenario may need several tests. Run /al-build in `UnitTestOnly` mode for unit proof or `AllTests` mode for integration proof; a new automated proof goes red for the intended reason. If existing behavior and an existing test already prove the case, record that evidence instead of adding a duplicate test.
+Before changing an existing test, run /al-build in `UnitTestOnly` mode for unit proof or `AllTests` mode for integration proof and require its current scope green. Apply the proof map's proof-preserving reshapes before new expectations or production changes. Account for every existing business assertion in the final cases unless the current requirement explicitly replaces it, rerun the same mode green, and add no transitional test that the accepted map does not retain.
+
+Implement each unit or integration AAA case through the named module interface. One Gherkin scenario may need several tests. An unchanged existing test marked `keep` supplies evidence without a duplicate.
+
+Every new or materially reshaped automated proof earns a red. If born red, require failure for the intended reason. If born green because the behavior exists, inject one compiling fault into the production site the proof targets, run its scope to red, revert the fault, and confirm green. A compile error or a failure before the assertion is not red; if no fault forces red, strengthen the assertion until it does.
 
 A walkthrough-only case does not enter the automated red step. Keep it in the receipt for /al-walkthrough.
 
@@ -28,7 +32,7 @@ A walkthrough-only case does not enter the automated red step. Keep it in the re
 
 Write the smallest production change that makes the proof green. Keep business writes on validated or posting paths, reuse Base App seams, preserve quality properties, and avoid an AL interface with one implementation.
 
-Run the same /al-build mode until green, then run /al-build in `AllTests` mode. A red result remains red until the output names its exact cause.
+Run /al-build in `UnitTestOnly` mode for unit proof or `AllTests` mode for integration proof until green, then run /al-build in `AllTests` mode. A red result remains red until the output names its exact cause.
 
 ## Map what landed
 

@@ -18,6 +18,24 @@ Describe 'Skill workflow contracts' {
         $refactor | Should -Match '`Tidy: none` or the exact reshapes'
     }
 
+    It 'designs one coherent proof set and preserves existing proof while reshaping it' {
+        $testDesign = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-test-design' 'SKILL.md') -Raw
+        $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
+        $refactor = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-refactor' 'SKILL.md') -Raw
+
+        $testDesign | Should -Match 'search the repository for existing proof'
+        $testDesign | Should -Match 'Current-to-final proof map'
+        $testDesign | Should -Match 'keep`, `reshape`, `combine`, `split`, `replace`, or `add'
+        $implement | Should -Match 'proof-preserving reshapes before new expectations or production changes'
+        $implement | Should -Match 'require its current scope green'
+        $implement | Should -Match 'rerun the same mode green'
+        $implement | Should -Match 'Every new or materially reshaped automated proof earns a red'
+        $implement | Should -Match 'inject one compiling fault'
+        $refactor | Should -Match 'Compare the landed tests with the accepted proof map'
+        $refactor | Should -Match 'require its current scope green'
+        $refactor | Should -Match 'Every new or materially reshaped proof born green takes mutation as its red'
+    }
+
     It 'keeps precedent map ownership with al-lookup' {
         $lookup = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-lookup' 'SKILL.md') -Raw
         $mapContracts = @(Get-ChildItem -LiteralPath $script:SkillsRoot -Filter '*.md' -Recurse |
