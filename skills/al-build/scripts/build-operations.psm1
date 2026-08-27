@@ -712,15 +712,90 @@ function Get-LatestCompilerPath {
     return $null
 }
 
+function Get-ALCopsExpectedDllNames {
+    return @(
+        'ALCops.ApplicationCop.dll'
+        'ALCops.Common.dll'
+        'ALCops.DocumentationCop.dll'
+        'ALCops.FormattingCop.dll'
+        'ALCops.LinterCop.dll'
+        'ALCops.PlatformCop.dll'
+        'ALCops.TestAutomationCop.dll'
+    )
+}
+
+function Get-InstalledALCopsVersion {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$AnalyzersDir
+    )
+
+    $versions = [System.Collections.Generic.List[string]]::new()
+    foreach ($dllName in Get-ALCopsExpectedDllNames) {
+        $dllPath = Join-Path $AnalyzersDir $dllName
+        if (-not (Test-Path -LiteralPath $dllPath -PathType Leaf)) {
+            return $null
+        }
+
+        try {
+            $assemblyVersion = [System.Reflection.AssemblyName]::GetAssemblyName($dllPath).Version
+        } catch {
+            return $null
+        }
+        if (-not $assemblyVersion) {
+            return $null
+        }
+        $versions.Add($assemblyVersion.ToString())
+    }
+
+    $distinctVersions = @($versions | Sort-Object -Unique)
+    if ($distinctVersions.Count -ne 1) {
+        return $null
+    }
+    return $distinctVersions[0]
+}
+
+function Invoke-ALCopsDownload {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$CompilerDir,
+
+        [Parameter(Mandatory)]
+        [string]$AnalyzersDir
+    )
+
+    # Own the native-command error path: with $PSNativeCommandUseErrorActionPreference
+    # on, a non-zero npx exit would throw at the call site and discard the captured
+    # npm diagnostics. The explicit $LASTEXITCODE check below produces the richer error.
+    $PSNativeCommandUseErrorActionPreference = $false
+
+    if (-not (Get-Command npx -ErrorAction SilentlyContinue)) {
+        throw "npx not found. ALCops analyzers are installed via the official '@alcops/core' CLI, which requires Node.js. Install Node >= 22 (any source: MSI, Volta, nvm) so 'npx' is on PATH, then re-run provision."
+    }
+
+    $npxArgs = @(
+        '--yes', '@alcops/core@latest', 'download'
+        '--output', $AnalyzersDir
+        '--detect-using', $CompilerDir
+        '--detect-from', 'compiler-path'
+    )
+    $output = & npx @npxArgs 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "ALCops download failed (npx exit $LASTEXITCODE): $($output -join [Environment]::NewLine)"
+    }
+}
+
 function Install-ALCops {
     <#
     .SYNOPSIS
         Download and install the ALCops analyzers into the compiler's Analyzers folder.
     .DESCRIPTION
-        Uses the official '@alcops/core' CLI to detect the compiler's target framework
-        and download the latest ALCops.Analyzers NuGet package (six cops plus the
-        shared ALCops.Common.dll). Always installs the latest version and runs on
-        every provision, so analyzers track upstream releases without pinning.
+        Reuses a complete ALCops suite when all seven DLLs report one assembly version.
+        Otherwise uses the official '@alcops/core' CLI to detect the compiler's target
+        framework and download the latest ALCops.Analyzers NuGet package (six cops plus
+        the shared ALCops.Common.dll).
         Removes a legacy BusinessCentral.LinterCop.dll when present: ALCops shares
         diagnostic IDs with the discontinued LinterCop, so the two must never load
         together. Fails loudly; a missing analyzer must stop provisioning rather
@@ -735,17 +810,6 @@ function Install-ALCops {
         [string]$CompilerDir
     )
 
-    Write-BuildMessage -Type Step -Message "Installing ALCops analyzers..."
-
-    # Own the native-command error path: with $PSNativeCommandUseErrorActionPreference
-    # on, a non-zero npx exit would throw at the call site and discard the captured
-    # npm diagnostics. The explicit $LASTEXITCODE check below produces the richer error.
-    $PSNativeCommandUseErrorActionPreference = $false
-
-    if (-not (Get-Command npx -ErrorAction SilentlyContinue)) {
-        throw "npx not found. ALCops analyzers are installed via the official '@alcops/core' CLI, which requires Node.js. Install Node >= 22 (any source: MSI, Volta, nvm) so 'npx' is on PATH, then re-run provision."
-    }
-
     $analyzersDir = Join-Path $CompilerDir 'Analyzers'
     Ensure-Directory -Path $analyzersDir
 
@@ -756,32 +820,23 @@ function Install-ALCops {
         Write-BuildMessage -Type Detail -Message "Removed legacy BusinessCentral.LinterCop.dll"
     }
 
-    $npxArgs = @(
-        '--yes', '@alcops/core@latest', 'download'
-        '--output', $analyzersDir
-        '--detect-using', $CompilerDir
-        '--detect-from', 'compiler-path'
-    )
-    $output = & npx @npxArgs 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        throw "ALCops download failed (npx exit $LASTEXITCODE): $($output -join [Environment]::NewLine)"
+    $installedVersion = Get-InstalledALCopsVersion -AnalyzersDir $analyzersDir
+    if ($installedVersion) {
+        Write-BuildMessage -Type Success -Message "ALCops analyzers already installed: $installedVersion"
+        Write-BuildMessage -Type Detail -Message "Folder: $analyzersDir"
+        return
     }
 
-    $expectedDlls = @(
-        'ALCops.ApplicationCop.dll'
-        'ALCops.Common.dll'
-        'ALCops.DocumentationCop.dll'
-        'ALCops.FormattingCop.dll'
-        'ALCops.LinterCop.dll'
-        'ALCops.PlatformCop.dll'
-        'ALCops.TestAutomationCop.dll'
-    )
-    $missing = @($expectedDlls | Where-Object { -not (Test-Path -LiteralPath (Join-Path $analyzersDir $_)) })
-    if ($missing.Count -gt 0) {
-        throw "ALCops installation incomplete; missing in '$analyzersDir': $($missing -join ', ')"
+    Write-BuildMessage -Type Step -Message "Installing ALCops analyzers..."
+    Invoke-ALCopsDownload -CompilerDir $CompilerDir -AnalyzersDir $analyzersDir
+
+    $installedVersion = Get-InstalledALCopsVersion -AnalyzersDir $analyzersDir
+    if (-not $installedVersion) {
+        throw "ALCops installation incomplete or inconsistent in '$analyzersDir'."
     }
 
-    Write-BuildMessage -Type Success -Message "ALCops analyzers installed ($($expectedDlls.Count) DLLs)"
+    $expectedDllCount = @(Get-ALCopsExpectedDllNames).Count
+    Write-BuildMessage -Type Success -Message "ALCops analyzers installed: $installedVersion ($expectedDllCount DLLs)"
     Write-BuildMessage -Type Detail -Message "Folder: $analyzersDir"
 }
 
