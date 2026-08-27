@@ -32,7 +32,7 @@ A walkthrough-only case does not enter the automated red step. Keep it in the re
 
 Write the smallest production change that makes the proof green. Keep business writes on validated or posting paths, reuse Base App seams, preserve quality properties, and avoid an AL interface with one implementation.
 
-Run /al-build in `UnitTestOnly` mode for unit proof or `AllTests` mode for integration proof until green, then run /al-build in `AllTests` mode. A red result remains red until the output names its exact cause.
+Run the same /al-build mode until green, then run /al-build in `AllTests` mode. A red result remains red until the output names its exact cause.
 
 ## Map what landed
 
