@@ -1,11 +1,11 @@
 ---
 name: al-design
-description: Use when an Azure DevOps Feature needs its BC shape, deep-module boundaries, or arc42 Building Block Level 1 defined or revised.
+description: Use when an Azure DevOps Original User Story needs its BC shape, deep-module boundaries, or arc42 Building Block Level 1 defined or revised.
 ---
 
 # al-design - shape the modules
 
-In: the Feature with its original request and process model. This conversation owns architecture and data shape before code: canonical BC shape, Level 1 modules, their responsibilities, and their caller-visible interfaces. Implementation details remain open. If Azure DevOps work-item tools are unavailable, show the exact Description update and attachment set, then stop without creating a substitute record.
+In: the Original User Story with its original request and process model. This conversation owns architecture and data shape before code: canonical BC shape, Level 1 modules, their responsibilities, and their caller-visible interfaces. Implementation details remain open. If Azure DevOps work-item tools are unavailable, show the exact Description update and attachment set, then stop without creating a substitute record.
 
 Ask one substantive question per message. Show the competing module boundaries and their consequences when the choice is real. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
@@ -29,8 +29,8 @@ Use the arc42 Building Block View, Level 1:
 - Important Interfaces
 - one black box description per important module: Purpose/Responsibility, Interface(s), and only relevant optional fields
 
-Ask /al-arc42 to apply the official template and create the local architecture review HTML, editable SVG, and Azure DevOps-safe PNG. The user reviews the HTML before publication. Ask /al-azure-devops-attachments to attach the PNG and SVG, then embed its verified PNG URL and the black box text in the Feature Description. Missing MCP attachment support is not a blocker; authentication trouble stays with that skill until the Azure CLI token works. Level 1 records intended boundaries. Level 2 waits for implementation evidence.
+Ask /al-arc42 to apply the official template and create the local architecture review HTML, editable SVG, and Azure DevOps-safe PNG. The user reviews the HTML before publication. Ask /al-azure-devops-attachments to attach the PNG and SVG, then embed its verified PNG URL, explanatory text, and black boxes under `Building Block View` in the Original User Story Description. Missing MCP attachment support is not a blocker; authentication trouble stays with that skill until the Azure CLI token works. Level 1 records intended boundaries. Level 2 waits for implementation evidence.
 
 ## Close
 
-The pass ends when every important behavior has one module owner, each caller-visible interface is named, and the Feature contains the accepted Level 1 view. Commit any `docs/patterns.md` change with a plain descriptive message at every exit. No `docs/design.md` copy is created.
+The pass ends when every important behavior has one module owner, each caller-visible interface is named, and the Original User Story contains the accepted Level 1 view. Ask /al-commit to commit any `docs/patterns.md` change and the rest of the worktree at every exit. No `docs/design.md` copy is created.

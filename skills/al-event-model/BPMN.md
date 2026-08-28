@@ -22,7 +22,7 @@ Resolve the machine's existing Edge, Chrome, or Chromium executable. If Node.js,
 
 ## Render
 
-1. Write `.output/bpmn/<feature-id>/process.bpmn`.
+1. Write `.output/bpmn/<original-work-item-id>/process.bpmn`.
 2. Change the working directory to that output folder so generated paths stay local to the review artifact.
 3. In one PowerShell call, set the browser path and run:
 
@@ -32,9 +32,9 @@ Resolve the machine's existing Edge, Chrome, or Chromium executable. If Node.js,
 
 ## Local review HTML
 
-Write `.output/bpmn/<feature-id>/process.html` as a self-contained page with:
+Write `.output/bpmn/<original-work-item-id>/process.html` as a self-contained page with:
 
-1. Feature title
+1. Original User Story title
 2. Trigger
 3. Success guarantee
 4. Minimal guarantee

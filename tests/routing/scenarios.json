@@ -103,7 +103,7 @@
     },
     {
       "id": "S20",
-      "prompt": "The slice just landed — reconcile the Feature design, direct child slices, and receipts, then identify the next executable item.",
+      "prompt": "The slice just landed — reconcile the Original User Story design, direct child slices, and receipts, then identify the next executable item.",
       "expect": "al-next"
     },
     {
@@ -120,17 +120,17 @@
     },
     {
       "id": "S23",
-      "prompt": "Define the deep modules and arc42 Building Block Level 1 for this BC Feature.",
+      "prompt": "Define the deep modules and arc42 Building Block Level 1 for this Original User Story.",
       "expect": "al-design"
     },
     {
       "id": "S24",
-      "prompt": "Define the process contract and draw an exhaustive BPMN map for this Feature.",
+      "prompt": "Define the process contract and draw an exhaustive BPMN map for this Original User Story.",
       "expect": "al-event-model"
     },
     {
       "id": "S25",
-      "prompt": "Cut this Feature into independently useful Vertical slices with Gherkin and no implementation work items.",
+      "prompt": "Cut this Original User Story into independently useful Vertical slices with Gherkin and no implementation work items.",
       "expect": "al-scope"
     },
     {
@@ -150,7 +150,7 @@
     },
     {
       "id": "S29",
-      "prompt": "Anchor my original request as one Azure DevOps Feature, then interview me until the vocabulary is unambiguous.",
+      "prompt": "Anchor my original request as one Azure DevOps Original User Story, then interview me until the vocabulary is unambiguous.",
       "expect": "al-grill-adr"
     },
     {
@@ -197,6 +197,21 @@
       "id": "S38",
       "prompt": "Attach these local PNG and SVG files to Azure DevOps User Story 32717. Use the CLI if the MCP cannot upload them.",
       "expect": "al-azure-devops-attachments"
+    },
+    {
+      "id": "S39",
+      "prompt": "Commit everything in this worktree, including changes from earlier sessions, split into as many valid commits as possible.",
+      "expect": "al-commit"
+    },
+    {
+      "id": "S40",
+      "prompt": "Push this branch and open a ready pull request with the Azure DevOps links and available proof.",
+      "expect": "al-pull-request"
+    },
+    {
+      "id": "S41",
+      "prompt": "Update the current branch's pull request title and body to match what landed.",
+      "expect": "al-pull-request"
     }
   ]
 }

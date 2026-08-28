@@ -80,7 +80,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## Commit discipline
 
-32. A skill that writes repo files commits its own writes at every exit — clean close, fail pause, or open-question stop — with a plain descriptive message. Flag a writing skill with no commit line.
+32. A skill that writes repo files calls `/al-commit` at every exit — clean close, fail pause, or open-question stop. Flag a direct commit command or a writing skill with no `/al-commit` handoff. `/al-commit` owns the full worktree, questions only temporary paths, secret-bearing paths, or generated output that belongs in `.gitignore`, and creates the maximum number of independently valid commits.
 
 ## Show the thing
 
@@ -93,3 +93,8 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 ## Azure DevOps attachments
 
 35. A skill that publishes local files to an Azure DevOps work item calls `/al-azure-devops-attachments`. Flag manual-upload fallback and any claim that missing MCP attachment support blocks publication. Azure CLI authentication failure pauses for the exact user-run login command; after authentication, the skill resumes upload and verifies every `AttachedFile` relation.
+
+## Azure DevOps work items
+
+36. One request starts as one Original User Story. `Original` names its role in this workflow, not the top of the Azure DevOps hierarchy; structural parents remain unchanged and out of scope. With one Vertical slice, the Original User Story is executable and has no child from this workflow. With several slices, it becomes the container and every slice is one direct child User Story. Flag Azure DevOps Features introduced by this workflow and grandchildren below the Original User Story.
+37. Description sections keep this order when present: `Problem`, `Expected outcome`, `Scope`, `Process contract`, `Business process`, `Runtime View`, `Building Block View`. Diagrams stay with their explanatory text. In Acceptance Criteria, `Behavior` is valid fenced Gherkin and precedes `Test specification` when both exist; either section may be absent without prescribed meaning.
