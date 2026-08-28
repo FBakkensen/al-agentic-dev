@@ -1,25 +1,25 @@
 ---
 name: al-next
-description: Use when a Feature or Vertical slice has landed and its Azure DevOps design, evidence, or next executable slice needs reconciling.
+description: Use when a root or child User Story has landed and its Azure DevOps design, evidence, or next executable slice needs reconciling.
 ---
 
-# al-next - reconcile the feature
+# al-next - reconcile the request
 
-In: the Azure DevOps Feature, its child User Stories when present, work-item comments, receipts, and the landed diff. Azure DevOps is the design record; `.output/receipts/` mirrors execution evidence. If Azure DevOps work-item tools are unavailable, show the exact reconciliation update and stop without creating a substitute record.
+In: the Original Azure DevOps User Story, its child User Stories when present, work-item comments, receipts, and the landed diff. Azure DevOps is the design record; `.output/receipts/` mirrors execution evidence. If Azure DevOps work-item tools are unavailable, show the exact reconciliation update and stop without creating a substitute record.
 
-Ask one substantive question per message. Connect it to the Feature, the landed behavior, and verified code facts. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+Ask one substantive question per message. Connect it to the Original User Story, the landed behavior, and verified code facts. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## Show what landed
 
 Name the executable item and its receipts. Show its connected-object change map before the BC-anatomy delta table. The map explains how changed production objects connect and keeps tests in a separate Proof group. The table covers objects touched, schema, events, permissions, translations, tests, and the caller-visible behavior now present.
 
-## Reconcile the Feature
+## Reconcile the Original User Story
 
-Compare the code with the Feature's BPMN, Runtime View, Building Block Level 1, black boxes, and Level 2 when present. Compare the executable-item change map with the landed diff. Report drift and send the correction to /al-implement or /al-refactor. Update the Feature when implementation proved a better stable internal shape. A Level 2 change records current structure; the executable-item map records what changed.
+Compare the code with the Original User Story's BPMN, Runtime View, Building Block Level 1, black boxes, and Level 2 when present. Compare the executable-item change map with the landed diff. Report drift and send the correction to /al-implement or /al-refactor. Update the Original User Story when implementation proved a better stable internal shape. A Level 2 change records current structure; the executable-item map records what changed.
 
 ## Reconcile the slices
 
-Exactly one total slice stays on the Feature. With two or more, the Feature is their container and every slice is a direct child User Story. Add a newly proven slice only after the user approves its independent outcome and Gherkin. Remove or merge a slice whose separate value disappeared. Never create grandchildren or work items for modules, tests, diagrams, or implementation tasks.
+Exactly one total slice stays on the Original User Story. With two or more, the Original User Story is their container and every slice is a direct child User Story. Add a newly proven slice only after the user approves its independent outcome and Gherkin. Remove or merge a slice whose separate value disappeared. Never create grandchildren or work items for modules, tests, diagrams, or implementation tasks.
 
 ## Choose the next move
 
@@ -30,4 +30,4 @@ Exactly one total slice stays on the Feature. With two or more, the Feature is t
 
 ## Close
 
-Post reconciliation evidence as Feature or User Story comments. Name the Feature, the executable item, and the chosen next skill. The pass ends when the Description, child hierarchy, comments, and landed code tell one story.
+Post reconciliation evidence as User Story comments. Name the Original User Story, the executable item, and the chosen next skill. The pass ends when the Description, Acceptance Criteria, child hierarchy, comments, and landed code tell one story.

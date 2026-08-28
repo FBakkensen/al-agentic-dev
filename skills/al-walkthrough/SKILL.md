@@ -1,11 +1,11 @@
 ---
 name: al-walkthrough
-description: Use when an implemented Feature or Vertical slice needs its Gherkin scenarios walked in a running Business Central Web Client and the consumer repository supplies a Business Central workspace MCP for the current worktree.
+description: Use when an implemented User Story needs its Gherkin scenarios walked in a running Business Central Web Client and the consumer repository supplies a Business Central workspace MCP for the current worktree.
 ---
 
 # al-walkthrough - walk the slice
 
-In: the implemented executable Feature itself, or a child User Story and its parent Feature. The consumer repository must supply a workspace MCP that exposes the `bc_*` Web Client tools for the current worktree. This pass observes Gherkin behavior; AAA unit and integration cases remain build evidence.
+In: the implemented executable Original User Story, or a child User Story and its Original User Story. The consumer repository must supply a workspace MCP that exposes the `bc_*` Web Client tools for the current worktree. This pass observes Gherkin behavior; AAA unit and integration cases remain build evidence.
 
 ## Confirm the walk
 

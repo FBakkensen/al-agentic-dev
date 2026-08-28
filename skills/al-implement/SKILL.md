@@ -1,11 +1,11 @@
 ---
 name: al-implement
-description: Use when an executable Feature or Vertical slice has reviewed Gherkin, AAA test specification, and module contracts ready to implement in AL.
+description: Use when an executable User Story has reviewed Gherkin, AAA test specification, and module contracts ready to implement in AL.
 ---
 
 # al-implement - prove the slice
 
-In: the executable Feature itself, or a child User Story and its parent Feature. Read the executable item's reviewed `Test specification`, including its `Current-to-final proof map`, and the Feature's process and Building Block Level 1. If the AAA seam, existing-proof disposition, or expected value is unresolved, return that question to /al-test-design before editing code.
+In: the executable Original User Story, or a child User Story and its Original User Story. Read the executable item's reviewed `Test specification`, including its `Current-to-final proof map`, and the Original User Story's process and Building Block Level 1. If the AAA seam, existing-proof disposition, or expected value is unresolved, return that question to /al-test-design before editing code.
 
 Before editing, trace the narrow path through the workspace. Search for an existing module, event, interface, test, fixture, and pattern first. Confirm every BC object, table, field, procedure, event, enum value, and dialog text through lookup in this session.
 
@@ -40,7 +40,7 @@ After green, trace the landed production path from its caller through every chan
 
 Ask /al-arc42 to render the map. For one affected Level 1 module, use a Building Block Level 2 white box. For several affected Level 1 modules, use a Level 1 impact overview plus a Level 2 white box for each module whose object relations need explanation. Add a Runtime View only when call order, a transaction boundary, or an error path matters.
 
-Keep the change markers in the receipt and executable-item comment. Add or update the Feature's Level 2 only when the implementation map reveals stable internal building blocks or interfaces worth preserving; publish that current-state view without change markers. A simple module may need the implementation map but no Feature Level 2. Ask /al-arc42 for the local HTML, editable SVG, PNG, alt text, and publishable fragments. Ask /al-azure-devops-attachments to attach the PNG and SVG, and use its verified URLs in the comment and Feature fragment. Missing MCP attachment support is not a blocker; authentication trouble stays with that skill until the Azure CLI token works.
+Keep the change markers in the receipt and executable-item comment. Add or update the Original User Story's Level 2 only when the implementation map reveals stable internal building blocks or interfaces worth preserving; publish that current-state view without change markers. A simple module may need the implementation map but no Original User Story Level 2. Ask /al-arc42 for the local HTML, editable SVG, PNG, alt text, and publishable fragments. Ask /al-azure-devops-attachments to attach the PNG and SVG, and use its verified URLs in the comment and Original User Story fragment. Missing MCP attachment support is not a blocker; authentication trouble stays with that skill until the Azure CLI token works.
 
 ## Receipt
 
@@ -48,4 +48,4 @@ Write `.output/receipts/<work-item-id>.md` with the work-item ID, implementation
 
 ## Close
 
-Commit code and tracked documentation with a plain descriptive message at every exit. Finish outcome first: what changed, what proves it, where the implementation map is attached, which module interface stayed stable, and whether Feature Level 2 changed. Name /al-refactor as the next move. Stop with the exact red reason when any proof is unresolved.
+Ask /al-commit to commit the complete worktree at every exit. Finish outcome first: what changed, what proves it, where the implementation map is attached, which module interface stayed stable, and whether Original User Story Level 2 changed. Name /al-refactor as the next move. Stop with the exact red reason when any proof is unresolved.

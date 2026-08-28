@@ -42,8 +42,8 @@ Same plugin, no marketplace registration — and no catalog for `copilot plugin 
 ### Verify
 
 ```
-copilot plugin list      # al-agentic-dev@al-agentic-dev (v2.4.12)
-copilot skill list       # the 23 skills, under "Plugin skills"
+copilot plugin list      # al-agentic-dev@al-agentic-dev (v2.4.13)
+copilot skill list       # the 25 skills, under "Plugin skills"
 copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn, bc-code-intelligence
 ```
 
@@ -79,7 +79,7 @@ The auto-install runs when Copilot starts in a trusted checkout of that reposito
 
 ### Azure DevOps MCP server
 
-The Feature and its direct Vertical-slice children live in Azure DevOps work items, so install and authenticate the Azure DevOps MCP server per its own documentation. The plugin deliberately does not bundle it: the server connection is yours, not the plugin's. Without it, planning skills show the exact work-item fields needed and stop; they do not create a competing file-based design record.
+The Original User Story and its direct Vertical-slice children live in Azure DevOps, so install and authenticate the Azure DevOps MCP server per its own documentation. `Original` names the User Story that carries the request in this workflow; structural parents above it remain unchanged. The plugin deliberately does not bundle the server: the connection is yours. Without it, planning skills show the exact work-item fields needed and stop; they do not create a competing file-based design record.
 
 ### Web Client walkthrough
 
@@ -134,16 +134,18 @@ copilot plugin uninstall al-agentic-dev
 | `/al-miner` | Mines session history for repeated failures and steering corrections; proposes standing lessons with evidence, never landing them itself. |
 | `/al-lookup` | Answers one platform question with a source pointer — Microsoft Learn, bc-code-intelligence, the BCApps clone, or the BCQuality index — and grows the repo's precedent map. |
 | `/al-azure-devops-attachments` | Uploads local files through Azure CLI credentials, attaches them to an Azure DevOps work item, and guides the user through authentication when needed. |
-| `/al-grill-adr` | Anchors one Azure DevOps Feature, preserves the original request verbatim, settles domain vocabulary, and records hard-to-reverse business rules. |
+| `/al-commit` | Stages the full worktree and creates the maximum number of independently valid commits with scoped Azure DevOps links. |
+| `/al-pull-request` | Pushes the current branch and creates or updates its ready pull request with the landed change and available proof. |
+| `/al-grill-adr` | Anchors one Original Azure DevOps User Story, preserves the original request verbatim, settles domain vocabulary, and records hard-to-reverse business rules. |
 | `/al-event-model` | Adds the process contract and exhaustive BPMN map, renders it through locked bpmn-js tooling into local review HTML, and supplies Runtime scenarios to `/al-arc42`. |
 | `/al-design` | Defines deep-module boundaries and the arc42 Building Block Level 1 with black box contracts; implementation details stay open. |
-| `/al-scope` | Keeps an only slice on the Feature; with several, creates one direct child User Story per proven outcome, each with Gherkin Acceptance Criteria. |
-| `/al-test-design` | Turns approved Gherkin into a user-reviewed AAA test specification at the caller-visible module interface before implementation. |
+| `/al-scope` | Keeps an only slice on the Original User Story; with several, creates one direct child User Story per proven outcome. |
+| `/al-test-design` | Writes the reviewed AAA test specification after any Gherkin behavior in Acceptance Criteria. |
 | `/al-implement` | Implements reviewed AAA cases through the Level 1 interface, runs `/al-build`, writes the receipt, and adds Level 2 only when code proves stable internals. |
 | `/al-refactor` | Tidies green code or performs a named deepening reshape with behavior frozen, updating Level 2 only when internal structure changes. |
 | `/al-review` | Returns a read-only verdict against Gherkin, AAA proof, Level 1 ownership, and the accuracy or justified absence of Level 2. |
 | `/al-walkthrough` | Walks Gherkin scenarios in the running Web Client through the consumer repository's workspace MCP, preserving observed versus expected evidence. |
-| `/al-next` | Reconciles landed code, Feature design, direct child slices, receipts, and the next executable item without creating implementation work items. |
+| `/al-next` | Reconciles landed code, Original User Story design, direct child slices, receipts, and the next executable item without creating implementation work items. |
 | `/al-pr-shepherd` | Drives one open PR to merge — CI watched, Copilot findings fixed, main merged in with intent-preserving conflict resolution — merging only on your explicit go. |
 | `/al-orchestrate` | Runs one executable item with reviewed AAA through implementation, bounded refactoring, and read-only review in child sessions. |
 

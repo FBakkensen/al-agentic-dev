@@ -5,7 +5,7 @@ description: Use after AL implementation or refactoring when the diff needs a le
 
 # al-review - judge the landed slice
 
-In: the diff, receipt, and the executable Feature itself or a child User Story plus its parent Feature. Read the executable item's reviewed `Test specification`. Read-only: report evidence and make no code, work-item, or design edits.
+In: the diff, receipt, and the executable Original User Story or a child User Story plus its Original User Story. Read the executable item's reviewed `Test specification` from Acceptance Criteria. Read-only: report evidence and make no code, work-item, or design edits.
 
 Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Usually ask none: report findings, and make uncertainty explicit.
 
@@ -20,7 +20,7 @@ Trace every changed call site, data flow, commit boundary, subscriber, and proof
 Judge:
 
 - every Gherkin scenario reaches its named BPMN outcome
-- the Gherkin and AAA proof start from the Feature's Trigger and cover its Success and Minimal guarantees
+- the Gherkin and AAA proof start from the Original User Story's Trigger and cover its Success and Minimal guarantees
 - AAA cases cover the scenario branches with independent expected values
 - tests exercise the caller-visible module interface rather than private internals
 - Building Block Level 1 ownership matches the code
@@ -32,7 +32,7 @@ Run /al-build in `UnitTestOnly` mode for missing unit evidence or `AllTests` mod
 
 ## Parallel lenses
 
-Dispatch `al-review-lens` once with one dimension named `Feature contract`, its full definition being the checks above, the diff scope, work items, receipt, and relevant sources.
+Dispatch `al-review-lens` once with one dimension named `User Story contract`, its full definition being the checks above, the diff scope, work items, receipt, and relevant sources.
 
 For standards, read `.bcquality/skills/entry.md` and follow its Entry protocol with goal `review`, inputs `pr-diff`, technologies `[al]`, and all three layers. Dispatch one `al-knowledge-leaf` per selected leaf with the leaf path, diff scope, READ and DO paths, and domain-filtered index slice its contract requires.
 

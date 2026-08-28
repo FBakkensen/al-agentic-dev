@@ -1,17 +1,17 @@
 ---
 name: al-event-model
-description: Use when an Azure DevOps Feature needs its business process contract, BPMN process map, or arc42 Runtime View defined or revised.
+description: Use when an Azure DevOps Original User Story needs its business process contract, BPMN process map, or arc42 Runtime View defined or revised.
 ---
 
 # al-event-model - map the business process
 
-In: the original Azure DevOps Feature and the settled domain vocabulary. Read the request verbatim. Model what the business observes; AL publishers, subscribers, codeunits, and private procedures are design or implementation evidence, not the business process. If Azure DevOps work-item tools are unavailable, show the exact Description update and attachment set, then stop without creating a substitute record.
+In: the Original Azure DevOps User Story and the settled domain vocabulary. Read the request verbatim. Model what the business observes; AL publishers, subscribers, codeunits, and private procedures are design or implementation evidence, not the business process. If Azure DevOps work-item tools are unavailable, show the exact Description update and attachment set, then stop without creating a substitute record.
 
 Ask one substantive question per message. Connect it to earlier answers and verified facts, and show the affected path when a picture makes the choice clearer. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
 
 ## Process contract
 
-Extend the Feature Description with:
+Extend the Original User Story Description with `Process contract`, followed by `Business process`. Keep existing sections in this order when present: `Problem`, `Expected outcome`, `Scope`, `Process contract`, `Business process`, `Runtime View`, `Building Block View`.
 
 - **Trigger:** the business event that starts the process.
 - **Success guarantee:** what is observably true on the successful path.
@@ -23,7 +23,7 @@ Use BPMN 2.0 for roles, actions, gateways, records, exceptions, decisions, and n
 
 Follow [BPMN.md](BPMN.md). Create the editable BPMN source, render SVG and PNG from that source, and write the local process review HTML. The user reviews the HTML before publication.
 
-Ask /al-azure-devops-attachments to attach the BPMN source and PNG to the Feature, then embed its verified PNG URL in the Description. Missing MCP attachment support is not a blocker; authentication trouble stays with that skill until the Azure CLI token works.
+Ask /al-azure-devops-attachments to attach the BPMN source and PNG to the Original User Story, then embed its verified PNG URL with its explanatory text under `Business process`. Missing MCP attachment support is not a blocker; authentication trouble stays with that skill until the Azure CLI token works.
 
 ## Runtime View
 
@@ -35,4 +35,4 @@ Every Business Central object, field, action, event, enum value, or dialog text 
 
 ## Close
 
-The pass ends when Trigger, both guarantees, every BPMN path, and any necessary Runtime View agree with the original request. The user confirms the local HTML before the Feature update. No `docs/event-model.md` copy is created.
+The pass ends when Trigger, both guarantees, every BPMN path, and any necessary Runtime View agree with the original request. The user confirms the local HTML before the Original User Story update. No `docs/event-model.md` copy is created.

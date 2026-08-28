@@ -1,21 +1,21 @@
 ---
 name: al-orchestrate
-description: Use when one executable AL Feature or Vertical slice has reviewed AAA and needs implementation, bounded refactoring, and read-only review coordinated across child sessions.
+description: Use when one executable AL User Story has reviewed AAA and needs implementation, bounded refactoring, and read-only review coordinated across child sessions.
 ---
 
 # al-orchestrate - run the execution loop
 
-In: the executable Feature itself, or a child User Story and its parent Feature, with reviewed Gherkin and `Test specification`, plus any explicit deepening goal. If AAA is not reviewed, return `/al-test-design` as the next move and stop.
+In: the executable Original User Story, or a child User Story and its Original User Story, with reviewed Gherkin and `Test specification`, plus any explicit deepening goal. If AAA is not reviewed, return `/al-test-design` as the next move and stop.
 
 Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update only on an important finding, a decision point, or a changed direction.
 
 ## Run one owner at a time
 
-1. Launch a child session for /al-implement with the work-item ID, repository, Feature contract, and exact receipt path.
+1. Launch a child session for /al-implement with the work-item ID, repository, Original User Story contract, and exact receipt path.
 2. Read its result, branch, commit, and full receipt content.
-3. Launch a fresh /al-refactor child stacked on the implementation branch; pass the receipt content, reviewed AAA, Feature, and any named deepening goal in its kickoff.
+3. Launch a fresh /al-refactor child stacked on the implementation branch; pass the receipt content, reviewed AAA, Original User Story, and any named deepening goal in its kickoff.
 4. Read its branch, commit, and updated receipt content.
-5. Launch a fresh /al-review child stacked on the latest writing branch; pass the executable work item, parent Feature, diff base, and receipt content in its kickoff.
+5. Launch a fresh /al-review child stacked on the latest writing branch; pass the executable work item, Original User Story, diff base, and receipt content in its kickoff.
 6. After each blocking repair, launch another fresh /al-review child on the repaired branch; repeat until the verdict has no blocking findings.
 7. When the `Test specification` names walkthrough proof, launch /al-walkthrough on the latest writing branch after the blocking-free review and require evidence for every such case.
 
@@ -23,7 +23,7 @@ In the GitHub Copilot app, use `create_session` with kickoff mode `autopilot`, t
 
 In the terminal Copilot CLI, give each block a UUID and run it sequentially in the current worktree as a fresh headless process: `copilot -p "/al-implement <work-item>" --session-id <uuid> --allow-all-tools --no-ask-user --plugin-dir <plugin-folder>`, then the same shape for /al-refactor, /al-review, and /al-walkthrough when required. The shared worktree, commits, and receipt path carry state; one process runs at a time.
 
-Each writing child commits before returning; review remains read-only.
+Each writing child calls /al-commit before returning; review remains read-only.
 
 ## Pass through decisions
 
@@ -41,4 +41,4 @@ In the CLI, resume that child with `copilot --resume=<uuid> -p "<answer>" --allo
 
 ## Close
 
-Finish with the executable item, commits, receipt, connected-object change map, gate result, review verdict, walkthrough evidence when required, and whether Feature Level 2 changed. Outcome first; no extra summary.
+Finish with the executable item, commits, receipt, connected-object change map, gate result, review verdict, walkthrough evidence when required, and whether Original User Story Level 2 changed. Outcome first; no extra summary.

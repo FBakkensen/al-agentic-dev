@@ -35,11 +35,11 @@ A valid pointer is a Learn URL, a BCApps file and line, a bc-code-intelligence t
 
 ## Own the map change
 
-Whether /al-lookup runs standalone or inside another skill, it owns every change it makes to `docs/precedent-map.md`. A map hit writes and commits nothing. A search with no sourced answer writes and commits nothing.
+Whether /al-lookup runs standalone or inside another skill, it owns every change it makes to `docs/precedent-map.md`. A map hit writes nothing. A search with no sourced answer writes nothing.
 
-For a fresh answer, require a clean map path before writing; a dirty path stops the run before the map changes. Append the row, stage only `docs/precedent-map.md`, then run `git commit --only -m "Record AL precedent" -- docs/precedent-map.md`. Return only after that commit contains no other path and the map path is clean; all other working-tree and index changes stay untouched.
+For a fresh answer, require a clean map path before writing; a dirty path stops the run before the map changes. Append the row, then ask /al-commit to commit the complete worktree. Return only after one resulting commit contains the map change and the map path is clean.
 
-If the commit fails, remove this run's map change from both the index and working tree without touching any other path, then report the exact error. The caller receives the ledger line, never ownership of a dirty map change.
+If /al-commit cannot record the map change, remove only this run's row from the index and working tree, then report the exact error. The caller receives the ledger line, never ownership of a dirty map change.
 
 ## Deep questions go to /research
 
