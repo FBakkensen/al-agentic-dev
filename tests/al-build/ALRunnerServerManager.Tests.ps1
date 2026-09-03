@@ -100,11 +100,52 @@ exit /b 0
         $managerLogPath = Join-Path $repoRoot '.output' 'logs' 'al-runner-server-manager.log'
         $managerLog = Get-Content -LiteralPath $managerLogPath -Raw
         $managerLog | Should -Match 'did not signal ready'
+        # An early exit is distinguishable from a hang or a wrong first line:
+        # the fatal line carries the exit state, and the one logged retry
+        # keeps the flake visible while the second attempt runs.
+        $managerLog | Should -Match '\[manager\] retry: al-runner --server exited before its ready line \(HasExited=True ExitCode=0\)'
+        $managerLog | Should -Match "did not signal ready: '' \(HasExited=True ExitCode=0\)"
+        ([regex]::Matches($managerLog, 'did not signal ready')).Count | Should -Be 1
         # Dependencies are self-contained (design decision 3): Start-Child
         # builds the package-cache dir before it ever spawns al-runner, and
         # logs it — this is the one place the manager's own construction of
         # the --package-cache argument is observable end to end.
         $managerLog | Should -Match ([regex]::Escape('[deps] package-cache: ' + (Join-Path $repoRoot '.output' 'al-runner-deps')))
+    }
+    It 'names the wrong first line and reports the child alive when al-runner answers but never says ready' {
+        $fakeBinDir = Join-Path $TestDrive 'fake-bin-wrong-line'
+        New-Item -ItemType Directory -Path $fakeBinDir -Force | Out-Null
+        # Prints a non-ready line, then blocks on stdin: the retry is reserved
+        # for a child that exited, so this path must fail on the first attempt
+        # and the manager must still take the child down on exit.
+        Set-Content -LiteralPath (Join-Path $fakeBinDir 'al-runner.cmd') -Value @'
+@echo off
+echo {"hello":true}
+echo reexec failed 1>&2
+set /p line=
+exit /b 3
+'@
+
+        $repoRoot = Join-Path $TestDrive 'repo-wrong-line'
+        New-Item -ItemType Directory -Path $repoRoot -Force | Out-Null
+        New-MinimalBuildConfig -RepoRoot $repoRoot
+
+        $managerPath = Join-Path $PSScriptRoot '..' '..' 'skills' 'al-build' 'scripts' 'alrunner-server-manager.ps1'
+        $originalPath = $env:PATH
+        try {
+            $env:PATH = "$fakeBinDir;$originalPath"
+            & pwsh -NoProfile -File $managerPath -RepoRoot $repoRoot
+            $exitCode = $LASTEXITCODE
+        }
+        finally {
+            $env:PATH = $originalPath
+        }
+
+        $exitCode | Should -Be 1
+        $managerLog = Get-Content -LiteralPath (Join-Path $repoRoot '.output' 'logs' 'al-runner-server-manager.log') -Raw
+        $managerLog | Should -Not -Match '\[manager\] retry'
+        $managerLog | Should -Match 'did not signal ready: ''\{"hello":true\}'' \(HasExited=False PID=\d+\)'
+        $managerLog | Should -Match 'last 1 line\(s\) of .*al-runner-server\.log:\s+reexec failed'
     }
 }
 
