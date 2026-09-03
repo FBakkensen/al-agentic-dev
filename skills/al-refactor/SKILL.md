@@ -14,7 +14,7 @@ Ask every question in the reply itself, as plain text — never through a questi
 
 ## Freeze behavior
 
-Gherkin, reviewed AAA expected values and proof levels, and the Level 1 module interface are fixed. Read the accepted `Current-to-final proof map`, diff, and receipt, then trace consumers before moving a seam. Confirm every BC object, field, event, enum value, or test library used through lookup in this session.
+Gherkin, reviewed AAA expected values and proof levels, and the Level 1 module interface are fixed. Read the accepted `Current-to-final proof map`, diff, and receipt, then trace consumers before moving a seam. Confirm every BC object, table, field, procedure, event, enum value, test library, or dialog text used through lookup in this session.
 
 ## Decide the list
 
@@ -32,9 +32,9 @@ Before changing an existing test, require its current scope green:
 
 Then dispatch the list; the worker's brief carries the paragraph below:
 
-▶ execution · task · the reshape list for the named files with the frozen AAA expected values, the Speak BC paragraph, and the grounding rule → the diff, the green gate line, mutation evidence per reshaped proof
+▶ execution · task · the proof reshapes and tidy/deepening list for the named files with the frozen AAA expected values, the Speak BC paragraph, and the grounding rule → the diff, the green gate line, mutation evidence per reshaped proof, the receipt's Tidy: reshapes
 
-Keep production unchanged while applying proof-preserving reshapes, account for every existing business assertion unless the current requirement explicitly replaces it, then rerun the gate green. Every new or materially reshaped proof born green takes mutation as its red. Inject one compiling fault into the production site the proof targets, require red, revert the fault, and confirm green. If no fault forces red, strengthen the assertion until it does. Run /al-build's gate after each edit and finish on a green gate; restore the last green shape when an edit weakens behavior or the module contract.
+Apply proof-preserving reshapes with production unchanged, account for every existing business assertion unless the current requirement explicitly replaces it, then rerun the gate green. Apply the tidy/deepening list to production next; run /al-build's gate after each edit and finish on a green gate. Every new or materially reshaped proof born green takes mutation as its red. Inject one compiling fault into the production site the proof targets, require red, revert the fault, and confirm green. If no fault forces red, strengthen the assertion until it does. Restore the last green shape when an edit weakens behavior or the module contract.
 
 Judge the return against the frozen values and the list before the next step.
 
@@ -54,4 +54,4 @@ Update the receipt with the final implementation map, `Tidy: none` or the exact 
 
 ▶ mechanical · task · /al-commit the complete worktree, work items <ids> → commit hashes and subjects, remaining worktree
 
-Finish outcome first; stop with the exact red reason when the gate does not pass.
+Finish outcome first: name the reshaped files, the `Tidy: none` or exact reshapes line, the green gate, and that /al-review takes the receipt next. Stop with the exact red reason when the gate does not pass.
