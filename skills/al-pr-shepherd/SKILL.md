@@ -20,9 +20,19 @@ Re-read the PR as it is now — required checks, workflow runs, inline review th
 Then act, one class at a time:
 
 1. **Human feedback** → stop the automation and ask the user; never auto-reply, auto-resolve, or change code for it.
-2. **An actionable Copilot finding** → two classes. A local repair — contained, within what the PR already promises — is fixed, gated through /al-build, committed through /al-commit, pushed, replied to, resolved. A comment that widens what the PR promises is a bullet, not a fix: surface it, propose it for /al-scope or /al-next to place, and wait.
+2. **An actionable Copilot finding** → two classes. A local repair — contained, within what the PR already promises — goes to a worker, then is pushed, replied to, resolved:
+
+   ▶ execution · task · the finding, the PR's promise, the files it names, the Speak BC paragraph, and the grounding rule → the fix diff, the green gate line from /al-build, the /al-commit hashes
+
+   A comment that widens what the PR promises is a bullet, not a fix: surface it, propose it for /al-scope or /al-next to place, and wait.
 3. **A required check red because of the PR** → diagnose and fix the root cause under the same gate rules, push, reply. An infrastructure, access, or flaky failure stops with the blocker named.
-4. **Behind main** → merge origin/main INTO the PR branch as a merge commit — a rebase rewrites what reviewers saw. Conflicts resolve by preserving both intents, each side traced to its primary sources: commits, PRs, issues. The mechanical AL collision — the same object or field number claimed by both sides with no overlapping logic — keeps both declarations and renumbers the branch-new number within its idRanges bucket, verified by a workspace scan, never recall. A conflict that reveals a design decision — one concept modeled twice, conflicting logic in one object — stops for the user. /al-build's gate proves the synced tree before the push.
+4. **Behind main** → merge origin/main INTO the PR branch as a merge commit — a rebase rewrites what reviewers saw. Conflicts resolve by preserving both intents, each side traced to its primary sources: commits, PRs, issues. The same object or field number claimed by both sides with no overlapping logic is the one collision a worker resolves:
+
+   ▶ execution · task · the AL number collision: both sides' declarations and the idRanges bucket → both declarations kept, the branch-new number renumbered inside its bucket and verified by a workspace scan
+
+   A conflict that reveals a design decision — one concept modeled twice, conflicting logic in one object — stops for the user. Before the push:
+
+   ▶ mechanical · task · /al-build gate on the synced tree → summary.json verdict, per-runner totals, exact red cause
 5. **Copilot review requested or running, or a check still running** → wait inside this turn, as described under Waiting; never end the turn on a pending state.
 6. **Checks green, no Copilot pass pending, nothing left to handle** → ask for the user's go, and on it, merge.
 

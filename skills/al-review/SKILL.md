@@ -28,15 +28,19 @@ Judge:
 - Level 2, when present, matches proven internals; its absence is valid for a simple module
 - permissions, translations, upgrade impact, and breaking surface are covered
 
-Run /al-build's gate for missing test evidence.
+▶ mechanical · task · /al-build gate on the reviewed scope for missing test evidence, WARN_AS_ERROR as the repository states → summary.json verdict, per-runner totals, exact red cause
 
 ## Parallel lenses
 
-Dispatch `al-review-lens` once with one dimension named `User Story contract`, its full definition being the checks above, the diff scope, work items, receipt, and relevant sources.
+Launch these together in the background while the contract inspection above proceeds; wait only where the verdict needs their findings:
 
-For standards, read `.bcquality/skills/entry.md` and follow its Entry protocol with goal `review`, inputs `pr-diff`, technologies `[al]`, and all three layers. Dispatch one `al-knowledge-leaf` per selected leaf with the leaf path, diff scope, READ and DO paths, and domain-filtered index slice its contract requires.
+▶ execution · task · al-review-lens with the one dimension `User Story contract` — the checks above as its definition — the diff scope, work items, receipt, and relevant sources → its findings
 
-These parallelize in full-capability subagents, launched in the background while the User Story contract dimension proceeds; wait only where the verdict needs their findings. When subagents are unavailable, apply them in one pass. Deduplicate by root cause.
+For standards, read `.bcquality/skills/entry.md` and follow its Entry protocol with goal `review`, inputs `pr-diff`, technologies `[al]`, and all three layers; then one line per selected leaf:
+
+▶ mechanical · task · al-knowledge-leaf with the leaf path, diff scope, READ and DO paths, and the domain-filtered index slice its contract requires → the leaf's DO report
+
+Deduplicate by root cause.
 
 ## Verdict
 
