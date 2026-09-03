@@ -16,7 +16,7 @@ Invoke-Pester tests                   # the validator suites, the hook body suit
 
 The 1024-character description cap is load-bearing, not style: on copilot CLI 1.0.80 a skill whose description exceeds it is **silently never loaded** — no warning, no log line, the skill just never fires (probed 2026-08-19 with sentinel descriptions: 900 characters loads, 1100 and 2100 vanish). `Validate-Skills.ps1` enforcing 1024 is what turns that silent drop into a red gate.
 
-`tests/ModelTiers.Tests.ps1` runs both sessionStart hook bodies out of `hooks.json` as processes with `HOME` pointed at a scratch folder in four states — no `models.json`, a valid one, a broken one, one with a single tier — and asserts the injected `# Model tiers` rows and the `Defaults in use` line; the bash cases skip where `bash` is absent or does not share `HOME` (a WSL bash). Two Unit tests hold the inline default literal in each body equal to `skills/al-setup-models/models.default.json` with whitespace removed, and one holds each agent pin equal to its tier's default model.
+`tests/ModelTiers.Tests.ps1` runs both sessionStart hook bodies out of `hooks.json` as processes with `HOME` pointed at a scratch folder in six states — absent, valid, unparseable, partial, unsafe, and all-broken — plus a parity case set, and asserts the injected `# Model tiers` rows and the `Defaults in use` line; the bash cases skip where `bash` is absent or does not share `HOME` (a WSL bash). Two Unit tests hold the inline default literal in each body equal to `skills/al-setup-models/models.default.json` with whitespace removed, and one holds each agent pin equal to its tier's default model.
 
 ### Diff-vs-donor
 

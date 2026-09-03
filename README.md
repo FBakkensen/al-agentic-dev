@@ -149,7 +149,7 @@ copilot plugin uninstall al-agentic-dev
 | `/al-pr-shepherd` | Drives one open PR to merge — CI watched, Copilot findings fixed, main merged in with intent-preserving conflict resolution — merging only on your explicit go. |
 | `/al-orchestrate` | Runs one executable item with reviewed AAA through implementation, bounded refactoring, and read-only review in child sessions. |
 
-Two read-only reviewer agents ride under `agents/` — `al-review-lens` and `al-knowledge-leaf`, serving `/al-review`'s fan-out. `al-grill-me` (mattpocock/skills, MIT) and `al-unslop` (pstack, MIT) are pinned forks: their bodies stay donor text except the al- namespace, provenance pinned at the donor SHAs, and a content fix belongs upstream. `al-grilling` and `al-wait-what` began with the mattpocock donor text and are now maintained here. Their pins follow the model tiers — `al-review-lens` at execution, `al-knowledge-leaf` at mechanical — and a `▶` line's tier override wins at dispatch.
+Two read-only reviewer agents ride under `agents/` — `al-review-lens` and `al-knowledge-leaf`, serving `/al-review`'s fan-out. `al-grill-me` (mattpocock/skills, MIT) and `al-unslop` (pstack, MIT) are pinned forks: their bodies stay donor text except the al- namespace, provenance pinned at the donor SHAs, and a content fix belongs upstream. `al-grilling` and `al-wait-what` began with the mattpocock donor text and are now maintained here. The two agents' pins follow the model tiers — `al-review-lens` at execution, `al-knowledge-leaf` at mechanical — and a `▶` line's tier override wins at dispatch.
 
 Third-party formats and runtime dependencies are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 

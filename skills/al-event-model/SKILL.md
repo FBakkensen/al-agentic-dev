@@ -11,11 +11,11 @@ Ask one substantive question per message. Connect it to earlier answers and veri
 
 ## Process contract
 
-Extend the Original User Story Description with `Process contract`, followed by `Business process`. Keep existing sections in this order when present: `Problem`, `Expected outcome`, `Scope`, `Process contract`, `Business process`, `Runtime View`, `Building Block View`.
-
 When the Base App has a comparable flow:
 
 ▶ execution · task · process precedent: how the Base App's comparable flow posts, validates, and errors, read in .bcapps/release → step table with sources
+
+Extend the Original User Story Description with `Process contract`, followed by `Business process`. Keep existing sections in this order when present: `Problem`, `Expected outcome`, `Scope`, `Process contract`, `Business process`, `Runtime View`, `Building Block View`.
 
 - **Trigger:** the business event that starts the process.
 - **Success guarantee:** what is observably true on the successful path.

@@ -12,7 +12,7 @@ Ask every question in the reply itself, as plain text — never through a questi
 ## Run one owner at a time
 
 1. ▶ execution · session · /al-implement with the work-item ID, repository, Original User Story contract, and exact receipt path → its result, branch, commit, and full receipt content
-2. ▶ execution · session · Launch a fresh /al-refactor child stacked on the implementation branch with the receipt content, reviewed AAA, Original User Story, and any named deepening goal → its branch, commit, and updated receipt content
+2. ▶ execution · session · /al-refactor stacked on the implementation branch with the receipt content, reviewed AAA, Original User Story, and any named deepening goal → its branch, commit, and updated receipt content
 3. ▶ frontier · session · /al-review stacked on the latest writing branch with the executable work item, Original User Story, diff base, and receipt content → the verdict and its findings
 4. After each blocking repair, a fresh /al-review line on the repaired branch; repeat until the verdict has no blocking findings.
 5. When the `Test specification` names walkthrough proof and the review has no blocking findings, dispatch the walk.

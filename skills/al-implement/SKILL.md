@@ -21,13 +21,13 @@ Before changing an existing test, require its current scope green:
 
 ▶ mechanical · task · /al-build gate on the affected test scope, WARN_AS_ERROR as the repository states → summary.json verdict, per-runner totals, exact red cause
 
-Apply the proof map's proof-preserving reshapes before new expectations or production changes. Account for every existing business assertion in the final cases unless the current requirement explicitly replaces it, rerun the gate green, and add no transitional test that the accepted map does not retain.
-
 ## Prove and green, one worker per scenario
 
-For each Gherkin scenario, pick its AAA cases, production site, and seam, then dispatch; the scenarios launch together, and each worker's brief carries the two paragraphs below:
+For each Gherkin scenario, pick its AAA cases, production site, and seam, then dispatch; the scenarios launch together, and each worker's brief carries the three paragraphs below:
 
 ▶ execution · task · one Gherkin scenario: its AAA cases, production site, seam, proof-map rows, the Speak BC paragraph, and the grounding rule → red evidence per case, the green gate line, files touched
+
+Apply the proof map's proof-preserving reshapes before new expectations or production changes. Account for every existing business assertion in the final cases unless the current requirement explicitly replaces it, rerun the gate green, and add no transitional test that the accepted map does not retain.
 
 Implement each unit or integration AAA case through the named module interface. One Gherkin scenario may need several tests. An unchanged existing test marked `keep` supplies evidence without a duplicate. Every new or materially reshaped automated proof earns a red. If born red, require failure for the intended reason. If born green because the behavior exists, inject one compiling fault into the production site the proof targets, run its scope to red, revert the fault, and confirm green. A compile error or a failure before the assertion is not red; if no fault forces red, strengthen the assertion until it does.
 
