@@ -108,23 +108,97 @@ function Start-Child {
     }
     Write-ManagerLog "[deps] package-cache: $($depDir.OutputDirectory)"
 
-    $psi = [Diagnostics.ProcessStartInfo]::new()
-    $psi.FileName = $env:ComSpec
-    $psi.Arguments = "/c al-runner --server --package-cache `"$($depDir.OutputDirectory)`" 2>>`"$logPath`""
-    $psi.WorkingDirectory = $RepoRoot
-    $psi.RedirectStandardInput = $true
-    $psi.RedirectStandardOutput = $true
-    $script:child = [Diagnostics.Process]::Start($psi)
-    $ready = $script:child.StandardOutput.ReadLine()
+    # Observed flake (al-runner v2.10.0.0, Windows): a child started seconds
+    # after its predecessor's shutdown occasionally closes stdout before the
+    # ready line, writing nothing to stderr; the next start succeeds. One
+    # logged retry keeps the gate green while the flake stays visible in
+    # the manager log for the upstream report.
+    $ready = Start-ChildProcess -PackageCache $depDir.OutputDirectory
+    if ($null -eq $ready -and $script:child.HasExited) {
+        Write-ManagerLog "[manager] retry: al-runner --server exited before its ready line ($(Get-ChildExitDiagnostics)); starting once more"
+        $ready = Start-ChildProcess -PackageCache $depDir.OutputDirectory
+    }
     if ($ready -notmatch '"ready":true') {
-        throw "al-runner --server did not signal ready: $ready"
+        throw "al-runner --server did not signal ready: '$ready' ($(Get-ChildExitDiagnostics))`n$(Get-ChildLogTail)"
     }
     $script:fingerprint = Get-ALRunnerServerFingerprint -RepoRoot $RepoRoot
     $script:runCount = 0
 }
 
+# One start attempt: returns the first stdout line ($null on EOF) and leaves
+# the process in $script:child.
+function Start-ChildProcess {
+    param([Parameter(Mandatory)][string]$PackageCache)
+    $psi = [Diagnostics.ProcessStartInfo]::new()
+    $psi.FileName = $env:ComSpec
+    $psi.Arguments = "/c al-runner --server --package-cache `"$PackageCache`" 2>>`"$logPath`""
+    $psi.WorkingDirectory = $RepoRoot
+    $psi.RedirectStandardInput = $true
+    $psi.RedirectStandardOutput = $true
+    $script:child = [Diagnostics.Process]::Start($psi)
+    return $script:child.StandardOutput.ReadLine()
+}
+
+# Distinguishes "exited early" from "alive but wrong first line" in the
+# fatal message; a brief wait lets an exit that already closed stdout land.
+function Get-ChildExitDiagnostics {
+    if ($null -eq $script:child) { return 'no child process' }
+    $null = $script:child.WaitForExit(2000)
+    if ($script:child.HasExited) {
+        return "HasExited=True ExitCode=$($script:child.ExitCode)"
+    }
+    return "HasExited=False PID=$($script:child.Id)"
+}
+
+# Last lines of the child's stderr log. cmd.exe's 2>> holds the file open
+# without sharing while a child is alive, so open with ReadWrite sharing and
+# treat an unreadable file as a diagnostic gap, not a second failure.
+function Get-ChildLogTail {
+    param([int]$Lines = 20)
+    if (-not (Test-Path -LiteralPath $logPath)) { return "[manager] $logPath does not exist" }
+    try {
+        $stream = [IO.FileStream]::new($logPath, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::ReadWrite)
+        try {
+            $reader = [IO.StreamReader]::new($stream)
+            $all = $reader.ReadToEnd() -split "`r?`n" | Where-Object { $_ -ne '' }
+        }
+        finally { $stream.Dispose() }
+        $tail = @($all | Select-Object -Last $Lines)
+        return "[manager] last $($tail.Count) line(s) of $logPath`:`n" + ($tail -join "`n")
+    }
+    catch {
+        return "[manager] could not read $logPath`: $($_.Exception.Message)"
+    }
+}
+
+# Processes below the cmd.exe wrapper: al-runner itself and the copy it
+# re-executes from. Windows keeps a dead parent's PID on its children, so
+# the walk is valid before and after cmd.exe exits.
+function Get-ChildDescendantIds {
+    if (-not $IsWindows -or $null -eq $script:child) { return @() }
+    $all = Get-CimInstance -ClassName Win32_Process -Property ProcessId, ParentProcessId -ErrorAction SilentlyContinue
+    if (-not $all) { return @() }
+    $found = [Collections.Generic.List[int]]::new()
+    $queue = [Collections.Generic.Queue[int]]::new()
+    $queue.Enqueue($script:child.Id)
+    while ($queue.Count -gt 0) {
+        $parent = $queue.Dequeue()
+        foreach ($p in $all) {
+            if ($p.ParentProcessId -eq $parent -and $p.ProcessId -ne $parent -and -not $found.Contains([int]$p.ProcessId)) {
+                $found.Add([int]$p.ProcessId)
+                $queue.Enqueue([int]$p.ProcessId)
+            }
+        }
+    }
+    return $found.ToArray()
+}
+
 function Stop-Child {
-    if ($script:child -and -not $script:child.HasExited) {
+    if ($null -eq $script:child) { return }
+    # Snapshot the tree while it is alive: WaitForExit below observes only the
+    # cmd.exe wrapper, and al-runner's re-executed copy can outlive it.
+    $descendants = @(Get-ChildDescendantIds)
+    if (-not $script:child.HasExited) {
         try {
             $script:child.StandardInput.WriteLine('{"command":"shutdown"}')
             $null = $script:child.WaitForExit(5000)
@@ -133,11 +207,25 @@ function Stop-Child {
             # Child's stdin/stdout may already be broken; fall through to Kill.
         }
     }
-    if ($script:child -and -not $script:child.HasExited) {
+    if (-not $script:child.HasExited) {
         # $script:child is the cmd.exe wrapper; a plain Kill() only kills the
         # wrapper and orphans al-runner.exe underneath it. Kill(true) takes
         # the whole process tree.
         $script:child.Kill($true)
+    }
+    # The next Start-Child shares the package cache and al-runner's reexec
+    # directory with this tree; a still-exiting predecessor is the suspect
+    # for the missing-ready flake, so wait for every descendant before
+    # returning, then stop what remains.
+    $deadline = [DateTime]::UtcNow.AddSeconds(5)
+    $alive = @($descendants | Where-Object { Get-Process -Id $_ -ErrorAction SilentlyContinue })
+    while ($alive.Count -gt 0 -and [DateTime]::UtcNow -lt $deadline) {
+        Start-Sleep -Milliseconds 100
+        $alive = @($alive | Where-Object { Get-Process -Id $_ -ErrorAction SilentlyContinue })
+    }
+    foreach ($id in $alive) {
+        Write-ManagerLog "[manager] descendant PID $id still alive 5 s after shutdown; stopping it"
+        Stop-Process -Id $id -Force -ErrorAction SilentlyContinue
     }
 }
 
