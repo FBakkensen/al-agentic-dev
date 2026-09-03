@@ -774,6 +774,70 @@ Describe 'Validate-Skills harness checks' -Tag 'Unit' {
     }
 }
 
+Describe 'Validate-Skills model-tier defaults checks' -Tag 'Unit' {
+    BeforeAll {
+        $script:GoodDefaults = '{"version":1,"tiers":{"frontier":{"model":"model-f","effort":"high"},"execution":{"model":"model-e","effort":"medium"},"mechanical":{"model":"model-m","effort":"max"}}}'
+    }
+
+    It 'passes a well-formed models.default.json beside al-setup-models' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'defaults-good') -Files @{
+            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
+            'al-setup-models/models.default.json' = $script:GoodDefaults
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+
+    It 'fails al-setup-models without models.default.json' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'defaults-missing') -Files @{
+            'al-setup-models/SKILL.md' = (New-SkillContent -Name 'al-setup-models')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'al-setup-models/models\.default\.json: missing'
+    }
+
+    It 'fails models.default.json that does not parse' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'defaults-broken') -Files @{
+            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
+            'al-setup-models/models.default.json' = '{not json'
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'al-setup-models/models\.default\.json: does not parse'
+    }
+
+    It 'fails models.default.json whose tiers are not exactly frontier, execution, mechanical' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'defaults-tiers') -Files @{
+            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
+            'al-setup-models/models.default.json' = '{"version":1,"tiers":{"frontier":{"model":"model-f","effort":"high"},"execution":{"model":"model-e","effort":"medium"}}}'
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'tiers must be exactly frontier, execution, mechanical'
+    }
+
+    It 'fails a tier with an empty model or effort' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'defaults-empty') -Files @{
+            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
+            'al-setup-models/models.default.json' = '{"version":1,"tiers":{"frontier":{"model":"model-f","effort":"high"},"execution":{"model":"model-e","effort":""},"mechanical":{"model":"model-m","effort":"max"}}}'
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "tier 'execution' needs a non-empty model and effort"
+    }
+}
+
 Describe 'Validate-Skills agent checks' -Tag 'Unit' {
     BeforeAll {
         function New-AgentsRoot {

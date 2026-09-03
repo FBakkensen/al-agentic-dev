@@ -212,6 +212,11 @@
       "id": "S41",
       "prompt": "Update the current branch's pull request title and body to match what landed.",
       "expect": "al-pull-request"
+    },
+    {
+      "id": "S42",
+      "prompt": "Set which models the plugin uses for its frontier, execution, and mechanical tiers.",
+      "expect": "al-setup-models"
     }
   ]
 }

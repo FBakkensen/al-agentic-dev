@@ -28,6 +28,12 @@
     by name. A /name skill reference that
     matches a folder under the skills root resolves regardless of prefix; an al-prefixed
     reference with no folder is a violation.
+    Model tiers: when skills/al-setup-models exists, its models.default.json must parse and
+    hold exactly the tiers frontier, execution, and mechanical, each with a non-empty model
+    and effort; no model name from that file may appear in any skill markdown; and every
+    prose ▶ line matches the delegation grammar
+    '▶ <tier> · <vehicle> · <brief> → <return>' with tier in frontier|execution|mechanical
+    and vehicle in task|session.
     Agents: each agents/*.agent.md carries exactly the frontmatter keys name, description,
     tools, and model; name equals the filename stem and meets the skill name spec;
     description follows the skill description rules; model is a non-empty pin; tools is a
@@ -89,6 +95,39 @@ $scriptExemptions = @{
     'al-clone-bcquality' = @('.bcquality/tools/Build-KnowledgeIndex.ps1')
 }
 $skillFolders = @(Get-ChildItem -LiteralPath $root -Directory | ForEach-Object Name)
+
+# Model tiers: skills/al-setup-models/models.default.json is the single shipped default.
+# When that skill folder exists, the file must exist, parse, and hold exactly the three
+# tiers with a non-empty model and effort each. Its model names feed the skill-body ban.
+$modelNames = @()
+$setupFolder = Join-Path $root 'al-setup-models'
+$defaultsPath = Join-Path $setupFolder 'models.default.json'
+if (Test-Path -LiteralPath $setupFolder -PathType Container) {
+    if (-not (Test-Path -LiteralPath $defaultsPath -PathType Leaf)) {
+        $violations += 'al-setup-models/models.default.json: missing'
+    } else {
+        $defaults = $null
+        try { $defaults = Get-Content -LiteralPath $defaultsPath -Raw | ConvertFrom-Json -ErrorAction Stop } catch { $defaults = $null }
+        if (-not $defaults) {
+            $violations += 'al-setup-models/models.default.json: does not parse'
+        } else {
+            $expectedTiers = @('frontier', 'execution', 'mechanical')
+            $tierNames = @()
+            if ($defaults.tiers) { $tierNames = @($defaults.tiers.PSObject.Properties.Name) }
+            if (($tierNames -join ',') -cne ($expectedTiers -join ',')) {
+                $violations += "al-setup-models/models.default.json: tiers must be exactly frontier, execution, mechanical (found: $($tierNames -join ', '))"
+            }
+            foreach ($tier in $expectedTiers) {
+                $entry = if ($defaults.tiers) { $defaults.tiers.$tier } else { $null }
+                if (-not $entry -or -not [string]$entry.model -or -not [string]$entry.effort) {
+                    $violations += "al-setup-models/models.default.json: tier '$tier' needs a non-empty model and effort"
+                } else {
+                    $modelNames += [string]$entry.model
+                }
+            }
+        }
+    }
+}
 
 foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
     $skillCount = $violations.Count
