@@ -25,7 +25,7 @@ Before proposing cases, search the repository for existing proof by affected mod
 
 ▶ mechanical · task · inventory the existing proof for the affected interface, objects, and business terms → every test procedure and shared helper the changed Gherkin paths need, with paths
 
-Widen the brief until every path's current proof is known; leave unrelated behavior out.
+Widen the brief and dispatch again until every path's current proof is known; leave unrelated behavior out.
 
 Design that proof set as if all current requirements had existed when its tests were first written. Keep, reshape, combine, split, or replace existing tests; add a test only for a distinct remaining case. The final set must not preserve requirement history through layered or overlapping tests.
 
