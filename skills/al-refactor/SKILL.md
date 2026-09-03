@@ -20,7 +20,7 @@ Gherkin, reviewed AAA expected values and proof levels, and the Level 1 module i
 
 Inspect the affected proof set as if all current requirements had existed when its tests were first written. Compare the landed tests with the accepted proof map. Correct avoidable layers, overlaps, and chronology-shaped tests inside the affected tests and shared helpers; leave unrelated proof alone.
 
-Before changing an existing test, run /al-build in `UnitTestOnly` mode for unit proof or `AllTests` mode for integration proof and require its current scope green. Keep production unchanged while applying proof-preserving reshapes, account for every existing business assertion unless the current requirement explicitly replaces it, then rerun the same mode green. A behavior, expected-value, or proof-level change returns to /al-test-design and the user.
+Before changing an existing test, run /al-build's gate and require its current scope green. Keep production unchanged while applying proof-preserving reshapes, account for every existing business assertion unless the current requirement explicitly replaces it, then rerun the gate green. A behavior, expected-value, or proof-level change returns to /al-test-design and the user.
 
 Every new or materially reshaped proof born green takes mutation as its red. Inject one compiling fault into the production site the proof targets, require red, revert the fault, and confirm green. If no fault forces red, strengthen the assertion until it does.
 
@@ -34,7 +34,7 @@ Reduce hidden complexity behind the existing caller-visible interface. Keep owne
 
 ## Prove
 
-Run /al-build in `UnitTestOnly` mode after a unit-only edit or `AllTests` mode after an integration edit, then finish in `AllTests` mode. Restore the last green shape when an edit weakens behavior or the module contract.
+Run /al-build's gate after each edit and finish on a green gate. Restore the last green shape when an edit weakens behavior or the module contract.
 
 Regenerate the receipt's connected-object change map from the final diff so it shows the landed shape rather than the pre-refactor shape. If stable internal building blocks changed, update or remove the Original User Story's arc42 Level 2 so it matches the landed code. Ask /al-arc42 for refreshed local HTML, SVG, PNG, alt text, and publishable fragments. Ask /al-azure-devops-attachments to attach the refreshed PNG and SVG, and use its verified URLs in the receipt and Original User Story fragment. Missing MCP attachment support is not a blocker; authentication trouble stays with that skill until the Azure CLI token works. Routine tidy can change the receipt map without changing Original User Story Level 2.
 

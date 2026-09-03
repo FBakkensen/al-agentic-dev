@@ -4,6 +4,7 @@
 
   "appDir": "app",
   "testApps": ["test"],
+  "containerTestApps": [],
 
   "coverage": {
     "enabled": true
@@ -11,9 +12,6 @@
 
   "warnAsError": false,
   "rulesetPath": "al.ruleset.json",
-
-  "unitTestApp": "",
-  "unitTestInitEvents": false,
 
   "serverInstance": "BC",
 

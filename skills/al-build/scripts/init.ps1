@@ -135,4 +135,4 @@ if ($gitignoreUpdated) {
 Write-Host "`nNext steps:" -ForegroundColor Yellow
 Write-Host "  1. Review al-build.json and customize if needed"
 Write-Host "  2. Run pwsh <skill-folder>/scripts/provision.ps1 to install compiler and symbols"
-Write-Host "  3. Run pwsh <skill-folder>/scripts/test.ps1 -AllTests to verify the build"
+Write-Host "  3. Run pwsh <skill-folder>/scripts/test.ps1 to verify the build"

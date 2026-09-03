@@ -28,7 +28,7 @@ Describe 'Skill workflow contracts' {
         $testDesign | Should -Match 'keep`, `reshape`, `combine`, `split`, `replace`, or `add'
         $implement | Should -Match 'proof-preserving reshapes before new expectations or production changes'
         $implement | Should -Match 'require its current scope green'
-        $implement | Should -Match 'rerun the same mode green'
+        $implement | Should -Match 'rerun the gate green'
         $implement | Should -Match 'Every new or materially reshaped automated proof earns a red'
         $implement | Should -Match 'inject one compiling fault'
         $refactor | Should -Match 'Compare the landed tests with the accepted proof map'

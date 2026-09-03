@@ -31,7 +31,6 @@ $InformationPreference = 'Continue'
 # Import modules
 Import-Module (Join-Path $PSScriptRoot 'common.psm1') -Force -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot 'build-operations.psm1') -Force -DisableNameChecking
-Import-Module (Join-Path $PSScriptRoot 'coverage-helper-golden.psm1') -Force -DisableNameChecking
 
 # Load configuration
 $overrides = @{}
@@ -132,27 +131,6 @@ Restart-BcContainerServiceTier -containerName $containerName
 
 Write-BuildMessage -Type Success -Message "Development settings configured successfully"
 
-Write-BuildHeader 'Installing Code Coverage Helper'
-
-$alBuildRoot = Split-Path -Path $PSScriptRoot -Parent
-$coverageHelperProject = Join-Path $alBuildRoot 'code-coverage-helper'
-
-Write-BuildMessage -Type Step -Message "Compiling and installing the bundled code coverage helper..."
-try {
-    $coverageHelperManifest = Install-CodeCoverageHelperInBcContainer `
-        -ContainerName $containerName `
-        -Credential $credential `
-        -ProjectFolder $coverageHelperProject `
-        -Tenant $config.Tenant
-
-    Write-BuildMessage -Type Success -Message "Code coverage helper installed successfully"
-    Write-BuildMessage -Type Detail -Message "App ID: $($coverageHelperManifest.Id)"
-    Write-BuildMessage -Type Detail -Message "Version: $($coverageHelperManifest.Version)"
-} catch {
-    Write-BuildMessage -Type Error -Message "Failed to compile, install, or verify the code coverage helper: $_"
-    throw
-}
-
 Write-BuildHeader 'Installing AL Test Runner Service'
 
 Write-BuildMessage -Type Step -Message "Downloading AL Test Runner Service app..."
@@ -212,7 +190,6 @@ Write-BuildMessage -Type Success -Message "BC container '$containerName' is read
 Write-BuildMessage -Type Detail -Message "Container Name: $containerName"
 Write-BuildMessage -Type Detail -Message "Authentication: $($config.ContainerAuth)"
 Write-BuildMessage -Type Detail -Message "Credentials: $($config.ContainerUsername) / $($config.ContainerPassword)"
-Write-BuildMessage -Type Detail -Message "Code Coverage Helper: $($coverageHelperManifest.Id) v$($coverageHelperManifest.Version)"
 Write-BuildMessage -Type Detail -Message "AL Test Runner Service: Installed"
 Write-BuildMessage -Type Detail -Message "AL-Go Dependencies: $installedCount app(s) installed"
 Write-BuildMessage -Type Detail -Message "Development Settings: symbols enabled, debugging disabled, cache size 11"

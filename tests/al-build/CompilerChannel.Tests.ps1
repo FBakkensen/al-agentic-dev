@@ -92,38 +92,47 @@ Describe 'Get-AppRuntimeMajor' {
 }
 
 Describe 'Get-RequiredRuntimeMajor' {
-    It 'returns the max runtime major across main, test, and unit apps' {
+    It 'returns the max runtime major across main, test, and container-test apps' {
         $cfg = [PSCustomObject]@{
-            AppDir      = New-AppDir -Name 'main17' -Runtime '17.0'
-            TestApps    = @((New-AppDir -Name 'test18' -Runtime '18.0'), (New-AppDir -Name 'test16' -Runtime '16.0'))
-            UnitTestApp = New-AppDir -Name 'unit15' -Runtime '15.0'
+            AppDir            = New-AppDir -Name 'main17' -Runtime '17.0'
+            TestApps          = @((New-AppDir -Name 'test18' -Runtime '18.0'), (New-AppDir -Name 'test16' -Runtime '16.0'))
+            ContainerTestApps = @((New-AppDir -Name 'ctest15' -Runtime '15.0'))
         }
         Get-RequiredRuntimeMajor -Config $cfg | Should -Be 18
     }
 
+    It 'a container-test app newer than every other app drags the whole build up' {
+        $cfg = [PSCustomObject]@{
+            AppDir            = New-AppDir -Name 'main17c' -Runtime '17.0'
+            TestApps          = @((New-AppDir -Name 'test17c' -Runtime '17.0'))
+            ContainerTestApps = @((New-AppDir -Name 'ctest19' -Runtime '19.0'))
+        }
+        Get-RequiredRuntimeMajor -Config $cfg | Should -Be 19
+    }
+
     It 'a test app newer than the main app drags the whole build up' {
         $cfg = [PSCustomObject]@{
-            AppDir      = New-AppDir -Name 'main17b' -Runtime '17.0'
-            TestApps    = @((New-AppDir -Name 'test18b' -Runtime '18.0'))
-            UnitTestApp = ''
+            AppDir            = New-AppDir -Name 'main17b' -Runtime '17.0'
+            TestApps          = @((New-AppDir -Name 'test18b' -Runtime '18.0'))
+            ContainerTestApps = @()
         }
         Get-RequiredRuntimeMajor -Config $cfg | Should -Be 18
     }
 
     It 'returns 0 when no app pins a runtime' {
         $cfg = [PSCustomObject]@{
-            AppDir      = New-AppDir -Name 'mainnone' -Runtime '__none__'
-            TestApps    = @((New-AppDir -Name 'testnone' -Runtime '__none__'))
-            UnitTestApp = ''
+            AppDir            = New-AppDir -Name 'mainnone' -Runtime '__none__'
+            TestApps          = @((New-AppDir -Name 'testnone' -Runtime '__none__'))
+            ContainerTestApps = @()
         }
         Get-RequiredRuntimeMajor -Config $cfg | Should -Be 0
     }
 
     It 'ignores a configured test app dir that does not exist on disk' {
         $cfg = [PSCustomObject]@{
-            AppDir      = New-AppDir -Name 'main17c' -Runtime '17.0'
-            TestApps    = @((Join-Path $TestDrive 'ghost-test-app'))
-            UnitTestApp = ''
+            AppDir            = New-AppDir -Name 'main17d' -Runtime '17.0'
+            TestApps          = @((Join-Path $TestDrive 'ghost-test-app'))
+            ContainerTestApps = @()
         }
         Get-RequiredRuntimeMajor -Config $cfg | Should -Be 17
     }

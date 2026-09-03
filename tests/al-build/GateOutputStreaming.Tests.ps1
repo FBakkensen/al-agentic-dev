@@ -10,7 +10,6 @@ BeforeAll {
     $script:ScriptsDir = Resolve-Path (Join-Path $PSScriptRoot '..' '..' 'skills' 'al-build' 'scripts')
     $script:TestScriptPath = Join-Path $script:ScriptsDir 'test.ps1'
     Import-Module (Join-Path $script:ScriptsDir 'common.psm1') -Force -DisableNameChecking
-    Import-Module (Join-Path $script:ScriptsDir 'coverage-runtime.psm1') -Force -DisableNameChecking
     Import-Module (Join-Path $script:ScriptsDir 'build-operations.psm1') -Force -DisableNameChecking
 }
 
@@ -120,26 +119,20 @@ Describe 'Invoke-TestGate verdict channel' {
         Mock Set-BuildEnvironment {}
         Mock Resolve-CoverageEnabled { $false }
         Mock Copy-ALSymbolToCache {}
-        Mock Ensure-BCAgentContainer {}
-        Mock Invoke-ALPublish {}
-        Mock Invoke-ALTest {}
+        Mock Write-ALRunnerJUnit {}
 
         $repoRoot = Join-Path $TestDrive 'gate-repo'
-        $unitTestApp = Join-Path $repoRoot 'unit'
-        New-Item -ItemType Directory -Path $unitTestApp -Force | Out-Null
-        $script:UnitTestApp = $unitTestApp
+        $testApp = Join-Path $repoRoot 'test'
+        New-Item -ItemType Directory -Path $testApp -Force | Out-Null
+        $script:TestApp = $testApp
 
         Mock Get-GitRepoRoot { $repoRoot }
         Mock Get-BuildConfig {
             [pscustomobject]@{
-                AppDir             = $repoRoot
-                TestApps           = @()
-                UnitTestApp        = $script:UnitTestApp
-                UnitTestInitEvents = $false
-                WarnAsError        = $false
-                ContainerName      = 'unused'
-                ContainerUsername  = 'unused'
-                Tenant             = 'default'
+                AppDir            = $repoRoot
+                TestApps          = @($script:TestApp)
+                ContainerTestApps = @()
+                WarnAsError       = $false
             }
         }
         Mock Get-CompileTargets { @() }
@@ -151,18 +144,22 @@ Describe 'Invoke-TestGate verdict channel' {
     }
 
     It 'reports a green run as $script:GateExitCode 0 and keeps the verdict off the output stream' {
-        Mock Invoke-ALRunnerTest {
+        Mock Request-ALRunnerServerRun {
             [pscustomobject]@{
-                Runner     = 'al-runner'
-                AppName    = 'Unit Tests'
-                TestDir    = $script:UnitTestApp
-                Passed     = $true
-                Counts     = [ordered]@{ testCodeunits = 1; tests = 1; testsPassed = 1; testsFailed = 0; testsSkipped = 0 }
-                ResultFile = (Join-Path $TestDrive 'al-runner.xml')
+                Passed      = $true
+                ExitCode    = 0
+                Total       = 1
+                Failed      = 0
+                Errors      = 0
+                PassedCount = 1
+                Cached      = 0
+                WallSeconds = 0.1
+                Tests       = @([pscustomobject]@{ Name = 'Codeunit1.Test1'; Status = 'pass'; DurationMs = 5; Message = $null })
+                SummaryFile = (Join-Path $TestDrive 'al-runner-summary.json')
             }
         }
 
-        $out = @(Invoke-TestGate -UnitTestOnly)
+        $out = @(Invoke-TestGate)
 
         $script:GateExitCode | Should -Be 0
         $out | Should -Not -Contain 0
@@ -170,22 +167,40 @@ Describe 'Invoke-TestGate verdict channel' {
     }
 
     It 'reports a red run as $script:GateExitCode 1 and keeps the verdict off the output stream' {
-        Mock Invoke-ALRunnerTest {
+        Mock Request-ALRunnerServerRun {
             [pscustomobject]@{
-                Runner     = 'al-runner'
-                AppName    = 'Unit Tests'
-                TestDir    = $script:UnitTestApp
-                Passed     = $false
-                Counts     = [ordered]@{ testCodeunits = 1; tests = 1; testsPassed = 0; testsFailed = 1; testsSkipped = 0 }
-                ResultFile = (Join-Path $TestDrive 'al-runner.xml')
+                Passed      = $false
+                ExitCode    = 1
+                Total       = 1
+                Failed      = 1
+                Errors      = 0
+                PassedCount = 0
+                Cached      = 0
+                WallSeconds = 0.1
+                Tests       = @([pscustomobject]@{ Name = 'Codeunit1.Test1'; Status = 'fail'; DurationMs = 5; Message = 'boom' })
+                SummaryFile = (Join-Path $TestDrive 'al-runner-summary.json')
             }
         }
 
-        $out = @(Invoke-TestGate -UnitTestOnly)
+        $out = @(Invoke-TestGate)
 
         $script:GateExitCode | Should -Be 1
         $out | Should -Not -Contain 1
         $out | Should -Contain 'FAKE-NATIVE-STDOUT'
+    }
+
+    It 'reds the gate and names the manager log when the server is unavailable' {
+        # Regression guard: the server is the only test path — an unavailable
+        # server must red the gate rather than fall back to a fresh al-runner
+        # CLI process.
+        Mock Request-ALRunnerServerRun { $null }
+
+        { Invoke-TestGate } | Should -Not -Throw
+
+        $script:GateExitCode | Should -Be 1
+        Should -Invoke Write-BuildMessage -ParameterFilter {
+            $Type -eq 'Error' -and $Message -match [regex]::Escape('al-runner-server-manager.log')
+        }
     }
 }
 

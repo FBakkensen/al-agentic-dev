@@ -1,0 +1,79 @@
+{
+  "exitCode": 0,
+  "total": 2,
+  "passed": 2,
+  "failed": 0,
+  "errors": 0,
+  "cached": false,
+  "wallSeconds": 1.23,
+  "protocolVersion": 2,
+  "coverage": [
+    {
+      "file": "__REPOROOT__/app/src/Calc.Codeunit.al",
+      "statements": [
+        { "id": 1, "scope": "Calc.OnRun", "line": 4, "column": 5, "endLine": 4, "endColumn": 10, "hits": 2 },
+        { "id": 2, "scope": "Calc.OnRun", "line": 5, "column": 5, "endLine": 5, "endColumn": 10, "hits": 0 },
+        { "id": 3, "scope": "Calc.Add", "line": 9, "column": 9, "endLine": 9, "endColumn": 24, "hits": 1 },
+        { "id": 4, "scope": "Calc.Add", "line": 10, "column": 5, "endLine": 10, "endColumn": 10, "hits": 3 }
+      ]
+    },
+    {
+      "file": "__REPOROOT__/app/src/T.Table.al",
+      "statements": [
+        { "id": 5, "scope": "T", "line": 5, "column": 9, "endLine": 5, "endColumn": 40, "hits": 1 }
+      ]
+    },
+    {
+      "file": "__REPOROOT__/test/src/CalcTest.Codeunit.al",
+      "statements": [
+        { "id": 6, "scope": "CalcTest.A", "line": 4, "column": 5, "endLine": 4, "endColumn": 10, "hits": 1 },
+        { "id": 7, "scope": "CalcTest.B", "line": 9, "column": 5, "endLine": 9, "endColumn": 10, "hits": 1 }
+      ]
+    }
+  ],
+  "perTestCoverage": [
+    {
+      "test": "Codeunit50150.A",
+      "coverage": [
+        {
+          "file": "__REPOROOT__/app/src/Calc.Codeunit.al",
+          "statements": [
+            { "id": 1, "scope": "Calc.OnRun", "line": 4, "column": 5, "endLine": 4, "endColumn": 10, "hits": 1 },
+            { "id": 1, "scope": "Calc.OnRun", "line": 4, "column": 5, "endLine": 4, "endColumn": 10, "hits": 1 },
+            { "id": 3, "scope": "Calc.Add", "line": 9, "column": 9, "endLine": 9, "endColumn": 24, "hits": 1 }
+          ]
+        },
+        {
+          "file": "__REPOROOT__/app/src/T.Table.al",
+          "statements": [
+            { "id": 5, "scope": "T", "line": 5, "column": 9, "endLine": 5, "endColumn": 40, "hits": 1 }
+          ]
+        },
+        {
+          "file": "__REPOROOT__/test/src/CalcTest.Codeunit.al",
+          "statements": [
+            { "id": 6, "scope": "CalcTest.A", "line": 4, "column": 5, "endLine": 4, "endColumn": 10, "hits": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "test": "Codeunit50150.B",
+      "coverage": [
+        {
+          "file": "__REPOROOT__/app/src/Calc.Codeunit.al",
+          "statements": [
+            { "id": 1, "scope": "Calc.OnRun", "line": 4, "column": 5, "endLine": 4, "endColumn": 10, "hits": 1 },
+            { "id": 4, "scope": "Calc.Add", "line": 10, "column": 5, "endLine": 10, "endColumn": 10, "hits": 2 }
+          ]
+        },
+        {
+          "file": "__REPOROOT__/test/src/CalcTest.Codeunit.al",
+          "statements": [
+            { "id": 7, "scope": "CalcTest.B", "line": 9, "column": 5, "endLine": 9, "endColumn": 10, "hits": 1 }
+          ]
+        }
+      ]
+    }
+  ]
+}

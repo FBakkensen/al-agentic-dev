@@ -15,7 +15,7 @@ Ask every question in the reply itself, as plain text — never through a questi
 
 ## Walk through Business Central
 
-The repository workspace MCP owns the branch and container binding. After changing branches or its configuration, restart the MCP or Copilot session before the walk. Run /al-build in `AllTests` mode with forced republish into that container. Record the commit and deployed app version before the first scenario.
+The repository workspace MCP owns the branch and container binding. After changing branches or its configuration, restart the MCP or Copilot session before the walk. Run /al-build's clean republish into that container. Record the commit and deployed app version before the first scenario.
 
 Use the repository's Business Central workspace MCP to open the Web Client and exercise each confirmed scenario as a user would. Before relying on any page, action, field, enum value, dialog, or resulting record, confirm it through the current client or a lookup in this session.
 

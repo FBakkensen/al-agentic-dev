@@ -28,7 +28,7 @@ Judge:
 - Level 2, when present, matches proven internals; its absence is valid for a simple module
 - permissions, translations, upgrade impact, and breaking surface are covered
 
-Run /al-build in `UnitTestOnly` mode for missing unit evidence or `AllTests` mode for missing integration evidence.
+Run /al-build's gate for missing test evidence.
 
 ## Parallel lenses
 

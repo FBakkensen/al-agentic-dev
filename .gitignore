@@ -48,3 +48,6 @@ Desktop.ini
 
 # Throwaway eval material
 experiments/
+
+# Agent session scratch (SDD ledgers, briefs, review packages)
+.superpowers/

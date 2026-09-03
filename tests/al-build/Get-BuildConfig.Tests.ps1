@@ -49,3 +49,41 @@ Describe 'Get-BuildConfig uses Get-GitRepoRoot' {
         }
     }
 }
+
+Describe 'Get-BuildConfig config model' {
+    BeforeEach {
+        $script:ProbeRoot = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $script:ProbeRoot -Force | Out-Null
+        Push-Location $script:ProbeRoot
+        $configPath = Join-Path $script:ProbeRoot 'al-build.json'
+
+        Mock git {
+            $global:LASTEXITCODE = 128
+        } -ModuleName common
+        Mock Get-BCAgentContainerName { 'bctest' } -ModuleName build-operations
+        Mock Write-BuildMessage {} -ModuleName build-operations
+    }
+
+    AfterEach {
+        Pop-Location
+    }
+
+    It 'resolves containerTestApps to absolute paths' {
+        Set-Content -LiteralPath $configPath -Value '{"appDir":"app","testApps":["test"],"containerTestApps":["e2e"]}'
+        $config = Get-BuildConfig
+        @($config.ContainerTestApps).Count | Should -Be 1
+        [System.IO.Path]::IsPathRooted($config.ContainerTestApps[0]) | Should -BeTrue
+    }
+
+    It 'defaults containerTestApps to empty' {
+        Set-Content -LiteralPath $configPath -Value '{"appDir":"app","testApps":["test"]}'
+        (Get-BuildConfig).ContainerTestApps | Should -HaveCount 0
+    }
+
+    It 'no longer exposes unitTestApp keys' {
+        Set-Content -LiteralPath $configPath -Value '{"appDir":"app","testApps":["test"],"unitTestApp":"unit"}'
+        $config = Get-BuildConfig
+        $config.PSObject.Properties.Name | Should -Not -Contain 'UnitTestApp'
+        $config.PSObject.Properties.Name | Should -Not -Contain 'UnitTestInitEvents'
+    }
+}

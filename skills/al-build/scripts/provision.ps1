@@ -85,10 +85,8 @@ Install-LatestBcContainerHelper
 # Step 2: Ensure compiler
 Install-ALCompiler -Update:$UpdateCompiler
 
-# Step 2b: Ensure AL Runner (if unitTestApp is configured)
-if ($config.UnitTestApp) {
-    Install-ALRunner -Update:$UpdateCompiler
-}
+# Step 2b: Ensure AL Runner (containerless test execution always uses it)
+Install-ALRunner -Update:$UpdateCompiler
 
 # Step 3: Download symbols for main app
 $downloadSymbolsScript = Join-Path $PSScriptRoot 'download-symbols.ps1'
@@ -114,20 +112,7 @@ foreach ($testAppDir in $config.TestApps) {
     }
 }
 
-# Step 5: Download symbols for unitTestApp (if not already covered by testApps)
-if ($config.UnitTestApp -and (Test-Path $config.UnitTestApp)) {
-    $alreadyCovered = $config.TestApps | Where-Object {
-        [IO.Path]::GetFullPath($_) -eq [IO.Path]::GetFullPath($config.UnitTestApp)
-    }
-    if (-not $alreadyCovered) {
-        & $downloadSymbolsScript -AppDir $config.UnitTestApp
-        if ($LASTEXITCODE -ne 0) {
-            throw "Symbol download failed for unit test app: $($config.UnitTestApp)"
-        }
-    }
-}
-
-# Step 6: Refresh the breaking-change baseline (when enabled). Cache the previous
+# Step 5: Refresh the breaking-change baseline (when enabled). Cache the previous
 # release + deps and point AppSourceCop at them, so AS00xx surfaces at compile.
 if ($config.BreakingChangeEnabled) {
     $downloadBaselineScript = Join-Path $PSScriptRoot 'download-baseline.ps1'
@@ -139,4 +124,4 @@ if ($config.BreakingChangeEnabled) {
 
 Write-BuildHeader 'Provision Complete'
 Write-BuildMessage -Type Success -Message "Environment is ready for development"
-Write-BuildMessage -Type Info -Message "Next: Run 'pwsh $PSScriptRoot/test.ps1 -AllTests' to build and test"
+Write-BuildMessage -Type Info -Message "Next: Run 'pwsh $PSScriptRoot/test.ps1' to build and test"

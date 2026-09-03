@@ -20,7 +20,7 @@ Ask every question in the reply itself, as plain text — never through a questi
 
 ## Shape the proof
 
-Before changing an existing test, run /al-build in `UnitTestOnly` mode for unit proof or `AllTests` mode for integration proof and require its current scope green. Apply the proof map's proof-preserving reshapes before new expectations or production changes. Account for every existing business assertion in the final cases unless the current requirement explicitly replaces it, rerun the same mode green, and add no transitional test that the accepted map does not retain.
+Before changing an existing test, run /al-build's gate and require its current scope green. Apply the proof map's proof-preserving reshapes before new expectations or production changes. Account for every existing business assertion in the final cases unless the current requirement explicitly replaces it, rerun the gate green, and add no transitional test that the accepted map does not retain.
 
 Implement each unit or integration AAA case through the named module interface. One Gherkin scenario may need several tests. An unchanged existing test marked `keep` supplies evidence without a duplicate.
 
@@ -32,7 +32,7 @@ A walkthrough-only case does not enter the automated red step. Keep it in the re
 
 Write the smallest production change that makes the proof green. Keep business writes on validated or posting paths, reuse Base App seams, preserve quality properties, and avoid an AL interface with one implementation.
 
-Run the same /al-build mode until green, then run /al-build in `AllTests` mode. A red result remains red until the output names its exact cause.
+Run /al-build's gate until green. A red result remains red until the output names its exact cause.
 
 ## Map what landed
 

@@ -2,7 +2,11 @@
 
 BeforeAll {
     $scriptsRoot = Join-Path $PSScriptRoot '..' '..' 'skills' 'al-build' 'scripts'
+    $script:ScriptsDir = $scriptsRoot
     $script:ProvisionPath = Resolve-Path (Join-Path $scriptsRoot 'provision.ps1')
+
+    Import-Module (Join-Path $scriptsRoot 'common.psm1') -Force -DisableNameChecking
+    Import-Module (Join-Path $scriptsRoot 'build-operations.psm1') -Force -DisableNameChecking
 
     $tokens = $null
     $parseErrors = $null
@@ -117,5 +121,56 @@ Describe 'Install-LatestBcContainerHelper' {
         { Install-LatestBcContainerHelper } |
             Should -Throw -ExpectedMessage '*PSGallery returned no BcContainerHelper version*'
         Should -Invoke Install-Module -Times 0 -Exactly
+    }
+}
+
+Describe 'ConvertTo-ALRunnerVersion' {
+    It 'parses the al-runner version banner' {
+        ConvertTo-ALRunnerVersion -VersionLine 'al-runner v2.10.0.0' | Should -Be ([version]'2.10.0.0')
+    }
+
+    It 'throws on an unrecognizable banner' {
+        { ConvertTo-ALRunnerVersion -VersionLine 'nonsense' } | Should -Throw '*nonsense*'
+    }
+
+    It 'throws instead of matching a version-shaped substring in an unrecognized banner' {
+        { ConvertTo-ALRunnerVersion -VersionLine 'nonsense v2.10' } | Should -Throw '*nonsense v2.10*'
+    }
+}
+
+Describe 'provision.ps1 AL Runner provisioning' {
+    It 'calls Install-ALRunner unconditionally' {
+        $content = Get-Content (Join-Path $script:ScriptsDir 'provision.ps1') -Raw
+        $content | Should -Match '(?m)^Install-ALRunner'
+    }
+}
+
+Describe 'Install-ALRunner update-once contract' {
+    # -Update can already run a `dotnet tool update` (existing tool, forced
+    # refresh); the version-floor check must not run a second one in the same
+    # invocation. Mocks target the build-operations module scope so the real
+    # al-runner/dotnet on this machine are never invoked.
+    BeforeAll {
+        # Pester's Mock needs a real command to shadow. CI runners have no
+        # al-runner, so a PATH stub stands in; the mock below overrides it.
+        $script:stubBin = Join-Path $TestDrive 'stub-bin'
+        New-Item -ItemType Directory -Path $script:stubBin -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $script:stubBin 'al-runner.cmd') -Value "@echo off`r`necho al-runner v2.9.0.0"
+        $script:savedPath = $env:PATH
+        $env:PATH = "$($script:stubBin)$([IO.Path]::PathSeparator)$env:PATH"
+    }
+    AfterAll {
+        $env:PATH = $script:savedPath
+    }
+    BeforeEach {
+        Mock -ModuleName 'build-operations' Write-BuildHeader {}
+        Mock -ModuleName 'build-operations' Write-BuildMessage {}
+        Mock -ModuleName 'build-operations' al-runner { 'al-runner v2.9.0.0' }
+        Mock -ModuleName 'build-operations' dotnet { $global:LASTEXITCODE = 0 }
+    }
+
+    It 'throws without a second dotnet tool update when -Update already ran one and the tool is still below floor' {
+        { Install-ALRunner -Update } | Should -Throw '*al-runner 2.9.0.0 found, 2.10 required*'
+        Should -Invoke -ModuleName 'build-operations' dotnet -Times 1 -Exactly
     }
 }

@@ -13,7 +13,7 @@
     - Test execution
 
 .NOTES
-    Import this module alongside common.psm1 and coverage-runtime.psm1 for full functionality.
+    Import this module alongside common.psm1 for full functionality.
     All functions use Write-BuildMessage for consistent output.
 #>
 
@@ -93,6 +93,22 @@ function Get-BuildConfig {
         }
     }
 
+    # Resolve containerTestApps array
+    $containerTestAppsRaw = if ($defaults.ContainsKey('containerTestApps') -and $defaults['containerTestApps'] -is [System.Collections.IEnumerable] -and $defaults['containerTestApps'] -isnot [string]) {
+        @($defaults['containerTestApps'])
+    } else {
+        @()
+    }
+
+    $containerTestApps = @()
+    foreach ($containerTestAppDir in $containerTestAppsRaw) {
+        if (-not [System.IO.Path]::IsPathRooted($containerTestAppDir)) {
+            $containerTestApps += Join-Path $workspaceRoot $containerTestAppDir
+        } else {
+            $containerTestApps += $containerTestAppDir
+        }
+    }
+
     # Always derive container name from git branch (no env var caching)
     try {
         $containerName = Get-BCAgentContainerName
@@ -142,22 +158,10 @@ function Get-BuildConfig {
         return $Default
     }
 
-    # Resolve unitTestApp (single string, empty = disabled)
-    $unitTestAppRaw = Resolve-Value 'unitTestApp' 'ALBT_UNIT_TEST_APP' ''
-    $unitTestApp = ''
-    if ($unitTestAppRaw -and $unitTestAppRaw -ne '') {
-        if (-not [System.IO.Path]::IsPathRooted($unitTestAppRaw)) {
-            $unitTestApp = Join-Path $workspaceRoot $unitTestAppRaw
-        } else {
-            $unitTestApp = $unitTestAppRaw
-        }
-    }
-
     $config = [PSCustomObject]@{
         AppDir                              = $appDir
         TestApps                            = $testApps
-        UnitTestApp                         = $unitTestApp
-        UnitTestInitEvents                  = ConvertTo-Boolean (Resolve-Value 'unitTestInitEvents' 'ALBT_UNIT_TEST_INIT_EVENTS' $false)
+        ContainerTestApps                   = $containerTestApps
         WarnAsError                         = Resolve-Value 'warnAsError' 'WARN_AS_ERROR' $false
         RulesetPath                         = Resolve-Value 'rulesetPath' 'RULESET_PATH' 'al.ruleset.json'
         ServerInstance                      = Resolve-Value 'serverInstance' 'ALBT_BC_SERVER_INSTANCE' 'BC'
@@ -191,7 +195,6 @@ function Resolve-CoverageEnabled {
     .SYNOPSIS
         Resolve effective coverage at the test invocation boundary.
     .DESCRIPTION
-        Unit-only runs ignore configured coverage but reject explicit -Coverage.
         Runs without configured testApps skip coverage from every source.
         Otherwise explicit -Coverage wins over configured coverage.
     #>
@@ -200,17 +203,9 @@ function Resolve-CoverageEnabled {
         [Parameter(Mandatory)]
         [PSCustomObject]$Config,
 
-        [switch]$Coverage,
-
-        [switch]$UnitTestOnly
+        [switch]$Coverage
     )
 
-    if ($Coverage -and $UnitTestOnly) {
-        throw '-Coverage cannot be combined with -UnitTestOnly.'
-    }
-    if ($UnitTestOnly) {
-        return $false
-    }
     if (@($Config.TestApps).Count -eq 0) {
         return $false
     }
@@ -227,34 +222,27 @@ function Get-CompileTargets {
     .DESCRIPTION
         The main app is compiled separately (test.ps1 Step 1) in every mode, so
         it is not in this list. This returns the secondary compile targets —
-        every test app, then the unit-test app — each carrying the Role used to
-        name its build step ('test' or 'unit'). Compilation runs the analyzer
-        gate (alc /analyzer:) on the host and happens in every mode:
-        -UnitTestOnly skips the container publish/run, not the compile. The
-        unit-test app is included so its code goes through the analyzer gate (AL
-        Runner compiles it internally too, but without /analyzer: args); it is
-        omitted here when it is also a test app, to avoid compiling it twice.
+        every test app, then every container-test app not already listed —
+        each carrying the Role used to name its build step ('test' or
+        'container-test'). Compilation runs the analyzer gate (alc
+        /analyzer:) on the host for every listed app.
     .PARAMETER Config
         Build configuration object from Get-BuildConfig.
-    .PARAMETER UnitTestOnly
-        Accepted to pin the invariant that the target list is identical in both
-        modes — every app compiles through the analyzer gate regardless. The
-        return value does not depend on this switch; a test asserts the equality.
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [PSCustomObject]$Config,
-
-        [switch]$UnitTestOnly
+        [PSCustomObject]$Config
     )
 
     $targets = @()
     foreach ($testAppDir in $Config.TestApps) {
         $targets += [ordered]@{ AppDir = $testAppDir; Role = 'test' }
     }
-    if ($Config.UnitTestApp -and ($Config.TestApps -notcontains $Config.UnitTestApp)) {
-        $targets += [ordered]@{ AppDir = $Config.UnitTestApp; Role = 'unit' }
+    foreach ($containerTestAppDir in $Config.ContainerTestApps) {
+        if ($Config.TestApps -notcontains $containerTestAppDir) {
+            $targets += [ordered]@{ AppDir = $containerTestAppDir; Role = 'container-test' }
+        }
     }
     return $targets
 }
@@ -418,17 +406,19 @@ function Get-RequiredRuntimeMajor {
     .SYNOPSIS
         Highest app.json runtime major across all of a build's apps.
     .DESCRIPTION
-        Scans the main app, every test app, and the unit-test app; returns the max
-        'runtime' major, or 0 when no app pins a runtime. One compiler compiles them
-        all, so it must satisfy the most demanding app — an app at a runtime newer
-        than the latest stable pulls the whole build onto the prerelease channel.
+        Scans the main app, every test app, and every container-test app —
+        the full compile set — and returns the max 'runtime' major, or 0 when
+        no app pins a runtime. One compiler compiles them all, so it must
+        satisfy the most demanding app — an app at a runtime newer than the
+        latest stable pulls the whole build onto the prerelease channel.
     #>
     param([Parameter(Mandatory)]$Config)
 
     $dirs = New-Object System.Collections.Generic.List[string]
     if ($Config.AppDir) { $dirs.Add([string]$Config.AppDir) }
     foreach ($t in @($Config.TestApps)) { if ($t) { $dirs.Add([string]$t) } }
-    if ($Config.UnitTestApp) { $dirs.Add([string]$Config.UnitTestApp) }
+    $containerTestApps = if ($Config.PSObject.Properties['ContainerTestApps']) { @($Config.ContainerTestApps) } else { @() }
+    foreach ($t in $containerTestApps) { if ($t -and -not $dirs.Contains([string]$t)) { $dirs.Add([string]$t) } }
 
     $max = 0
     foreach ($d in $dirs) {
@@ -511,13 +501,36 @@ function Install-ALCompiler {
     Write-BuildMessage -Type Success -Message "Compiler provisioning complete"
 }
 
+function ConvertTo-ALRunnerVersion {
+    <#
+    .SYNOPSIS
+        Parse an al-runner --version banner into a [version].
+    .PARAMETER VersionLine
+        A single line of al-runner --version output, e.g. 'al-runner v2.10.0.0'.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$VersionLine
+    )
+
+    $trimmed = $VersionLine.Trim()
+    if ($trimmed -match '^al-runner v(\d+(?:\.\d+){1,3})$') {
+        return [version]$Matches[1]
+    }
+
+    throw "Unable to parse al-runner version from banner: '$VersionLine'"
+}
+
 function Install-ALRunner {
     <#
     .SYNOPSIS
-        Ensure the AL Runner tool is available
+        Ensure the AL Runner tool is available at the required version floor
     .DESCRIPTION
         Installs BusinessCentral.AL.Runner as a global dotnet tool for containerless
-        unit testing. Mirrors the Install-ALCompiler pattern.
+        unit testing. Mirrors the Install-ALCompiler pattern. After presence is
+        ensured, verifies the installed version meets the 2.10 floor, updating
+        once if it does not.
     .PARAMETER Update
         Force update of an existing global tool.
     #>
@@ -534,6 +547,7 @@ function Install-ALRunner {
 
     $packageId = 'MSDyn365BC.AL.Runner'
     $existing = Get-Command al-runner -ErrorAction SilentlyContinue
+    $updated = $false
 
     if ($existing -and -not $Update) {
         Write-BuildMessage -Type Success -Message "AL Runner already installed: $($existing.Source)"
@@ -543,6 +557,7 @@ function Install-ALRunner {
         if ($LASTEXITCODE -ne 0) {
             throw "dotnet tool update failed for $packageId with exit code $LASTEXITCODE. Output: $($updateOutput -join [Environment]::NewLine)"
         }
+        $updated = $true
         Write-BuildMessage -Type Success -Message "AL Runner updated"
     } else {
         Write-BuildMessage -Type Step -Message "Installing AL Runner..."
@@ -568,6 +583,34 @@ function Install-ALRunner {
     }
 
     Write-BuildMessage -Type Detail -Message "Path: $($postInstall.Source)"
+
+    # Enforce the version floor: containerless test execution depends on 2.10+.
+    # At most one update runs per invocation — if -Update already ran the
+    # dotnet tool update above, a still-below-floor version throws directly
+    # instead of updating a second time.
+    $requiredVersion = [version]'2.10'
+    $versionLine = @(& al-runner --version 2>&1)[0]
+    $foundVersion = ConvertTo-ALRunnerVersion -VersionLine $versionLine
+
+    if ($foundVersion -lt $requiredVersion) {
+        if ($updated) {
+            throw "al-runner $foundVersion found, 2.10 required"
+        }
+
+        Write-BuildMessage -Type Step -Message "AL Runner $foundVersion found, updating to meet the $requiredVersion floor..."
+        $floorUpdateOutput = & dotnet tool update --global $packageId 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            throw "dotnet tool update failed for $packageId with exit code $LASTEXITCODE. Output: $($floorUpdateOutput -join [Environment]::NewLine)"
+        }
+        $updated = $true
+
+        $versionLine = @(& al-runner --version 2>&1)[0]
+        $foundVersion = ConvertTo-ALRunnerVersion -VersionLine $versionLine
+        if ($foundVersion -lt $requiredVersion) {
+            throw "al-runner $foundVersion found, 2.10 required"
+        }
+    }
+
     Write-BuildMessage -Type Success -Message "AL Runner provisioning complete"
 }
 
@@ -1261,38 +1304,56 @@ function Format-TestCountSummary {
     "$($Counts.tests) tests in $($Counts.testCodeunits) test codeunits - $($Counts.testsPassed) passed, $($Counts.testsFailed) failed, $($Counts.testsSkipped) skipped"
 }
 
-function Get-BcTestExecutionVerdict {
+function Get-BcSharedTestBasePath {
+    <#
+    .SYNOPSIS
+        Resolve the container's shared folder that JUnit results are written to.
+    .DESCRIPTION
+        BcContainerHelper writes -JUnitResultFileName from inside the container,
+        so the path must be one already shared with the host filesystem.
+    #>
     [CmdletBinding()]
     param(
-        $Execution,
-
         [Parameter(Mandatory)]
-        [string]$TestAppName,
-
-        [switch]$Coverage
+        [string]$ContainerName
     )
 
-    if (-not $Execution -or
-        -not $Execution.PSObject.Properties['TestRunnerCompleted'] -or
-        $Execution.TestRunnerCompleted -ne $true) {
-        throw "Test execution for '$TestAppName' did not return explicit Test Runner completion evidence."
+    $sharedFolders = Get-BcContainerSharedFolders -containerName $ContainerName
+    $sharedBaseFolder = $sharedFolders.Keys |
+        Where-Object { $_ -like "*$ContainerName*" } |
+        Select-Object -First 1
+    if (-not $sharedBaseFolder) {
+        $sharedBaseFolder = $sharedFolders.Keys |
+            Where-Object { $_ -like '*ProgramData*' } |
+            Select-Object -First 1
     }
-    if ($Coverage -and
-        (-not $Execution.PSObject.Properties['CollectorCompleted'] -or
-            $Execution.CollectorCompleted -ne $true)) {
-        throw "Coverage execution for '$TestAppName' did not return explicit collector completion evidence."
+    if (-not $sharedBaseFolder) {
+        $sharedBaseFolder = $sharedFolders.Keys | Select-Object -First 1
     }
-    if (-not $Execution.PSObject.Properties['CompletionStatus']) {
-        throw "Test execution for '$TestAppName' did not return an explicit completion status."
+    if (-not $sharedBaseFolder) {
+        throw "No shared folders found for container '$ContainerName'."
     }
 
-    switch ($Execution.CompletionStatus) {
-        'completed-green' { return $true }
-        'completed-red' { return $false }
-        default {
-            throw "Test execution for '$TestAppName' returned unsupported completion status '$($Execution.CompletionStatus)'."
-        }
-    }
+    $sharedResultsPath = Join-Path $sharedBaseFolder 'TestResults'
+    New-Item -ItemType Directory -Path $sharedResultsPath -Force | Out-Null
+    $sharedResultsPath
+}
+
+function New-BcSharedTestRunDirectory {
+    <#
+    .SYNOPSIS
+        Create a fresh, uniquely named run folder under the container's shared path.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$ContainerName
+    )
+
+    $basePath = Get-BcSharedTestBasePath -ContainerName $ContainerName
+    $runPath = Join-Path $basePath "run-$([guid]::NewGuid().ToString('N'))"
+    New-Item -ItemType Directory -Path $runPath -Force | Out-Null
+    $runPath
 }
 
 function Invoke-ALTest {
@@ -1312,13 +1373,7 @@ function Invoke-ALTest {
         [string]$TestDir,
 
         [Parameter(Mandatory)]
-        [string]$OutputDir,
-
-        [switch]$Coverage,
-
-        [string]$CoverageStagingRoot,
-
-        $CoverageContract
+        [string]$OutputDir
     )
 
     $config = Get-BuildConfig
@@ -1358,45 +1413,9 @@ function Invoke-ALTest {
 
     $resultFile = Join-Path $OutputDir 'last.xml'
     $primaryError = $null
+    $testsPassed = $false
     try {
-        $exporterId = 0
-        if ($Coverage) {
-            if (-not $CoverageContract) {
-                throw 'Coverage helper contract is required when coverage is enabled.'
-            }
-            if (-not $CoverageStagingRoot) {
-                throw 'Coverage staging root is required when coverage is enabled.'
-            }
-            $exporterId = [int]$CoverageContract.ExporterId
-        }
-
-        $execution = Invoke-BcTestRunWithCoverage -ContainerName $config.ContainerName `
-            -Tenant $config.Tenant -Credential $credential -SharedRunPath $sharedRunPath `
-            -JUnitPath $sharedResultFile -TestAppName $dirName -Coverage:$Coverage `
-            -ExporterId $exporterId -RunTests {
-                Run-TestsInBcContainer @testParams
-            }
-
-        if ($execution.PSObject.Properties['PostCompletionRunnerError'] -and
-            $execution.PostCompletionRunnerError) {
-            Write-BuildMessage -Type Warning -Message (
-                "Test Runner reported a non-fatal error after completed JUnit evidence " +
-                "for '$dirName': $($execution.PostCompletionRunnerError.Exception.Message)"
-            )
-        }
-
-        $testsPassed = Get-BcTestExecutionVerdict -Execution $execution `
-            -TestAppName $dirName -Coverage:$Coverage
-
-        if ($Coverage) {
-            $appCoverageStage = Join-Path $CoverageStagingRoot $dirName
-            if (Test-Path -LiteralPath $appCoverageStage) {
-                Remove-Item -LiteralPath $appCoverageStage -Recurse -Force -Confirm:$false
-            }
-            Copy-Item -LiteralPath $execution.CoveragePath -Destination $appCoverageStage -Recurse
-            Test-BcCoverageCollection -Path $appCoverageStage -ExpectedTestApp $dirName | Out-Null
-        }
-
+        $testsPassed = [bool](Run-TestsInBcContainer @testParams)
     } catch {
         $primaryError = $_
     }
@@ -1430,7 +1449,7 @@ function Invoke-ALTest {
             try {
                 Write-BuildMessage -Type Warning -Message "Secondary failure while attempting to $($transportError.Operation): $($transportError.Error.Exception.Message)"
             } catch {
-                # Preserve the active runner or coverage failure.
+                # Preserve the active runner failure.
             }
         }
         throw $primaryError
@@ -1477,118 +1496,99 @@ function Invoke-ALTest {
     return $result
 }
 
-function Invoke-ALRunnerTest {
+# =============================================================================
+# Test Result Summary Helpers
+# =============================================================================
+# Shared by every gate that runs tests (test.ps1's al-runner runner today,
+# container-test.ps1's container runner) so summary.json and console totals
+# share one shape and one aggregation rule regardless of which gate wrote them.
+
+function ConvertTo-RunRecord {
+    param($Result)
+    $record = [ordered]@{
+        runner     = $Result.Runner
+        appName    = $Result.AppName
+        dir        = (Split-Path $Result.TestDir -Leaf)
+        passed     = $Result.Passed
+        counts     = $Result.Counts
+        resultFile = $Result.ResultFile
+    }
+    if ($Result.Filter) { $record.filter = $Result.Filter }
+    $record.notices = @($Result.Notices)
+    $record
+}
+
+function Get-RunnerTotals {
+    # Totals are aggregated per runner. Today there is exactly one runner and
+    # one run, but the shape stays runner-keyed so a future second runner
+    # never overwrites this one's totals.
+    param($Results)
+    $totals = [ordered]@{}
+    foreach ($runner in @($Results | ForEach-Object { $_.Runner } | Select-Object -Unique)) {
+        $runnerResults = @($Results | Where-Object { $_.Runner -eq $runner })
+        $counted = @($runnerResults | Where-Object { $_.Counts })
+        if ($counted.Count -eq 0) {
+            # Counts unknown for every run of this runner — null, never zeros
+            $totals[$runner] = $null
+            continue
+        }
+        $totals[$runner] = [ordered]@{
+            runs          = $runnerResults.Count
+            testCodeunits = [int](($counted | ForEach-Object { $_.Counts.testCodeunits } | Measure-Object -Sum).Sum)
+            tests         = [int](($counted | ForEach-Object { $_.Counts.tests } | Measure-Object -Sum).Sum)
+            testsPassed   = [int](($counted | ForEach-Object { $_.Counts.testsPassed } | Measure-Object -Sum).Sum)
+            testsFailed   = [int](($counted | ForEach-Object { $_.Counts.testsFailed } | Measure-Object -Sum).Sum)
+            testsSkipped  = [int](($counted | ForEach-Object { $_.Counts.testsSkipped } | Measure-Object -Sum).Sum)
+        }
+    }
+    return $totals
+}
+
+function ConvertTo-RepoRelativePath {
     <#
     .SYNOPSIS
-        Run AL unit tests using BusinessCentral.AL.Runner (no container required)
-    .PARAMETER AppDir
-        Directory containing the main app source
-    .PARAMETER TestDir
-        Directory containing the unit test app source
-    .PARAMETER OutputDir
-        Directory to write test results (al-runner.xml — last.xml belongs to the
-        container run; separate files so neither runner overwrites the other)
-    .PARAMETER InitEvents
-        Fire BC lifecycle events (OnCompanyInitialize, OnInstallAppPerCompany) at startup
-    .OUTPUTS
-        PSCustomObject with Passed, Runner, AppName, TestDir, Counts, ResultFile properties
+        Format a path repo-relative with forward slashes for summary.json.
     #>
-    [CmdletBinding()]
     param(
-        [Parameter(Mandatory)]
-        [string]$AppDir,
-
-        [Parameter(Mandatory)]
-        [string]$TestDir,
-
-        [Parameter(Mandatory)]
-        [string]$OutputDir,
-
-        [switch]$InitEvents
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [Parameter(Mandatory)][string]$Path
     )
+    $resolvedRoot = (Resolve-Path -LiteralPath $RepoRoot).Path
+    $resolvedPath = (Resolve-Path -LiteralPath $Path).Path
+    ([System.IO.Path]::GetRelativePath($resolvedRoot, $resolvedPath)) -replace '\\', '/'
+}
 
-    # Guard: al-runner must be available
-    $alRunner = Get-Command al-runner -ErrorAction SilentlyContinue
-    if (-not $alRunner) {
-        throw "al-runner not found on PATH. Run provision.ps1 to install it."
-    }
-
-    $appJson = Get-AppJsonObject $TestDir
-    if (-not $appJson) {
-        throw "app.json not found in '$TestDir'"
-    }
-
-    Write-BuildHeader 'AL Runner Unit Test'
-    Write-BuildMessage -Type Step -Message "Running unit tests: $($appJson.name)"
-
-    # Setup output directory. The top-level test.ps1 gate already removed
-    # and recreated the whole .output/TestResults tree before this run
-    # started, so no per-run local JUnit cleanup happens here.
-    # AL Runner owns al-runner.xml; the container run owns last.xml in the
-    # same directory — separate files so a full gate never overwrites the
-    # unit result.
-    Ensure-Directory -Path $OutputDir
-    $resultFile = Join-Path $OutputDir 'al-runner.xml'
-
-    # Resolve symbol package path for the test app
-    $packageCachePath = $null
-    try {
-        $symbolCacheInfo = Get-SymbolCacheInfo -AppJson $appJson
-        $packageCachePath = $symbolCacheInfo.CacheDir
-    } catch {
-        throw "Symbol cache not found for unit test app '$($appJson.name)'. Run provision.ps1 first. Error: $_"
-    }
-
-    # Build arguments
-    $arguments = @(
-        '--output-junit', $resultFile,
-        '--strict',
-        '--no-telemetry'
+function Write-TestSummary {
+    param(
+        [string]$Gate,
+        $Results,
+        [Parameter(Mandatory)]
+        $CoverageBlock,
+        $ErrorBlock,
+        [string]$Path
     )
-    if ($InitEvents) {
-        $arguments += '--init-events'
+    $summary = [ordered]@{
+        gate     = $Gate
+        totals   = Get-RunnerTotals $Results
+        runs     = @($Results | ForEach-Object { ConvertTo-RunRecord $_ })
+        coverage = $CoverageBlock
     }
-    if ($packageCachePath) {
-        $arguments += @('--packages', $packageCachePath)
-    }
-    $arguments += @($AppDir, $TestDir)
+    if ($ErrorBlock) { $summary.error = $ErrorBlock }
+    $summary | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $Path -Force
+}
 
-    Write-BuildMessage -Type Detail -Message "Command: al-runner $($arguments -join ' ')"
-
-    # Run al-runner — pipe to Out-Host to avoid polluting the return pipeline
-    & $alRunner.Source @arguments | Out-Host
-    $exitCode = $LASTEXITCODE
-
-    # Exit codes: 0 = all passed, 1 = test failures, 2 = runner limitations (--strict promotes to 1), 3 = compile error
-    $testsPassed = $exitCode -eq 0
-
-    # Parse authoritative counts from the JUnit result — never derived from console lines
-    $counts = Get-JUnitTestCounts -ResultFile $resultFile
-
-    $result = [PSCustomObject]@{
-        Passed        = $testsPassed
-        Runner        = 'al-runner'
-        AppName       = $appJson.name
-        TestDir       = $TestDir
-        Counts        = $counts
-        ResultFile    = if (Test-Path -LiteralPath $resultFile) { $resultFile } else { '' }
-    }
-
-    if ($testsPassed) {
-        if ($counts) {
-            Write-BuildMessage -Type Success -Message "al-runner - $($appJson.name): $(Format-TestCountSummary $counts)"
-        } else {
-            Write-BuildMessage -Type Success -Message "All unit tests passed: $($appJson.name) (test counts unavailable - result XML missing)"
+function Show-RunnerTotals {
+    param($Results)
+    $totals = Get-RunnerTotals $Results
+    foreach ($runner in $totals.Keys) {
+        $t = $totals[$runner]
+        if ($null -eq $t) {
+            Write-BuildMessage -Type Warning -Message "${runner}: test counts unavailable (no parseable result XML)"
+            continue
         }
-    } else {
-        if ($counts) {
-            Write-BuildMessage -Type Error -Message "al-runner - $($appJson.name): $(Format-TestCountSummary $counts) (exit $exitCode). See results in $OutputDir"
-        } else {
-            Write-BuildMessage -Type Error -Message "Unit tests failed (exit $exitCode): $($appJson.name). See results in $OutputDir"
-        }
+        $runWord = if ($t.runs -eq 1) { 'run' } else { 'runs' }
+        Write-BuildMessage -Type Info -Message "${runner}: $($t.runs) $runWord - $($t.tests) tests in $($t.testCodeunits) test codeunits - $($t.testsPassed) passed, $($t.testsFailed) failed, $($t.testsSkipped) skipped"
     }
-
-    return $result
 }
 
 function Invoke-ALUnpublish {
@@ -1880,12 +1880,19 @@ Export-ModuleMember -Function @(
 
     # Test
     'Invoke-ALTest'
-    'Invoke-ALRunnerTest'
     'Get-JUnitTestCounts'
     'Format-TestCountSummary'
 
+    # Test Result Summary
+    'ConvertTo-RunRecord'
+    'Get-RunnerTotals'
+    'ConvertTo-RepoRelativePath'
+    'Write-TestSummary'
+    'Show-RunnerTotals'
+
     # AL Runner
     'Install-ALRunner'
+    'ConvertTo-ALRunnerVersion'
 
     # Local Symbols
     'Copy-ALSymbolToCache'

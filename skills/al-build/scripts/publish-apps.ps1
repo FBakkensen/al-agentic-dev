@@ -6,9 +6,9 @@
 
 .DESCRIPTION
     Clean-republish primitive. Unconditionally unpublishes every app present in
-    the container (test apps → unitTestApp → main app, dependency-reversed),
-    then force-publishes them in dependency order (main → test apps → unitTestApp)
-    per al-build.json.
+    the container (secondary apps → main app, dependency-reversed), then
+    force-publishes them in dependency order (main → test apps → container test
+    apps) per al-build.json — the same secondary set Get-CompileTargets resolves.
 
     No build, no tests, no replay — caller is responsible for having compiled
     .app artifacts present. Invoke-ALUnpublish internally skips when an app is
@@ -61,10 +61,10 @@ Write-BuildHeader 'Publish Apps'
 Write-BuildMessage -Type Info -Message "Configuration:"
 Write-BuildMessage -Type Detail -Message "App Directory: $($config.AppDir)"
 Write-BuildMessage -Type Detail -Message "Test Apps: $($config.TestApps -join ', ')"
-if ($config.UnitTestApp) {
-    Write-BuildMessage -Type Detail -Message "Unit Test App: $($config.UnitTestApp)"
-}
+Write-BuildMessage -Type Detail -Message "Container Test Apps: $($config.ContainerTestApps -join ', ')"
 Write-BuildMessage -Type Detail -Message "Container: $($config.ContainerName)"
+
+$secondaryAppDirs = @(Get-CompileTargets -Config $config | ForEach-Object { $_.AppDir })
 
 # Step 1: Ensure agent container is running
 Start-Step 'ensure-container'
@@ -74,16 +74,10 @@ Stop-Step 'ensure-container'
 # Step 2: Unpublish all apps in dependency-reverse order
 # Invoke-ALUnpublish internally skips when app is not installed → safe on fresh container.
 Start-Step 'unpublish'
-foreach ($testAppDir in @($config.TestApps | Sort-Object -Descending)) {
-    $testAppJson = Get-AppJsonObject $testAppDir
-    if ($testAppJson) {
-        Invoke-ALUnpublish -AppName $testAppJson.name
-    }
-}
-if ($config.UnitTestApp -and ($config.UnitTestApp -notin $config.TestApps)) {
-    $unitAppJson = Get-AppJsonObject $config.UnitTestApp
-    if ($unitAppJson) {
-        Invoke-ALUnpublish -AppName $unitAppJson.name
+foreach ($appDir in @($secondaryAppDirs | Sort-Object -Descending)) {
+    $appJson = Get-AppJsonObject $appDir
+    if ($appJson) {
+        Invoke-ALUnpublish -AppName $appJson.name
     }
 }
 $mainAppJson = Get-AppJsonObject $config.AppDir
@@ -98,20 +92,12 @@ Start-Step 'publish'
 Invoke-ALPublish -AppDir $config.AppDir -Force
 Stop-Step 'publish'
 
-# Step 4: Publish each test app
-foreach ($testAppDir in $config.TestApps) {
-    $dirName = Split-Path $testAppDir -Leaf
+# Step 4: Publish each secondary app (test apps, then container test apps)
+foreach ($appDir in $secondaryAppDirs) {
+    $dirName = Split-Path $appDir -Leaf
     Start-Step "publish-test-$dirName"
-    Invoke-ALPublish -AppDir $testAppDir -Force
+    Invoke-ALPublish -AppDir $appDir -Force
     Stop-Step "publish-test-$dirName"
-}
-
-# Step 5: Publish unit test app when configured and not already in TestApps
-if ($config.UnitTestApp -and ($config.UnitTestApp -notin $config.TestApps)) {
-    $unitDirName = Split-Path $config.UnitTestApp -Leaf
-    Start-Step "publish-unit-$unitDirName"
-    Invoke-ALPublish -AppDir $config.UnitTestApp -Force
-    Stop-Step "publish-unit-$unitDirName"
 }
 
 # Show timing summary

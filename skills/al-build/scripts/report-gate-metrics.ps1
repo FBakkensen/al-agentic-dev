@@ -20,7 +20,8 @@
       unknown   — entries predating evidence capture
 
     Answers "where does the wall-clock go": mutation share vs TDD inner-loop
-    share, unit vs full gate split, red rate per signature, suite growth.
+    share, containerless vs container gate split, red rate per signature,
+    suite growth.
 
 .PARAMETER LogPath
     Explicit path to a JSONL log. Defaults to .output/logs/build-timing.jsonl
@@ -35,8 +36,8 @@
     Only include entries newer than N days. 0 (default) = no filter.
 
 .PARAMETER Task
-    Only include entries for these task names (e.g. 'test','unit-test').
-    Default: gate tasks ('test','unit-test'). Pass an empty array for all tasks.
+    Only include entries for these task names (e.g. 'test','container-test').
+    Default: gate tasks ('test','container-test'). Pass an empty array for all tasks.
 
 .EXAMPLE
     pwsh -File report-gate-metrics.ps1
@@ -55,7 +56,7 @@ param(
 
     [int]$SinceDays = 0,
 
-    [string[]]$Task = @('test', 'unit-test')
+    [string[]]$Task = @('test', 'container-test')
 )
 
 Set-StrictMode -Version Latest

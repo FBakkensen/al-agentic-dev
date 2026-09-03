@@ -217,8 +217,8 @@ Describe 'Get-GateMetricsSummary' {
             Add-FixtureEntry @{ timestamp = $recent; task = 'test'; gate = 'full'; outcome = 'passed'; totalSec = $sec; dirty = @{ app = 1; tests = 0; other = 0 } }
         }
         # Two RED-shaped unit entries (test-only dirty), one failed one error
-        Add-FixtureEntry @{ timestamp = $recent; task = 'unit-test'; gate = 'unit'; outcome = 'failed'; totalSec = 60; dirty = @{ app = 0; tests = 2; other = 0 } }
-        Add-FixtureEntry @{ timestamp = $recent; task = 'unit-test'; gate = 'unit'; outcome = 'error'; totalSec = 30; dirty = @{ app = 0; tests = 1; other = 1 } }
+        Add-FixtureEntry @{ timestamp = $recent; task = 'container-test'; gate = 'unit'; outcome = 'failed'; totalSec = 60; dirty = @{ app = 0; tests = 2; other = 0 } }
+        Add-FixtureEntry @{ timestamp = $recent; task = 'container-test'; gate = 'unit'; outcome = 'error'; totalSec = 30; dirty = @{ app = 0; tests = 1; other = 1 } }
         # One TDD-inner-loop entry (both dirty)
         Add-FixtureEntry @{ timestamp = $recent; task = 'test'; gate = 'full'; outcome = 'passed'; totalSec = 80; dirty = @{ app = 2; tests = 3; other = 0 } }
         # Legacy entry: no dirty/gate/outcome -> unknown/full via task name,
@@ -232,7 +232,7 @@ Describe 'Get-GateMetricsSummary' {
         Add-Content -Path $script:SummaryLog -Value '{"timestamp": "2026-' -Encoding UTF8
         Add-Content -Path $script:SummaryLog -Value '' -Encoding UTF8
 
-        $script:Rows = @(Get-GateMetricsSummary -LogPath $script:SummaryLog -Task @('test', 'unit-test'))
+        $script:Rows = @(Get-GateMetricsSummary -LogPath $script:SummaryLog -Task @('test', 'container-test'))
     }
 
     It 'groups by signature and gate' {
@@ -267,7 +267,7 @@ Describe 'Get-GateMetricsSummary' {
     }
 
     It 'applies the SinceDays window' {
-        $windowed = @(Get-GateMetricsSummary -LogPath $script:SummaryLog -SinceDays 7 -Task @('test', 'unit-test'))
+        $windowed = @(Get-GateMetricsSummary -LogPath $script:SummaryLog -SinceDays 7 -Task @('test', 'container-test'))
         ($windowed | Where-Object { $_.Signature -eq 'clean' }) | Should -BeNullOrEmpty
         ($windowed | Measure-Object -Property Runs -Sum).Sum | Should -Be 9
     }
