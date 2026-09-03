@@ -16,8 +16,11 @@ BeforeAll {
         $saved = $env:HOME
         try {
             $env:HOME = $probe
-            $seen = (bash -c 'printf %s "$HOME"' 2>$null) -join ''
-            $script:BashUsable = ($seen -replace '\\', '/') -eq ($probe -replace '\\', '/')
+            $seen = (bash -c 'cygpath -m "$HOME" 2>/dev/null || printf %s "$HOME"' 2>$null) -join ''
+            $windowsHome = if ($env:HOME) { $env:HOME } else { $env:USERPROFILE }
+            $seen = ($seen -replace '\\', '/').TrimEnd('/')
+            $windowsHome = ($windowsHome -replace '\\', '/').TrimEnd('/')
+            $script:BashUsable = $seen.Equals($windowsHome, [System.StringComparison]::OrdinalIgnoreCase)
         } finally { $env:HOME = $saved }
     }
 
@@ -74,9 +77,19 @@ Describe 'sessionStart hook model tiers' -Tag 'Process' {
         @{ Shell = 'powershell' }
         @{ Shell = 'bash' }
     )
+    $script:ParityCases = @(
+        @{ Name = 'absent'; ModelsJson = $null }
+        @{ Name = 'valid'; ModelsJson = '{"version":1,"tiers":{"frontier":{"model":"user-f","effort":"low"},"execution":{"model":"user-e","effort":"medium"},"mechanical":{"model":"user-m","effort":"high"}}}' }
+        @{ Name = 'unparseable'; ModelsJson = '{ not json' }
+        @{ Name = 'partial'; ModelsJson = '{"version":1,"tiers":{"frontier":{"model":"user-f","effort":"low"}}}' }
+        @{ Name = 'unsafe'; ModelsJson = '{"version":1,"tiers":{"frontier":{"model":"bad\"model","effort":"low"},"execution":{"model":"user-e","effort":"medium"},"mechanical":{"model":"user-m","effort":"high"}}}' }
+        @{ Name = 'all-broken'; ModelsJson = '{"version":1,"tiers":{"frontier":{"model":"bad\"model","effort":"low"},"execution":{"model":"user-e","effort":"bad effort"},"mechanical":{}}}' }
+    )
     BeforeAll {
         $script:UserMap = '{"version":1,"tiers":{"frontier":{"model":"user-f","effort":"low"},"execution":{"model":"user-e","effort":"medium"},"mechanical":{"model":"user-m","effort":"high"}}}'
         $script:PartialMap = '{"version":1,"tiers":{"frontier":{"model":"user-f","effort":"low"}}}'
+        $script:UnsafeMap = '{"version":1,"tiers":{"frontier":{"model":"bad\"model","effort":"low"},"execution":{"model":"user-e","effort":"medium"},"mechanical":{"model":"user-m","effort":"high"}}}'
+        $script:AllBrokenMap = '{"version":1,"tiers":{"frontier":{"model":"bad\"model","effort":"low"},"execution":{"model":"user-e","effort":"bad effort"},"mechanical":{}}}'
     }
 
     It 'injects the shipped defaults with the Defaults line when the file is absent (<Shell>)' -TestCases $script:Cases {
@@ -127,6 +140,42 @@ Describe 'sessionStart hook model tiers' -Tag 'Process' {
         $context | Should -Match ([regex]::Escape((Get-DefaultRow -Tier 'execution' -For 'writing code and tests from a brief')))
         $context | Should -Match ([regex]::Escape((Get-DefaultRow -Tier 'mechanical' -For 'running gates, commits, renders, lookups, review lenses')))
         $context | Should -Match 'Defaults in use for execution, mechanical — run /al-setup-models to set your models\.'
+    }
+
+    It 'falls back only the tier whose model has a non-matching value (<Shell>)' -TestCases $script:Cases {
+        param($Shell)
+        if ($Shell -eq 'bash' -and -not $script:BashUsable) { Set-ItResult -Skipped -Because 'bash is not on PATH or does not share HOME'; return }
+
+        $context = Invoke-SessionStart -Shell $Shell -HomeDir (New-HomeDir -Name "unsafe-$Shell" -ModelsJson $script:UnsafeMap) -Cwd $TestDrive
+
+        $context | Should -Match ([regex]::Escape((Get-DefaultRow -Tier 'frontier' -For 'design, judgment, verdicts, uncertain work')))
+        $context | Should -Match '\| execution \| user-e \| medium \|'
+        $context | Should -Match '\| mechanical \| user-m \| high \|'
+        $context | Should -Match 'Defaults in use for frontier — run /al-setup-models to set your models\.'
+        $context | Should -Not -Match 'bad"model'
+    }
+
+    It 'uses the full Defaults line when all three tiers are broken (<Shell>)' -TestCases $script:Cases {
+        param($Shell)
+        if ($Shell -eq 'bash' -and -not $script:BashUsable) { Set-ItResult -Skipped -Because 'bash is not on PATH or does not share HOME'; return }
+
+        $context = Invoke-SessionStart -Shell $Shell -HomeDir (New-HomeDir -Name "all-broken-$Shell" -ModelsJson $script:AllBrokenMap) -Cwd $TestDrive
+
+        $context | Should -Match ([regex]::Escape((Get-DefaultRow -Tier 'frontier' -For 'design, judgment, verdicts, uncertain work')))
+        $context | Should -Match ([regex]::Escape((Get-DefaultRow -Tier 'execution' -For 'writing code and tests from a brief')))
+        $context | Should -Match ([regex]::Escape((Get-DefaultRow -Tier 'mechanical' -For 'running gates, commits, renders, lookups, review lenses')))
+        $context | Should -Match '(?m)^Defaults in use — run /al-setup-models to set your models\.$'
+        $context | Should -Not -Match 'Defaults in use for'
+    }
+
+    It 'produces identical context from both bodies for the <Name> map' -TestCases $script:ParityCases {
+        param($Name, $ModelsJson)
+        if (-not $script:BashUsable) { Set-ItResult -Skipped -Because 'bash is not on PATH or does not share HOME'; return }
+
+        $powershellContext = Invoke-SessionStart -Shell 'powershell' -HomeDir (New-HomeDir -Name "parity-$Name-powershell" -ModelsJson $ModelsJson) -Cwd $TestDrive
+        $bashContext = Invoke-SessionStart -Shell 'bash' -HomeDir (New-HomeDir -Name "parity-$Name-bash" -ModelsJson $ModelsJson) -Cwd $TestDrive
+
+        $bashContext | Should -BeExactly $powershellContext
     }
 
     It 'places the block after Reply shape and before Speak BC in an AL repo (<Shell>)' -TestCases $script:Cases {
