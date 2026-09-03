@@ -34,9 +34,9 @@ In the app, send it with `send_session_message`. In the CLI, resume that child w
 ## React to evidence
 
 - A red implementation or gate result returns to the owning child.
-- A blocking review finding returns to a fresh implementation or refactor child with the exact proof and fix requirement, then to step 6.
+- A blocking review finding returns to a fresh child on item 1's or item 2's line with the exact proof and fix requirement, then item 3's line runs again.
 - A walkthrough mismatch returns to a writing child, then a fresh review and walkthrough.
-- `non-blocking only` or `no blocking issues found` ends the review-repair loop; step 7 still runs when walkthrough proof is required.
+- `non-blocking only` or `no blocking issues found` ends the review-repair loop; item 5's line still runs when walkthrough proof is required.
 - A module-contract dispute returns to the user rather than being decided by orchestration.
 
 ## Close

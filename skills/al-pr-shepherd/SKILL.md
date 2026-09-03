@@ -28,7 +28,7 @@ Then act, one class at a time:
 3. **A required check red because of the PR** → diagnose and fix the root cause under the same gate rules, push, reply. An infrastructure, access, or flaky failure stops with the blocker named.
 4. **Behind main** → merge origin/main INTO the PR branch as a merge commit — a rebase rewrites what reviewers saw. Conflicts resolve by preserving both intents, each side traced to its primary sources: commits, PRs, issues. The same object or field number claimed by both sides with no overlapping logic is the one collision a worker resolves:
 
-   ▶ execution · task · the AL number collision: both sides' declarations and the idRanges bucket → both declarations kept, the branch-new number renumbered inside its bucket and verified by a workspace scan
+   ▶ execution · task · the AL number collision: origin/main's declaration, the branch-new declaration, and the idRanges bucket → both declarations kept, the branch-new number renumbered inside its bucket and verified by a workspace scan
 
    A conflict that reveals a design decision — one concept modeled twice, conflicting logic in one object — stops for the user. Before the push:
 
