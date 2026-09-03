@@ -11,7 +11,13 @@ Ask one substantive question per message. Connect it to the Original User Story,
 
 ## Show what landed
 
-Name the executable item and its receipts. Show its connected-object change map before the BC-anatomy delta table. The map explains how changed production objects connect and keeps tests in a separate Proof group. The table covers objects touched, schema, events, permissions, translations, tests, and the caller-visible behavior now present.
+Name the executable item and its receipts. Launch both together:
+
+▶ mechanical · task · receipts and work-item comments for the executable items → one summary per item
+
+▶ mechanical · task · BC-anatomy delta table from the diff base: objects touched, schema, events, permissions, translations, tests, caller-visible behavior now present → the table
+
+Show the connected-object change map before the delta table. The map explains how changed production objects connect and keeps tests in a separate Proof group.
 
 ## Reconcile the Original User Story
 

@@ -13,6 +13,8 @@ Ask one substantive question per message. Show the competing module boundaries a
 
 Start with the canonical shape: master data with entries, a document flavor, a journal plus posting extension, setup, dimensions, or another verified Base App precedent. Maintain `docs/patterns.md` only when this repo gains its first example of a reusable BC shape.
 
+▶ execution · task · canonical-shape survey: how the Base App models the concept — tables, seams, events — read in .bcapps/release → precedent table with file:line
+
 Every Base App seam, table, field, object, procedure, event, or enum value named comes from a lookup in this session. Reach for the platform before designing custom structure.
 
 ## Deep modules
@@ -29,8 +31,18 @@ Use the arc42 Building Block View, Level 1:
 - Important Interfaces
 - one black box description per important module: Purpose/Responsibility, Interface(s), and only relevant optional fields
 
-Ask /al-arc42 to apply the official template and create the local architecture review HTML, editable SVG, and Azure DevOps-safe PNG. The user reviews the HTML before publication. Ask /al-azure-devops-attachments to attach the PNG and SVG, then embed its verified PNG URL, explanatory text, and black boxes under `Building Block View` in the Original User Story Description. Missing MCP attachment support is not a blocker; authentication trouble stays with that skill until the Azure CLI token works. Level 1 records intended boundaries. Level 2 waits for implementation evidence.
+▶ mechanical · task · /al-arc42 the Building Block Level 1 view from the settled black boxes → HTML path, SVG and PNG paths, alt text, publishable fragments
+
+Open the HTML in the browser canvas; the user reviews it before publication.
+
+▶ mechanical · task · /al-azure-devops-attachments the PNG and SVG to the Original User Story → verified attachment URLs
+
+Embed the verified PNG URL, explanatory text, and black boxes under `Building Block View` in the Original User Story Description. Missing MCP attachment support is not a blocker; authentication trouble stays with that skill until the Azure CLI token works. Level 1 records intended boundaries. Level 2 waits for implementation evidence.
 
 ## Close
 
-The pass ends when every important behavior has one module owner, each caller-visible interface is named, and the Original User Story contains the accepted Level 1 view. Ask /al-commit to commit any `docs/patterns.md` change and the rest of the worktree at every exit. No `docs/design.md` copy is created.
+The pass ends when every important behavior has one module owner, each caller-visible interface is named, and the Original User Story contains the accepted Level 1 view. At every exit:
+
+▶ mechanical · task · /al-commit the complete worktree — any `docs/patterns.md` change and the rest — work items <ids> → commit hashes and subjects, remaining worktree
+
+No `docs/design.md` copy is created.

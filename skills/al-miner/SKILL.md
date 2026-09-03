@@ -15,7 +15,9 @@ Turn session history into standing improvements. The history already holds the t
 
 ## Engines by surface
 
-`/chronicle` ships in both the terminal Copilot CLI and the GitHub Copilot app composer. `/chronicle improve` proposes lines for the repo's `.github/copilot-instructions.md` and applies only what the user approves — that shelf is chronicle's end to end; leave its work alone. `/chronicle search <terms>` is the evidence probe. Both are the user's commands, typed in the composer — a skill turn cannot type them, and a headless `copilot -p "/chronicle …"` prompt lands as plain text, not the command. Inside a run, query the session store directly with the session_store_sql tool: turns for steering phrases, events for failure patterns, the local full-text index for error signatures.
+`/chronicle` ships in both the terminal Copilot CLI and the GitHub Copilot app composer. `/chronicle improve` proposes lines for the repo's `.github/copilot-instructions.md` and applies only what the user approves — that shelf is chronicle's end to end; leave its work alone. `/chronicle search <terms>` is the evidence probe. Both are the user's commands, typed in the composer — a skill turn cannot type them, and a headless `copilot -p "/chronicle …"` prompt lands as plain text, not the command. Inside a run, query the session store directly with the session_store_sql tool: turns for steering phrases, events for failure patterns, the local full-text index for error signatures. The extraction itself is one worker; the lead judges which candidates become lessons:
+
+▶ mechanical · task · extract repeated failures and steering corrections from the session store for the named range with the session_store_sql tool → candidate table with counts, date spans, session ids, and the query used
 
 ## What the miner adds
 

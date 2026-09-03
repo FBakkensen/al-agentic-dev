@@ -21,11 +21,17 @@ Ask one substantive question per message. Ask every question in the reply itself
 
 Test through the smallest caller-visible module interface that proves the Gherkin behavior. Do not split tests by private procedure or internal object. A deep module's internals may change while its contract stays green.
 
-Before proposing cases, search the repository for existing proof by affected module interface, objects, business terms, fixtures, and assertions. Inventory the affected proof set: every existing test procedure and shared test helper needed by the changed Gherkin paths. Widen the search until every path's current proof is known; leave unrelated behavior out.
+Before proposing cases, search the repository for existing proof by affected module interface, objects, business terms, fixtures, and assertions:
+
+▶ mechanical · task · inventory the existing proof for the affected interface, objects, and business terms → every test procedure and shared helper the changed Gherkin paths need, with paths
+
+Widen the brief until every path's current proof is known; leave unrelated behavior out.
 
 Design that proof set as if all current requirements had existed when its tests were first written. Keep, reshape, combine, split, or replace existing tests; add a test only for a distinct remaining case. The final set must not preserve requirement history through layered or overlapping tests.
 
-Confirm every Business Central object, table, field, action, procedure, event, enum value, and dialog text through lookup in this session. Reach for standard test libraries and fixtures before inventing helpers.
+Confirm every Business Central object, table, field, action, procedure, event, enum value, and dialog text through lookup in this session. Reach for standard test libraries and fixtures before inventing helpers:
+
+▶ mechanical · task · standard test libraries and fixtures for the named objects → library and fixture names with paths
 
 ## Write AAA cases
 
