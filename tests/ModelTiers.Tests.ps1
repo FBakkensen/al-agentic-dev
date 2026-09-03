@@ -82,6 +82,7 @@ Describe 'sessionStart hook model tiers' -Tag 'Process' {
         @{ Name = 'valid'; ModelsJson = '{"version":1,"tiers":{"frontier":{"model":"user-f","effort":"low"},"execution":{"model":"user-e","effort":"medium"},"mechanical":{"model":"user-m","effort":"high"}}}' }
         @{ Name = 'unparseable'; ModelsJson = '{ not json' }
         @{ Name = 'partial'; ModelsJson = '{"version":1,"tiers":{"frontier":{"model":"user-f","effort":"low"}}}' }
+        @{ Name = 'duplicate'; ModelsJson = '{"version":1,"tiers":{"frontier":{"model":"user-f","effort":"low"},"execution":{"model":"first-e","effort":"low"},"execution":{"model":"last-e","effort":"high"},"mechanical":{"model":"user-m","effort":"high"}}}' }
         @{ Name = 'unsafe'; ModelsJson = '{"version":1,"tiers":{"frontier":{"model":"bad\"model","effort":"low"},"execution":{"model":"user-e","effort":"medium"},"mechanical":{"model":"user-m","effort":"high"}}}' }
         @{ Name = 'all-broken'; ModelsJson = '{"version":1,"tiers":{"frontier":{"model":"bad\"model","effort":"low"},"execution":{"model":"user-e","effort":"bad effort"},"mechanical":{}}}' }
     )
@@ -106,7 +107,7 @@ Describe 'sessionStart hook model tiers' -Tag 'Process' {
         $context | Should -Match 'Defaults in use — run /al-setup-models to set your models\.'
         $context | Should -Match 'A `▶ <tier> · <vehicle> · <brief> → <return>` line dispatches now'
         $context | Should -Match 'Delegation is down only'
-        $context | Should -Match ([regex]::Escape('Every dispatch prompt carries the brief, the return contract, the unattended line — `You run unattended; the user cannot answer mid-task. Proceed on every reversible step the User Story already covers, and end your turn only when the slice is complete or a decision only the user can take is written out with its options.` — and the plain-text question rule; a child that writes or judges AL also carries the Speak BC paragraph and the grounding rule.'))
+        $context | Should -Match ([regex]::Escape('Every dispatch prompt carries the brief, the return contract, the unattended line — `You run unattended; the user cannot answer mid-task. Proceed on every reversible step the User Story already covers, and end your turn only when the slice is complete or a decision only the user can take is written out with its options.` — and the plain-text question rule; a child that writes or judges AL also carries the Speak BC paragraph and the grounding rule. A child''s stop is a decision: answer it to the same child when the skill''s contract does, otherwise quote it to the user with options and the recommendation marked and relay the answer unchanged. A return that misses its contract, or a red twice on one cause, is re-dispatched once, one tier up, with the child''s output in the brief; a second miss goes to the user with the evidence.'))
     }
 
     It 'injects the user map without the Defaults line when the file is valid (<Shell>)' -TestCases $script:Cases {
