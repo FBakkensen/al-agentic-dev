@@ -102,7 +102,7 @@ Describe 'sessionStart hook model tiers' -Tag 'Process' {
         $context | Should -Match '\| Tier \| Model \| Effort \| For \|'
         $context | Should -Match ([regex]::Escape((Get-DefaultRow -Tier 'frontier' -For 'design, judgment, verdicts, uncertain work')))
         $context | Should -Match ([regex]::Escape((Get-DefaultRow -Tier 'execution' -For 'writing code and tests from a brief')))
-        $context | Should -Match ([regex]::Escape((Get-DefaultRow -Tier 'mechanical' -For 'running gates, commits, renders, lookups, review lenses')))
+        $context | Should -Match ([regex]::Escape((Get-DefaultRow -Tier 'mechanical' -For 'running gates, commits, renders, lookups, knowledge leaves')))
         $context | Should -Match 'Defaults in use — run /al-setup-models to set your models\.'
         $context | Should -Match 'A `▶ <tier> · <vehicle> · <brief> → <return>` line dispatches now'
         $context | Should -Match 'Delegation is down only'
@@ -139,7 +139,7 @@ Describe 'sessionStart hook model tiers' -Tag 'Process' {
 
         $context | Should -Match '\| frontier \| user-f \| low \|'
         $context | Should -Match ([regex]::Escape((Get-DefaultRow -Tier 'execution' -For 'writing code and tests from a brief')))
-        $context | Should -Match ([regex]::Escape((Get-DefaultRow -Tier 'mechanical' -For 'running gates, commits, renders, lookups, review lenses')))
+        $context | Should -Match ([regex]::Escape((Get-DefaultRow -Tier 'mechanical' -For 'running gates, commits, renders, lookups, knowledge leaves')))
         $context | Should -Match 'Defaults in use for execution, mechanical — run /al-setup-models to set your models\.'
     }
 
@@ -164,7 +164,7 @@ Describe 'sessionStart hook model tiers' -Tag 'Process' {
 
         $context | Should -Match ([regex]::Escape((Get-DefaultRow -Tier 'frontier' -For 'design, judgment, verdicts, uncertain work')))
         $context | Should -Match ([regex]::Escape((Get-DefaultRow -Tier 'execution' -For 'writing code and tests from a brief')))
-        $context | Should -Match ([regex]::Escape((Get-DefaultRow -Tier 'mechanical' -For 'running gates, commits, renders, lookups, review lenses')))
+        $context | Should -Match ([regex]::Escape((Get-DefaultRow -Tier 'mechanical' -For 'running gates, commits, renders, lookups, knowledge leaves')))
         $context | Should -Match '(?m)^Defaults in use — run /al-setup-models to set your models\.$'
         $context | Should -Not -Match 'Defaults in use for'
     }

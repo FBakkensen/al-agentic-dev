@@ -15,7 +15,7 @@ Read the built-in file. Apply each `tier=model` pair from the invocation line to
 
 - `frontier` — design, judgment, verdicts, uncertain work
 - `execution` — writing code and tests from a brief
-- `mechanical` — running gates, commits, renders, lookups, review lenses
+- `mechanical` — running gates, commits, renders, lookups, knowledge leaves
 
 When the existing file differs from the proposal, show its rows beside the proposal. Ask one question: **A** adopt the map as shown (recommended), **B** change rows.
 

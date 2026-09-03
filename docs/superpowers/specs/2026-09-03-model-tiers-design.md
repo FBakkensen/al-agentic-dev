@@ -18,7 +18,7 @@ Three named tiers carry the meaning; a user file carries the names.
 |---|---|---|---|
 | `frontier` | design, judgment, verdicts, uncertain work | `claude-fable-5.1` | `high` |
 | `execution` | writing code and tests from a brief | `gpt-5.6-sol` | `medium` |
-| `mechanical` | running gates, commits, renders, lookups, review lenses | `gpt-5.6-luna` | `max` |
+| `mechanical` | running gates, commits, renders, lookups, knowledge leaves | `gpt-5.6-luna` | `max` |
 
 - File: `~/.copilot/al-agentic-dev/models.json`, `{"version":1,"tiers":{"frontier":{"model":…,"effort":…},"execution":{…},"mechanical":{…}}}`. Only names and effort live there; what a tier is for ships in the hook text.
 - The existing sessionStart hook (both `bash` and `powershell` bodies) reads the file and injects a `# Model tiers` block after Reply shape and before Speak BC. Absent or unparseable file → the shipped defaults plus one line: `Defaults in use — run /al-setup-models to set your models.` A missing or broken single tier falls back alone and the line names it.
