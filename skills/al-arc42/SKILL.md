@@ -7,7 +7,7 @@ description: Use when settled Business Central architecture content needs the of
 
 In: settled architecture content from /al-event-model, /al-design, /al-implement, or /al-refactor. The caller owns meaning. This skill applies the official structure in [ARC42.md](ARC42.md), creates the review surface, and returns publishable artifacts.
 
-Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Usually ask none. Before the first tool call, write one sentence. Update only on an important finding or changed direction.
+Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Usually ask none. Before the first tool call, write one sentence. Update on an important finding or a changed direction; close with the outcome first, standing on its own.
 
 ## Apply the requested views
 

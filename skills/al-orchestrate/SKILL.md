@@ -7,7 +7,7 @@ description: Use when one executable AL User Story has reviewed AAA and needs im
 
 In: the executable Original User Story, or a child User Story and its Original User Story, with reviewed Gherkin and `Test specification`, plus any explicit deepening goal. If AAA is not reviewed, return `/al-test-design` as the next move and stop.
 
-Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update only on an important finding, a decision point, or a changed direction.
+Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update on an important finding, a decision point, or a changed direction.
 
 ## Run one owner at a time
 
@@ -23,7 +23,7 @@ In the GitHub Copilot app, use `create_session` with kickoff mode `autopilot`, t
 
 In the terminal Copilot CLI, give each block a UUID and run it sequentially in the current worktree as a fresh headless process: `copilot -p "/al-implement <work-item>" --session-id <uuid> --allow-all-tools --no-ask-user --plugin-dir <plugin-folder>`, then the same shape for /al-refactor, /al-review, and /al-walkthrough when required. The shared worktree, commits, and receipt path carry state; one process runs at a time.
 
-Each writing child calls /al-commit before returning; review remains read-only.
+Each writing child calls /al-commit before returning; review remains read-only. Every kickoff carries this line: `You run unattended; the user cannot answer mid-task. Proceed on every reversible step the User Story already covers, and end your turn only when the slice is complete or a decision only the user can take is written out with its options.` The pass-through below is that decision's only route.
 
 ## Pass through decisions
 
@@ -41,4 +41,4 @@ In the CLI, resume that child with `copilot --resume=<uuid> -p "<answer>" --allo
 
 ## Close
 
-Finish with the executable item, commits, receipt, connected-object change map, gate result, review verdict, walkthrough evidence when required, and whether Original User Story Level 2 changed. Outcome first; no extra summary.
+Finish with the executable item, commits, receipt, connected-object change map, gate result, review verdict, walkthrough evidence when required, and whether Original User Story Level 2 changed. Outcome first; the close stands on its own for a reader who sees only the last message.

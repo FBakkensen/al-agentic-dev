@@ -36,7 +36,7 @@ Dispatch `al-review-lens` once with one dimension named `User Story contract`, i
 
 For standards, read `.bcquality/skills/entry.md` and follow its Entry protocol with goal `review`, inputs `pr-diff`, technologies `[al]`, and all three layers. Dispatch one `al-knowledge-leaf` per selected leaf with the leaf path, diff scope, READ and DO paths, and domain-filtered index slice its contract requires.
 
-These parallelize in full-capability subagents; when subagents are unavailable, apply them in one pass. Deduplicate by root cause.
+These parallelize in full-capability subagents, launched in the background while the User Story contract dimension proceeds; wait only where the verdict needs their findings. When subagents are unavailable, apply them in one pass. Deduplicate by root cause.
 
 ## Verdict
 

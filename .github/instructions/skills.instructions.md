@@ -61,14 +61,14 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## Reply shape a skill asks for
 
-25. Every authored `SKILL.md` carries this exact rule: `Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.` The pinned forks `al-grill-me` and `al-unslop` are exempt — `hooks.json` enforces the ask_user ban at runtime. A skill that shapes the reply also asks for: one sentence before the first tool call; a brief update only on an important finding or a change of direction; the outcome first when finishing, detail after.
-26. Flag a skill that asks the model to announce each step before taking it.
-27. Written artifacts match the length the task needs. Flag instructions to add summary sections, recaps, or boilerplate headings.
+25. Every authored `SKILL.md` carries this exact rule: `Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.` The pinned forks `al-grill-me` and `al-unslop` are exempt — `hooks.json` enforces the ask_user ban at runtime. A skill that shapes the reply also asks for: one sentence before the first tool call; a brief update on an important finding or a change of direction; a close that stands on its own, outcome first and detail after. Flag a line that suppresses updates — "work quietly", "hold findings for the final response" — the model already under-reports during long tool chains.
+26. Flag a skill that asks the model to announce each step before taking it, and flag a skill that ends a turn on a stated next step instead of running it.
+27. Written artifacts match the length the task needs. Flag an instruction to add a section that restates what the artifact already shows, and flag anti-formatting language — "no headings", "no lists" — where a rule naming when formatting helps belongs instead.
 
 ## Delegation
 
 28. Delegation is for large, genuinely independent work. Flag a skill that spawns a subagent for work finishable in a few tool calls, or that spawns one to check its own output. Every delegated review judgment runs in a full-capability subagent; flag a skill that assigns one below that capability.
-29. Where fan-out is optional, one sentence covers it: `These parallelize in full-capability subagents; when subagents are unavailable, apply them in one pass.`
+29. Where fan-out is optional, one sentence covers it: `These parallelize in full-capability subagents; when subagents are unavailable, apply them in one pass.` A lead that launches subagents keeps working on independent steps while they run and waits only where the next step needs their result.
 
 ## Retired concepts
 

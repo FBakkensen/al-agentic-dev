@@ -10,7 +10,7 @@ In: the green implementation, reviewed AAA specification, receipt, and the Origi
 - **Tidy:** local duplication, names, extraction, data access, readability, or dead structure in the changed slice.
 - **Deepening:** only on an explicit user request that names the module boundary to reshape.
 
-Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update only on an important finding or changed direction.
+Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update on an important finding or a changed direction; close with the outcome first, standing on its own.
 
 ## Freeze behavior
 
@@ -26,7 +26,7 @@ Every new or materially reshaped proof born green takes mutation as its red. Inj
 
 ## Tidy
 
-Stay inside changed files and immediate seams. Prefer canonical BC patterns and Base App helpers. An interface with one implementation is a finding; collapse it unless a second implementation or stable external contract proves the seam.
+Stay inside changed files and immediate seams. Prefer canonical BC patterns and Base App helpers. An interface with one implementation is a finding; collapse it unless a second implementation or stable external contract proves the seam. A defect noticed outside the slice is a follow-up line in the receipt, not a change.
 
 ## Deepening
 

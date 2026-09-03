@@ -11,7 +11,7 @@ In: the implemented executable Original User Story, or a child User Story and it
 
 Read the Gherkin scenarios and BPMN outcomes. Present the exact scenario order, company or tenant, required records, and expected visible result. Ask the user to confirm before opening the client.
 
-Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update only on an important finding or changed direction. Finish with the outcome first, then the detail.
+Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update on an important finding or a changed direction. Finish with the outcome first, then the detail, so the last message stands on its own.
 
 ## Walk through Business Central
 

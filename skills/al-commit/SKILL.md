@@ -7,7 +7,7 @@ description: Use when repository changes need staging and splitting into the max
 
 In: the current repository worktree and any applicable Azure DevOps work-item IDs already established in the conversation. Out: every committable change recorded in the maximum number of independently valid commits.
 
-Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update only on an important finding or changed direction.
+Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update on an important finding or a changed direction; close with the outcome first, standing on its own.
 
 ## Inspect everything
 

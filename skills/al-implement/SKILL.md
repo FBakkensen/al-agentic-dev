@@ -9,7 +9,7 @@ In: the executable Original User Story, or a child User Story and its Original U
 
 Before editing, trace the narrow path through the workspace. Search for an existing module, event, interface, test, fixture, and pattern first. Confirm every BC object, table, field, procedure, event, enum value, and dialog text through lookup in this session.
 
-Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update only on an important finding or a changed direction.
+Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update on an important finding or a changed direction; close with the outcome first, standing on its own.
 
 ## Contract
 
@@ -30,7 +30,7 @@ A walkthrough-only case does not enter the automated red step. Keep it in the re
 
 ## Green
 
-Write the smallest production change that makes the proof green. Keep business writes on validated or posting paths, reuse Base App seams, preserve quality properties, and avoid an AL interface with one implementation.
+Write the smallest production change that makes the proof green. Keep business writes on validated or posting paths, reuse Base App seams, preserve quality properties, and avoid an AL interface with one implementation. A pre-existing bug or a behavior the User Story does not name is a follow-up line in the receipt, not a change, unless the proof cannot go green without it.
 
 Run /al-build's gate until green. A red result remains red until the output names its exact cause.
 

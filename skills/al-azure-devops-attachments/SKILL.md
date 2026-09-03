@@ -7,7 +7,7 @@ description: Use when local files must be uploaded and attached to an Azure DevO
 
 In: an Azure DevOps work-item ID or URL and one or more local file paths. The Azure DevOps MCP edits work items; this skill owns file upload through Azure CLI credentials and the WIT attachments API.
 
-Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update only on an important finding or changed direction.
+Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update on an important finding or a changed direction; close with the outcome first, standing on its own.
 
 ## Authenticate
 
