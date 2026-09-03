@@ -106,6 +106,8 @@ Describe 'sessionStart hook model tiers' -Tag 'Process' {
         $context | Should -Match 'Defaults in use — run /al-setup-models to set your models\.'
         $context | Should -Match 'A `▶ <tier> · <vehicle> · <brief> → <return>` line dispatches now'
         $context | Should -Match 'Delegation is down only'
+        $context | Should -Match 'Every dispatch prompt carries the brief, the return contract, the unattended line — `You run unattended; the user cannot answer mid-task\.'
+        $context | Should -Match 'and the plain-text question rule; a child that writes or judges AL also carries the Speak BC paragraph and the grounding rule\.'
     }
 
     It 'injects the user map without the Defaults line when the file is valid (<Shell>)' -TestCases $script:Cases {
