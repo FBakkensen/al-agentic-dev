@@ -2,17 +2,17 @@
 
 <#
 .SYNOPSIS
-    Publish and run the configured container test apps against the AL agent
-    container.
+    Compile, publish, and run the configured container test apps against the
+    AL agent container.
 
 .DESCRIPTION
-    The explicit-only container test surface. This script never compiles —
-    every configured containerTestApps entry and the main app must already
-    carry a compiled .app (run the gate, test.ps1, first). Performs:
+    The explicit-only container test surface. Every app it publishes is
+    compiled first in this run, so the container never tests a stale .app.
+    Performs:
     1. Validate containerTestApps is configured, before any BcContainerHelper
        import.
-    2. Validate the main app and every containerTestApps entry has a
-       compiled .app in its output folder.
+    2. Compile the main app, then every containerTestApps entry with the main
+       app staged as its local symbol — the same analyzer gate test.ps1 runs.
     3. Ensure the agent container, decide whether the main app needs
        republishing, unpublish container test apps (dependency-reversed)
        when the main app republishes, publish the main app, publish every
@@ -26,11 +26,11 @@
 
 .EXAMPLE
     pwsh -File container-test.ps1
-    # Publish (as needed) and test every configured container test app.
+    # Compile, publish (as needed), and test every configured container test app.
 
 .EXAMPLE
     pwsh -File container-test.ps1 -Force
-    # Force republish every app, then test.
+    # Compile, force republish every app, then test.
 #>
 
 [CmdletBinding()]
@@ -88,7 +88,8 @@ function Invoke-ContainerTestGate {
     $testResults = @()
 
     # Gate metrics: outcome defaults to 'error' and is only upgraded at the
-    # verdict points below — any throw (publish, container, test) keeps it.
+    # verdict points below — any throw (compile, publish, container, test)
+    # keeps it.
     # Workspace evidence (dirty fingerprint + HEAD sha) is captured up front;
     # phase attribution derives from it at report time, never from a
     # caller-supplied tag.
@@ -117,25 +118,34 @@ function Invoke-ContainerTestGate {
         $gateOutcome = 'failed'
         return
     }
-
-    # Step 2: artifact check — the main app and every container test app
-    # must already carry a compiled .app; this script never compiles.
-    $artifactCheckDirs = @($config.AppDir) + @($config.ContainerTestApps)
-    foreach ($dir in $artifactCheckDirs) {
-        $appFilePath = Get-OutputPath $dir
-        $dirName = Split-Path $dir -Leaf
-        if (-not $appFilePath -or -not (Test-Path -LiteralPath $appFilePath)) {
-            Write-BuildMessage -Type Error -Message "Compiled app not found for '$dirName' ($dir). Run the gate (test.ps1) first."
-            $gateOutcome = 'failed'
-            return
-        }
-    }
     Stop-Step 'validate-config'
 
     Write-BuildMessage -Type Info -Message "Configuration:"
     Write-BuildMessage -Type Detail -Message "App Directory: $($config.AppDir)"
     Write-BuildMessage -Type Detail -Message "Container Test Apps: $($config.ContainerTestApps -join ', ')"
     Write-BuildMessage -Type Detail -Message "Container: $($config.ContainerName)"
+
+    # Step 2: compile the main app, then every container test app against the
+    # freshly built main app as its local symbol. The published .app is always
+    # this run's output — a compile failure stops before the container is
+    # touched. One compiler channel for the whole set, as in test.ps1.
+    $requiredRuntimeMajor = Get-RequiredRuntimeMajor -Config $config
+    $warnAsError = ConvertTo-Boolean $config.WarnAsError
+
+    Start-Step 'build'
+    Invoke-ALBuild -AppDir $config.AppDir -WarnAsError:$warnAsError -RequiredRuntimeMajor $requiredRuntimeMajor
+    Stop-Step 'build'
+
+    foreach ($testAppDir in $config.ContainerTestApps) {
+        $dirName = Split-Path $testAppDir -Leaf
+        Start-Step "provision-symbols-$dirName"
+        Copy-ALSymbolToCache -SourceAppDir $config.AppDir -TargetAppDir $testAppDir
+        Stop-Step "provision-symbols-$dirName"
+
+        Start-Step "build-container-test-$dirName"
+        Invoke-ALBuild -AppDir $testAppDir -WarnAsError:$warnAsError -RequiredRuntimeMajor $requiredRuntimeMajor
+        Stop-Step "build-container-test-$dirName"
+    }
 
     # Step 3: the agent container must be up before any publish.
     Start-Step 'ensure-container'

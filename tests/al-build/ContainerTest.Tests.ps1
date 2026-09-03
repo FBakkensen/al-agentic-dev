@@ -2,9 +2,9 @@
 
 # Unit tests for container-test.ps1 — the explicit-only container test
 # surface. These run without a BC container and without BcContainerHelper
-# installed: only the two failure paths that must resolve before any
-# container work starts (empty containerTestApps, missing compiled .app) are
-# in scope, plus the parameter surface. A live container run is out of scope
+# installed: only the failure paths that must resolve before any container
+# work starts (empty containerTestApps, a compile that cannot run) are in
+# scope, plus the parameter surface. A live container run is out of scope
 # for this suite — this machine's golden container may not exist.
 
 BeforeAll {
@@ -20,10 +20,11 @@ BeforeAll {
             Build a minimal consumer repo fixture: al-build.json, a main app
             dir, and one container test app dir, each with app.json.
         .PARAMETER MainAppCompiled
-            When set, drop a compiled .app (Get-OutputPath's naming
-            convention) into the main app dir.
+            When set, drop a stale compiled .app (Get-OutputPath's naming
+            convention) into the main app dir — the artifact the script must
+            never publish without recompiling.
         .PARAMETER ContainerTestAppCompiled
-            When set, drop a compiled .app into the container test app dir.
+            When set, drop a stale compiled .app into the container test app dir.
         .PARAMETER ContainerTestApps
             containerTestApps entries to write into al-build.json. Empty
             reproduces the unconfigured-gate failure path.
@@ -77,14 +78,18 @@ BeforeAll {
         .SYNOPSIS
             Run container-test.ps1 as a fresh pwsh.exe process rooted at
             $Root, so Get-GitRepoRoot's cwd fallback resolves al-build.json
-            from the fixture and never this repo's own config.
+            from the fixture and never this repo's own config. The tool cache
+            is pointed at an empty fixture dir so no provisioned compiler on
+            this machine can leak into the run.
         #>
         param(
             [Parameter(Mandatory)][string]$Root,
             [switch]$Force
         )
         $forceArg = if ($Force) { ' -Force' } else { '' }
-        $command = "Set-Location -LiteralPath '$Root'; & '$script:ContainerTestScript'$forceArg"
+        $toolCache = Join-Path $Root '.tool-cache'
+        New-Item -ItemType Directory -Path $toolCache -Force | Out-Null
+        $command = "`$env:ALBT_TOOL_CACHE_ROOT = '$toolCache'; Set-Location -LiteralPath '$Root'; & '$script:ContainerTestScript'$forceArg"
         $output = & $script:Pwsh -NoProfile -Command $command 2>&1
         [pscustomobject]@{
             ExitCode = $LASTEXITCODE
@@ -115,29 +120,16 @@ Describe 'container-test.ps1 explicit-only failure paths' {
         ($result.Output -join "`n") | Should -Not -Match 'BcContainerHelper'
     }
 
-    It 'fails naming the app and pointing at test.ps1 when a container test app has no compiled .app' {
-        $root = Join-Path $TestDrive 'missing-artifact'
+    It 'compiles before publishing: a stale .app on disk never reaches the container when the compiler cannot run' {
+        $root = Join-Path $TestDrive 'compile-first'
         New-ContainerTestFixture -Root $root -ContainerTestApps @('containertest') `
-            -MainAppCompiled -ContainerTestAppCompiled:$false
+            -MainAppCompiled -ContainerTestAppCompiled
 
         $result = Invoke-ContainerTestProcess -Root $root
 
         $result.ExitCode | Should -Be 1
-        ($result.Output -join "`n") | Should -Match 'containertest'
-        ($result.Output -join "`n") | Should -Match 'test\.ps1'
+        ($result.Output -join "`n") | Should -Match 'Compiler not provisioned'
         ($result.Output -join "`n") | Should -Not -Match 'BcContainerHelper'
-    }
-
-    It 'fails naming the main app when the main app itself has no compiled .app' {
-        $root = Join-Path $TestDrive 'missing-main-artifact'
-        New-ContainerTestFixture -Root $root -ContainerTestApps @('containertest') `
-            -MainAppCompiled:$false -ContainerTestAppCompiled
-
-        $result = Invoke-ContainerTestProcess -Root $root
-
-        $result.ExitCode | Should -Be 1
-        ($result.Output -join "`n") | Should -Match "'app'"
-        ($result.Output -join "`n") | Should -Match 'test\.ps1'
-        ($result.Output -join "`n") | Should -Not -Match 'BcContainerHelper'
+        ($result.Output -join "`n") | Should -Not -Match 'App Publishing'
     }
 }

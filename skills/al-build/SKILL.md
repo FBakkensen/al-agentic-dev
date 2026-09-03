@@ -18,7 +18,7 @@ Run one at a time. `al-build.json` in the repo root is required — without it t
 | Command | Scope |
 |---|---|
 | `test.ps1` | The gate. Compiles every app (main, `testApps`, `containerTestApps`) through the analyzer gate, then runs AL Runner once over the main app and every `testApps` bundle — through the warm AL Runner server, auto-started on first use. The server is the only test path. Never touches a container. |
-| `container-test.ps1` | Container tests for `containerTestApps`: publish, sync barrier, run. Only when a task explicitly requires the container surface — no ordinary gate or verify step calls it. |
+| `container-test.ps1` | Container tests for `containerTestApps`: compile the main app and every container test app through the analyzer gate, publish, sync barrier, run. Only when a task explicitly requires the container surface — no ordinary gate or verify step calls it. |
 
 `test.ps1 -Coverage` adds complete per-test coverage to the same run, collected through the AL Runner server — see `COVERAGE.md` for the artifact contract.
 
@@ -52,7 +52,7 @@ Other artifacts: `.output/TestResults/al-runner.xml` (the al-runner gate's JUnit
 | `init.ps1` | One-time per repo: writes `al-build.json` into the repo root with detected app and test directories, copied from this folder's `config/al-build.json` template. Set `testApps` afterwards. |
 | `clean.ps1` | Deletes compiled `.app` files and clears publish state so the next run republishes. |
 | `report-gate-metrics.ps1` | Gate wall-clock per workspace signature and gate scope, from `build-timing.jsonl`; `-GlobalLog` reads the cross-repo mirror. |
-| `container-test.ps1` | Container tests for `containerTestApps` — see "The gate" above. `-Force` republishes unchanged apps. |
+| `container-test.ps1` | Container tests for `containerTestApps` — see "The gate" above. Compiles before it publishes; `-Force` republishes unchanged apps. |
 | `alrunner-server-manager.ps1` | Owns the AL Runner server; started automatically by `test.ps1`. Restarts on an AL Runner version change, an `.al` table or table extension shape change, a `tests/expectations` change, a dependency-set change — and, while the AL Runner request-drift defect is open (later requests on one server fail No. Series tests the first request passes), after every run. A restart waits for the previous al-runner process tree before starting the next; a child that exits before its ready line is started once more, logged as `[manager] retry:` in `.output/logs/al-runner-server-manager.log`, and a second miss fails with the exit code and the last lines of `al-runner-server.log`. |
 | `download-symbols.ps1`, `download-baseline.ps1` | The two fetches `provision.ps1` already performs. Run one alone to refresh only the symbols or only the baseline. |
 
