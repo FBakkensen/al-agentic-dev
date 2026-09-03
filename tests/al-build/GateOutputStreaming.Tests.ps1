@@ -202,6 +202,20 @@ Describe 'Invoke-TestGate verdict channel' {
             $Type -eq 'Error' -and $Message -match [regex]::Escape('al-runner-server-manager.log')
         }
     }
+    It 'reds the gate before the server starts when tests/expectations exists' {
+        # An expectations manifest makes al-runner exit 0 on failing tests. The
+        # gate never hides a failure: the folder's presence is red on its own.
+        New-Item -ItemType Directory -Path (Join-Path $repoRoot 'tests' 'expectations') -Force | Out-Null
+        Mock Request-ALRunnerServerRun { throw 'server must not be reached' }
+
+        { Invoke-TestGate } | Should -Not -Throw
+
+        $script:GateExitCode | Should -Be 1
+        Should -Invoke Request-ALRunnerServerRun -Times 0
+        Should -Invoke Write-BuildMessage -ParameterFilter {
+            $Type -eq 'Error' -and $Message -match 'tests/expectations' -and $Message -match 'containerTestApps'
+        }
+    }
 }
 
 Describe 'test.ps1 entry point' {

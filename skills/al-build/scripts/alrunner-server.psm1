@@ -432,9 +432,8 @@ function Get-ALRunnerServerFingerprint {
         .DESCRIPTION
         Hashes (SHA256) the `al-runner --version` output, then one
         'path|lastWriteUtcTicks|length' line per .al file whose first 4 KB matches a
-        table/tableextension declaration (sorted by path), then the same line per
-        file under tests/expectations when that directory exists. A codeunit-only
-        edit never changes the fingerprint. A missing al-runner binary contributes
+        table/tableextension declaration (sorted by path), then the dependency-set
+        lines. A codeunit-only edit never changes the fingerprint. A missing al-runner binary contributes
         an empty version line instead of throwing, so the fingerprint stays
         computable without a live al-runner install.
     #>
@@ -475,13 +474,6 @@ function Get-ALRunnerServerFingerprint {
     }
     foreach ($file in ($schemaFiles | Sort-Object -Property FullName)) {
         $lines.Add("$($file.FullName)|$($file.LastWriteTimeUtc.Ticks)|$($file.Length)")
-    }
-
-    $expectationsDir = Join-Path $RepoRoot 'tests' 'expectations'
-    if (Test-Path -LiteralPath $expectationsDir) {
-        foreach ($file in (Get-ChildItem -LiteralPath $expectationsDir -Recurse -File -ErrorAction SilentlyContinue | Sort-Object -Property FullName)) {
-            $lines.Add("$($file.FullName)|$($file.LastWriteTimeUtc.Ticks)|$($file.Length)")
-        }
     }
 
     foreach ($line in (Get-ALRunnerDependencySetFingerprintLines -RepoRoot $RepoRoot)) {

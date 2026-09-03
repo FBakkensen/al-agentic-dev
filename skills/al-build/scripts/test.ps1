@@ -135,6 +135,16 @@ function Write-ALRunnerFailureSample {
     Write-BuildMessage -Type Error -Message "Results: $ResultFile"
 }
 
+# An expectations manifest turns a failing test into exit 0. al-runner
+# auto-probes <repo>/tests/expectations from its cwd, so the folder's presence
+# alone would hide failures — the gate reds before the server ever starts.
+$expectationsDir = Join-Path $repoRoot 'tests' 'expectations'
+if (Test-Path -LiteralPath $expectationsDir) {
+    $failureMessage = "Expectations manifest found at tests/expectations — the gate never hides a failing test. Remove the folder. A failing test is fixed (green), or is an al-runner gap (stop and ask the user), or needs a surface al-runner refuses by design and moves its app to containerTestApps on the user's explicit ack."
+    Write-BuildMessage -Type Error -Message $failureMessage
+    return
+}
+
 # Load configuration — malformed config throws here, outside the gate's
 # try/finally, so no summary.json is written (startup cleanup already left
 # an empty TestResults tree).

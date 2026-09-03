@@ -14,7 +14,7 @@ Date: 2026-09-02. Decided in a brainstorm session with empirical probes against 
 
 - One invocation, all bundles: each extra invocation costs ~9s warm; one aggregated run shares warm dependencies (verified: 3 bundles, one summary).
 - The JUnit XML from `--output-junit` carries per-codeunit `testsuite` elements and no app attribution (verified: 256 suites named `CodeunitNNNN`). `summary.json` therefore records one merged run for the al-runner gate instead of per-app records.
-- Gate output surfaces three runner lines verbatim: `[bc] selected BC …` (and its build-skew warning — one fired in probing), `[dep] … NO IMPLEMENTATION` (a live symbols-only trap existed in the consumer repo: the `9A Advanced Manufacturing - License` dependency), and the `[expectations]` status line.
+- Gate output surfaces two runner lines verbatim: `[bc] selected BC …` (and its build-skew warning — one fired in probing) and `[dep] … NO IMPLEMENTATION` (a live symbols-only trap existed in one consumer repo: the `9A Advanced Manufacturing - License` dependency).
 
 ### 2. Config split: `testApps` and `containerTestApps`
 
@@ -26,7 +26,7 @@ The old `unitTestApp` / `testApps` split named v1's capability boundary (unit vs
 - No `bcVersion` key: the runner deduces its BC version from symbols and its artifact cache and prints the selection; the gate surfaces that line (verified: `[bc] selected BC 28.4.53241.53504` with zero flags).
 - No `testData` key: out of scope this round (see Out of scope).
 
-Membership moves an app between lists only on a documented runner limitation. Per-test known gaps never move an app; they are expectations-manifest entries (decision 6).
+Membership moves an app between lists only on a documented runner limitation, and only on the user's explicit ack. Per-test known gaps never move an app and never get an exemption (decision 6).
 
 ### 3. Server mode, auto-started, with a lifecycle manager
 
@@ -34,8 +34,8 @@ The gate uses `al-runner --server` (JSON-RPC over stdin/stdout, NDJSON). Measure
 
 - A small detached manager process owns the `al-runner --server` child and relays NDJSON over a named pipe keyed by repo root. `test.ps1` connects; if the pipe is absent it spawns the manager, waits for `{"ready":true}`, and proceeds. The server is the only test path: when it does not answer, the gate is red and names `.output/logs/al-runner-server-manager.log`. No CLI fallback — a fallback would hide a server that cannot start.
 - Dependencies are self-contained. At server start the manager builds `.output/al-runner-deps/` from the checkout symbol cache (`download-symbols.ps1` output): every non-Microsoft dependency declared in each bundle's `app.json`, excluding any package whose id is itself a bundle in the run (al-runner synthesizes those from source). It passes the dir as `--package-cache`. Microsoft platform and test libraries come from al-runner's own artifact cache, which is code-bearing and engine-matched; a symbols-only Microsoft copy from the feed must never enter the dir, because al-runner picks the highest version across all dirs and a newer symbols-only copy would win. The dir's id+version set joins the restart fingerprint. `.alpackages` is never read. A symbols-only third-party dependency whose code no test executes is legitimate (al-runner prints a `[deps] NOTE … symbol-only` line, not an error); one whose code does execute needs the vendor's code-bearing `.app` — that remedy is documented, not automated.
-- The manager restarts the server on: al-runner version change, table/tableextension source fingerprint change (the reload contract does not see table-shape edits — upstream documents "restart the server after a schema change"), and expectations-manifest change (loads once at startup). It also recycles the server after 50 runs: each warm reload loads a new assembly alongside the old, and probe wall time crept 7.9→10.5s over 20 reloads.
-- The server starts with cwd at the consumer repo root so the expectations auto-probe works.
+- The manager restarts the server on: al-runner version change, table/tableextension source fingerprint change (the reload contract does not see table-shape edits — upstream documents "restart the server after a schema change"), and dependency-set change. It also recycles the server after 50 runs: each warm reload loads a new assembly alongside the old, and probe wall time crept 7.9→10.5s over 20 reloads.
+- The server starts with cwd at the consumer repo root. al-runner auto-probes `<cwd>/tests/expectations` from there, which is why `test.ps1` reds on that folder before the server starts (decision 6).
 - Request drift, worked around: on the consumer suite the first `runTests` on a server process reports 366 failures and every later identical request 753, stable; a fresh process returns to 366. Reproduced 2026-09-03 on al-runner main over direct stdio with no manager and no coverage — 382 extra failures, 349 of them `NavDateTime with NavGuid` in `"Library - Inventory".ItemNoSeriesSetup`, the rest in `"No. Series - Stateless Impl."`. Filed upstream. Until fixed, `MaxRunsPerChild` in the manager is 1 — every request runs on a fresh child, so the 50-run ceiling and the warm-cache speedup are suspended. The revert recipe is the comment above `MaxRunsPerChild`.
 - `runTests` has no test filter, and `test.ps1` has no `-Test`. A focused single-test run is `al-runner --test <name> <bundles>` typed directly; it is a fresh process outside the gate.
 
@@ -51,11 +51,17 @@ Container coverage was a workaround until al-runner could do it. It can (verifie
 
 A new script carries today's container sequence out of the gate: ensure the branch agent container, publish main + `containerTestApps`, wait for the sync barrier, run the container tests, write `last.xml` and a `gate: "container"` summary. No coverage. No normal flow invokes it — a task names it explicitly (for example a Copilot-implementation story that genuinely needs platform surfaces). User verification keeps the container exactly as today: `publish-apps.ps1` + the walkthrough. Container lifecycle scripts, `validate-breaking-changes.ps1`, and `prune.ps1` are unchanged.
 
-### 6. Expected failures live in expectations manifests
+### 6. No expected failures — a red test has three outcomes
 
-al-runner's `--expectations` mechanism is the designed home for "these tests fail on al-runner and that is expected" (the consumer repo has such tests today). Auto-probed at `<repo>/tests/expectations`; entries are Microsoft `DisabledTests`-shaped JSON plus a `Mode` (`expect-oos`, `expect-fail-known-gap`, `expect-divergence`, `skip`).
+Superseded 2026-09-03. The first version of this decision made al-runner's `--expectations` manifest (`<repo>/tests/expectations`; `expect-oos`, `expect-fail-known-gap`, `expect-divergence`, `skip`) the home for "these tests fail on al-runner and that is expected". Verified then: a manifest covering 4 real failures took the run to `pass-known-gap: 4`, exit 0. That is the defect — a config file turns a red gate green, and every downstream skill reads exit 0 as proof.
 
-Verified both directions: a manifest covering 4 real failures took the run to `pass-known-gap: 4`, exit 0; declaring a passing test as a known gap flipped the run red (drift alarm). One trap, verified: an entry with a wrong `CodeunitName` silently matches nothing — the gate documentation tells authors to confirm the `pass-known-gap` counter moved after adding entries.
+A failing test now has exactly three outcomes:
+
+1. It is fixed and genuinely green.
+2. The failure is an al-runner gap — the skill stops and puts the evidence to the user with options.
+3. The test genuinely needs a surface al-runner refuses by design (`RunnerOutOfScopeException`) — its app moves to `containerTestApps`, and only on the user's explicit ack.
+
+Enforcement: `test.ps1` reds before the server starts when `tests/expectations` exists in the repo (al-runner would auto-probe it from the server's cwd). The server manager never passes `--expectations`, and the restart fingerprint no longer reads the folder.
 
 ### 7. `summary.json` schema
 
@@ -78,7 +84,7 @@ Ensures the `msdyn365bc.al.runner` dotnet tool is installed at ≥ 2.10 (today's
 
 ## Implementation-time verifications
 
-Named, not assumed: `--expectations` behavior under `--server`; JUnit synthesis from the NDJSON stream (or CLI `--output-junit` on the fallback path); clean-machine auto-provision behavior; named-pipe relay robustness under concurrent gate attempts; 27MB summary-line handling; the transient first-run crash seen once in probing (`IOException` moving the ncl-shadow variant dir — retry-once semantics in the bridge).
+Named, not assumed: JUnit synthesis from the NDJSON stream (or CLI `--output-junit` on the fallback path); clean-machine auto-provision behavior; named-pipe relay robustness under concurrent gate attempts; 27MB summary-line handling; the transient first-run crash seen once in probing (`IOException` moving the ncl-shadow variant dir — retry-once semantics in the bridge).
 
 ## Evidence index
 
@@ -92,5 +98,5 @@ Named, not assumed: `--expectations` behavior under `--server`; JUnit synthesis 
 | Server: 10-step TDD red→green | 20/20 correct verdicts, 8–10s per edited re-run |
 | Server: coverage + perTestCoverage | per-test statement hits with source positions; 15.6s; 27MB summary line |
 | `--test-data` (28.1 bak + bcdb) | fixes 218/219 data failures, adds 194 No.-Series failures, 5.4× wall |
-| Expectations manifest | honest-green (`pass-known-gap`) and drift alarm both verified |
+| Expectations manifest | a 4-entry manifest took 4 real failures to `pass-known-gap: 4`, exit 0 — the evidence behind retiring it (decision 6) |
 | JUnit shape | one XML, per-codeunit suites, no app attribution |
