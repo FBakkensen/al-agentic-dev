@@ -2,7 +2,7 @@
 name: al-review-lens
 description: Reads one scoped AL/Business Central diff through exactly one review dimension named in the prompt and returns grounded findings. Invoked by al-review, one invocation per dimension.
 tools: ["grep", "glob", "view", "execute", "microsoft-learn/*"]
-model: gpt-5.6-luna
+model: gpt-5.6-sol
 ---
 
 # al-review-lens — one dimension, one diff

@@ -209,3 +209,17 @@ Describe 'Model tier defaults are single-sourced' -Tag 'Unit' {
         $literal | Should -Be $script:DefaultsCompact
     }
 }
+
+Describe 'Agent pins follow the model tiers' -Tag 'Unit' {
+    It 'pins <Agent> to the <Tier> default model' -TestCases @(
+        @{ Agent = 'al-review-lens'; Tier = 'execution' }
+        @{ Agent = 'al-knowledge-leaf'; Tier = 'mechanical' }
+    ) {
+        param($Agent, $Tier)
+
+        $text = Get-Content -LiteralPath (Join-Path $script:RepoRoot 'agents' "$Agent.agent.md") -Raw
+        $pin = [regex]::Match($text, '(?m)^model\s*:\s*(.+?)\s*$').Groups[1].Value.Trim("'", '"')
+
+        $pin | Should -Be $script:Defaults.tiers.$Tier.model
+    }
+}
