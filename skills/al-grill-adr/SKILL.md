@@ -7,6 +7,10 @@ description: Use when a fresh AL/Business Central request needs its original Azu
 
 In: a fresh user request, with an Azure DevOps User Story when one already exists. Establish that Original User Story before downstream design. `Original` names its role in this workflow, not its place in the Azure DevOps hierarchy; structural parents remain unchanged. If Azure DevOps work-item tools are unavailable, show the exact User Story fields needed and stop; no substitute design file becomes another source of truth.
 
+When the User Story hierarchy is more than a handful of items:
+
+▶ mechanical · task · read the Original User Story, its linked items, and the CONTEXT.md vocabulary → summary table of items, fields, and terms
+
 Before publication, show the exact `Original request` block and ask the user to confirm it. Preserve every non-sensitive word verbatim; replace only credentials, tokens, private keys, secret paths, or third-party personal data with `[REDACTED: <reason>]`. The title may become a concise business outcome.
 
 Write the Description with `Problem`, `Expected outcome`, and `Scope` in that order when present. Keep the confirmed `Original request` inside `Problem`.
@@ -28,4 +32,8 @@ Offer an ADR when the decision is hard to reverse, surprising without context, h
 
 ## Close
 
-The pass ends when the Original User Story exists, its Description preserves the confirmed request under `Problem`, and every surfaced domain question is answered, parked in the User Story conversation, or ruled out. Ask /al-commit to commit `CONTEXT.md`, accepted ADRs, and the rest of the worktree at every exit. Continue with /al-event-model.
+The pass ends when the Original User Story exists, its Description preserves the confirmed request under `Problem`, and every surfaced domain question is answered, parked in the User Story conversation, or ruled out. At every exit:
+
+▶ mechanical · task · /al-commit the complete worktree — CONTEXT.md, accepted ADRs, and the rest — work items <ids> → commit hashes and subjects, remaining worktree
+
+Continue with /al-event-model.

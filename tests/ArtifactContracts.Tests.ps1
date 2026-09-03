@@ -96,7 +96,7 @@ Describe 'Architecture artifact contracts' {
         $runner | Should -Match '\$config\.Filter\.ExcludeTag = @\(''Process'', ''LiveFixture''\)'
         $runner | Should -Match '''Process''\s*\{\s*\$config\.Filter\.Tag = @\(''Process''\)'
         $runner | Should -Match '''LiveFixture''\s*\{\s*\$config\.Filter\.Tag = @\(''LiveFixture''\)'
-        $instructions | Should -Match 'task agent pinned to `gpt-5\.6-luna`'
+        $instructions | Should -Match 'task agent at the mechanical tier'
         $instructions | Should -Match 'runs `scripts/Invoke-Tests\.ps1` once'
     }
 

@@ -1,7 +1,7 @@
 {
   "name": "al-agentic-dev",
   "description": "Agentic AL and Business Central development skills.",
-  "version": "3.1.1",
+  "version": "4.0.0",
   "skills": "skills/",
   "agents": "agents/",
   "hooks": "hooks.json",

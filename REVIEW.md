@@ -21,7 +21,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 7. Copilot names are the working vocabulary. A skill body names the tool, the bundled MCP server, or the packaged agent it means; the word "harness" is a defect the gate fails. Flag harness-conditional phrasing and a capability paraphrase where a concrete name exists.
    - Correct: `search the workspace with grep; confirm the field through the nab-al-tools lookup`
    - Incorrect: `if your harness supports subagents…`, `use whatever search capability is available`
-8. Model pins live in `agents/*.agent.md` only. Flag a model name in a skill body or skill frontmatter; a skill that needs a specific model for a delegation names the packaged agent that pins it.
+8. Model names live in `skills/al-setup-models/models.default.json` and in `agents/*.agent.md` pins only. Flag a model name in a skill body or skill frontmatter — the gate fails it; a skill names a tier on a `▶` line (rule 38), never a model.
 
 ## Packaged agents
 
@@ -67,8 +67,8 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## Delegation
 
-28. Delegation is for large, genuinely independent work. Flag a skill that spawns a subagent for work finishable in a few tool calls, or that spawns one to check its own output. Every delegated review judgment runs in a full-capability subagent; flag a skill that assigns one below that capability.
-29. Where fan-out is optional, one sentence covers it: `These parallelize in full-capability subagents; when subagents are unavailable, apply them in one pass.` A lead that launches subagents keeps working on independent steps while they run and waits only where the next step needs their result.
+28. Delegation is for work that returns a compact result — a survey table, one scenario's red→green evidence, a gate verdict — or that owns its own branch. A single lookup stays in-line: flag a `▶` line for work finishable in a few tool calls, and flag one that checks the skill's own output. A delegated review judgment runs at `execution` or above; a leaf following a written contract runs `mechanical`.
+29. Fan-out is several `▶ task` lines at one step, launched together in the background; the lead keeps working on independent steps and waits with `read_agent wait:true` only where the next step needs a result. Every Copilot surface has the `task` tool, so no skill carries an unavailable-subagents fallback.
 
 ## Retired concepts
 
@@ -84,7 +84,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## Show the thing
 
-33. Artifact prose shows the thing — the page, the field, the command, the number — one sentence per fact; run narration in an artifact is a defect, its home the commit message. Chat surfaces glyph their fixed slots, shape-distinct rather than color-coded: findings as `⛔` Blocking / `⚖️` Non-Blocking headlines over one-line `⚡ Breaks:` / `📍 Proof:` / `🔧 Fix:` slots in the reviewer agents — the set-wide verdict grammar, "no blocking issues found" a legal verdict, one optional `Refactor food:` line the only home for aesthetics — and the run-narration ledes — `▸` finding / `➜` move mid-run, `✅` / `⛔` at the close — carried by the reply-shape snippet. These carried lines are deliberate, not rule-16/17 findings — live sessions ignored the shape while it was unwritten. Flag a carrier missing its line, and flag an emoji outside a defined slot — that one is decoration.
+33. Artifact prose shows the thing — the page, the field, the command, the number — one sentence per fact; run narration in an artifact is a defect, its home the commit message. Chat surfaces glyph their fixed slots, shape-distinct rather than color-coded: findings as `⛔` Blocking / `⚖️` Non-Blocking headlines over one-line `⚡ Breaks:` / `📍 Proof:` / `🔧 Fix:` slots in the reviewer agents — the set-wide verdict grammar, "no blocking issues found" a legal verdict, one optional `Refactor food:` line the only home for aesthetics — and the run-narration ledes — `▸` finding / `➜` move mid-run, `✅` / `⛔` at the close — carried by the reply-shape snippet. These carried lines are deliberate, not rule-16/17 findings — live sessions ignored the shape while it was unwritten. Flag a carrier missing its line, and flag an emoji outside a defined slot — that one is decoration. The delegation line `▶ <tier> · <vehicle> · <brief> → <return>` of rule 38 is a defined slot; `al-walkthrough`'s `▶ <business action>` report line stays — it sits in a code span and names no tier.
 
 ## Pinned forks
 
@@ -98,3 +98,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 36. One request starts as one Original User Story. `Original` names its role in this workflow, not the top of the Azure DevOps hierarchy; structural parents remain unchanged and out of scope. With one Vertical slice, the Original User Story is executable and has no child from this workflow. With several slices, it becomes the container and every slice is one direct child User Story. Flag Azure DevOps Features introduced by this workflow and grandchildren below the Original User Story.
 37. Description sections keep this order when present: `Problem`, `Expected outcome`, `Scope`, `Process contract`, `Business process`, `Runtime View`, `Building Block View`. Diagrams stay with their explanatory text. In Acceptance Criteria, `Behavior` is valid fenced Gherkin and precedes `Test specification` when both exist; either section may be absent without prescribed meaning.
+
+## Delegation contract
+
+38. A skill delegates a step with one line — `▶ <tier> · <vehicle> · <brief> → <return>` — placed at the step it serves. `tier` is `frontier`, `execution`, or `mechanical`; `vehicle` is `task` for work that writes into the current branch or reads only, `session` for work that owns its own branch. The `brief` names what the child receives — it inherits nothing — and the `return` names what comes back, checkable. Task workers do not delegate; session children run their skill's `▶` lines as written. Callee skills — `/al-build`, `/al-commit`, `/al-arc42`, `/al-azure-devops-attachments`, `/al-pull-request`, `/al-clone-bcapps`, `/al-clone-bcquality` — carry no `▶` line; the caller writes it. Every dispatch prompt carries the brief, the return contract, the unattended line (`You run unattended; the user cannot answer mid-task. Proceed on every reversible step the User Story already covers, and end your turn only when the slice is complete or a decision only the user can take is written out with its options.`), and the plain-text question rule; a child that writes or judges AL also carries the Speak BC paragraph and the grounding rule of rule 31. A child's stop is a decision: the skill's own contract answers it to the same child, or the lead quotes it to the user with options and the recommendation marked and relays the answer unchanged. A return that misses its contract, or a red twice on the same cause, is re-dispatched once, one tier up, with the child's output added to the brief; a second miss goes to the user with the evidence. Flag a `▶` line outside this grammar, a callee skill carrying one, a dispatch prompt missing a fixed part, and a model name where a tier belongs.

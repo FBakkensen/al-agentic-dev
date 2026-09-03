@@ -5,8 +5,8 @@
 .DESCRIPTION
     Loads this repo's plugin — its committed hooks.json — into two scratch-directory
     copilot sessions via --plugin-dir and asserts on the model's reply text:
-    Run 1, an AL fixture (app.json at the root): the model echoes both injected
-    headings (# Reply shape, # Speak BC) and answers a pairing question only the
+    Run 1, an AL fixture (app.json at the root): the model echoes all three injected
+    headings (# Reply shape, # Model tiers, # Speak BC) and answers a pairing question only the
     injected voice text can answer (transaction -> Ledger Entry).
     Run 2, a plain directory: the Reply shape heading and its four exact glyphs echo,
     Speak BC stays absent, and the model reports NOVOICE.
@@ -70,9 +70,11 @@ $plainReply = Invoke-Fixture -Name 'plain' -Seed { param($dir) }
 
 $assertions = @(
     @{ run = 'al'; text = $alReply; token = 'Reply shape'; expect = $true; what = 'reply shape heading echoed' }
+    @{ run = 'al'; text = $alReply; token = 'Model tiers'; expect = $true; what = 'model tiers heading echoed' }
     @{ run = 'al'; text = $alReply; token = 'Speak BC'; expect = $true; what = 'voice heading echoed' }
     @{ run = 'al'; text = $alReply; token = 'Ledger Entry'; expect = $true; what = 'voice pairing answered from context' }
     @{ run = 'plain'; text = $plainReply; token = 'Reply shape'; expect = $true; what = 'reply shape heading echoed' }
+    @{ run = 'plain'; text = $plainReply; token = 'Model tiers'; expect = $true; what = 'model tiers heading echoed' }
     @{ run = 'plain'; text = $plainReply; token = '➜ ▸ ✅ ⛔'; expect = $true; what = 'reply shape glyphs preserved' }
     @{ run = 'plain'; text = $plainReply; token = 'Speak BC'; expect = $false; what = 'voice heading absent' }
     @{ run = 'plain'; text = $plainReply; token = 'NOVOICE'; expect = $true; what = 'model reports no vocabulary section' }

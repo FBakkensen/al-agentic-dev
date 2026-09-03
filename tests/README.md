@@ -11,10 +11,12 @@ pwsh scripts/Validate-Json.ps1        # JSON syntax repo-wide; plugin.json, .mcp
 pwsh scripts/Validate-PowerShell.ps1  # PowerShell syntax repo-wide
 pwsh scripts/Validate-Skills.ps1      # frontmatter keys, name = folder, description ≤ 1024, links stay in-folder, script ownership, retired-concept bans
 pwsh scripts/Update-Review.ps1 -Check # REVIEW.md in sync with skills.instructions.md
-Invoke-Pester tests                   # the validator suites and the al-build substrate tests
+Invoke-Pester tests                   # the validator suites, the hook body suite (tests/ModelTiers.Tests.ps1), and the al-build substrate tests
 ```
 
 The 1024-character description cap is load-bearing, not style: on copilot CLI 1.0.80 a skill whose description exceeds it is **silently never loaded** — no warning, no log line, the skill just never fires (probed 2026-08-19 with sentinel descriptions: 900 characters loads, 1100 and 2100 vanish). `Validate-Skills.ps1` enforcing 1024 is what turns that silent drop into a red gate.
+
+`tests/ModelTiers.Tests.ps1` runs both sessionStart hook bodies out of `hooks.json` as processes with `HOME` pointed at a scratch folder in six states — absent, valid, unparseable, partial, unsafe, and all-broken — plus a parity case set, and asserts the injected `# Model tiers` rows and the `Defaults in use` line; the bash cases skip where `bash` is absent or does not share `HOME` (a WSL bash). Two Unit tests hold the inline default literal in each body equal to `skills/al-setup-models/models.default.json` with whitespace removed, and one holds each agent pin equal to its tier's default model.
 
 ### Diff-vs-donor
 
@@ -43,7 +45,7 @@ Every package that adds skills appends its scenarios to `tests/routing/scenarios
 pwsh tests/hooks/Invoke-HookSmoke.ps1
 ```
 
-Two `copilot -p` runs against this checkout's committed `hooks.json`: an AL fixture (an `app.json` at the scratch root) where the reply shape, Speak BC voice rule, and ask_user deny must all show in the model's reply, and a plain directory where the reply shape shows while the voice rule stays absent. Static assertions prove that neither sessionStart command instructs the model to invoke `/al-unslop`. Hook injection is deterministic, so unlike routing misses any assertion failure exits 1 and prints both replies. Roughly 10 AI credits per invocation; run it after any hooks.json change.
+Two `copilot -p` runs against this checkout's committed `hooks.json`: an AL fixture (an `app.json` at the scratch root) where the reply shape, model tiers, Speak BC voice rule, and ask_user deny must all show in the model's reply, and a plain directory where the reply shape shows while the voice rule stays absent. Static assertions prove that neither sessionStart command instructs the model to invoke `/al-unslop`. Hook injection is deterministic, so unlike routing misses any assertion failure exits 1 and prints both replies. Roughly 10 AI credits per invocation; run it after any hooks.json change.
 
 ## Loading this checkout's plugin in isolation
 

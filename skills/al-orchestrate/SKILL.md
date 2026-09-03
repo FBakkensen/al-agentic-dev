@@ -11,17 +11,17 @@ Ask every question in the reply itself, as plain text — never through a questi
 
 ## Run one owner at a time
 
-1. Launch a child session for /al-implement with the work-item ID, repository, Original User Story contract, and exact receipt path.
-2. Read its result, branch, commit, and full receipt content.
-3. Launch a fresh /al-refactor child stacked on the implementation branch; pass the receipt content, reviewed AAA, Original User Story, and any named deepening goal in its kickoff.
-4. Read its branch, commit, and updated receipt content.
-5. Launch a fresh /al-review child stacked on the latest writing branch; pass the executable work item, Original User Story, diff base, and receipt content in its kickoff.
-6. After each blocking repair, launch another fresh /al-review child on the repaired branch; repeat until the verdict has no blocking findings.
-7. When the `Test specification` names walkthrough proof, launch /al-walkthrough on the latest writing branch after the blocking-free review and require evidence for every such case.
+1. ▶ execution · session · /al-implement with the work-item ID, repository, Original User Story contract, and exact receipt path → its result, branch, commit, and full receipt content
+2. ▶ execution · session · Launch a fresh /al-refactor child stacked on the implementation branch with the receipt content, reviewed AAA, Original User Story, and any named deepening goal → its branch, commit, and updated receipt content
+3. ▶ frontier · session · /al-review stacked on the latest writing branch with the executable work item, Original User Story, diff base, and receipt content → the verdict and its findings
+4. After each blocking repair, a fresh /al-review line on the repaired branch; repeat until the verdict has no blocking findings.
+5. When the `Test specification` names walkthrough proof and the review has no blocking findings, dispatch the walk.
 
-In the GitHub Copilot app, use `create_session` with kickoff mode `autopilot`, then `get_session` and `send_session_message`, with the stacked branches above. `.output/` is ignored, so later app children receive receipt content explicitly rather than by path.
+   ▶ execution · session · /al-walkthrough on the latest writing branch with the executable item and Original User Story → evidence for every walkthrough case
 
-In the terminal Copilot CLI, give each block a UUID and run it sequentially in the current worktree as a fresh headless process: `copilot -p "/al-implement <work-item>" --session-id <uuid> --allow-all-tools --no-ask-user --plugin-dir <plugin-folder>`, then the same shape for /al-refactor, /al-review, and /al-walkthrough when required. The shared worktree, commits, and receipt path carry state; one process runs at a time.
+In the GitHub Copilot app, each line is `create_session` with kickoff mode `autopilot`, the tier's model and effort, `coordinate_with_creator`, and `notify_on_idle`, stacked on the branch named; read results with `get_session`. `.output/` is ignored, so later app children receive receipt content explicitly rather than by path.
+
+In the terminal Copilot CLI, give each block a UUID and run it sequentially in the current worktree as a fresh headless process: `copilot -p "/al-implement <work-item>" --model <tier model> --session-id <uuid> --allow-all-tools --no-ask-user --plugin-dir <plugin-folder>`, then the same shape for /al-refactor, /al-review, and /al-walkthrough when required. The shared worktree, commits, and receipt path carry state; one process runs at a time.
 
 Each writing child calls /al-commit before returning; review remains read-only. Every kickoff carries this line: `You run unattended; the user cannot answer mid-task. Proceed on every reversible step the User Story already covers, and end your turn only when the slice is complete or a decision only the user can take is written out with its options.` The pass-through below is that decision's only route.
 
@@ -29,14 +29,14 @@ Each writing child calls /al-commit before returning; review remains read-only. 
 
 When a child raises a real decision, quote it to the user with its options and recommendation. After the answer, send it back to the same child session and continue. Do not reinterpret the choice.
 
-In the CLI, resume that child with `copilot --resume=<uuid> -p "<answer>" --allow-all-tools --no-ask-user --plugin-dir <plugin-folder>`.
+In the app, send it with `send_session_message`. In the CLI, resume that child with `copilot --resume=<uuid> -p "<answer>" --model <tier model> --allow-all-tools --no-ask-user --plugin-dir <plugin-folder>`.
 
 ## React to evidence
 
 - A red implementation or gate result returns to the owning child.
-- A blocking review finding returns to a fresh implementation or refactor child with the exact proof and fix requirement, then to step 6.
+- A blocking review finding returns to a fresh child on item 1's or item 2's line with the exact proof and fix requirement, then item 3's line runs again.
 - A walkthrough mismatch returns to a writing child, then a fresh review and walkthrough.
-- `non-blocking only` or `no blocking issues found` ends the review-repair loop; step 7 still runs when walkthrough proof is required.
+- `non-blocking only` or `no blocking issues found` ends the review-repair loop; item 5's line still runs when walkthrough proof is required.
 - A module-contract dispute returns to the user rather than being decided by orchestration.
 
 ## Close

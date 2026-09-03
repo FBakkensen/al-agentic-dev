@@ -774,6 +774,177 @@ Describe 'Validate-Skills harness checks' -Tag 'Unit' {
     }
 }
 
+Describe 'Validate-Skills model-tier defaults checks' -Tag 'Unit' {
+    BeforeAll {
+        $script:GoodDefaults = '{"version":1,"tiers":{"frontier":{"model":"model-f","effort":"high"},"execution":{"model":"model-e","effort":"medium"},"mechanical":{"model":"model-m","effort":"max"}}}'
+    }
+
+    It 'passes a well-formed models.default.json beside al-setup-models' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'defaults-good') -Files @{
+            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
+            'al-setup-models/models.default.json' = $script:GoodDefaults
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+
+    It 'fails al-setup-models without models.default.json' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'defaults-missing') -Files @{
+            'al-setup-models/SKILL.md' = (New-SkillContent -Name 'al-setup-models')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'al-setup-models/models\.default\.json: missing'
+    }
+
+    It 'fails models.default.json that does not parse' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'defaults-broken') -Files @{
+            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
+            'al-setup-models/models.default.json' = '{not json'
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'al-setup-models/models\.default\.json: does not parse'
+    }
+
+    It 'fails models.default.json whose tiers are not exactly frontier, execution, mechanical' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'defaults-tiers') -Files @{
+            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
+            'al-setup-models/models.default.json' = '{"version":1,"tiers":{"frontier":{"model":"model-f","effort":"high"},"execution":{"model":"model-e","effort":"medium"}}}'
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'tiers must be exactly frontier, execution, mechanical'
+    }
+
+    It 'fails a tier with an empty model or effort' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'defaults-empty') -Files @{
+            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
+            'al-setup-models/models.default.json' = '{"version":1,"tiers":{"frontier":{"model":"model-f","effort":"high"},"execution":{"model":"model-e","effort":""},"mechanical":{"model":"model-m","effort":"max"}}}'
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "tier 'execution' needs a non-empty model and effort"
+    }
+}
+
+Describe 'Validate-Skills delegation checks' -Tag 'Unit' {
+    BeforeAll {
+        $script:GoodDefaults = '{"version":1,"tiers":{"frontier":{"model":"model-f","effort":"high"},"execution":{"model":"model-e","effort":"medium"},"mechanical":{"model":"model-m","effort":"max"}}}'
+    }
+
+    It 'passes ▶ lines in the grammar, a code-span ▶, and a fenced ▶' {
+        $body = @'
+Before changing a test:
+
+▶ mechanical · task · /al-build gate on the slice → summary.json verdict, exact red cause
+
+1. ▶ execution · session · /al-implement with the work item → branch, commit, receipt
+
+- ▶ frontier · task · judge the two module boundaries → the chosen boundary with its reason
+
+For each step report `▶ <business action>` and the observed result.
+
+```text
+▶ anything goes inside a fence
+```
+'@
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'delegation-good') -Files @{
+            'demo/SKILL.md'        = (New-SkillContent -Body $body)
+            'al-build/SKILL.md'    = (New-SkillContent -Name 'al-build')
+            'al-implement/SKILL.md' = (New-SkillContent -Name 'al-implement')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+
+    It 'fails a ▶ line outside the grammar' -TestCases @(
+        @{ Case = 'tier'; Line = '▶ quick · task · run the gate → verdict' }
+        @{ Case = 'vehicle'; Line = '▶ mechanical · agent · run the gate → verdict' }
+        @{ Case = 'return'; Line = '▶ mechanical · task · run the gate' }
+        @{ Case = 'prose'; Line = 'Then ▶ the worker runs the gate.' }
+        @{ Case = 'colon'; Line = '▶ mechanical: task: run the gate → verdict' }
+    ) {
+        param($Case, $Line)
+
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive "delegation-$Case") -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body $Line)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $expected = "demo/SKILL.md: ▶ line outside the delegation grammar '▶ <tier> · <vehicle> · <brief> → <return>': $Line"
+        $result.Text | Should -Match ([regex]::Escape($expected))
+    }
+
+    It 'fails a ▶ line outside the grammar in a sibling file' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'delegation-sibling') -Files @{
+            'demo/SKILL.md'  = (New-SkillContent -Body 'See [Format](FORMAT.md).')
+            'demo/FORMAT.md' = '# Format' + [Environment]::NewLine + '▶ run it'
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $expected = "demo/FORMAT.md: ▶ line outside the delegation grammar '▶ <tier> · <vehicle> · <brief> → <return>': ▶ run it"
+        $result.Text | Should -Match ([regex]::Escape($expected))
+    }
+
+    It 'fails a default model name in a skill body' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'model-name-body') -Files @{
+            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
+            'al-setup-models/models.default.json' = $script:GoodDefaults
+            'demo/SKILL.md'                       = (New-SkillContent -Body 'Dispatch the gate on model-e.')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $expected = "demo/SKILL.md: names the model 'model-e'; name a tier on a ▶ line instead"
+        $result.Text | Should -Match ([regex]::Escape($expected))
+    }
+
+    It 'fails a default model name in a sibling file, case-insensitively' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'model-name-sibling') -Files @{
+            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
+            'al-setup-models/models.default.json' = $script:GoodDefaults
+            'demo/SKILL.md'                       = (New-SkillContent -Body 'See [Format](FORMAT.md).')
+            'demo/FORMAT.md'                      = 'Pinned to Model-M.'
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $expected = "demo/FORMAT.md: names the model 'model-m'; name a tier on a ▶ line instead"
+        $result.Text | Should -Match ([regex]::Escape($expected))
+    }
+
+    It 'passes a tier name where a model name would fail' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'model-name-tier') -Files @{
+            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
+            'al-setup-models/models.default.json' = $script:GoodDefaults
+            'demo/SKILL.md'                       = (New-SkillContent -Body '▶ mechanical · task · run the gate → verdict')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+}
+
 Describe 'Validate-Skills agent checks' -Tag 'Unit' {
     BeforeAll {
         function New-AgentsRoot {
