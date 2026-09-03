@@ -838,6 +838,109 @@ Describe 'Validate-Skills model-tier defaults checks' -Tag 'Unit' {
     }
 }
 
+Describe 'Validate-Skills delegation checks' -Tag 'Unit' {
+    BeforeAll {
+        $script:GoodDefaults = '{"version":1,"tiers":{"frontier":{"model":"model-f","effort":"high"},"execution":{"model":"model-e","effort":"medium"},"mechanical":{"model":"model-m","effort":"max"}}}'
+    }
+
+    It 'passes ▶ lines in the grammar, a code-span ▶, and a fenced ▶' {
+        $body = @'
+Before changing a test:
+
+▶ mechanical · task · /al-build gate on the slice → summary.json verdict, exact red cause
+
+1. ▶ execution · session · /al-implement with the work item → branch, commit, receipt
+
+- ▶ frontier · task · judge the two module boundaries → the chosen boundary with its reason
+
+For each step report `▶ <business action>` and the observed result.
+
+```text
+▶ anything goes inside a fence
+```
+'@
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'delegation-good') -Files @{
+            'demo/SKILL.md'        = (New-SkillContent -Body $body)
+            'al-build/SKILL.md'    = (New-SkillContent -Name 'al-build')
+            'al-implement/SKILL.md' = (New-SkillContent -Name 'al-implement')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+
+    It 'fails a ▶ line outside the grammar' -TestCases @(
+        @{ Case = 'tier'; Line = '▶ quick · task · run the gate → verdict' }
+        @{ Case = 'vehicle'; Line = '▶ mechanical · agent · run the gate → verdict' }
+        @{ Case = 'return'; Line = '▶ mechanical · task · run the gate' }
+        @{ Case = 'prose'; Line = 'Then ▶ the worker runs the gate.' }
+        @{ Case = 'colon'; Line = '▶ mechanical: task: run the gate → verdict' }
+    ) {
+        param($Case, $Line)
+
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive "delegation-$Case") -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body $Line)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'outside the delegation grammar'
+    }
+
+    It 'fails a ▶ line outside the grammar in a sibling file' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'delegation-sibling') -Files @{
+            'demo/SKILL.md'  = (New-SkillContent -Body 'See [Format](FORMAT.md).')
+            'demo/FORMAT.md' = '# Format' + [Environment]::NewLine + '▶ run it'
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'demo/FORMAT\.md: ▶ line outside the delegation grammar'
+    }
+
+    It 'fails a default model name in a skill body' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'model-name-body') -Files @{
+            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
+            'al-setup-models/models.default.json' = $script:GoodDefaults
+            'demo/SKILL.md'                       = (New-SkillContent -Body 'Dispatch the gate on model-e.')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "demo/SKILL\.md: names the model 'model-e'"
+    }
+
+    It 'fails a default model name in a sibling file, case-insensitively' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'model-name-sibling') -Files @{
+            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
+            'al-setup-models/models.default.json' = $script:GoodDefaults
+            'demo/SKILL.md'                       = (New-SkillContent -Body 'See [Format](FORMAT.md).')
+            'demo/FORMAT.md'                      = 'Pinned to Model-M.'
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "demo/FORMAT\.md: names the model 'model-m'"
+    }
+
+    It 'passes a tier name where a model name would fail' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'model-name-tier') -Files @{
+            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
+            'al-setup-models/models.default.json' = $script:GoodDefaults
+            'demo/SKILL.md'                       = (New-SkillContent -Body '▶ mechanical · task · run the gate → verdict')
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 0
+    }
+}
+
 Describe 'Validate-Skills agent checks' -Tag 'Unit' {
     BeforeAll {
         function New-AgentsRoot {

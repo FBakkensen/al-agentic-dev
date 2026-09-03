@@ -72,6 +72,29 @@ function Get-MarkdownLinkTarget {
     }
 }
 
+function Get-ProseLine {
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Text)
+
+    $fenceChar = ''
+    $fenceLength = 0
+    foreach ($line in ($Text -split '\r?\n')) {
+        $run = [regex]::Match($line, '^\s*(?<fence>`{3,}|~{3,})')
+        if ($run.Success) {
+            $fence = $run.Groups['fence'].Value
+            if ($fenceLength -eq 0) {
+                $fenceChar = $fence[0]
+                $fenceLength = $fence.Length
+                continue
+            } elseif ($fence[0] -eq $fenceChar -and $fence.Length -ge $fenceLength) {
+                $fenceLength = 0
+                continue
+            }
+        }
+        if ($fenceLength -gt 0) { continue }
+        $line -replace '`[^`]*`', ''
+    }
+}
+
 function Invoke-SkillsValidation {
     [CmdletBinding()]
     param(
@@ -256,6 +279,20 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
             # a generic non-folder token is indistinguishable from a platform command or path.
             if ($name -clike 'al-*') {
                 $violations += "${relative}: names a skill that has no folder: $($mention.Value)"
+            }
+        }
+
+        $delegationGrammar = '^\s*(?:[-*]|\d+\.)?\s*▶ (frontier|execution|mechanical) · (task|session) · .+ → .+$'
+        foreach ($prose in (Get-ProseLine -Text $body)) {
+            if ($prose -notmatch '▶') { continue }
+            if ($prose -notmatch $delegationGrammar) {
+                $violations += "${relative}: ▶ line outside the delegation grammar '▶ <tier> · <vehicle> · <brief> → <return>': $($prose.Trim())"
+            }
+        }
+
+        foreach ($modelName in $modelNames) {
+            if ([string]$text -match [regex]::Escape($modelName)) {
+                $violations += "${relative}: names the model '$modelName'; name a tier on a ▶ line instead"
             }
         }
     }
