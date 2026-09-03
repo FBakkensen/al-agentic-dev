@@ -886,7 +886,8 @@ For each step report `▶ <business action>` and the observed result.
         $result = Invoke-SkillValidator -Root $root
 
         $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'outside the delegation grammar'
+        $expected = "demo/SKILL.md: ▶ line outside the delegation grammar '▶ <tier> · <vehicle> · <brief> → <return>': $Line"
+        $result.Text | Should -Match ([regex]::Escape($expected))
     }
 
     It 'fails a ▶ line outside the grammar in a sibling file' {
@@ -898,7 +899,8 @@ For each step report `▶ <business action>` and the observed result.
         $result = Invoke-SkillValidator -Root $root
 
         $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'demo/FORMAT\.md: ▶ line outside the delegation grammar'
+        $expected = "demo/FORMAT.md: ▶ line outside the delegation grammar '▶ <tier> · <vehicle> · <brief> → <return>': ▶ run it"
+        $result.Text | Should -Match ([regex]::Escape($expected))
     }
 
     It 'fails a default model name in a skill body' {
@@ -911,7 +913,8 @@ For each step report `▶ <business action>` and the observed result.
         $result = Invoke-SkillValidator -Root $root
 
         $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match "demo/SKILL\.md: names the model 'model-e'"
+        $expected = "demo/SKILL.md: names the model 'model-e'; name a tier on a ▶ line instead"
+        $result.Text | Should -Match ([regex]::Escape($expected))
     }
 
     It 'fails a default model name in a sibling file, case-insensitively' {
@@ -925,7 +928,8 @@ For each step report `▶ <business action>` and the observed result.
         $result = Invoke-SkillValidator -Root $root
 
         $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match "demo/FORMAT\.md: names the model 'model-m'"
+        $expected = "demo/FORMAT.md: names the model 'model-m'; name a tier on a ▶ line instead"
+        $result.Text | Should -Match ([regex]::Escape($expected))
     }
 
     It 'passes a tier name where a model name would fail' {
