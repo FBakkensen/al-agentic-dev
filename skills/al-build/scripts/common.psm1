@@ -1800,9 +1800,11 @@ function Get-RepoFromUrl {
     .SYNOPSIS
         Parse a Git repository URL into a structured spec.
     .DESCRIPTION
-        Accepts HTTPS (github.com, *.ghe.com, custom hosts), SSH (git@host:owner/repo),
+        Accepts HTTPS (github.com, *.ghe.com, custom hosts, with or without
+        userinfo and port), SSH (git@host:owner/repo and ssh://[user@]host[:port]/owner/repo),
         and bare owner/repo forms. A trailing .git is stripped. Bare form is treated as
-        github.com. Throws on unparseable input.
+        github.com. HostName never carries userinfo or a port. Throws on unparseable
+        input, with any userinfo redacted from the message.
     .PARAMETER Url
         Repository URL or owner/repo slug.
     .OUTPUTS
@@ -1813,13 +1815,19 @@ function Get-RepoFromUrl {
     #>
     param([Parameter(Mandatory)][string]$Url)
 
-    # SSH: git@HOST:OWNER/REPO[.git]
+    # SSH scp-like: git@HOST:OWNER/REPO[.git]
     if ($Url -match '^git@([^:]+):([^/]+)/([^/]+?)(?:\.git)?$') {
         return [pscustomobject]@{ HostName = $Matches[1]; Owner = $Matches[2]; Repo = $Matches[3] }
     }
 
-    # HTTPS: https?://HOST/OWNER/REPO[.git]
-    if ($Url -match '^https?://([^/]+)/([^/]+)/([^/]+?)(?:\.git)?$') {
+    # SSH URL: ssh://[user@]HOST[:port]/OWNER/REPO[.git]
+    if ($Url -match '^ssh://(?:[^@/]+@)?([^/:]+)(?::\d+)?/([^/]+)/([^/]+?)(?:\.git)?$') {
+        return [pscustomobject]@{ HostName = $Matches[1]; Owner = $Matches[2]; Repo = $Matches[3] }
+    }
+
+    # HTTPS: https?://[userinfo@]HOST[:port]/OWNER/REPO[.git] — userinfo and port
+    # are dropped so HostName is what `gh --hostname` accepts.
+    if ($Url -match '^https?://(?:[^@/]+@)?([^/:]+)(?::\d+)?/([^/]+)/([^/]+?)(?:\.git)?$') {
         return [pscustomobject]@{ HostName = $Matches[1]; Owner = $Matches[2]; Repo = $Matches[3] }
     }
 
@@ -1828,7 +1836,9 @@ function Get-RepoFromUrl {
         return [pscustomobject]@{ HostName = 'github.com'; Owner = $Matches[1]; Repo = $Matches[2] }
     }
 
-    throw "Unrecognized repository URL format: '$Url'"
+    # Userinfo may carry a token; never echo it.
+    $safeUrl = $Url -replace '^([a-z]+://)[^@/]+@', '$1'
+    throw "Unrecognized repository URL format: '$safeUrl'"
 }
 
 function Get-ReleaseAppFiles {
