@@ -272,9 +272,14 @@ function Stop-OrphanedALRunnerServer {
         $commandLine = [string]$process.CommandLine
         if (-not $commandLine) { continue }
         if ($commandLine -notmatch 'al-runner(\.dll)?["'']?\s+.*--server') { continue }
-        $cacheMatch = [regex]::Match($commandLine, '--package-cache\s+"?([^"\s]+)"?')
+        # Quote-aware: a quoted path keeps its spaces; a bare token stops at
+        # whitespace.
+        $cacheMatch = [regex]::Match($commandLine, '--package-cache\s+(?:"([^"]+)"|(\S+))')
         if (-not $cacheMatch.Success) { continue }
-        $cachePath = $cacheMatch.Groups[1].Value
+        $cachePath = if ($cacheMatch.Groups[1].Success) { $cacheMatch.Groups[1].Value } else { $cacheMatch.Groups[2].Value }
+        # A relative --package-cache belongs to that process's own cwd, not
+        # this repo; resolving it here would match a stranger's server.
+        if (-not [IO.Path]::IsPathRooted($cachePath)) { continue }
         try {
             $cacheFull = [IO.Path]::GetFullPath($cachePath)
         }

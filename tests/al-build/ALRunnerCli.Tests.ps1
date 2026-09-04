@@ -165,6 +165,31 @@ Describe 'Stop-OrphanedALRunnerServer' {
         @($stopped).Count | Should -Be 0
         Should -Invoke Stop-Process -ModuleName alrunner-cli -Times 0
     }
+
+    It 'skips a server whose --package-cache is relative — it belongs to that process cwd, not this repo' {
+        Mock Get-CimInstance {
+            @([pscustomobject]@{ ProcessId = 5150; CommandLine = 'dotnet exec al-runner.dll --server --package-cache .output\al-runner-deps' })
+        } -ModuleName alrunner-cli
+
+        $stopped = Stop-OrphanedALRunnerServer -RepoRoot $script:RepoRoot
+
+        @($stopped).Count | Should -Be 0
+        Should -Invoke Stop-Process -ModuleName alrunner-cli -Times 0
+    }
+
+    It 'reads a quoted --package-cache with spaces whole' {
+        $spacedRoot = Join-Path $TestDrive 'repo with space'
+        New-Item -ItemType Directory -Path $spacedRoot -Force | Out-Null
+        $cache = Join-Path $spacedRoot '.output' 'al-runner-deps'
+        Mock Get-CimInstance {
+            @([pscustomobject]@{ ProcessId = 6160; CommandLine = "dotnet exec al-runner.dll --server --package-cache `"$cache`" --verbose" })
+        } -ModuleName alrunner-cli
+
+        $stopped = Stop-OrphanedALRunnerServer -RepoRoot $spacedRoot
+
+        $stopped | Should -Be @(6160)
+        Should -Invoke Stop-Process -ModuleName alrunner-cli -Times 1 -Exactly -ParameterFilter { $Id -eq 6160 }
+    }
 }
 
 Describe 'Invoke-ALRunnerCli' -Tag 'Process' {
