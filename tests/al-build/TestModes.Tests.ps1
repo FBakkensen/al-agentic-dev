@@ -19,13 +19,13 @@ Describe 'test.ps1 surface' {
         }
     }
 
-    It 'fails the gate with the manager and server log paths when the server is unavailable' {
-        # Regression guard: the server is the only test path — an unavailable
-        # server must red the gate with the two log paths named, not fall
-        # back to a fresh al-runner CLI process.
+    It 'runs al-runner as one CLI process per gate and names its log on a red' {
+        # Regression guard: the al-runner --server manager is gone; the gate
+        # runs the CLI directly and points at .output/logs/al-runner.log.
         $content = Get-Content (Join-Path $scriptsDir 'test.ps1') -Raw
-        $content | Should -Match ([regex]::Escape('.output/logs/al-runner-server-manager.log'))
-        $content | Should -Match ([regex]::Escape('.output/logs/al-runner-server.log'))
-        $content | Should -Not -Match 'Invoke-ALRunnerCli'
+        $content | Should -Match 'Invoke-ALRunnerCli'
+        $content | Should -Match ([regex]::Escape('.output/logs/al-runner.log'))
+        $content | Should -Not -Match 'Request-ALRunnerServerRun'
+        $content | Should -Not -Match 'al-runner-server'
     }
 }

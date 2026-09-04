@@ -84,6 +84,7 @@ function Invoke-ContainerTestGate {
     # Load configuration — malformed config throws here, outside the gate's
     # try/finally, so no summary.json is written.
     $config = Get-BuildConfig
+    Set-BuildEnvironment -Config $config
 
     $testResults = @()
 

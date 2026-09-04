@@ -3,7 +3,7 @@
 BeforeAll {
     Import-Module (Join-Path $PSScriptRoot '..' '..' 'skills' 'al-build' 'scripts' 'common.psm1') -Force -DisableNameChecking
     Import-Module (Join-Path $PSScriptRoot '..' '..' 'skills' 'al-build' 'scripts' 'build-operations.psm1') -Force -DisableNameChecking
-    Import-Module (Join-Path $PSScriptRoot '..' '..' 'skills' 'al-build' 'scripts' 'alrunner-server.psm1') -Force -DisableNameChecking
+    Import-Module (Join-Path $PSScriptRoot '..' '..' 'skills' 'al-build' 'scripts' 'alrunner-cli.psm1') -Force -DisableNameChecking
 
     $script:OriginalHome = $env:HOME
     $script:OriginalUserProfile = $env:USERPROFILE
@@ -222,65 +222,3 @@ Describe 'Resolve-ALRunnerDependencySet / New-ALRunnerDependencyDirectory' -Tag 
     }
 }
 
-Describe 'Get-ALRunnerDependencySetFingerprint' -Tag 'Process' {
-    BeforeEach {
-        $script:FakeHome = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
-        New-Item -ItemType Directory -Path $script:FakeHome -Force | Out-Null
-        $env:HOME = $script:FakeHome
-        $env:USERPROFILE = $script:FakeHome
-    }
-
-    AfterEach {
-        $env:HOME = $script:OriginalHome
-        $env:USERPROFILE = $script:OriginalUserProfile
-    }
-
-    It 'changes when a dependency version in app.json changes' {
-        $repo = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
-        $appManifest = New-MainAppManifest -Dependencies @(
-            [ordered]@{ id = $script:ThirdPartyId; publisher = '9altitudes'; name = 'License'; version = '1.0.0.0' }
-        )
-        New-DependencyFixtureRepo -Root $repo -AppManifest $appManifest
-        Add-CacheFile -RepoRoot $repo -BundleAppJson $appManifest -FileNames @('9altitudes.License.1.0.0.0.app', '9altitudes.License.2.0.0.0.app') | Out-Null
-
-        $f1 = Get-ALRunnerDependencySetFingerprint -RepoRoot $repo
-
-        $bumpedManifest = New-MainAppManifest -Dependencies @(
-            [ordered]@{ id = $script:ThirdPartyId; publisher = '9altitudes'; name = 'License'; version = '2.0.0.0' }
-        )
-        $bumpedManifest | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $repo 'app' 'app.json') -Encoding UTF8
-
-        $f2 = Get-ALRunnerDependencySetFingerprint -RepoRoot $repo
-        $f2 | Should -Not -Be $f1
-    }
-
-    It 'changes when the matching cache file changes' {
-        $repo = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
-        $appManifest = New-MainAppManifest -Dependencies @(
-            [ordered]@{ id = $script:ThirdPartyId; publisher = '9altitudes'; name = 'License'; version = '1.0.0.0' }
-        )
-        New-DependencyFixtureRepo -Root $repo -AppManifest $appManifest
-        $cacheDir = Add-CacheFile -RepoRoot $repo -BundleAppJson $appManifest -FileNames @('9altitudes.License.1.0.0.0.app')
-
-        $f1 = Get-ALRunnerDependencySetFingerprint -RepoRoot $repo
-
-        Start-Sleep -Milliseconds 20
-        Set-Content -LiteralPath (Join-Path $cacheDir '9altitudes.License.1.0.0.0.app') -Value 'replaced-content-of-different-length'
-
-        $f2 = Get-ALRunnerDependencySetFingerprint -RepoRoot $repo
-        $f2 | Should -Not -Be $f1
-    }
-
-    It 'stays unchanged across repeated calls with no changes' {
-        $repo = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
-        $appManifest = New-MainAppManifest -Dependencies @(
-            [ordered]@{ id = $script:ThirdPartyId; publisher = '9altitudes'; name = 'License'; version = '1.0.0.0' }
-        )
-        New-DependencyFixtureRepo -Root $repo -AppManifest $appManifest
-        Add-CacheFile -RepoRoot $repo -BundleAppJson $appManifest -FileNames @('9altitudes.License.1.0.0.0.app') | Out-Null
-
-        $f1 = Get-ALRunnerDependencySetFingerprint -RepoRoot $repo
-        $f2 = Get-ALRunnerDependencySetFingerprint -RepoRoot $repo
-        $f2 | Should -Be $f1
-    }
-}

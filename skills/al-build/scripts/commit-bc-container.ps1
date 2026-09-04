@@ -38,6 +38,7 @@ Import-BCContainerHelper
 
 # Load configuration and apply defaults if parameters not provided
 $config = Get-BuildConfig
+Set-BuildEnvironment -Config $config
 if (-not $ContainerName) { $ContainerName = $config.GoldenContainerName }
 if (-not $ImageName) { $ImageName = $config.ImageName }
 

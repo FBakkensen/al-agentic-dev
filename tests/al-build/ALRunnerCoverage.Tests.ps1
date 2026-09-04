@@ -104,24 +104,53 @@ codeunit 50150 "CalcTest"
 '@
     }
 
-    function New-ALRunnerCoverageSummaryFile {
+    function New-ALRunnerCoberturaFile {
         <#
             .SYNOPSIS
-            Loads the checked-in small-summary.json fixture, substitutes the
-            __REPOROOT__ placeholder with the given (forward-slash) repo root, and
-            writes the result to $TestDrive/summary.json.
+            Writes a Cobertura file shaped like al-runner's --coverage-out output:
+            one package, repo-relative forward-slash class filenames spanning the
+            main app and the test app. Calc.Codeunit.al lines 4,5,8,9 (all hit
+            except line 5), T.Table.al line 5, and two test-app lines that the
+            main-app result must exclude.
         #>
         param(
-            [Parameter(Mandatory)]
-            [string]$RepoRoot,
-
-            [string]$OutputPath = (Join-Path $TestDrive 'summary.json')
+            [string]$OutputPath = (Join-Path $TestDrive 'al-runner-cobertura.xml')
         )
 
-        $fixturePath = Join-Path $script:RepoRoot 'tests' 'al-build' 'fixtures' 'alrunner-summary' 'small-summary.json'
-        $forwardSlashRoot = $RepoRoot -replace '\\', '/'
-        $content = (Get-Content -LiteralPath $fixturePath -Raw) -replace '__REPOROOT__', $forwardSlashRoot
-        Set-Content -LiteralPath $OutputPath -Value $content -Encoding utf8
+        Set-FileContent -Path $OutputPath -Content @'
+<?xml version="1.0" encoding="utf-8"?>
+<coverage line-rate="0.7143" branch-rate="0" lines-covered="5" lines-valid="7" branches-covered="0" branches-valid="0" complexity="0" version="al-runner" timestamp="0">
+  <sources><source>.</source></sources>
+  <packages>
+    <package name="al-source" line-rate="0.7143" branch-rate="0" complexity="0">
+      <classes>
+        <class name="Calc" filename="app/src/Calc.Codeunit.al" line-rate="0.75" branch-rate="0" complexity="0">
+          <methods />
+          <lines>
+            <line number="4" hits="3" />
+            <line number="5" hits="0" />
+            <line number="8" hits="1" />
+            <line number="9" hits="1" />
+          </lines>
+        </class>
+        <class name="T" filename="app/src/T.Table.al" line-rate="1" branch-rate="0" complexity="0">
+          <methods />
+          <lines>
+            <line number="5" hits="1" />
+          </lines>
+        </class>
+        <class name="CalcTest" filename="test/src/CalcTest.Codeunit.al" line-rate="0.5" branch-rate="0" complexity="0">
+          <methods />
+          <lines>
+            <line number="4" hits="1" />
+            <line number="9" hits="0" />
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+'@
         $OutputPath
     }
 }
@@ -130,74 +159,52 @@ Describe 'Write-ALRunnerCoverageArtifacts' {
     BeforeAll {
         $script:FixtureRepoRoot = Join-Path $TestDrive 'repo'
         New-ALRunnerCoverageFixtureRepo -RepoRoot $script:FixtureRepoRoot
-        $script:SummaryFile = New-ALRunnerCoverageSummaryFile -RepoRoot $script:FixtureRepoRoot
+        $script:CoberturaFile = New-ALRunnerCoberturaFile
         $script:OutputDirectory = Join-Path $TestDrive 'coverage'
 
-        $script:Result = Write-ALRunnerCoverageArtifacts -SummaryFile $script:SummaryFile `
+        $script:Result = Write-ALRunnerCoverageArtifacts -CoberturaFile $script:CoberturaFile `
             -RepoRoot $script:FixtureRepoRoot `
             -MainAppPath (Join-Path $script:FixtureRepoRoot 'app') `
-            -TestApps @((Join-Path $script:FixtureRepoRoot 'test')) `
             -OutputDirectory $script:OutputDirectory
-
-        $script:PerTestLines = Get-Content -LiteralPath $script:Result.PerTestPath | ForEach-Object { $_ | ConvertFrom-Json }
+        [xml]$script:Cobertura = Get-Content -LiteralPath $script:Result.CoberturaPath
     }
 
-    It 'excludes non-main-app files from source records' {
-        $script:PerTestLines | Where-Object kind -eq 'source' | ForEach-Object {
-            $_.sourcePath | Should -Not -Match 'test/src'
-        }
-        (@($script:PerTestLines | Where-Object kind -eq 'source')).Count | Should -Be 5
+    It 'returns no per-test path — the al-runner CLI exposes no per-test attribution' {
+        $script:Result.PerTestPath | Should -BeNullOrEmpty
     }
 
-    It 'emits hit records with testApp, testCodeunit, and testProcedure resolved' {
-        $hits = @($script:PerTestLines | Where-Object kind -eq 'hit')
-        $hits.Count | Should -Be 5
-        foreach ($hit in $hits) {
-            $hit.testApp | Should -Be 'test'
-            $hit.testCodeunit | Should -Be 'Codeunit50150'
-        }
-        ($hits | Where-Object testProcedure -eq 'A').Count | Should -Be 3
-        ($hits | Where-Object testProcedure -eq 'B').Count | Should -Be 2
+    It 'keeps only main-app classes in the written Cobertura' {
+        $filenames = @($script:Cobertura.SelectNodes('//class') | ForEach-Object { $_.GetAttribute('filename') })
+        $filenames | Should -Not -Contain 'test/src/CalcTest.Codeunit.al'
+        $filenames | Should -Contain 'app/src/Calc.Codeunit.al'
+        $filenames | Should -Contain 'app/src/T.Table.al'
     }
 
-    It 'shows both tests overlapping on Calc.Codeunit.al line 4' {
-        $overlap = @($script:PerTestLines | Where-Object { $_.kind -eq 'hit' -and $_.lineNumber -eq 4 })
-        $overlap.Count | Should -Be 2
-        ($overlap | Where-Object testProcedure -eq 'A').hits | Should -Be 2
-        ($overlap | Where-Object testProcedure -eq 'B').hits | Should -Be 1
-    }
-
-    It 'computes LineRate as covered/valid rounded to 4 decimals' {
+    It 'computes main-app-only LineRate as covered/valid rounded to 4 decimals' {
         $script:Result.LinesValid | Should -Be 5
         $script:Result.LinesCovered | Should -Be 4
         $script:Result.LineRate | Should -Be 0.8
+        $script:Cobertura.coverage.'lines-valid' | Should -Be '5'
     }
 
-    It 'produces byte-identical artifacts across two runs over the same summary' {
-        $secondOutputDirectory = Join-Path $TestDrive 'coverage-2'
-        $secondResult = Write-ALRunnerCoverageArtifacts -SummaryFile $script:SummaryFile `
-            -RepoRoot $script:FixtureRepoRoot `
-            -MainAppPath (Join-Path $script:FixtureRepoRoot 'app') `
-            -TestApps @((Join-Path $script:FixtureRepoRoot 'test')) `
-            -OutputDirectory $secondOutputDirectory
-
-        $firstPerTestBytes = [System.IO.File]::ReadAllBytes($script:Result.PerTestPath)
-        $secondPerTestBytes = [System.IO.File]::ReadAllBytes($secondResult.PerTestPath)
-        [System.Convert]::ToBase64String($firstPerTestBytes) | Should -Be ([System.Convert]::ToBase64String($secondPerTestBytes))
-
-        $firstCoberturaBytes = [System.IO.File]::ReadAllBytes($script:Result.CoberturaPath)
-        $secondCoberturaBytes = [System.IO.File]::ReadAllBytes($secondResult.CoberturaPath)
-        [System.Convert]::ToBase64String($firstCoberturaBytes) | Should -Be ([System.Convert]::ToBase64String($secondCoberturaBytes))
-    }
-
-    It 'writes valid Cobertura XML listing a zero-hit line' {
-        [xml]$cobertura = Get-Content -LiteralPath $script:Result.CoberturaPath
-        $cobertura.coverage.'lines-valid' | Should -Be '5'
-        $lines = $cobertura.coverage.packages.package.classes.class |
+    It 'lists the zero-hit line' {
+        $lines = $script:Cobertura.coverage.packages.package.classes.class |
             Where-Object { $_.filename -eq 'app/src/Calc.Codeunit.al' } |
             Select-Object -ExpandProperty lines |
             Select-Object -ExpandProperty line
         ($lines | Where-Object number -eq '5').hits | Should -Be '0'
+        ($lines | Where-Object number -eq '4').hits | Should -Be '3'
+    }
+
+    It 'produces byte-identical artifacts across two runs over the same Cobertura' {
+        $secondResult = Write-ALRunnerCoverageArtifacts -CoberturaFile $script:CoberturaFile `
+            -RepoRoot $script:FixtureRepoRoot `
+            -MainAppPath (Join-Path $script:FixtureRepoRoot 'app') `
+            -OutputDirectory (Join-Path $TestDrive 'coverage-2')
+
+        $first = [System.IO.File]::ReadAllBytes($script:Result.CoberturaPath)
+        $second = [System.IO.File]::ReadAllBytes($secondResult.CoberturaPath)
+        [System.Convert]::ToBase64String($first) | Should -Be ([System.Convert]::ToBase64String($second))
     }
 }
 
@@ -206,100 +213,34 @@ Describe 'Write-ALRunnerCoverageArtifacts failure paths' {
         $script:FailFixtureRepoRoot = Join-Path $TestDrive 'fail-repo'
         New-ALRunnerCoverageFixtureRepo -RepoRoot $script:FailFixtureRepoRoot
         $script:FailMainAppPath = Join-Path $script:FailFixtureRepoRoot 'app'
-        $script:FailTestApps = @((Join-Path $script:FailFixtureRepoRoot 'test'))
     }
 
-    It 'throws naming the missing field when coverage is absent' {
-        $summaryPath = Join-Path $TestDrive 'summary-no-coverage.json'
-        [ordered]@{ exitCode = 0; perTestCoverage = @() } | ConvertTo-Json | Set-Content -LiteralPath $summaryPath -Encoding utf8
-
-        { Write-ALRunnerCoverageArtifacts -SummaryFile $summaryPath -RepoRoot $script:FailFixtureRepoRoot `
-                -MainAppPath $script:FailMainAppPath -TestApps $script:FailTestApps `
-                -OutputDirectory (Join-Path $TestDrive 'out-no-coverage') } |
-            Should -Throw "*'coverage'*"
+    It 'throws naming the Cobertura path when al-runner wrote none' {
+        $missing = Join-Path $TestDrive 'never-written.xml'
+        { Write-ALRunnerCoverageArtifacts -CoberturaFile $missing -RepoRoot $script:FailFixtureRepoRoot `
+                -MainAppPath $script:FailMainAppPath -OutputDirectory (Join-Path $TestDrive 'out-missing') } |
+            Should -Throw "*$missing*"
     }
 
-    It 'throws naming the missing field when perTestCoverage is absent' {
-        $summaryPath = Join-Path $TestDrive 'summary-no-pertest.json'
-        [ordered]@{ exitCode = 0; coverage = @() } | ConvertTo-Json | Set-Content -LiteralPath $summaryPath -Encoding utf8
-
-        { Write-ALRunnerCoverageArtifacts -SummaryFile $summaryPath -RepoRoot $script:FailFixtureRepoRoot `
-                -MainAppPath $script:FailMainAppPath -TestApps $script:FailTestApps `
-                -OutputDirectory (Join-Path $TestDrive 'out-no-pertest') } |
-            Should -Throw "*'perTestCoverage'*"
+    It 'throws naming the Cobertura path when the file is not valid XML' {
+        $malformed = Join-Path $TestDrive 'malformed.xml'
+        Set-FileContent -Path $malformed -Content '<coverage><packages>'
+        { Write-ALRunnerCoverageArtifacts -CoberturaFile $malformed -RepoRoot $script:FailFixtureRepoRoot `
+                -MainAppPath $script:FailMainAppPath -OutputDirectory (Join-Path $TestDrive 'out-malformed') } |
+            Should -Throw "*$malformed*"
     }
 
     It 'throws naming the file when a covered main-app file cannot be parsed' {
-        $unparsableFile = Join-Path $script:FailMainAppPath 'src' 'NotAlObject.txt'
-        Set-FileContent -Path $unparsableFile -Content "just some text`nwith no object declaration`n"
-        $forwardSlashFile = $unparsableFile -replace '\\', '/'
-
-        $summaryPath = Join-Path $TestDrive 'summary-unparsable.json'
-        [ordered]@{
-            exitCode        = 0
-            coverage        = @(
-                [ordered]@{
-                    file       = $forwardSlashFile
-                    statements = @([ordered]@{ id = 1; scope = 'x'; line = 1; column = 1; endLine = 1; endColumn = 5; hits = 1 })
-                }
-            )
-            perTestCoverage = @()
-        } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $summaryPath -Encoding utf8
-
-        { Write-ALRunnerCoverageArtifacts -SummaryFile $summaryPath -RepoRoot $script:FailFixtureRepoRoot `
-                -MainAppPath $script:FailMainAppPath -TestApps $script:FailTestApps `
-                -OutputDirectory (Join-Path $TestDrive 'out-unparsable') } |
+        Set-FileContent -Path (Join-Path $script:FailMainAppPath 'src' 'NotAlObject.txt') -Content "just some text`nwith no object declaration`n"
+        $cobertura = Join-Path $TestDrive 'unparsable.xml'
+        Set-FileContent -Path $cobertura -Content @'
+<?xml version="1.0" encoding="utf-8"?>
+<coverage line-rate="1" lines-covered="1" lines-valid="1"><packages><package name="al-source"><classes>
+<class name="x" filename="app/src/NotAlObject.txt"><lines><line number="1" hits="1" /></lines></class>
+</classes></package></packages></coverage>
+'@
+        { Write-ALRunnerCoverageArtifacts -CoberturaFile $cobertura -RepoRoot $script:FailFixtureRepoRoot `
+                -MainAppPath $script:FailMainAppPath -OutputDirectory (Join-Path $TestDrive 'out-unparsable') } |
             Should -Throw "*NotAlObject.txt*"
-    }
-
-    It 'throws naming the summary path when the summary file is not valid JSON' {
-        $summaryPath = Join-Path $TestDrive 'summary-malformed.json'
-        Set-Content -LiteralPath $summaryPath -Value '{"exitCode":0,"coverage":[' -Encoding utf8
-
-        { Write-ALRunnerCoverageArtifacts -SummaryFile $summaryPath -RepoRoot $script:FailFixtureRepoRoot `
-                -MainAppPath $script:FailMainAppPath -TestApps $script:FailTestApps `
-                -OutputDirectory (Join-Path $TestDrive 'out-malformed') } |
-            Should -Throw "*$summaryPath*"
-    }
-}
-
-Describe 'Write-ALRunnerCoverageArtifacts with a large perTestCoverage payload' {
-    BeforeAll {
-        $script:LargeRepoRoot = Join-Path $TestDrive 'large-repo'
-        New-ALRunnerCoverageFixtureRepo -RepoRoot $script:LargeRepoRoot
-        $forwardSlashRoot = $script:LargeRepoRoot -replace '\\', '/'
-
-        # Synthesize ~5-10 MB of perTestCoverage entries so the summary file itself
-        # is large enough to exercise the FileStream-backed JsonDocument parse path
-        # rather than a small checked-in fixture.
-        $script:EntryCount = 25000
-        $perTestEntries = [System.Collections.Generic.List[string]]::new()
-        for ($i = 0; $i -lt $script:EntryCount; $i++) {
-            $perTestEntries.Add(
-                '{"test":"Codeunit50150.A","coverage":[{"file":"' + $forwardSlashRoot + '/app/src/Calc.Codeunit.al","statements":[{"id":1,"scope":"Calc.OnRun","line":4,"column":5,"endLine":4,"endColumn":10,"hits":1}]}]}'
-            )
-        }
-        $summaryContent = '{"exitCode":0,"coverage":[{"file":"' + $forwardSlashRoot + '/app/src/Calc.Codeunit.al","statements":[{"id":1,"scope":"Calc.OnRun","line":4,"column":5,"endLine":4,"endColumn":10,"hits":1}]}],"perTestCoverage":[' + ($perTestEntries -join ',') + ']}'
-        $summaryContent.Length | Should -BeGreaterThan 5000000
-
-        $script:LargeSummaryFile = Join-Path $TestDrive 'large-summary.json'
-        [System.IO.File]::WriteAllText($script:LargeSummaryFile, $summaryContent, [System.Text.UTF8Encoding]::new($false))
-
-        $script:LargeOutputDirectory = Join-Path $TestDrive 'large-coverage'
-        $script:LargeResult = Write-ALRunnerCoverageArtifacts -SummaryFile $script:LargeSummaryFile `
-            -RepoRoot $script:LargeRepoRoot `
-            -MainAppPath (Join-Path $script:LargeRepoRoot 'app') `
-            -TestApps @((Join-Path $script:LargeRepoRoot 'test')) `
-            -OutputDirectory $script:LargeOutputDirectory
-    }
-
-    It 'aggregates the large perTestCoverage payload without truncation' {
-        $script:LargeResult.LinesValid | Should -Be 1
-        $script:LargeResult.LinesCovered | Should -Be 1
-
-        $perTestLines = Get-Content -LiteralPath $script:LargeResult.PerTestPath | ForEach-Object { $_ | ConvertFrom-Json }
-        $hits = @($perTestLines | Where-Object kind -eq 'hit')
-        $hits.Count | Should -Be $script:EntryCount
-        ($hits | Measure-Object -Property hits -Sum).Sum | Should -Be $script:EntryCount
     }
 }

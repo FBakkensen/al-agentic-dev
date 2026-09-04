@@ -107,6 +107,45 @@ exit 0
 Describe 'Invoke-TestGate verdict channel' {
     BeforeAll {
         . $script:TestScriptPath
+
+        function Set-FakeCliRun {
+            <#
+                .SYNOPSIS
+                Mocks Invoke-ALRunnerCli to write a CLI --output-json document
+                (and optionally a Cobertura file) to the paths the gate passes,
+                returning the given exit code.
+            #>
+            param(
+                [int]$ExitCode,
+                [object[]]$Tests,
+                [string]$Cobertura
+            )
+            $script:FakeExitCode = $ExitCode
+            $script:FakeTests = $Tests
+            $script:FakeCobertura = $Cobertura
+            Mock Invoke-ALRunnerCli {
+                $failed = @($script:FakeTests | Where-Object status -eq 'fail').Count
+                $document = [ordered]@{
+                    tests       = @($script:FakeTests)
+                    passed      = @($script:FakeTests | Where-Object status -eq 'pass').Count
+                    failed      = $failed
+                    errors      = 0
+                    skipped     = 0
+                    total       = @($script:FakeTests).Count
+                    exitCode    = $script:FakeExitCode
+                    wallSeconds = 0.1
+                }
+                New-Item -ItemType Directory -Path (Split-Path $StdoutPath -Parent) -Force | Out-Null
+                $document | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $StdoutPath -Encoding utf8
+                Set-Content -LiteralPath $StderrPath -Value @('[bc] selected BC 99.0.0.0 (fake)', '[dep] none') -Encoding utf8
+                if ($script:FakeCobertura) {
+                    $coverageOut = $Arguments[[array]::IndexOf($Arguments, '--coverage-out') + 1]
+                    New-Item -ItemType Directory -Path (Split-Path $coverageOut -Parent) -Force | Out-Null
+                    Set-Content -LiteralPath $coverageOut -Value $script:FakeCobertura -Encoding utf8
+                }
+                [pscustomobject]@{ ExitCode = $script:FakeExitCode; StdoutPath = $StdoutPath; StderrPath = $StderrPath }
+            }
+        }
     }
 
     BeforeEach {
@@ -119,12 +158,15 @@ Describe 'Invoke-TestGate verdict channel' {
         Mock Set-BuildEnvironment {}
         Mock Resolve-CoverageEnabled { $false }
         Mock Copy-ALSymbolToCache {}
-        Mock Write-ALRunnerJUnit {}
+        Mock Stop-OrphanedALRunnerServer {}
+        Mock New-ALRunnerDependencyDirectory { [pscustomobject]@{ OutputDirectory = $OutputDirectory; Packages = @() } }
 
         $repoRoot = Join-Path $TestDrive 'gate-repo'
+        if (Test-Path -LiteralPath $repoRoot) { Remove-Item -LiteralPath $repoRoot -Recurse -Force }
         $testApp = Join-Path $repoRoot 'test'
         New-Item -ItemType Directory -Path $testApp -Force | Out-Null
         $script:TestApp = $testApp
+        $script:GateRepoRoot = $repoRoot
 
         Mock Get-GitRepoRoot { $repoRoot }
         Mock Get-BuildConfig {
@@ -144,20 +186,7 @@ Describe 'Invoke-TestGate verdict channel' {
     }
 
     It 'reports a green run as $script:GateExitCode 0 and keeps the verdict off the output stream' {
-        Mock Request-ALRunnerServerRun {
-            [pscustomobject]@{
-                Passed      = $true
-                ExitCode    = 0
-                Total       = 1
-                Failed      = 0
-                Errors      = 0
-                PassedCount = 1
-                Cached      = 0
-                WallSeconds = 0.1
-                Tests       = @([pscustomobject]@{ Name = 'Codeunit1.Test1'; Status = 'pass'; DurationMs = 5; Message = $null })
-                SummaryFile = (Join-Path $TestDrive 'al-runner-summary.json')
-            }
-        }
+        Set-FakeCliRun -ExitCode 0 -Tests @([ordered]@{ name = 'Codeunit1.Test1'; status = 'pass'; durationMs = 5 })
 
         $out = @(Invoke-TestGate)
 
@@ -166,21 +195,18 @@ Describe 'Invoke-TestGate verdict channel' {
         $out | Should -Contain 'FAKE-NATIVE-STDOUT'
     }
 
-    It 'reports a red run as $script:GateExitCode 1 and keeps the verdict off the output stream' {
-        Mock Request-ALRunnerServerRun {
-            [pscustomobject]@{
-                Passed      = $false
-                ExitCode    = 1
-                Total       = 1
-                Failed      = 1
-                Errors      = 0
-                PassedCount = 0
-                Cached      = 0
-                WallSeconds = 0.1
-                Tests       = @([pscustomobject]@{ Name = 'Codeunit1.Test1'; Status = 'fail'; DurationMs = 5; Message = 'boom' })
-                SummaryFile = (Join-Path $TestDrive 'al-runner-summary.json')
-            }
+    It 'surfaces the [bc] selected line from the al-runner log' {
+        Set-FakeCliRun -ExitCode 0 -Tests @([ordered]@{ name = 'Codeunit1.Test1'; status = 'pass'; durationMs = 5 })
+
+        Invoke-TestGate | Out-Null
+
+        Should -Invoke Write-BuildMessage -ParameterFilter {
+            $Type -eq 'Info' -and $Message -eq '[bc] selected BC 99.0.0.0 (fake)'
         }
+    }
+
+    It 'reports a red run as $script:GateExitCode 1 and keeps the verdict off the output stream' {
+        Set-FakeCliRun -ExitCode 1 -Tests @([ordered]@{ name = 'Codeunit1.Test1'; status = 'fail'; durationMs = 5; message = 'boom' })
 
         $out = @(Invoke-TestGate)
 
@@ -189,31 +215,91 @@ Describe 'Invoke-TestGate verdict channel' {
         $out | Should -Contain 'FAKE-NATIVE-STDOUT'
     }
 
-    It 'reds the gate and names the manager log when the server is unavailable' {
-        # Regression guard: the server is the only test path — an unavailable
-        # server must red the gate rather than fall back to a fresh al-runner
-        # CLI process.
-        Mock Request-ALRunnerServerRun { $null }
+    It 'throws naming the al-runner log when al-runner exits 3 (could not compile)' {
+        Mock Invoke-ALRunnerCli {
+            Set-Content -LiteralPath $StderrPath -Value @('error AL0118: fake compile error') -Encoding utf8
+            [pscustomobject]@{ ExitCode = 3; StdoutPath = $StdoutPath; StderrPath = $StderrPath }
+        }
 
-        { Invoke-TestGate } | Should -Not -Throw
+        { Invoke-TestGate } | Should -Throw '*al-runner exited 3*.output/logs/al-runner.log*'
 
-        $script:GateExitCode | Should -Be 1
         Should -Invoke Write-BuildMessage -ParameterFilter {
-            $Type -eq 'Error' -and $Message -match [regex]::Escape('al-runner-server-manager.log')
+            $Type -eq 'Error' -and $Message -match 'AL0118'
         }
     }
-    It 'reds the gate before the server starts when tests/expectations exists' {
+
+    It 'throws naming the output when al-runner exits 0 without a result document' {
+        Mock Invoke-ALRunnerCli {
+            Set-Content -LiteralPath $StdoutPath -Value '' -Encoding utf8 -NoNewline
+            [pscustomobject]@{ ExitCode = 0; StdoutPath = $StdoutPath; StderrPath = $StderrPath }
+        }
+
+        { Invoke-TestGate } | Should -Throw '*al-runner output unreadable*'
+    }
+
+    It 'reds the gate before al-runner runs when tests/expectations exists' {
         # An expectations manifest makes al-runner exit 0 on failing tests. The
         # gate never hides a failure: the folder's presence is red on its own.
         New-Item -ItemType Directory -Path (Join-Path $repoRoot 'tests' 'expectations') -Force | Out-Null
-        Mock Request-ALRunnerServerRun { throw 'server must not be reached' }
+        Mock Invoke-ALRunnerCli { throw 'al-runner must not be reached' }
 
         { Invoke-TestGate } | Should -Not -Throw
 
         $script:GateExitCode | Should -Be 1
-        Should -Invoke Request-ALRunnerServerRun -Times 0
+        Should -Invoke Invoke-ALRunnerCli -Times 0
         Should -Invoke Write-BuildMessage -ParameterFilter {
             $Type -eq 'Error' -and $Message -match 'tests/expectations' -and $Message -match 'containerTestApps'
+        }
+    }
+
+    Context 'coverage' {
+        BeforeEach {
+            Mock Resolve-CoverageEnabled { $true }
+            New-Item -ItemType Directory -Path (Join-Path $script:GateRepoRoot 'src') -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $script:GateRepoRoot 'src' 'Calc.Codeunit.al') -Value "codeunit 50100 `"Calc`"`n{`n}`n" -Encoding utf8
+            $script:Cobertura = @'
+<?xml version="1.0" encoding="utf-8"?>
+<coverage line-rate="0.5" lines-covered="1" lines-valid="2"><packages><package name="al-source"><classes>
+<class name="Calc" filename="src/Calc.Codeunit.al"><lines><line number="1" hits="1" /><line number="2" hits="0" /></lines></class>
+</classes></package></packages></coverage>
+'@
+        }
+
+        It 'passes --coverage and --coverage-out to al-runner and reports aggregate-only coverage' {
+            Set-FakeCliRun -ExitCode 0 -Tests @([ordered]@{ name = 'Codeunit1.Test1'; status = 'pass'; durationMs = 5 }) -Cobertura $script:Cobertura
+
+            Invoke-TestGate | Out-Null
+
+            $script:GateExitCode | Should -Be 0
+            Should -Invoke Invoke-ALRunnerCli -ParameterFilter { $Arguments -contains '--coverage' -and $Arguments -contains '--coverage-out' }
+            $summary = Get-Content -LiteralPath (Join-Path $script:GateRepoRoot '.output' 'TestResults' 'summary.json') -Raw | ConvertFrom-Json
+            $summary.coverage.status | Should -Be 'aggregate-only'
+            $summary.coverage.complete | Should -BeTrue
+            $summary.coverage.perTestJsonlPath | Should -BeNullOrEmpty
+            $summary.coverage.linesValid | Should -Be 2
+            $summary.coverage.linesCovered | Should -Be 1
+            $summary.coverage.lineRate | Should -Be 0.5
+            $summary.coverage.coberturaXmlPath | Should -Be '.output/TestResults/coverage/cobertura.xml'
+        }
+
+        It 'keeps the green verdict and reports a failed coverage block when al-runner wrote no Cobertura' {
+            Set-FakeCliRun -ExitCode 0 -Tests @([ordered]@{ name = 'Codeunit1.Test1'; status = 'pass'; durationMs = 5 })
+
+            { Invoke-TestGate } | Should -Not -Throw
+
+            $script:GateExitCode | Should -Be 0
+            $summary = Get-Content -LiteralPath (Join-Path $script:GateRepoRoot '.output' 'TestResults' 'summary.json') -Raw | ConvertFrom-Json
+            $summary.coverage.status | Should -Be 'failed'
+            $summary.coverage.failure.message | Should -Match 'cobertura.xml'
+        }
+
+        It 'omits --coverage when coverage is disabled' {
+            Mock Resolve-CoverageEnabled { $false }
+            Set-FakeCliRun -ExitCode 0 -Tests @([ordered]@{ name = 'Codeunit1.Test1'; status = 'pass'; durationMs = 5 })
+
+            Invoke-TestGate | Out-Null
+
+            Should -Invoke Invoke-ALRunnerCli -ParameterFilter { $Arguments -notcontains '--coverage' }
         }
     }
 }

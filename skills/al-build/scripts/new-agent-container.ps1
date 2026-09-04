@@ -48,6 +48,7 @@ if (-not (Get-Module -Name $buildOpsModuleName)) {
 
 # Load configuration and apply defaults if parameters not provided
 $config = Get-BuildConfig
+Set-BuildEnvironment -Config $config
 if (-not $ImageName) { $ImageName = $config.ImageName }
 if (-not $MemoryLimit) { $MemoryLimit = $config.MemoryLimit }
 
