@@ -17,10 +17,10 @@ Run one at a time. `al-build.json` in the repo root is required — without it t
 
 | Command | Scope |
 |---|---|
-| `test.ps1` | The gate. Compiles every app (main, `testApps`, `containerTestApps`) through the analyzer gate, then runs AL Runner once over the main app and every `testApps` bundle — through the warm AL Runner server, auto-started on first use. The server is the only test path. Never touches a container. |
+| `test.ps1` | The gate. Compiles every app (main, `testApps`, `containerTestApps`) through the analyzer gate, then runs AL Runner once over the main app and every `testApps` bundle — one fresh `al-runner` CLI process per gate, its progress echoed live and kept in `.output/logs/al-runner.log`. Never touches a container. |
 | `container-test.ps1` | Container tests for `containerTestApps`: compile the main app and every container test app through the analyzer gate, publish, sync barrier, run. Only when a task explicitly requires the container surface — no ordinary gate or verify step calls it. |
 
-`test.ps1 -Coverage` adds complete per-test coverage to the same run, collected through the AL Runner server — see `COVERAGE.md` for the artifact contract.
+`test.ps1 -Coverage` adds main-app line coverage to the same run through AL Runner's `--coverage`; the CLI exposes no per-test attribution, so the coverage block's status field holds `"aggregate-only"` — see `COVERAGE.md` for the artifact contract.
 
 Green is zero errors and zero warnings. `test.ps1` exits 0 on warnings by default, so set `WARN_AS_ERROR=true` to bind that bar to the exit code.
 
@@ -32,11 +32,11 @@ After the run, read `.output/TestResults/summary.json` and report from it. It ca
 - `counts: null` reports as unavailable, not as zeros.
 - `Codeunit … Success` console lines count test codeunits, not tests. Counts come from the summary and the JUnit XML alone.
 - `test.ps1` clears prior test results at startup, before configuration loads. A malformed config or early compile failure can leave no `summary.json`; take the red signal from the diagnostics instead.
-- Read the `[bc] selected …` notice line, including any build-skew warning it carries, from `.output/logs/al-runner-server.log`; the staged dependency set, one `[deps] <publisher>/<name> <version> <- <source>` line per package, is in `.output/logs/al-runner-server-manager.log`. The server emits no `[dep]` resolution lines; a focused single-test run `al-runner --test <name> <bundle dirs>` typed directly — a fresh process outside the gate, never collects coverage — prints them, and `[dep] … NO IMPLEMENTATION` there is a red-flag warning — a symbols-only dependency trap, not a pass.
-- Dependencies are self-contained: at server start the manager stages every non-Microsoft, non-bundle dependency from the checkout symbol cache into `.output/al-runner-deps` and passes it as `--package-cache`; Microsoft platform and test libraries come from AL Runner's own artifact cache; every bundle in the run compiles from source. `.alpackages` is never read. A symbols-only third-party package is legitimate while no test executes into it; once a test does, place the vendor's code-bearing `.app` in that app's symbol cache dir after the symbol download (the download clears the dir) and rerun the gate.
+- `.output/logs/al-runner.log` is AL Runner's stderr for the run: the `[bc] selected …` notice line, including any build-skew warning it carries (also echoed in the gate output), and one `[dep] <publisher>/<name> <version> <- <source>` line per resolved dependency. `[dep] … NO IMPLEMENTATION` there is a red-flag warning — a symbols-only dependency trap, not a pass. A focused single-test run is `al-runner --test <name> <bundle dirs> --package-cache .output/al-runner-deps` typed directly, outside the gate; it never collects coverage.
+- Dependencies are self-contained: at each gate run `test.ps1` stages every non-Microsoft, non-bundle dependency from the checkout symbol cache into `.output/al-runner-deps` (one `[deps] …` line per package in the gate output) and passes it as `--package-cache`; Microsoft platform and test libraries come from AL Runner's own artifact cache; every bundle in the run compiles from source. `.alpackages` is never read. A symbols-only third-party package is legitimate while no test executes into it; once a test does, place the vendor's code-bearing `.app` in that app's symbol cache dir after the symbol download (the download clears the dir) and rerun the gate.
 - A red test has three outcomes and no fourth: fix it until genuinely green; when the failure is an AL Runner gap, stop and put the evidence to the user with options; when the test genuinely needs a surface AL Runner refuses by design (`RunnerOutOfScopeException`), move its app to `containerTestApps` — only on the user's explicit ack, never on your own. The gate reds on a `tests/expectations` folder in the repo, since AL Runner's expectations manifest would turn a failing test into exit 0.
 
-Other artifacts: `.output/TestResults/al-runner.xml` (the al-runner gate's JUnit), `.output/TestResults/<dirName>/last.xml` (per-app container JUnit), and `.output/logs/build-timing.jsonl`, one entry per gate run on every exit path.
+Other artifacts: `.output/TestResults/al-runner.xml` (the al-runner gate's JUnit, written by AL Runner's `--output-junit`), `.output/TestResults/al-runner-output.json` (its `--output-json` result), `.output/TestResults/<dirName>/last.xml` (per-app container JUnit), and `.output/logs/build-timing.jsonl`, one entry per gate run on every exit path.
 
 ## Every other entry point
 
@@ -53,7 +53,6 @@ Other artifacts: `.output/TestResults/al-runner.xml` (the al-runner gate's JUnit
 | `clean.ps1` | Deletes compiled `.app` files and clears publish state so the next run republishes. |
 | `report-gate-metrics.ps1` | Gate wall-clock per workspace signature and gate scope, from `build-timing.jsonl`; `-GlobalLog` reads the cross-repo mirror. |
 | `container-test.ps1` | Container tests for `containerTestApps` — see "The gate" above. Compiles before it publishes; `-Force` republishes unchanged apps. |
-| `alrunner-server-manager.ps1` | Owns the AL Runner server; started automatically by `test.ps1`. Restarts on an AL Runner version change, an `.al` table or table extension shape change, a dependency-set change — and, while the AL Runner request-drift defect is open (later requests on one server fail No. Series tests the first request passes), after every run. A restart waits for the previous al-runner process tree before starting the next; a child that exits before its ready line is started once more, logged as `[manager] retry:` in `.output/logs/al-runner-server-manager.log`, and a second miss fails with the exit code and the last lines of `al-runner-server.log`. |
 | `download-symbols.ps1`, `download-baseline.ps1` | The two fetches `provision.ps1` already performs. Run one alone to refresh only the symbols or only the baseline. |
 
 The three container scripts are one sequence, run once per BC version: `new-bc-container.ps1`, `commit-bc-container.ps1`, then `new-agent-container.ps1` for each branch off the resulting snapshot.
