@@ -505,18 +505,37 @@ function ConvertTo-ALRunnerVersion {
     <#
     .SYNOPSIS
         Parse an al-runner --version banner into a [version].
+    .DESCRIPTION
+        Accepts a numeric core of two to four parts with an optional SemVer
+        prerelease (-local.9017de3a, -beta.1) and build (+build.5) suffix.
+        Throws when the banner does not match.
     .PARAMETER VersionLine
-        A single line of al-runner --version output, e.g. 'al-runner v2.10.0.0'.
+        A single line of al-runner --version output, e.g. 'al-runner v2.10.0.0'
+        or 'al-runner v2.10.0-local.9017de3a'.
+    .PARAMETER Detailed
+        Return [pscustomobject] Version, Prerelease, IsPrerelease instead of the
+        bare [version].
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [string]$VersionLine
+        [string]$VersionLine,
+
+        [switch]$Detailed
     )
 
     $trimmed = $VersionLine.Trim()
-    if ($trimmed -match '^al-runner v(\d+(?:\.\d+){1,3})$') {
-        return [version]$Matches[1]
+    if ($trimmed -match '^al-runner v(\d+(?:\.\d+){1,3})(?:-([0-9A-Za-z][0-9A-Za-z.-]*))?(?:\+[0-9A-Za-z][0-9A-Za-z.-]*)?$') {
+        $version = [version]$Matches[1]
+        if (-not $Detailed) {
+            return $version
+        }
+        $prerelease = if ($Matches.ContainsKey(2)) { $Matches[2] } else { $null }
+        return [pscustomobject]@{
+            Version      = $version
+            Prerelease   = $prerelease
+            IsPrerelease = [bool]$prerelease
+        }
     }
 
     throw "Unable to parse al-runner version from banner: '$VersionLine'"
@@ -531,6 +550,14 @@ function Install-ALRunner {
         unit testing. Mirrors the Install-ALCompiler pattern. After presence is
         ensured, verifies the installed version meets the 2.10 floor, updating
         once if it does not.
+
+        Prerelease decision: a banner with a SemVer prerelease suffix
+        (al-runner v2.10.0-local.9017de3a) is a developer's local or preview
+        build. The implicit floor update never runs against it — `dotnet tool
+        update --global` would replace the local build with the feed's release.
+        A prerelease at or above the floor passes untouched; one below the floor
+        throws and names the suffix. The explicit -Update switch still updates,
+        because the user asked for it.
     .PARAMETER Update
         Force update of an existing global tool.
     #>
@@ -590,11 +617,15 @@ function Install-ALRunner {
     # instead of updating a second time.
     $requiredVersion = [version]'2.10'
     $versionLine = @(& al-runner --version 2>&1)[0]
-    $foundVersion = ConvertTo-ALRunnerVersion -VersionLine $versionLine
+    $found = ConvertTo-ALRunnerVersion -VersionLine $versionLine -Detailed
+    $foundVersion = $found.Version
 
     if ($foundVersion -lt $requiredVersion) {
         if ($updated) {
             throw "al-runner $foundVersion found, 2.10 required"
+        }
+        if ($found.IsPrerelease) {
+            throw "al-runner $foundVersion-$($found.Prerelease) found, 2.10 required; prerelease/local build left untouched — update it yourself or run with -Update"
         }
 
         Write-BuildMessage -Type Step -Message "AL Runner $foundVersion found, updating to meet the $requiredVersion floor..."
@@ -609,6 +640,8 @@ function Install-ALRunner {
         if ($foundVersion -lt $requiredVersion) {
             throw "al-runner $foundVersion found, 2.10 required"
         }
+    } elseif ($found.IsPrerelease) {
+        Write-BuildMessage -Type Detail -Message "AL Runner $foundVersion-$($found.Prerelease) is a prerelease/local build; left untouched"
     }
 
     Write-BuildMessage -Type Success -Message "AL Runner provisioning complete"
