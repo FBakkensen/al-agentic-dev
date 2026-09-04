@@ -25,6 +25,7 @@ Import-Module "$PSScriptRoot/build-operations.psm1" -Force -DisableNameChecking
 
 # Load configuration
 $config = Get-BuildConfig
+Set-BuildEnvironment -Config $config
 
 Write-BuildHeader 'Clean: Build Artifact Removal'
 
