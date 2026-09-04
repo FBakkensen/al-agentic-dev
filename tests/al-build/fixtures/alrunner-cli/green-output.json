@@ -1,0 +1,16 @@
+{
+  "tests": [
+    {
+      "name": "Codeunit60000.InitAppliesItemStatusCalcDefault",
+      "status": "pass",
+      "durationMs": 6
+    }
+  ],
+  "passed": 1,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "total": 1,
+  "exitCode": 0,
+  "wallSeconds": 31.8701689
+}

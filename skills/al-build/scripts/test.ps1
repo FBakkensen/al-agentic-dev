@@ -9,18 +9,21 @@
     1. Build the main app.
     2. For each configured test app: provision the main app's symbol into its
        cache, then build it (analyzer gate, host alc).
-    3. Run al-runner once over the main app plus every test app, through the
-       al-runner server (auto-started on first use). The server is the only
-       test path — no fallback.
-    4. Write the run to .output/TestResults/al-runner.xml.
+    3. Run al-runner once over the main app plus every test app, as one fresh
+       CLI process per gate (--output-json, --output-junit). Its stderr is
+       echoed live and kept in .output/logs/al-runner.log; its JSON result is
+       kept in .output/TestResults/al-runner-output.json.
+    4. al-runner writes the run to .output/TestResults/al-runner.xml.
     5. Write summary to .output/TestResults/summary.json
        (gate, per-runner totals, one run record with test counts).
 
     Coverage can be enabled by configuration, ALBT_COVERAGE_ENABLED, or
-    -Coverage. It is skipped when testApps is empty.
+    -Coverage. It is skipped when testApps is empty. Coverage is aggregate
+    (main-app line coverage from al-runner's Cobertura); the CLI exposes no
+    per-test attribution. Coverage never fails the gate.
 
 .PARAMETER Coverage
-    Collect complete per-test raw coverage across every configured test app.
+    Collect main-app line coverage across every configured test app.
     Ignored when testApps is empty.
 
 .EXAMPLE
@@ -29,7 +32,7 @@
 
 .EXAMPLE
     pwsh -File test.ps1 -Coverage
-    # Run the full suite and retain complete per-test raw coverage.
+    # Run the full suite and retain the Cobertura coverage artifact.
 #>
 
 [CmdletBinding()]
@@ -65,7 +68,7 @@ $isDotSourced = $MyInvocation.InvocationName -eq '.'
 # Import modules
 Import-Module (Join-Path $PSScriptRoot 'common.psm1') -Force -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot 'build-operations.psm1') -Force -DisableNameChecking
-Import-Module (Join-Path $PSScriptRoot 'alrunner-server.psm1') -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot 'alrunner-cli.psm1') -Force -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot 'alrunner-coverage.psm1') -Force -DisableNameChecking
 
 function Invoke-TestGate {
@@ -100,9 +103,9 @@ function Write-ALRunnerFailureSample {
     .SYNOPSIS
         Print up to 10 failing test names and messages, pointing at the result file.
     .DESCRIPTION
-        Reads from the server's per-test stream when available (Tests); falls
-        back to parsing the JUnit result file's failure/error nodes when it is
-        not.
+        Reads from the parsed --output-json tests when available (Tests);
+        falls back to parsing the JUnit result file's failure/error nodes
+        when it is not.
     #>
     param(
         [Parameter(Mandatory)][string]$ResultFile,
@@ -137,7 +140,7 @@ function Write-ALRunnerFailureSample {
 
 # An expectations manifest turns a failing test into exit 0. al-runner
 # auto-probes <repo>/tests/expectations from its cwd, so the folder's presence
-# alone would hide failures — the gate reds before the server ever starts.
+# alone would hide failures — the gate reds before al-runner ever runs.
 $expectationsDir = Join-Path $repoRoot 'tests' 'expectations'
 if (Test-Path -LiteralPath $expectationsDir) {
     $failureMessage = "Expectations manifest found at tests/expectations — the gate never hides a failing test. Remove the folder. A failing test is fixed (green), or is an al-runner gap (stop and ask the user), or needs a surface al-runner refuses by design and moves its app to containerTestApps on the user's explicit ack."
@@ -159,7 +162,6 @@ $testResults = @()
 # any of these beyond their initial values.
 $coverageComplete = $false
 $coverageFailureMessage = $null
-$coveragePerTestJsonlRelPath = $null
 $coverageCoberturaRelPath = $null
 $coverageLineRate = $null
 $coverageLinesValid = $null
@@ -214,56 +216,83 @@ foreach ($target in (Get-CompileTargets -Config $config)) {
     Stop-Step "build-$($target.Role)-$dirName"
 }
 
-# Step 3: One al-runner run over the main app plus every test app. Dependencies
-# are self-contained (design decision 3): the manager stages every
-# non-Microsoft, non-bundle dependency from the checkout symbol cache into
-# .output/al-runner-deps before starting the server and passes that dir as
-# --package-cache; Microsoft platform and test libraries come from al-runner's
-# own artifact cache; every bundle here compiles from source. .alpackages is
-# never read.
+# Step 3: One al-runner run over the main app plus every test app, as one
+# fresh CLI process. Dependencies are self-contained (design decision 3):
+# every non-Microsoft, non-bundle dependency is staged from the checkout
+# symbol cache into .output/al-runner-deps and passed as --package-cache;
+# Microsoft platform and test libraries come from al-runner's own artifact
+# cache; every bundle here compiles from source. .alpackages is never read.
 $bundles = @($config.AppDir) + @($config.TestApps)
 $appNames = (@($config.TestApps | ForEach-Object { Split-Path $_ -Leaf })) -join ', '
 $resultFile = Join-Path $baseResultsPath 'al-runner.xml'
+$cliOutputPath = Join-Path $baseResultsPath 'al-runner-output.json'
+$logsDir = Join-Path $repoRoot '.output' 'logs'
+New-Item -ItemType Directory -Path $logsDir -Force | Out-Null
+$cliLogPath = Join-Path $logsDir 'al-runner.log'
+$cliLogHint = 'see .output/logs/al-runner.log'
+$coverageDir = Join-Path $baseResultsPath 'coverage'
+$coverageOutPath = Join-Path $coverageDir 'cobertura.xml'
 
 Start-Step 'al-runner'
-$serverSummaryPath = Join-Path $baseResultsPath 'al-runner-summary.json'
-$serverLogHint = 'see .output/logs/al-runner-server-manager.log and .output/logs/al-runner-server.log'
+Stop-OrphanedALRunnerServer -RepoRoot $repoRoot
+
+$dependencyDirectory = Join-Path $repoRoot '.output' 'al-runner-deps'
+$staged = New-ALRunnerDependencyDirectory -RepoRoot $repoRoot -OutputDirectory $dependencyDirectory
+Write-BuildMessage -Type Info -Message "[deps] package-cache: .output/al-runner-deps"
+foreach ($package in @($staged.Packages)) {
+    Write-BuildMessage -Type Info -Message "[deps] $($package.Publisher)/$($package.Name) $($package.Version) <- $($package.Source)"
+}
+
+if ($coverageEnabled) { New-Item -ItemType Directory -Path $coverageDir -Force | Out-Null }
+$cliArguments = Get-ALRunnerCliArguments -Bundles $bundles -PackageCache $dependencyDirectory -JUnitPath $resultFile `
+    -Coverage:$coverageEnabled -CoverageOutPath $coverageOutPath
+Write-BuildMessage -Type Info -Message "al-runner $($cliArguments -join ' ')"
+
+$cliRun = Invoke-ALRunnerCli -Arguments $cliArguments -WorkingDirectory $repoRoot -StdoutPath $cliOutputPath -StderrPath $cliLogPath
+
+$selectedBcLine = Get-ALRunnerSelectedBcLine -LogPath $cliLogPath
+if ($selectedBcLine) { Write-BuildMessage -Type Info -Message $selectedBcLine }
+
+# Exit 0 (all passed) and 1 (a test failed) carry a result document; 2, 3 and 4
+# mean al-runner never produced a verdict, so the gate errors naming the log.
+if ($cliRun.ExitCode -notin @(0, 1)) {
+    $tail = @(Get-Content -LiteralPath $cliLogPath -ErrorAction SilentlyContinue | Select-Object -Last 20)
+    foreach ($line in $tail) { Write-BuildMessage -Type Error -Message "  $line" }
+    throw "al-runner exited $($cliRun.ExitCode) before producing a test result ($cliLogHint)"
+}
+
 try {
-    $serverResult = Request-ALRunnerServerRun -RepoRoot $repoRoot -SourcePaths $bundles `
-        -Coverage:$coverageEnabled -PerTestCoverage:$coverageEnabled -SummaryPath $serverSummaryPath
+    $cliResult = Read-ALRunnerCliOutput -Path $cliOutputPath
 } catch {
-    throw "al-runner server run failed: $($_.Exception.Message) ($serverLogHint)"
+    throw "al-runner output unreadable: $($_.Exception.Message) ($cliLogHint)"
 }
 
-if ($null -eq $serverResult) {
-    $failureMessage = "al-runner server unavailable ($serverLogHint)"
-    $script:LastErrorMessage = $failureMessage
-    if ($coverageEnabled) { $coverageFailureMessage = $failureMessage }
-    Write-BuildMessage -Type Error -Message $failureMessage
-    return
-}
-
-Write-ALRunnerJUnit -Tests $serverResult.Tests -Path $resultFile
-$skippedCount = @($serverResult.Tests | Where-Object { $_.Status -eq 'skipped' }).Count
-$codeunitCount = @($serverResult.Tests | ForEach-Object { ($_.Name -split '\.')[0] } | Select-Object -Unique).Count
+$skippedCount = @($cliResult.Tests | Where-Object { $_.Status -eq 'skipped' }).Count
+$codeunitCount = @($cliResult.Tests | ForEach-Object { ($_.Name -split '\.')[0] } | Select-Object -Unique).Count
 $counts = [ordered]@{
     testCodeunits = $codeunitCount
-    tests         = $serverResult.Total
-    testsPassed   = $serverResult.PassedCount
-    testsFailed   = ($serverResult.Failed + $serverResult.Errors)
+    tests         = $cliResult.Total
+    testsPassed   = $cliResult.PassedCount
+    testsFailed   = ($cliResult.Failed + $cliResult.Errors)
     testsSkipped  = $skippedCount
 }
 
+# Coverage never blocks the gate: a failure here lands in the coverage block
+# of summary.json while the test verdict stands.
 if ($coverageEnabled) {
     Start-Step 'coverage'
-    $coverageArtifacts = Write-ALRunnerCoverageArtifacts -SummaryFile $serverSummaryPath -RepoRoot $repoRoot `
-        -MainAppPath $config.AppDir -TestApps $config.TestApps -OutputDirectory (Join-Path $baseResultsPath 'coverage')
-    $coverageComplete = $true
-    $coverageLineRate = $coverageArtifacts.LineRate
-    $coverageLinesValid = $coverageArtifacts.LinesValid
-    $coverageLinesCovered = $coverageArtifacts.LinesCovered
-    $coveragePerTestJsonlRelPath = ConvertTo-RepoRelativePath -RepoRoot $repoRoot -Path $coverageArtifacts.PerTestPath
-    $coverageCoberturaRelPath = ConvertTo-RepoRelativePath -RepoRoot $repoRoot -Path $coverageArtifacts.CoberturaPath
+    try {
+        $coverageArtifacts = Write-ALRunnerCoverageArtifacts -CoberturaFile $coverageOutPath -RepoRoot $repoRoot `
+            -MainAppPath $config.AppDir -OutputDirectory $coverageDir
+        $coverageComplete = $true
+        $coverageLineRate = $coverageArtifacts.LineRate
+        $coverageLinesValid = $coverageArtifacts.LinesValid
+        $coverageLinesCovered = $coverageArtifacts.LinesCovered
+        $coverageCoberturaRelPath = ConvertTo-RepoRelativePath -RepoRoot $repoRoot -Path $coverageArtifacts.CoberturaPath
+    } catch {
+        $coverageFailureMessage = $_.Exception.Message
+        Write-BuildMessage -Type Warning -Message "Coverage failed: $coverageFailureMessage"
+    }
     Stop-Step 'coverage'
 }
 
@@ -271,12 +300,12 @@ $runResult = [pscustomobject]@{
     Runner     = 'al-runner'
     AppName    = $appNames
     TestDir    = $baseResultsPath
-    Passed     = $serverResult.Passed
+    Passed     = $cliResult.Passed
     Counts     = $counts
     ResultFile = $resultFile
     Filter     = $null
     Notices    = @()
-    RawTests   = $serverResult.Tests
+    RawTests   = $cliResult.Tests
 }
 $testResults += $runResult
 Stop-Step 'al-runner'
@@ -329,8 +358,9 @@ $script:GateExitCode = 0
     }
 
     # Build the coverage summary block. Disabled runs carry nothing beyond
-    # the flag; enabled runs report either the complete artifact set or the
-    # failure that stopped short of it.
+    # the flag; enabled runs report the aggregate artifact (the al-runner CLI
+    # exposes no per-test attribution, so perTestJsonlPath is always null) or
+    # the failure that stopped short of it.
     if (-not $coverageEnabled) {
         $coverageBlock = [ordered]@{
             enabled = $false
@@ -339,12 +369,12 @@ $script:GateExitCode = 0
         $coverageBlock = [ordered]@{
             schemaVersion    = 1
             enabled          = $true
-            status           = 'complete'
+            status           = 'aggregate-only'
             complete         = $true
             lineRate         = $coverageLineRate
             linesValid       = $coverageLinesValid
             linesCovered     = $coverageLinesCovered
-            perTestJsonlPath = $coveragePerTestJsonlRelPath
+            perTestJsonlPath = $null
             coberturaXmlPath = $coverageCoberturaRelPath
         }
     } else {
