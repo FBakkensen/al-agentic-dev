@@ -370,13 +370,34 @@ function Invoke-ALRunnerCli {
         if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Force -Confirm:$false }
     }
 
-    $process = Start-Process -FilePath $Command -ArgumentList $Arguments -WorkingDirectory $WorkingDirectory `
-        -RedirectStandardOutput $StdoutPath -RedirectStandardError $StderrPath -NoNewWindow -PassThru
+    # ProcessStartInfo.ArgumentList quotes each element for the Windows
+    # command line; Start-Process -ArgumentList joins with spaces and would
+    # split a path with a space into several tokens.
+    $resolved = Get-Command -Name $Command -ErrorAction Stop
+    $fileName = if ($resolved.Path) { $resolved.Path } else { $resolved.Source }
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = $fileName
+    foreach ($argument in $Arguments) { $startInfo.ArgumentList.Add([string]$argument) }
+    $startInfo.WorkingDirectory = $WorkingDirectory
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
 
+    $process = [System.Diagnostics.Process]::new()
+    $process.StartInfo = $startInfo
+    $null = $process.Start()
+
+    # Both streams drain concurrently into their files; a sequential
+    # ReadToEnd would deadlock once the other pipe's buffer fills.
+    $stdoutFile = [System.IO.FileStream]::new($StdoutPath, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write, [System.IO.FileShare]::Read)
+    $stderrFile = [System.IO.FileStream]::new($StderrPath, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write, [System.IO.FileShare]::Read)
+    $stdoutCopy = $process.StandardOutput.BaseStream.CopyToAsync($stdoutFile)
+    $stderrCopy = $process.StandardError.BaseStream.CopyToAsync($stderrFile)
     $echoed = 0
     $tail = {
-        # Re-read the file each poll; al-runner may hold it with a writer lock
-        # that Get-Content tolerates but a persistent reader would not.
+        # Re-read the file each poll; CopyToAsync flushes as the pipe delivers,
+        # and FileShare.Read lets this reader see it mid-run.
         $lines = @(Get-Content -LiteralPath $StderrPath -ErrorAction SilentlyContinue)
         for ($i = $echoed; $i -lt $lines.Count; $i++) {
             Write-Host "  [al-runner] $($lines[$i])"
@@ -389,6 +410,9 @@ function Invoke-ALRunnerCli {
         Start-Sleep -Milliseconds $PollIntervalMs
     }
     $process.WaitForExit()
+    [System.Threading.Tasks.Task]::WaitAll(@($stdoutCopy, $stderrCopy))
+    $stdoutFile.Dispose()
+    $stderrFile.Dispose()
     $echoed = & $tail
 
     [pscustomobject]@{

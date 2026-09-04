@@ -212,4 +212,33 @@ exit /b %1
 
         @(Get-Content -LiteralPath $stderr) | Should -Not -Contain 'stale line from last time'
     }
+
+    It 'hands each argument to al-runner as one token when paths and the working directory contain spaces' {
+        # Regression guard: Start-Process -ArgumentList joined with spaces and
+        # split `C:\Users\John Doe\...` into two tokens; ArgumentList quotes.
+        $workDir = Join-Path $TestDrive 'work dir with space'
+        New-Item -ItemType Directory -Path $workDir -Force | Out-Null
+        $echoArgs = Join-Path $TestDrive 'echo-args.ps1'
+        Set-Content -LiteralPath $echoArgs -Value @'
+foreach ($a in $args) { [Console]::Error.WriteLine("[$a]") }
+[Console]::Out.WriteLine("[cwd:$((Get-Location).Path)]")
+exit 0
+'@
+        $stdout = Join-Path $TestDrive 'out 3' 'al-runner-output.json'
+        $stderr = Join-Path $TestDrive 'logs 3' 'al-runner.log'
+        $bundle = Join-Path $workDir 'my app'
+        $cache = Join-Path $workDir '.output' 'al-runner deps'
+
+        Invoke-ALRunnerCli -Command (Join-Path $PSHOME 'pwsh.exe') -WorkingDirectory $workDir `
+            -Arguments @('-NoProfile', '-File', $echoArgs, $bundle, '--package-cache', $cache, '--output-junit', 'plain.xml') `
+            -StdoutPath $stdout -StderrPath $stderr -PollIntervalMs 50 6>$null | Out-Null
+
+        $tokens = @(Get-Content -LiteralPath $stderr)
+        $tokens | Should -Contain "[$bundle]"
+        $tokens | Should -Contain "[$cache]"
+        $tokens | Should -Contain '[--package-cache]'
+        $tokens | Should -Contain '[plain.xml]'
+        $tokens.Count | Should -Be 5
+        (Get-Content -LiteralPath $stdout -Raw) | Should -Match ([regex]::Escape("[cwd:$workDir]"))
+    }
 }
