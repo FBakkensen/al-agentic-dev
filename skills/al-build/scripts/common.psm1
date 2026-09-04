@@ -1762,19 +1762,53 @@ function Import-BCContainerHelper {
 # GitHub CLI Integration
 # =============================================================================
 
+function Get-GhTargetHostName {
+    <#
+    .SYNOPSIS
+        Resolve the GitHub host that gh will target for the current repository.
+    .DESCRIPTION
+        gh commands run without --repo resolve the host from the git remotes, so
+        the origin remote URL is the faithful source. Falls back to GH_HOST, then
+        github.com. Never throws — a missing remote or unparseable URL falls
+        through to the next source.
+    .OUTPUTS
+        [string] host name, e.g. github.com or mytenant.ghe.com.
+    #>
+    try {
+        $originUrl = (& git remote get-url origin 2>$null) -as [string]
+        if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($originUrl)) {
+            return (Get-RepoFromUrl $originUrl.Trim()).HostName
+        }
+    } catch {
+        # fall through
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($env:GH_HOST)) {
+        return $env:GH_HOST.Trim()
+    }
+
+    return 'github.com'
+}
+
 function Test-GhAuthentication {
     <#
     .SYNOPSIS
-        Check if GitHub CLI (gh) is authenticated
+        Check if GitHub CLI (gh) is authenticated to the host it will target.
+    .DESCRIPTION
+        A bare `gh auth status` reports every configured host and exits non-zero
+        if any of them fails (a GH_TOKEN for a GHE host is "invalid" for a
+        leftover github.com login). This checks only the host the caller is
+        about to use.
+    .PARAMETER HostName
+        Host to check. Defaults to Get-GhTargetHostName.
     .OUTPUTS
-        $true if authenticated, $false otherwise
+        $true if authenticated to that host, $false otherwise
     #>
-    try {
-        $null = gh auth status 2>&1
-        return $LASTEXITCODE -eq 0
-    } catch {
-        return $false
+    param([string]$HostName)
+    if ([string]::IsNullOrWhiteSpace($HostName)) {
+        $HostName = Get-GhTargetHostName
     }
+    return Test-GhHostAuthentication -HostName $HostName
 }
 
 function Test-GhHostAuthentication {
@@ -2935,6 +2969,7 @@ Export-ModuleMember -Function @(
     'Remove-OrphanedAgentContainers'
 
     # GitHub CLI Integration
+    'Get-GhTargetHostName'
     'Test-GhAuthentication'
     'Test-GhHostAuthentication'
     'Get-RepoFromUrl'
