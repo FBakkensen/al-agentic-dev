@@ -48,9 +48,42 @@ Describe 'Get-RepoFromUrl' {
             $r.Owner    | Should -Be 'owner'
             $r.Repo     | Should -Be 'repo'
         }
+
+        It 'drops the port from an HTTPS host' {
+            $r = Get-RepoFromUrl 'https://ghe.example.com:8443/acme/widget.git'
+            $r.HostName | Should -Be 'ghe.example.com'
+            $r.Owner    | Should -Be 'acme'
+            $r.Repo     | Should -Be 'widget'
+        }
+
+        It 'drops userinfo from an HTTPS host' {
+            $r = Get-RepoFromUrl 'https://user:tok@ghe.example.com/acme/widget.git'
+            $r.HostName | Should -Be 'ghe.example.com'
+            $r.Owner    | Should -Be 'acme'
+            $r.Repo     | Should -Be 'widget'
+        }
     }
 
     Context 'SSH URLs' {
+        It 'parses ssh:// URL with user' {
+            $r = Get-RepoFromUrl 'ssh://git@ghe.example.com/acme/widget.git'
+            $r.HostName | Should -Be 'ghe.example.com'
+            $r.Owner    | Should -Be 'acme'
+            $r.Repo     | Should -Be 'widget'
+        }
+
+        It 'parses ssh:// URL with a non-standard port' {
+            $r = Get-RepoFromUrl 'ssh://git@ghe.example.com:122/acme/widget.git'
+            $r.HostName | Should -Be 'ghe.example.com'
+            $r.Owner    | Should -Be 'acme'
+            $r.Repo     | Should -Be 'widget'
+        }
+
+        It 'parses ssh:// URL without user or .git' {
+            $r = Get-RepoFromUrl 'ssh://ghe.example.com/acme/widget'
+            $r.HostName | Should -Be 'ghe.example.com'
+            $r.Repo     | Should -Be 'widget'
+        }
         It 'parses SSH github.com URL with .git suffix' {
             $r = Get-RepoFromUrl 'git@github.com:owner/repo.git'
             $r.HostName | Should -Be 'github.com'
@@ -129,6 +162,12 @@ Describe 'Get-RepoFromUrl' {
 
         It 'throws on single-segment slug' {
             { Get-RepoFromUrl 'reponame' } | Should -Throw
+        }
+
+        It 'redacts userinfo from the error message' {
+            $err = { Get-RepoFromUrl 'https://user:s3cret@ghe.example.com/owner' } | Should -Throw -PassThru
+            $err.Exception.Message | Should -Not -Match 's3cret'
+            $err.Exception.Message | Should -Match 'https://ghe.example.com/owner'
         }
     }
 }

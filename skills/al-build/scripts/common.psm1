@@ -1762,19 +1762,53 @@ function Import-BCContainerHelper {
 # GitHub CLI Integration
 # =============================================================================
 
+function Get-GhTargetHostName {
+    <#
+    .SYNOPSIS
+        Resolve the GitHub host that gh will target for the current repository.
+    .DESCRIPTION
+        gh commands run without --repo resolve the host from the git remotes, so
+        the origin remote URL is the faithful source. Falls back to GH_HOST, then
+        github.com. Never throws — a missing remote or unparseable URL falls
+        through to the next source.
+    .OUTPUTS
+        [string] host name, e.g. github.com or mytenant.ghe.com.
+    #>
+    try {
+        $originUrl = (& git remote get-url origin 2>$null) -as [string]
+        if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($originUrl)) {
+            return (Get-RepoFromUrl $originUrl.Trim()).HostName
+        }
+    } catch {
+        # fall through
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($env:GH_HOST)) {
+        return $env:GH_HOST.Trim()
+    }
+
+    return 'github.com'
+}
+
 function Test-GhAuthentication {
     <#
     .SYNOPSIS
-        Check if GitHub CLI (gh) is authenticated
+        Check if GitHub CLI (gh) is authenticated to the host it will target.
+    .DESCRIPTION
+        A bare `gh auth status` reports every configured host and exits non-zero
+        if any of them fails (a GH_TOKEN for a GHE host is "invalid" for a
+        leftover github.com login). This checks only the host the caller is
+        about to use.
+    .PARAMETER HostName
+        Host to check. Defaults to Get-GhTargetHostName.
     .OUTPUTS
-        $true if authenticated, $false otherwise
+        $true if authenticated to that host, $false otherwise
     #>
-    try {
-        $null = gh auth status 2>&1
-        return $LASTEXITCODE -eq 0
-    } catch {
-        return $false
+    param([string]$HostName)
+    if ([string]::IsNullOrWhiteSpace($HostName)) {
+        $HostName = Get-GhTargetHostName
     }
+    return Test-GhHostAuthentication -HostName $HostName
 }
 
 function Test-GhHostAuthentication {
@@ -1800,9 +1834,11 @@ function Get-RepoFromUrl {
     .SYNOPSIS
         Parse a Git repository URL into a structured spec.
     .DESCRIPTION
-        Accepts HTTPS (github.com, *.ghe.com, custom hosts), SSH (git@host:owner/repo),
+        Accepts HTTPS (github.com, *.ghe.com, custom hosts, with or without
+        userinfo and port), SSH (git@host:owner/repo and ssh://[user@]host[:port]/owner/repo),
         and bare owner/repo forms. A trailing .git is stripped. Bare form is treated as
-        github.com. Throws on unparseable input.
+        github.com. HostName never carries userinfo or a port. Throws on unparseable
+        input, with any userinfo redacted from the message.
     .PARAMETER Url
         Repository URL or owner/repo slug.
     .OUTPUTS
@@ -1813,13 +1849,19 @@ function Get-RepoFromUrl {
     #>
     param([Parameter(Mandatory)][string]$Url)
 
-    # SSH: git@HOST:OWNER/REPO[.git]
+    # SSH scp-like: git@HOST:OWNER/REPO[.git]
     if ($Url -match '^git@([^:]+):([^/]+)/([^/]+?)(?:\.git)?$') {
         return [pscustomobject]@{ HostName = $Matches[1]; Owner = $Matches[2]; Repo = $Matches[3] }
     }
 
-    # HTTPS: https?://HOST/OWNER/REPO[.git]
-    if ($Url -match '^https?://([^/]+)/([^/]+)/([^/]+?)(?:\.git)?$') {
+    # SSH URL: ssh://[user@]HOST[:port]/OWNER/REPO[.git]
+    if ($Url -match '^ssh://(?:[^@/]+@)?([^/:]+)(?::\d+)?/([^/]+)/([^/]+?)(?:\.git)?$') {
+        return [pscustomobject]@{ HostName = $Matches[1]; Owner = $Matches[2]; Repo = $Matches[3] }
+    }
+
+    # HTTPS: https?://[userinfo@]HOST[:port]/OWNER/REPO[.git] — userinfo and port
+    # are dropped so HostName is what `gh --hostname` accepts.
+    if ($Url -match '^https?://(?:[^@/]+@)?([^/:]+)(?::\d+)?/([^/]+)/([^/]+?)(?:\.git)?$') {
         return [pscustomobject]@{ HostName = $Matches[1]; Owner = $Matches[2]; Repo = $Matches[3] }
     }
 
@@ -1828,7 +1870,9 @@ function Get-RepoFromUrl {
         return [pscustomobject]@{ HostName = 'github.com'; Owner = $Matches[1]; Repo = $Matches[2] }
     }
 
-    throw "Unrecognized repository URL format: '$Url'"
+    # Userinfo may carry a token; never echo it.
+    $safeUrl = $Url -replace '^([a-z]+://)[^@/]+@', '$1'
+    throw "Unrecognized repository URL format: '$safeUrl'"
 }
 
 function Get-ReleaseAppFiles {
@@ -2925,6 +2969,7 @@ Export-ModuleMember -Function @(
     'Remove-OrphanedAgentContainers'
 
     # GitHub CLI Integration
+    'Get-GhTargetHostName'
     'Test-GhAuthentication'
     'Test-GhHostAuthentication'
     'Get-RepoFromUrl'

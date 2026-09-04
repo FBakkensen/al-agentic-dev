@@ -129,12 +129,45 @@ Describe 'ConvertTo-ALRunnerVersion' {
         ConvertTo-ALRunnerVersion -VersionLine 'al-runner v2.10.0.0' | Should -Be ([version]'2.10.0.0')
     }
 
+    It 'parses a three-part release banner' {
+        ConvertTo-ALRunnerVersion -VersionLine 'al-runner v2.10.0' | Should -Be ([version]'2.10.0')
+    }
+
+    It 'parses a local build banner with a prerelease suffix' {
+        ConvertTo-ALRunnerVersion -VersionLine 'al-runner v2.10.0-local.9017de3a' | Should -Be ([version]'2.10.0')
+    }
+
+    It 'parses a beta banner' {
+        ConvertTo-ALRunnerVersion -VersionLine 'al-runner v3.0.0-beta.1' | Should -Be ([version]'3.0.0')
+    }
+
+    It 'parses a banner with build metadata' {
+        ConvertTo-ALRunnerVersion -VersionLine 'al-runner v2.10.0+build.5' | Should -Be ([version]'2.10.0')
+    }
+
+    It 'exposes the prerelease suffix with -Detailed' {
+        $d = ConvertTo-ALRunnerVersion -VersionLine 'al-runner v2.10.0-local.9017de3a' -Detailed
+        $d.Version | Should -Be ([version]'2.10.0')
+        $d.Prerelease | Should -Be 'local.9017de3a'
+        $d.IsPrerelease | Should -BeTrue
+    }
+
+    It 'reports a release banner as not prerelease with -Detailed' {
+        $d = ConvertTo-ALRunnerVersion -VersionLine 'al-runner v2.10.0.0' -Detailed
+        $d.Prerelease | Should -BeNullOrEmpty
+        $d.IsPrerelease | Should -BeFalse
+    }
+
     It 'throws on an unrecognizable banner' {
         { ConvertTo-ALRunnerVersion -VersionLine 'nonsense' } | Should -Throw '*nonsense*'
     }
 
     It 'throws instead of matching a version-shaped substring in an unrecognized banner' {
         { ConvertTo-ALRunnerVersion -VersionLine 'nonsense v2.10' } | Should -Throw '*nonsense v2.10*'
+    }
+
+    It 'throws on a dangling prerelease separator' {
+        { ConvertTo-ALRunnerVersion -VersionLine 'al-runner v2.10.0-' } | Should -Throw '*al-runner v2.10.0-*'
     }
 }
 
@@ -171,6 +204,44 @@ Describe 'Install-ALRunner update-once contract' {
 
     It 'throws without a second dotnet tool update when -Update already ran one and the tool is still below floor' {
         { Install-ALRunner -Update } | Should -Throw '*al-runner 2.9.0.0 found, 2.10 required*'
+        Should -Invoke -ModuleName 'build-operations' dotnet -Times 1 -Exactly
+    }
+}
+
+Describe 'Install-ALRunner prerelease builds' {
+    # A -local./-beta. suffix marks a developer's own build: the implicit floor
+    # update must never replace it via `dotnet tool update --global`.
+    BeforeAll {
+        $script:stubBin = Join-Path $TestDrive 'stub-bin'
+        New-Item -ItemType Directory -Path $script:stubBin -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $script:stubBin 'al-runner.cmd') -Value "@echo off`r`necho al-runner v2.10.0-local.9017de3a"
+        $script:savedPath = $env:PATH
+        $env:PATH = "$($script:stubBin)$([IO.Path]::PathSeparator)$env:PATH"
+    }
+    AfterAll {
+        $env:PATH = $script:savedPath
+    }
+    BeforeEach {
+        Mock -ModuleName 'build-operations' Write-BuildHeader {}
+        Mock -ModuleName 'build-operations' Write-BuildMessage {}
+        Mock -ModuleName 'build-operations' dotnet { $global:LASTEXITCODE = 0 }
+    }
+
+    It 'accepts a local build at the floor without running dotnet' {
+        Mock -ModuleName 'build-operations' al-runner { 'al-runner v2.10.0-local.9017de3a' }
+        { Install-ALRunner } | Should -Not -Throw
+        Should -Invoke -ModuleName 'build-operations' dotnet -Times 0 -Exactly
+    }
+
+    It 'throws on a local build below the floor instead of updating it' {
+        Mock -ModuleName 'build-operations' al-runner { 'al-runner v2.9.0-local.abc1234' }
+        { Install-ALRunner } | Should -Throw '*al-runner 2.9.0-local.abc1234 found, 2.10 required*'
+        Should -Invoke -ModuleName 'build-operations' dotnet -Times 0 -Exactly
+    }
+
+    It 'still updates a local build when -Update is explicit' {
+        Mock -ModuleName 'build-operations' al-runner { 'al-runner v2.10.0-local.9017de3a' }
+        { Install-ALRunner -Update } | Should -Not -Throw
         Should -Invoke -ModuleName 'build-operations' dotnet -Times 1 -Exactly
     }
 }

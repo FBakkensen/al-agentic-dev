@@ -84,8 +84,9 @@ if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
     Write-BuildMessage -Type Error -Message "GitHub CLI (gh) not found"
     exit $Exit.MissingTool
 }
-if (-not (Test-GhAuthentication)) {
-    Write-BuildMessage -Type Error -Message "GitHub CLI not authenticated. Run 'gh auth login'"
+$ghHost = Get-GhTargetHostName
+if (-not (Test-GhAuthentication -HostName $ghHost)) {
+    Write-BuildMessage -Type Error -Message "GitHub CLI not authenticated to $ghHost. Run: gh auth login --hostname $ghHost"
     exit $Exit.Contract
 }
 
