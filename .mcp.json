@@ -1,24 +1,5 @@
 {
   "mcpServers": {
-    "nab-al-tools": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "-y",
-        "@nabsolutions/nab-al-tools-mcp"
-      ],
-      "tools": [
-        "initialize",
-        "createLanguageXlf",
-        "refreshXlf",
-        "getGlossaryTerms",
-        "getTextsToTranslate",
-        "getTextsByKeyword",
-        "getTranslatedTextsByState",
-        "getTranslatedTextsMap",
-        "saveTranslatedTexts"
-      ]
-    },
     "microsoft-learn": {
       "type": "http",
       "url": "https://learn.microsoft.com/api/mcp",
@@ -26,21 +7,6 @@
         "microsoft_docs_search",
         "microsoft_docs_fetch",
         "microsoft_code_sample_search"
-      ]
-    },
-    "bc-code-intelligence": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "-y",
-        "bc-code-intelligence-mcp@1.7.6"
-      ],
-      "tools": [
-        "find_bc_knowledge",
-        "get_bc_topic",
-        "ask_bc_expert",
-        "analyze_al_code",
-        "set_workspace_info"
       ]
     }
   }

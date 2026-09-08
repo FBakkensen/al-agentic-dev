@@ -11,12 +11,11 @@ One question in, one sourced answer out, in seconds. When looking up costs one c
 
 `docs/precedent-map.md` in the consumer repo holds every answered question — a table `| date | question | answer | source |`, newest first. A hit there ends the run before any search. No file means no map yet; the first append creates it with the table header.
 
-## Four sources, picked by question class
+## Three sources, picked by question class
 
 | Question class | Source | Copilot name |
 |---|---|---|
 | Platform and language semantics — what a property, trigger, or method does | Microsoft Learn MCP | microsoft_docs_search, then microsoft_docs_fetch for the full page |
-| BC idioms, patterns, best practices | bc-code-intelligence MCP | find_bc_knowledge and get_bc_topic; ask_bc_expert for judgment; analyze_al_code over a snippet |
 | Precedent by example — how the Base App does it | the version-matched BCApps clone | grep pointed at `.bcapps/` explicitly (it is gitignored, so a workspace-wide grep skips it), then view the file |
 | Review rules and quality precedent | the BCQuality index | `.bcquality/knowledge-index.json` — one minified line, parse it as JSON — then the article it names |
 
@@ -31,7 +30,7 @@ verified: <claim> — <source pointer>
 assumed: <claim> — not verified
 ```
 
-A valid pointer is a Learn URL, a BCApps file and line, a bc-code-intelligence topic id, or a BCQuality article path. Writing skills carry these entries in their receipts; al-review reads the ledger first.
+A valid pointer is a Learn URL, a BCApps file and line, or a BCQuality article path. Writing skills carry these entries in their receipts; al-review reads the ledger first.
 
 ## Own the map change
 

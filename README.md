@@ -2,7 +2,7 @@
 
 A GitHub Copilot plugin for Microsoft Dynamics 365 Business Central development: a scripted compile-publish-test gate with containers, coverage, and breaking-change validation underneath, plus the two platform-knowledge clones and a visual steering surface.
 
-One install brings the Agent Skills, two packaged custom agents (`al-review-lens`, `al-knowledge-leaf`), and three bundled MCP servers. NAB AL Tools handles XLF translation, Microsoft Learn supplies current Microsoft documentation, and bc-code-intelligence covers BC idioms and patterns.
+One install brings the Agent Skills, two packaged custom agents (`al-review-lens`, `al-knowledge-leaf`), and one bundled MCP server: Microsoft Learn supplies current Microsoft documentation.
 
 The set is mid-rebuild: the earlier 26-skill pipeline is retired, and each new plugin version ports proven skills back in as real work needs them. Git history is the donor archive.
 
@@ -11,7 +11,7 @@ The set is mid-rebuild: the earlier 26-skill pipeline is retired, and each new p
 - Windows, PowerShell 7.2+
 - GitHub Copilot CLI, authenticated to `9altitudes.ghe.com` (`gh auth status -h 9altitudes.ghe.com`)
 - Docker Desktop, BcContainerHelper, and the .NET SDK — `/al-build`'s scripted toolchain
-- Company Portal-managed Node.js 20+ at `C:\Program Files\nodejs` — runs the bundled stdio MCP servers
+- Company Portal-managed Node.js 22+ at `C:\Program Files\nodejs` — `npx` for the al-build gate and the al-event-model BPMN renderer
 - In each consumer repo: `al-build.json` at the root for the build gate
 
 The planning flow uses Azure DevOps work-item tools when available. `/al-event-model` installs its locked BPMN renderer on first use.
@@ -44,7 +44,7 @@ Same plugin, no marketplace registration — and no catalog for `copilot plugin 
 ```
 copilot plugin list      # al-agentic-dev@al-agentic-dev (v2.4.13)
 copilot skill list       # the 25 skills, under "Plugin skills"
-copilot mcp list         # Plugin servers: nab-al-tools, microsoft-learn, bc-code-intelligence
+copilot mcp list         # Plugin servers: microsoft-learn
 ```
 
 The skills must appear under **Plugin skills**. Any of them listed under *Personal skills* is a leftover legacy copy shadowing the plugin — go to [Migrating from `npx skills add`](#migrating-from-npx-skills-add).
@@ -117,7 +117,7 @@ foreach ($dir in "$HOME\.agents\skills", "$HOME\.copilot\skills") {
 copilot plugin uninstall al-agentic-dev
 ```
 
-**4. Install fresh** per [Install](#install), then verify: `copilot plugin list` shows the plugin, `copilot skill list` shows its skills under **Plugin skills** and none of them under *Personal skills*, and `copilot mcp list` shows `nab-al-tools`, `microsoft-learn`, and `bc-code-intelligence` as plugin servers.
+**4. Install fresh** per [Install](#install), then verify: `copilot plugin list` shows the plugin, `copilot skill list` shows its skills under **Plugin skills** and none of them under *Personal skills*, and `copilot mcp list` shows `microsoft-learn` as a plugin server.
 
 ## The skills
 
@@ -132,7 +132,7 @@ copilot plugin uninstall al-agentic-dev
 | `/al-wait-what` | Stops the flow and reconnects the last message to prior decisions with plain language and a useful visual. |
 | `/al-unslop` | Cuts AI tells from any writing; applies to every reply and artifact. |
 | `/al-miner` | Mines session history for repeated failures and steering corrections; proposes standing lessons with evidence, never landing them itself. |
-| `/al-lookup` | Answers one platform question with a source pointer — Microsoft Learn, bc-code-intelligence, the BCApps clone, or the BCQuality index — and grows the repo's precedent map. |
+| `/al-lookup` | Answers one platform question with a source pointer — Microsoft Learn, the BCApps clone, or the BCQuality index — and grows the repo's precedent map. |
 | `/al-azure-devops-attachments` | Uploads local files through Azure CLI credentials, attaches them to an Azure DevOps work item, and guides the user through authentication when needed. |
 | `/al-commit` | Stages the full worktree and creates the maximum number of independently valid commits with scoped Azure DevOps links. |
 | `/al-pull-request` | Pushes the current branch and creates or updates its ready pull request with the landed change and available proof. |

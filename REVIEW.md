@@ -19,7 +19,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
    - Incorrect: `Run [al-build](../al-build/SKILL.md).`
 6. Scripts are run only by the skill that owns them. Outside `skills/al-build/`, flag any `.ps1` filename or `scripts/` path; the skill calls `/al-build` instead. One skill at a time may be exempted for one named script that upstream owns and it runs inside a checkout it clones — today `al-clone-bcquality` and the BCQuality knowledge-index generator, listed in the validator. Flag a new exemption that arrives without that approval, and flag an exempted skill naming any other script.
 7. Copilot names are the working vocabulary. A skill body names the tool, the bundled MCP server, or the packaged agent it means; the word "harness" is a defect the gate fails. Flag harness-conditional phrasing and a capability paraphrase where a concrete name exists.
-   - Correct: `search the workspace with grep; confirm the field through the nab-al-tools lookup`
+   - Correct: `search the workspace with grep; confirm the property through microsoft_docs_search`
    - Incorrect: `if your harness supports subagents…`, `use whatever search capability is available`
 8. Model names live in `skills/al-setup-models/models.default.json` and in `agents/*.agent.md` pins only. Flag a model name in a skill body or skill frontmatter — the gate fails it; a skill names a tier on a `▶` line (rule 38), never a model.
 
