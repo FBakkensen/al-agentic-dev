@@ -15,6 +15,7 @@ Describe 'Skill workflow contracts' {
         $lens = Get-Content -LiteralPath (Join-Path $script:RepoRoot 'agents' 'al-review-lens.agent.md') -Raw
 
         $orchestrate | Should -Match 'dispatch the next line or repair without stopping to report progress'
+        $orchestrate | Should -Match 'Every kickoff copies the plain-text question rule at the start of this skill verbatim'
         $orchestrate | Should -Match 'green gate, no blocking review findings, and all required walkthrough cases pass'
         $lookup | Should -Match 'name the unresolved question and each source searched'
         $lookup | Should -Match 'unresolved: <question> — searched: <source locations>'

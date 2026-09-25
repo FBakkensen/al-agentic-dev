@@ -23,7 +23,7 @@ In the GitHub Copilot app, each line is `create_session` with kickoff mode `auto
 
 In the terminal Copilot CLI, give each block a UUID and run it sequentially in the current worktree as a fresh headless process: `copilot -p "/al-implement <work-item>" --model <tier model> --session-id <uuid> --allow-all-tools --no-ask-user --plugin-dir <plugin-folder>`, then the same shape for /al-refactor, /al-review, and /al-walkthrough when required. The shared worktree, commits, and receipt path carry state; one process runs at a time.
 
-Each writing child calls /al-commit before returning; review remains read-only. Compare every return with its `→` result, then dispatch the next line or repair without stopping to report progress. Every kickoff carries this line: `You run unattended; the user cannot answer mid-task. Proceed on every reversible step the User Story already covers, and end your turn only when the slice is complete or a decision only the user can take is written out with its options.` The pass-through below is that decision's only route.
+Each writing child calls /al-commit before returning; review remains read-only. Compare every return with its `→` result, then dispatch the next line or repair without stopping to report progress. Every kickoff copies the plain-text question rule at the start of this skill verbatim alongside this line: `You run unattended; the user cannot answer mid-task. Proceed on every reversible step the User Story already covers, and end your turn only when the slice is complete or a decision only the user can take is written out with its options.` The pass-through below is that decision's only route.
 
 ## Pass through decisions
 
