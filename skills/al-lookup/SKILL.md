@@ -19,18 +19,19 @@ One question in, one sourced answer out, in seconds. When looking up costs one c
 | Precedent by example — how the Base App does it | the version-matched BCApps clone | grep pointed at `.bcapps/` explicitly (it is gitignored, so a workspace-wide grep skips it), then view the file |
 | Review rules and quality precedent | the BCQuality index | `.bcquality/knowledge-index.json` — one minified line, parse it as JSON — then the article it names |
 
-A miss falls through to the next source that fits the question; no source answering is an honest result, reported as such. A missing clone names its producer — /al-clone-bcapps or /al-clone-bcquality — and the run answers from the remaining sources. The clone is version-matched through `symbols.lock.json`: read `.bcapps/release` first, and `.bcapps/main` only for the folders release lacks — that code is next-major, ahead of what the app runs against.
+A miss falls through to the next source that fits the question; if none answers, name the unresolved question and each source searched instead of claiming a verified answer. A missing clone names its producer — /al-clone-bcapps or /al-clone-bcquality — and the run answers from the remaining sources. The clone is version-matched through `symbols.lock.json`: read `.bcapps/release` first, and `.bcapps/main` only for the folders release lacks — that code is next-major, ahead of what the app runs against.
 
 ## The ledger entry
 
-The answer's durable form is one line:
+The result's durable form is one line:
 
 ```
 verified: <claim> — <source pointer>
 assumed: <claim> — not verified
+unresolved: <question> — searched: <source locations>
 ```
 
-A valid pointer is a Learn URL, a BCApps file and line, or a BCQuality article path. Writing skills carry these entries in their receipts; al-review reads the ledger first.
+A valid pointer is a Learn URL, a BCApps file and line, or a BCQuality article path. Use `unresolved:` when no claim can be stated; name the locations actually searched, not missing clones. Writing skills carry these entries in their receipts; al-review reads the ledger first.
 
 ## Own the map change
 
@@ -46,4 +47,4 @@ A whole-feature shape question — which BC pattern, which tables and extensions
 
 ## Close
 
-State the answer with its pointer, name the map commit or the map hit reused, and hand the ledger line to the caller. Invoked by the user directly, that one answer is the whole run.
+State a sourced answer with its pointer and map commit or hit, a tentative claim, or the unanswered question with locations searched. Hand the corresponding `verified:`, `assumed:`, or `unresolved:` ledger line to the caller. Invoked by the user directly, that result is the whole run.

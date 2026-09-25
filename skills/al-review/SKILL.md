@@ -11,7 +11,7 @@ Ask every question in the reply itself, as plain text — never through a questi
 
 ## Ledger first
 
-Read the receipt's `verified:` / `assumed:` entries first. Spot-check every verified pointer. An undeclared platform assumption that behavior depends on is Blocking; an unresolved declared assumption is classified by its consequence.
+Read the receipt's `verified:` / `assumed:` / `unresolved:` entries first. Spot-check every verified pointer. An undeclared platform assumption that behavior depends on is Blocking; classify a declared assumption or unanswered question by its consequence.
 
 ## Inspect the contracts
 
@@ -44,7 +44,7 @@ Deduplicate by root cause.
 
 ## Verdict
 
-Report only actionable findings:
+Report only actionable findings, Blocking before Non-Blocking:
 
 `⛔ Blocking - <title>` or `⚖️ Non-Blocking - <title>`
 
@@ -52,7 +52,7 @@ Then one line each:
 
 `⚡ Breaks:` violated behavior or contract
 
-`📍 Proof:` file, line, test, work-item section, or verified platform evidence
+`📍 Proof:` file and line, test, work-item section, or verified platform evidence; show the failing case or reproducible path when possible
 
 `🔧 Fix:` smallest complete correction
 

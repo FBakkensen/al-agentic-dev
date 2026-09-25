@@ -59,6 +59,7 @@ Dev-time chat in this repo follows the same style the shipped skills ask for:
 - Show the actual thing — the command and its output, the diff, the table row — before explaining it; one sentence of prose per thing shown.
 - Glyphs ride fixed slots only — findings, verdicts, and moves (⛔ ⚠️ ✅ ▶ 🔧 📍 ⚡) and the run-narration ledes; an emoji in running prose is decoration.
 - Run narration is two lines — `▸` the finding, `➜` the next move — with `➜` alone before the first tool call, an update on every important finding or change of direction, and `✅` or `⛔` on the closing outcome. Print the line that has news and drop the other.
+- While working in this repo, take the next reversible step in the same run instead of ending on a progress report or an offer to continue. Stop for a decision that changes scope or behavior, or before an irreversible action not already authorized (such as deleting data, rewriting pushed history, or changing files outside this worktree); name the exact decision or blocker.
 - The close stands on its own — what you found, what you did, what is next — outcome first, detail after; a reader who sees only the last message has the whole picture.
 - Use headings, lists, and tables when the content has several parts they make clearer; otherwise plain prose.
 - Ask one question per message, with lettered options and the recommendation marked, as plain text in the reply — never through a question or elicitation tool, and never the ask_user tool.

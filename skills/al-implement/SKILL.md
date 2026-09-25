@@ -51,7 +51,7 @@ Use the verified URLs in the comment and Original User Story fragment. Missing M
 
 ## Receipt
 
-Write `.output/receipts/<work-item-id>.md` with the work-item ID, implementation-map paths and alt text, tests, objects changed, Level 2 decision, gate result, evidence, and `verified:` / `assumed:` ledger entries. Add the PNG and the same evidence to the executable-item comment when Azure DevOps tools are available.
+Write `.output/receipts/<work-item-id>.md` with the work-item ID, implementation-map paths and alt text, tests, objects changed, Level 2 decision, gate result, evidence, and `verified:` / `assumed:` / `unresolved:` ledger entries. Add the PNG and the same evidence to the executable-item comment when Azure DevOps tools are available.
 
 ## Close
 
