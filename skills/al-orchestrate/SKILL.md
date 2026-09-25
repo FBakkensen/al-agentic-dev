@@ -23,7 +23,7 @@ In the GitHub Copilot app, each line is `create_session` with kickoff mode `auto
 
 In the terminal Copilot CLI, give each block a UUID and run it sequentially in the current worktree as a fresh headless process: `copilot -p "/al-implement <work-item>" --model <tier model> --session-id <uuid> --allow-all-tools --no-ask-user --plugin-dir <plugin-folder>`, then the same shape for /al-refactor, /al-review, and /al-walkthrough when required. The shared worktree, commits, and receipt path carry state; one process runs at a time.
 
-Each writing child calls /al-commit before returning; review remains read-only. Every kickoff carries this line: `You run unattended; the user cannot answer mid-task. Proceed on every reversible step the User Story already covers, and end your turn only when the slice is complete or a decision only the user can take is written out with its options.` The pass-through below is that decision's only route.
+Each writing child calls /al-commit before returning; review remains read-only. Compare every return with its `→` result, then dispatch the next line or repair without stopping to report progress. Every kickoff carries this line: `You run unattended; the user cannot answer mid-task. Proceed on every reversible step the User Story already covers, and end your turn only when the slice is complete or a decision only the user can take is written out with its options.` The pass-through below is that decision's only route.
 
 ## Pass through decisions
 
@@ -41,4 +41,4 @@ In the app, send it with `send_session_message`. In the CLI, resume that child w
 
 ## Close
 
-Finish with the executable item, commits, receipt, connected-object change map, gate result, review verdict, walkthrough evidence when required, and whether Original User Story Level 2 changed. Outcome first; the close stands on its own for a reader who sees only the last message.
+The run finishes after a green gate, no blocking review findings, and all required walkthrough cases pass; otherwise name the exact blocker or user decision. Finish with the executable item, commits, receipt, connected-object change map, gate result, review verdict, walkthrough evidence when required, and whether Original User Story Level 2 changed. Outcome first; the close stands on its own for a reader who sees only the last message.

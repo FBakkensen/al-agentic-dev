@@ -6,6 +6,27 @@ BeforeAll {
 }
 
 Describe 'Skill workflow contracts' {
+    It 'keeps long runs moving and reports evidence when no answer can be verified' {
+        $orchestrate = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-orchestrate' 'SKILL.md') -Raw
+        $lookup = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-lookup' 'SKILL.md') -Raw
+        $review = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-review' 'SKILL.md') -Raw
+        $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
+        $refactor = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-refactor' 'SKILL.md') -Raw
+        $lens = Get-Content -LiteralPath (Join-Path $script:RepoRoot 'agents' 'al-review-lens.agent.md') -Raw
+
+        $orchestrate | Should -Match 'dispatch the next line or repair without stopping to report progress'
+        $orchestrate | Should -Match 'green gate, no blocking review findings, and all required walkthrough cases pass'
+        $lookup | Should -Match 'name the unresolved question and each source searched'
+        $lookup | Should -Match 'unresolved: <question> — searched: <source locations>'
+        $lookup | Should -Match 'Hand the corresponding `verified:`, `assumed:`, or `unresolved:` ledger line'
+        $implement | Should -Match '`verified:` / `assumed:` / `unresolved:` ledger entries'
+        $refactor | Should -Match '`verified:` / `assumed:` / `unresolved:` entries'
+        $review | Should -Match 'receipt''s `verified:` / `assumed:` / `unresolved:` entries'
+        $review | Should -Match 'Blocking before Non-Blocking'
+        $review | Should -Match 'show the failing case or reproducible path when possible'
+        $lens | Should -Match 'plus a failing case or reproducible path when possible'
+    }
+
     It 'keeps refactor evaluation with al-refactor' {
         $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
         $refactor = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-refactor' 'SKILL.md') -Raw

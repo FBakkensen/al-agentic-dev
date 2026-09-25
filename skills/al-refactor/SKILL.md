@@ -50,7 +50,7 @@ Use the verified URLs in the receipt and Original User Story fragment. Missing M
 
 ## Close
 
-Update the receipt with the final implementation map, `Tidy: none` or the exact reshapes, test evidence, gate result, Original User Story Level 2 delta, and any new `verified:` / `assumed:` entries. At every exit:
+Update the receipt with the final implementation map, `Tidy: none` or the exact reshapes, test evidence, gate result, Original User Story Level 2 delta, and any new `verified:` / `assumed:` / `unresolved:` entries. At every exit:
 
 ▶ mechanical · task · /al-commit the complete worktree, work items <ids> → commit hashes and subjects, remaining worktree
 
