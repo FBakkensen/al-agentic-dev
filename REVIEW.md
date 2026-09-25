@@ -54,7 +54,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 ## Contract and finishing
 
 22. A skill's steps stay inside its own declared contract. Flag a step that requires an action the skill forbids itself, and flag an imperative whose actor is unnamed.
-23. Each step ends on a condition that can be checked, and where it matters, an exhaustive one.
+23. Each step ends on a condition that can be checked, and where it matters, an exhaustive one. A multi-step skill names the task's finish line and any user-only decision that stops it; a progress report is not a finish line.
     - Correct: `every modified object appears in the change list`
     - Incorrect: `produce a change list`
 24. A skill closes by naming its outcome back into the work that invoked it — `al-build` on its gate verdict, the clone skills on the clone ready or the red named, `al-arc42` on the formatted view and local HTML. Flag a table of conditional exits, and flag a close that hands off to a skill that no longer exists.
@@ -62,7 +62,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 ## Reply shape a skill asks for
 
 25. Every authored `SKILL.md` carries this exact rule: `Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.` The pinned forks `al-grill-me` and `al-unslop` are exempt — `hooks.json` enforces the ask_user ban at runtime. A skill that shapes the reply also asks for: one sentence before the first tool call; a brief update on an important finding or a change of direction; a close that stands on its own, outcome first and detail after. Flag a line that suppresses updates — "work quietly", "hold findings for the final response" — the model already under-reports during long tool chains.
-26. Flag a skill that asks the model to announce each step before taking it, and flag a skill that ends a turn on a stated next step instead of running it.
+26. Flag a skill that asks the model to announce each step before taking it, and flag a skill that ends a turn on a stated next step instead of running it. An update on an important finding accompanies the next action when no user decision blocks that action.
 27. Written artifacts match the length the task needs. Flag an instruction to add a section that restates what the artifact already shows, and flag anti-formatting language — "no headings", "no lists" — where a rule naming when formatting helps belongs instead.
 
 ## Delegation
