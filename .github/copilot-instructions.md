@@ -47,7 +47,7 @@ These govern work on this repo and never ship. No `SKILL.md` may mention them.
 - `.github/instructions/skills.instructions.md` — read before editing `skills/**/*.md` or `agents/*.agent.md`.
 - `.github/instructions/powershell.instructions.md` — read before editing any `.ps1`.
 - `CLAUDE.md`, `AGENTS.md`, `REVIEW.md` — routes into the three files above for each entry point.
-- `docs/` — human-facing notes; no agent loads them.
+- `docs/` — human-facing notes; no agent loads them, except `docs/agents/`, the tracker, triage-label, and domain-doc configuration the development skills read through the `## Agent skills` block in `CLAUDE.md`.
 - `scripts/`, `tests/` — the CI gates.
 
 `REVIEW.md` holds a generated verbatim copy of `skills.instructions.md`. Edit the instruction file, then run `scripts/Update-Review.ps1` to regenerate `REVIEW.md`; CI fails on drift (`scripts/Update-Review.ps1 -Check`).
