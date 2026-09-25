@@ -7,3 +7,7 @@
 ### Issue tracker
 
 GitHub Issues for `gtm-general/al-agentic-dev` on `9altitudes.ghe.com`, via `gh`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default roles, each label string equal to its role name. See `docs/agents/triage-labels.md`.
