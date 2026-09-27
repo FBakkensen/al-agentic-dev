@@ -1,13 +1,12 @@
 # Issue tracker: GitHub Enterprise
 
-Issues and specs for this repo live on `https://9altitudes.ghe.com/gtm-general/al-agentic-dev`. Use the `gh` CLI for all operations.
+Issues and specs for this repo live on `https://github.com/fbakkensen/al-agentic-dev`. Use the `gh` CLI for all operations.
 
 This tracker covers changes to al-agentic-dev itself. Consumer projects track work in Azure DevOps under their own conventions.
 
 ## Host
 
-- `gh issue` and `gh pr` infer `9altitudes.ghe.com` from `git remote -v` inside the clone; outside it, pass `-R 9altitudes.ghe.com/gtm-general/al-agentic-dev`.
-- `gh api` takes `--hostname 9altitudes.ghe.com` on every call.
+- `gh issue` and `gh pr` infer `github.com` from `git remote -v` inside the clone; outside it, pass `-R github.com/fbakkensen/al-agentic-dev`.
 
 ## Conventions
 
@@ -42,13 +41,13 @@ Run `gh issue view <number> --comments`.
 
 Used by `/wayfinder`. The map is one issue labelled `wayfinder:map`; its tickets are native sub-issues. Sub-issues and issue dependencies are both enabled on this host.
 
-- **Database id**: `gh api --hostname 9altitudes.ghe.com repos/gtm-general/al-agentic-dev/issues/<n> --jq .id`. This is not the `#number` and not the `node_id`.
-- **Child ticket**: create the issue, then run `gh api --hostname 9altitudes.ghe.com --method POST repos/gtm-general/al-agentic-dev/issues/<map>/sub_issues -F sub_issue_id=<child-db-id>`. Label it `wayfinder:<type>`. `wayfinder:map`, `wayfinder:grilling`, and `wayfinder:task` exist; create `wayfinder:research` or `wayfinder:prototype` with `gh label create` the first time one is needed.
-- **Blocking**: `gh api --hostname 9altitudes.ghe.com --method POST repos/gtm-general/al-agentic-dev/issues/<child>/dependencies/blocked_by -F issue_id=<blocker-db-id>`. `issue_dependencies_summary.blocked_by` counts open blockers only.
+- **Database id**: `gh api repos/fbakkensen/al-agentic-dev/issues/<n> --jq .id`. This is not the `#number` and not the `node_id`.
+- **Child ticket**: create the issue, then run `gh api --method POST repos/fbakkensen/al-agentic-dev/issues/<map>/sub_issues -F sub_issue_id=<child-db-id>`. Label it `wayfinder:<type>`. `wayfinder:map`, `wayfinder:grilling`, and `wayfinder:task` exist; create `wayfinder:research` or `wayfinder:prototype` with `gh label create` the first time one is needed.
+- **Blocking**: `gh api --method POST repos/fbakkensen/al-agentic-dev/issues/<child>/dependencies/blocked_by -F issue_id=<blocker-db-id>`. `issue_dependencies_summary.blocked_by` counts open blockers only.
 - **Frontier query**: one GraphQL call returns the children in map order along with claims and blockers:
 
   ```
-  gh api graphql --hostname 9altitudes.ghe.com -f query='query { repository(owner:"gtm-general", name:"al-agentic-dev") { issue(number:<map>) { subIssues(first:50) { nodes { number title state url assignees(first:5){nodes{login}} labels(first:10){nodes{name}} blockedBy(first:20){nodes{number state}} } } } } }'
+  gh api graphql -f query='query { repository(owner:"fbakkensen", name:"al-agentic-dev") { issue(number:<map>) { subIssues(first:50) { nodes { number title state url assignees(first:5){nodes{login}} labels(first:10){nodes{name}} blockedBy(first:20){nodes{number state}} } } } } }'
   ```
 
   Keep the children that are open, have no assignee, and have no open `blockedBy` node. The first one in order wins.
