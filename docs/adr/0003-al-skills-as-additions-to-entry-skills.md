@@ -11,8 +11,8 @@ An addition loads through two signals: its description names the entry skill ("U
 
 ## Consequences
 
-- `al-orchestrate` is deleted; `/implement` chains `/tdd` → `/code-review` → commit.
-- `al-grill-adr`, `al-event-model`, `al-design`, `al-scope`, `al-test-design`, `al-refactor`, and `al-review` retire into additions; `al-build`, `al-arc42`, `al-walkthrough`, `al-next`, `al-pr-shepherd`, and `al-lookup` stay our own entries.
+- `al-orchestrate` is deleted; `/implement` chains `/tdd` → `mattpocock-skills:code-review` → commit.
+- `al-grill-adr`, `al-event-model`, `al-design`, `al-scope`, `al-test-design`, and `al-refactor` retire into additions, and `al-review` becomes the addition to `mattpocock-skills:code-review`; `al-build`, `al-arc42`, `al-walkthrough`, `al-next`, `al-pr-shepherd`, and `al-lookup` stay our own entries.
 - The callee skills — `al-commit`, `al-pull-request`, `al-azure-devops-attachments`, `al-clone-bcapps` — and `al-miner` are unchanged.
 - The review verdict follows `mattpocock-skills:code-review`'s two unmerged axes (Standards, Spec) instead of one merged verdict.
 - Upstream can rename an entry skill or change its steps under an addition; the drift check must also resolve the entry names addition descriptions and the hook table use.
