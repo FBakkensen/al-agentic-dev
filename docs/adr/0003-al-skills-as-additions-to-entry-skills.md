@@ -11,8 +11,8 @@ An addition loads through two signals: its description names the entry skill ("U
 
 ## Consequences
 
-- `al-orchestrate` is deleted; `/implement` chains `/tdd` → `mattpocock-skills:code-review` → commit.
+- `al-orchestrate` is deleted; `/implement` chains `/tdd` → review → commit. `/implement` names only a bare `/code-review`, which resolves to Claude Code's built-in (plugin skills are namespaced), so the `al-implement` addition names both reviews: `mattpocock-skills:code-review` with `al-review`, and the built-in `/code-review` at effort `high` as the correctness pass.
 - `al-grill-adr`, `al-event-model`, `al-design`, `al-scope`, `al-test-design`, and `al-refactor` retire into additions, and `al-review` becomes the addition to `mattpocock-skills:code-review`; `al-build`, `al-arc42`, `al-walkthrough`, `al-next`, `al-pr-shepherd`, and `al-lookup` stay our own entries.
 - The callee skills — `al-commit`, `al-pull-request`, `al-azure-devops-attachments`, `al-clone-bcapps` — and `al-miner` are unchanged.
-- The review verdict follows `mattpocock-skills:code-review`'s two unmerged axes (Standards, Spec) instead of one merged verdict.
+- The review verdict follows `mattpocock-skills:code-review`'s unmerged axes (Standards, Spec) plus a third, Correctness, from the built-in `/code-review`, instead of one merged verdict. The built-in ships with Claude Code (ADR 0001), so it is neither a declared dependency nor drift-checked.
 - Upstream can rename an entry skill or change its steps under an addition; the drift check must also resolve the entry names addition descriptions and the hook table use.
