@@ -23,3 +23,7 @@ _Avoid_: Original User Story, root item, parent (its own structural parent is un
 **9Altitudes predecessor**:
 The 9Altitudes copy this fork diverged from; a reference only, never a source of incoming changes.
 _Avoid_: upstream, parent, original (taken by Original work item)
+
+**Release**:
+A version of a Naveksa app published to AppSource; the latest one is the baseline that breaking changes are measured against. A build delivered outside AppSource is not a Release.
+_Avoid_: release branch, promoted version, latest build
