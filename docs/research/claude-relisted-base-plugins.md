@@ -50,3 +50,14 @@ Yes. With only our marketplace added, the install reports `(+ 3 dependencies: ma
 - mattpocock-skills' `version` (1.2.3) comes from its own `plugin.json`; bcquality's 0.2.0 was picked up without a `version` in our entry.
 - Git on Windows fails the clone with `'$GIT_DIR' too big` when `CLAUDE_CONFIG_DIR` is very long (a probe artifact; a normal `~/.claude` is short).
 - Skill namespaces are plugin names, not marketplace names: `mattpocock-skills:grilling` and `bcquality:al-code-review` are unchanged by re-listing.
+
+## Hybrid: mattpocock-skills from the official marketplace
+
+No plugin source type points at another marketplace's entry; the dependency itself does. `plugin.json` declares `"mattpocock-skills@claude-plugins-official"` beside the bare `"bcquality"` and `"al-language-server-go-windows"`, our marketplace lists only bcquality and the LSP, and `"allowCrossMarketplaceDependenciesOn": ["claude-plugins-official"]` lifts the trust block.
+
+"Claude Code adds Anthropic's official marketplace for you the first time you start an interactive terminal session" ([Install plugins](https://code.claude.com/docs/en/plugins/install.md)), so any developer who has opened Claude Code once already knows it.
+
+6. **Official known, mattpocock-skills not installed** — `(+ 3 dependencies: mattpocock-skills, bcquality, al-language-server-go-windows)`; list shows `mattpocock-skills@claude-plugins-official` enabled.
+7. **Official copy already installed** — `(+ 2 dependencies: bcquality, al-language-server-go-windows)`; the existing `mattpocock-skills@claude-plugins-official` is reused, one copy, no clash.
+
+On a config that never ran an interactive session, the official dependency errors until `claude plugin marketplace add anthropics/claude-plugins-official`, then self-heals (#24). mattpocock-skills then moves only when Anthropic bumps the SHA the official marketplace pins, as ADR 0002 already assumed.
