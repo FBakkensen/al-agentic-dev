@@ -1,6 +1,6 @@
 # al-agentic-dev
 
-A Claude Code plugin of Agent Skills for AL and Business Central development, maintained for Naveksa and forked from an original built for 9Altitudes.
+A Claude Code plugin of Agent Skills for AL and Business Central development, owned by Flemming Bakkensen, serving Naveksa's AL work, and forked from an original built for 9Altitudes.
 
 ## Language
 
