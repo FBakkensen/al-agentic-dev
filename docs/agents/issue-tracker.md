@@ -1,4 +1,4 @@
-# Issue tracker: GitHub Enterprise
+# Issue tracker: GitHub
 
 Issues and specs for this repo live on `https://github.com/fbakkensen/al-agentic-dev`. Use the `gh` CLI for all operations.
 
@@ -42,7 +42,7 @@ Run `gh issue view <number> --comments`.
 Used by `/wayfinder`. The map is one issue labelled `wayfinder:map`; its tickets are native sub-issues. Sub-issues and issue dependencies are both enabled on this host.
 
 - **Database id**: `gh api repos/fbakkensen/al-agentic-dev/issues/<n> --jq .id`. This is not the `#number` and not the `node_id`.
-- **Child ticket**: create the issue, then run `gh api --method POST repos/fbakkensen/al-agentic-dev/issues/<map>/sub_issues -F sub_issue_id=<child-db-id>`. Label it `wayfinder:<type>`. `wayfinder:map`, `wayfinder:grilling`, and `wayfinder:task` exist; create `wayfinder:research` or `wayfinder:prototype` with `gh label create` the first time one is needed.
+- **Child ticket**: create the issue, then run `gh api --method POST repos/fbakkensen/al-agentic-dev/issues/<map>/sub_issues -F sub_issue_id=<child-db-id>`. Label it `wayfinder:<type>`; the labels `wayfinder:map`, `wayfinder:grilling`, `wayfinder:task`, `wayfinder:research`, and `wayfinder:prototype` exist.
 - **Blocking**: `gh api --method POST repos/fbakkensen/al-agentic-dev/issues/<child>/dependencies/blocked_by -F issue_id=<blocker-db-id>`. `issue_dependencies_summary.blocked_by` counts open blockers only.
 - **Frontier query**: one GraphQL call returns the children in map order along with claims and blockers:
 
