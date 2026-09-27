@@ -24,9 +24,13 @@ _Avoid_: wrapper, host skill, parent skill
 A skill of ours, usually named `al-<entry skill>`, that loads alongside its entry skill in an AL repository and adds only the AL and Azure DevOps specifics to that step.
 _Avoid_: overlay, extension, wrapper, AL version of
 
+**Original work item**:
+The Feature, Bug, or Product Backlog Item (PBI) a request arrives on, carrying it through design and implementation; when the request splits, each slice is one direct child PBI.
+_Avoid_: Original User Story, root item, parent (its own structural parent is untouched)
+
 **9Altitudes predecessor**:
 The 9Altitudes copy this fork diverged from; a reference only, never a source of incoming changes.
-_Avoid_: upstream, parent, original (taken by Original User Story)
+_Avoid_: upstream, parent, original (taken by Original work item)
 
 **Release**:
 A version of a Naveksa app published to AppSource; the latest one is the baseline that breaking changes are measured against. A build delivered outside AppSource is not a Release.
