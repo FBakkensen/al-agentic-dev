@@ -21,7 +21,7 @@ A mattpocock-skills skill (or a Claude Code built-in such as `/simplify`) that t
 _Avoid_: wrapper, host skill, parent skill
 
 **AL addition**:
-A skill of ours, named `al-<entry skill>`, that loads alongside its entry skill in an AL repository and adds only the AL and Azure DevOps specifics to that step.
+A skill of ours, usually named `al-<entry skill>`, that loads alongside its entry skill in an AL repository and adds only the AL and Azure DevOps specifics to that step.
 _Avoid_: overlay, extension, wrapper, AL version of
 
 **9Altitudes predecessor**:
