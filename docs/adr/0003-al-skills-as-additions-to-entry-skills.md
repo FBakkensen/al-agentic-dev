@@ -2,7 +2,7 @@
 
 The user drives the flow with mattpocock-skills' own commands — `/grill-with-docs`, `/to-spec`, `/to-tickets`, `/implement` (→ `/tdd`, `mattpocock-skills:code-review`), `/improve-codebase-architecture`, `/setup-matt-pocock-skills` — plus Claude Code's `/simplify`. Our AL skills stop being a parallel chain and become AL additions: each named `al-<entry skill>` (one exception: the addition to `mattpocock-skills:code-review` stays `al-review`, since bcquality already ships `al-code-review`), loaded alongside its entry skill, carrying only what is AL- or Azure DevOps-specific. A developer who already knows Matt's skills works an AL repository without learning a second flow. This amends ADR 0002, where our skills owned the flow and called base-plugin skills by name.
 
-An addition loads through two signals: its description names the entry skill ("Use whenever `tdd` runs against AL code"), and the plugin's `SessionStart` hook, which fires only in AL repositories, carries the entry → addition table. Most entry skills are `disable-model-invocation: true`, so no skill of ours can start them; the user types the entry, and the entry's own chaining replaces ours.
+An addition loads through two signals: its description names the entry skill ("Use whenever `tdd` runs against AL code"), and the plugin's `SessionStart` hook carries the entry → addition table. The hook injects in every session, because the plugin is installed only for AL work and a repository gate had already missed a nested `app.json`. Most entry skills are `disable-model-invocation: true`, so no skill of ours can start them; the user types the entry, and the entry's own chaining replaces ours.
 
 ## Considered Options
 
