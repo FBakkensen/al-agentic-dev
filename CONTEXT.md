@@ -19,3 +19,7 @@ _Avoid_: upstream, parent, donor (a donor is only the source of a copy)
 **9Altitudes predecessor**:
 The 9Altitudes copy this fork diverged from; a reference only, never a source of incoming changes.
 _Avoid_: upstream, parent, original (taken by Original User Story)
+
+**Release**:
+A version of a Naveksa app published to AppSource; the latest one is the baseline that breaking changes are measured against. A build delivered outside AppSource is not a Release.
+_Avoid_: release branch, promoted version, latest build
