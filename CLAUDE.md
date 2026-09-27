@@ -6,7 +6,7 @@
 
 ### Issue tracker
 
-GitHub Issues for `gtm-general/al-agentic-dev` on `9altitudes.ghe.com`, via `gh`. See `docs/agents/issue-tracker.md`.
+GitHub Issues for `fbakkensen/al-agentic-dev` on `github.com`, via `gh`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

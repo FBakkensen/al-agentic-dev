@@ -9,7 +9,7 @@ The set is mid-rebuild: the earlier 26-skill pipeline is retired, and each new p
 ## Requirements
 
 - Windows, PowerShell 7.2+
-- GitHub Copilot CLI, authenticated to `9altitudes.ghe.com` (`gh auth status -h 9altitudes.ghe.com`)
+- GitHub Copilot CLI, authenticated to `github.com` (`gh auth status`)
 - Docker Desktop, BcContainerHelper, and the .NET SDK — `/al-build`'s scripted toolchain
 - Company Portal-managed Node.js 22+ at `C:\Program Files\nodejs` — `npx` for the al-build gate and the al-event-model BPMN renderer
 - In each consumer repo: `al-build.json` at the root for the build gate
@@ -25,16 +25,14 @@ Came here from an older install? Do [Migrating from `npx skills add`](#migrating
 This repository doubles as its own plugin marketplace through `.github/plugin/marketplace.json`, which is what keeps `copilot plugin update` working later:
 
 ```
-copilot plugin marketplace add https://9altitudes.ghe.com/gtm-general/al-agentic-dev
+copilot plugin marketplace add https://github.com/fbakkensen/al-agentic-dev
 copilot plugin install al-agentic-dev@al-agentic-dev
 ```
-
-The full URL matters: the `owner/repo` shorthand always resolves against GitHub.com, and this repository lives on GitHub Enterprise.
 
 ### Directly from the repository
 
 ```
-copilot plugin install https://9altitudes.ghe.com/gtm-general/al-agentic-dev
+copilot plugin install https://github.com/fbakkensen/al-agentic-dev
 ```
 
 Same plugin, no marketplace registration — and no catalog for `copilot plugin update` to check against, which is why the marketplace form is recommended.
@@ -65,7 +63,7 @@ A consumer repo can declare the plugin in `.github/copilot/settings.json`, commi
     "al-agentic-dev": {
       "source": {
         "source": "git",
-        "url": "https://9altitudes.ghe.com/gtm-general/al-agentic-dev"
+        "url": "https://github.com/fbakkensen/al-agentic-dev"
       }
     }
   },
