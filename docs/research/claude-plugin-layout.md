@@ -143,7 +143,7 @@ Mapping from the current Copilot `hooks.json`:
 | `"version": 1` | not part of the schema. **Validated:** the validator neither warns nor fails on it, but drop it |
 | matcher `ask_user` | `AskUserQuestion` (the Claude Code tool name) |
 | `{"permissionDecision":"deny",…}` at top level | `{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"…"}}`. The top-level form is deprecated for PreToolUse. The reason is shown to Claude on `deny` |
-| `{"additionalContext": …}` at top level | `{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"…"}}`. For SessionStart only, plain stdout also reaches Claude's context |
+| `{"additionalContext": …}` at top level | `{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"…"}}`. For SessionStart, plain stdout on exit 0 also reaches Claude's context |
 | `cwd` parsed from stdin JSON | still on stdin (`cwd`, `session_id`, `hook_event_name`, `source`, `model`, …). `CLAUDE_PROJECT_DIR`, `CLAUDE_PLUGIN_ROOT`, `CLAUDE_PLUGIN_DATA`, and `CLAUDE_PLUGIN_OPTION_<KEY>` are also exported to the hook process |
 
 Event facts that matter for our two hooks:
@@ -152,7 +152,7 @@ Event facts that matter for our two hooks:
 - **The 10,000-character cap:** it applies to each `additionalContext` string. Longer text is spilled to a file, and only a 2,000-character preview is injected. Today's reply-shape, Speak BC, and tier table add up to roughly 3k characters, well within the cap.
 - **Phrasing:** the docs advise writing injected text as factual statements. Text framed as out-of-band system commands can trigger prompt-injection defenses.
 - **SessionStart matchers:** the event fires with matcher values `startup`, `resume`, `clear`, `compact`, and `fork`. **Recommend no matcher**, so the injected rules are re-added after `/clear` and compaction. Only `command` and `mcp_tool` handler types are supported.
-- **SessionStart does not reach subagents.** The carrier into subagents (`al-review-lens`, `al-knowledge-leaf`, `task`-style children) is a **`SubagentStart`** hook returning `additionalContext`, which lands at the start of the subagent's conversation. A plugin agent's own frontmatter `hooks` are ignored ([source](https://code.claude.com/docs/en/plugins/components.md#frontmatter-fields-in-plugin-agents)), so this must be a plugin-level hook.
+- **SessionStart does not reach subagents.** A non-fork subagent's initial context is limited to four things: its own system prompt, the task message, the CLAUDE.md hierarchy, and git status ([Sub-agents: What loads at startup](https://code.claude.com/docs/en/sub-agents.md#what-loads-at-startup)). The main conversation's history, including SessionStart context, is not part of it. Forks are the exception. The carrier into subagents (`al-review-lens`, `al-knowledge-leaf`, `task`-style children) is a **`SubagentStart`** hook returning `additionalContext`, which lands at the start of the subagent's conversation. A plugin agent's own frontmatter `hooks` are ignored ([source](https://code.claude.com/docs/en/plugins/components.md#frontmatter-fields-in-plugin-agents)), so this must be a plugin-level hook.
 - **Plugin hooks inside subagents:** plugin hooks also fire inside subagents for tool events, and the input carries `agent_id` and `agent_type`.
 - **`AskUserQuestion` in subagents:** Claude Code removes `AskUserQuestion` from **every subagent**'s tool pool ([Sub-agents: Available tools](https://code.claude.com/docs/en/sub-agents.md#available-tools)). The original defect behind the ask_user deny hook, a child session hanging on a question, is therefore handled natively for subagents. A `PreToolUse` deny on `AskUserQuestion` now only affects the main session. Keeping or dropping it is for the downstream hooks ticket.
 - **`${user_config.*}` in hooks:** shell-form hooks reject `${user_config.*}`. Use exec form, or read `$CLAUDE_PLUGIN_OPTION_<KEY>`.
@@ -238,7 +238,7 @@ Sources:
 - **`tools`:** a comma-separated string or YAML list of Claude Code tool names. `mcp__<server>__*` patterns grant a whole server.
   - If no entry resolves, the agent refuses to launch with "Agent would be spawned with zero tools". The validator does **not** catch this (**validated:** the current `al-review-lens.agent.md` passes `claude plugin validate`).
   - Background subagents keep only `Read, Grep, Glob, LSP, Bash, PowerShell, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill, ToolSearch, …`, plus all MCP tools.
-- **Filename:** the `agents/` scan is recursive, and a subfolder becomes part of the name. **Validated:** `al-review-lens.agent.md` passes validation, and the frontmatter `name` sets the agent name. Renaming the files to `<name>.md` is the documented convention. The repo gate rule "name equals filename stem" needs updating either way.
+- **Filename:** the `agents/` scan is recursive, and a subfolder becomes part of the name. `al-review-lens.agent.md` passes `claude plugin validate`, but its runtime load was not tested. The docs say the frontmatter `name` sets the agent name. Renaming the files to `<name>.md` is the documented convention. The repo gate rule "name equals filename stem" needs updating either way.
 
 Current agents become:
 
@@ -302,10 +302,11 @@ claude plugin install al-agentic-dev@al-agentic-dev --scope user --config ado_or
 
 ## 8. Verification recipe for the migration
 
-Run `claude plugin validate --strict .claude-plugin/plugin.json` and `claude plugin validate --strict .` (the latter validates `marketplace.json`) in CI. Both have `--json` output and non-zero exit on failure. Together they check:
-- manifest paths
-- `.mcp.json` server schema (v2.1.281+)
-- `hooks/hooks.json` schema and event names
-- agent and skill frontmatter parse
+Run these four commands in CI:
 
-Neither checks that agent `tools` entries resolve.
+1. `claude plugin validate --strict .`, which validates `marketplace.json`
+2. `claude plugin validate --strict .claude-plugin/plugin.json`, which validates the manifest paths, the `.mcp.json` server schema (v2.1.281+), and the `hooks/hooks.json` schema and event names
+3. `claude plugin validate --strict agents`
+4. `claude plugin validate --strict skills`
+
+The last two check that frontmatter parses. Each command supports `--json` output and exits non-zero on failure. None of them checks that agent `tools` entries resolve.
