@@ -1,9 +1,12 @@
 {
   "name": "al-agentic-dev",
+  "description": "AL and Business Central development skills for Claude Code, with the Base plugins they build on.",
   "owner": {
     "name": "Flemming Bakkensen"
   },
-  "allowCrossMarketplaceDependenciesOn": ["claude-plugins-official"],
+  "allowCrossMarketplaceDependenciesOn": [
+    "claude-plugins-official"
+  ],
   "plugins": [
     {
       "name": "al-agentic-dev",
@@ -17,7 +20,9 @@
         "url": "https://github.com/microsoft/BCQuality.git"
       },
       "description": "Business Central AL quality knowledge base and review skills, packaged as an installable plugin. Exposes an AL review adapter while preserving BCQuality's internal Entry and action-skill protocols.",
-      "skills": ["./skills/"]
+      "skills": [
+        "./skills/"
+      ]
     },
     {
       "name": "al-language-server-go-windows",
