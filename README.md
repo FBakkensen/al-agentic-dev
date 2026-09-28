@@ -1,121 +1,85 @@
 # al-agentic-dev
 
-A GitHub Copilot plugin for Microsoft Dynamics 365 Business Central development: a scripted compile-publish-test gate with containers, coverage, and breaking-change validation underneath, plus the two platform-knowledge clones and a visual steering surface.
+A Claude Code plugin for Microsoft Dynamics 365 Business Central development: a scripted compile-publish-test gate with containers, coverage, and breaking-change validation underneath, plus the two platform-knowledge clones and a visual steering surface.
 
-One install brings the Agent Skills, two packaged custom agents (`al-review-lens`, `al-knowledge-leaf`), and one bundled MCP server: Microsoft Learn supplies current Microsoft documentation.
+One install brings the Agent Skills, a `SessionStart` hook, and two bundled MCP servers: Microsoft Learn supplies current Microsoft documentation, and the Azure DevOps server reads and writes work items. It also installs three Base plugins it builds on: `mattpocock-skills`, `bcquality`, and the AL language server.
 
 The set is mid-rebuild: the earlier 26-skill pipeline is retired, and each new plugin version ports proven skills back in as real work needs them. Git history is the donor archive.
 
 ## Requirements
 
 - Windows, PowerShell 7.2+
-- GitHub Copilot CLI, authenticated to `github.com` (`gh auth status`)
+- Claude Code
 - Docker Desktop, BcContainerHelper, and the .NET SDK — `/al-build`'s scripted toolchain
-- Company Portal-managed Node.js 22+ at `C:\Program Files\nodejs` — `npx` for the al-build gate and the al-event-model BPMN renderer
+- Company Portal-managed Node.js 22+ at `C:\Program Files\nodejs` — `npx` for the al-build gate, the Azure DevOps MCP server, and the al-event-model BPMN renderer
+- Azure CLI, signed in with `az login` — the bundled Azure DevOps MCP server authenticates through it
+- The VS Code AL extension (`ms-dynamics-smb.al`) — the AL language server exits without it
 - In each consumer repo: `al-build.json` at the root for the build gate
 
-The planning flow uses Azure DevOps work-item tools when available. `/al-event-model` installs its locked BPMN renderer on first use.
+`/al-event-model` installs its locked BPMN renderer on first use.
 
 ## Install
 
-Came here from an older install? Do [Migrating from `npx skills add`](#migrating-from-npx-skills-add) first — leftover copies silently mask everything below.
-
-### As a marketplace (recommended)
-
-This repository doubles as its own plugin marketplace through `.github/plugin/marketplace.json`, which is what keeps `copilot plugin update` working later:
+Add this repository as a marketplace, then install the plugin:
 
 ```
-copilot plugin marketplace add https://github.com/fbakkensen/al-agentic-dev
-copilot plugin install al-agentic-dev@al-agentic-dev
+/plugin marketplace add fbakkensen/al-agentic-dev
+/plugin install al-agentic-dev@al-agentic-dev
 ```
 
-### Directly from the repository
+The marketplace also lists the `bcquality` and `al-language-server-go-windows` Base plugins, so adding it is the only setup. `mattpocock-skills` installs from `claude-plugins-official`, which Claude Code registers on the first interactive session.
 
-```
-copilot plugin install https://github.com/fbakkensen/al-agentic-dev
-```
-
-Same plugin, no marketplace registration — and no catalog for `copilot plugin update` to check against, which is why the marketplace form is recommended.
+Claude Code asks for your Azure DevOps organization (`ado_org`, for example `naveksaas`) when it enables the plugin. The bundled `ado` MCP server connects to it.
 
 ### Verify
 
-```
-copilot plugin list      # al-agentic-dev@al-agentic-dev (v2.4.13)
-copilot skill list       # the 22 skills, under "Plugin skills"
-copilot mcp list         # Plugin servers: microsoft-learn
-```
-
-The skills must appear under **Plugin skills**. Any of them listed under *Personal skills* is a leftover legacy copy shadowing the plugin — go to [Migrating from `npx skills add`](#migrating-from-npx-skills-add).
+Run `/plugin` and confirm `al-agentic-dev` is installed at version `0.9.0`, then run `/mcp` and confirm `microsoft-learn` and `ado` are connected.
 
 ### Update
 
 ```
-copilot plugin update al-agentic-dev
+/plugin marketplace update al-agentic-dev
 ```
 
-### Enable per repository — Copilot app, CLI, and cloud agent
+### Azure DevOps
 
-A consumer repo can declare the plugin in `.github/copilot/settings.json`, committed to the repository. Copilot CLI (which the GitHub Copilot app runs on) and the Copilot cloud agent read the same two keys, auto-install the plugin for everyone who works in that repository, and scope it there:
-
-```json
-{
-  "extraKnownMarketplaces": {
-    "al-agentic-dev": {
-      "source": {
-        "source": "git",
-        "url": "https://github.com/fbakkensen/al-agentic-dev"
-      }
-    }
-  },
-  "enabledPlugins": {
-    "al-agentic-dev@al-agentic-dev": true
-  }
-}
-```
-
-The auto-install runs when Copilot starts in a trusted checkout of that repository; a user-level install through the commands above works everywhere regardless.
-
-### Azure DevOps MCP server
-
-The Original User Story and its direct Vertical-slice children live in Azure DevOps, so install and authenticate the Azure DevOps MCP server per its own documentation. `Original` names the User Story that carries the request in this workflow; structural parents above it remain unchanged. The plugin deliberately does not bundle the server: the connection is yours. Without it, planning skills show the exact work-item fields needed and stop; they do not create a competing file-based design record.
+The Original User Story and its direct Vertical-slice children live in Azure DevOps. `Original` names the User Story that carries the request in this workflow; structural parents above it remain unchanged. The plugin bundles the `ado` MCP server and authenticates it through the Azure CLI. Without it, planning skills show the exact work-item fields needed and stop; they do not create a competing file-based design record.
 
 ### Web Client walkthrough
 
-`/al-walkthrough` requires the consumer repository to declare a Business Central workspace MCP for each worktree. The MCP must expose its `bc_*` Web Client tools in the Copilot session and use the worktree's branch and `al-build.json` configuration.
+`/al-walkthrough` requires the consumer repository to declare a Business Central workspace MCP for each worktree. The MCP must expose its `bc_*` Web Client tools in the Claude Code session and use the worktree's branch and `al-build.json` configuration.
 
 Keep that MCP declaration in the consumer repository. A user-level MCP starts without one authoritative AL repository, while concurrent worktrees can require different containers and configuration.
 
-After changing branches or `al-build.json`, restart the workspace MCP or Copilot session before running `/al-walkthrough`.
+After changing branches or `al-build.json`, restart the workspace MCP or Claude Code session before running `/al-walkthrough`.
 
 Verify from a consumer repo whose branch container is up: `bc_list_companies` answers with the container's companies.
 
-## Migrating from `npx skills add`
+## Coming from the Copilot version
 
-Earlier versions of this set installed as loose per-user skill folders. Those copies load **before** plugin skills and silently mask every plugin update, forever — same name, stale text wins, no warning. Remove them once and the plugin takes over.
+Earlier versions were a GitHub Copilot plugin, and before that a set of loose per-user skill folders installed with `npx skills add`. Neither works with Claude Code, and any leftover copy duplicates a skill this plugin ships.
 
-**1. Detect.** List what the legacy installer left behind (only folders whose names this set has ever shipped — your other personal skills are untouched):
+**1. Detect.** List what those installers left behind (only folders whose names this set has ever shipped — your other personal skills are untouched):
 
 ```powershell
 $plugin = 'al-agentic-dev-overview','al-arc42','al-build','al-clone-bcapps','al-clone-bcquality','al-code-review',
-  'al-design','al-event-model','al-grill-adr','al-grilling','al-implement','al-knowledge-pass','al-next',
+  'al-design','al-event-model','al-grill-adr','al-grill-me','al-grilling','al-implement','al-knowledge-pass','al-next',
   'al-orchestrate','al-provision','al-quiz','al-refactor','al-refine','al-routing','al-scope','al-spec-review',
-  'al-sync-main','al-user-verification','al-validate-breaking-changes','al-visualize','babysit-pr'
-foreach ($dir in "$HOME\.agents\skills", "$HOME\.copilot\skills") {
+  'al-sync-main','al-unslop','al-user-verification','al-validate-breaking-changes','al-visualize','al-wait-what','babysit-pr'
+foreach ($dir in "$HOME\.agents\skills", "$HOME\.copilot\skills", "$HOME\.claude\skills") {
   if (Test-Path $dir) { Get-ChildItem $dir -Directory | Where-Object Name -in $plugin }
 }
 ```
 
-`copilot skill list` shows the same problem from the other side: these names under *Personal skills* instead of *Plugin skills*.
-
 **2. Remove.** Delete every folder the detection listed. Nothing else in those directories belongs to this plugin.
 
-**3. Remove leftover direct installs.** If `copilot plugin list` shows an `al-agentic-dev` installed from a local path or an old source, uninstall it — after closing every Copilot session first. While any session holds the plugin's MCP processes, the uninstall fails with `os error 32` (files held open); it succeeds once the sessions are gone.
+**3. Remove the Copilot plugin.** If you installed the Copilot version, close every Copilot session, then uninstall it. While a session holds the plugin's MCP processes, the uninstall fails with `os error 32`.
 
 ```
 copilot plugin uninstall al-agentic-dev
 ```
 
-**4. Install fresh** per [Install](#install), then verify: `copilot plugin list` shows the plugin, `copilot skill list` shows its skills under **Plugin skills** and none of them under *Personal skills*, and `copilot mcp list` shows `microsoft-learn` as a plugin server.
+**4. Install fresh** per [Install](#install).
 
 ## The skills
 
@@ -140,24 +104,12 @@ copilot plugin uninstall al-agentic-dev
 | `/al-review` | Returns a read-only verdict against Gherkin, AAA proof, Level 1 ownership, and the accuracy or justified absence of Level 2. |
 | `/al-walkthrough` | Walks Gherkin scenarios in the running Web Client through the consumer repository's workspace MCP, preserving observed versus expected evidence. |
 | `/al-next` | Reconciles landed code, Original User Story design, direct child slices, receipts, and the next executable item without creating implementation work items. |
-| `/al-pr-shepherd` | Drives one open PR to merge — CI watched, Copilot findings fixed, main merged in with intent-preserving conflict resolution — merging only on your explicit go. |
-| `/al-orchestrate` | Runs one executable item with reviewed AAA through implementation, bounded refactoring, and read-only review in child sessions. |
-
-Two read-only reviewer agents ride under `agents/` — `al-review-lens` and `al-knowledge-leaf`, serving `/al-review`'s fan-out. The two agents' pins follow the model tiers — `al-review-lens` at execution, `al-knowledge-leaf` at mechanical — and a `▶` line's tier override wins at dispatch.
+| `/al-pr-shepherd` | Drives one open PR to merge — CI watched, review findings fixed, main merged in with intent-preserving conflict resolution — merging only on your explicit go. |
 
 Third-party formats and runtime dependencies are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-**Migrating from v1:** the Page Scripting recording and replay machinery is gone — `/al-walkthrough` through the consumer repository's workspace MCP replaces the slice-end verification walk.
+**Coming from v1:** the Page Scripting recording and replay machinery is gone — `/al-walkthrough` through the consumer repository's workspace MCP replaces the slice-end verification walk.
 
-## The hooks
+## The hook
 
-`hooks.json` ships two hooks, the second carrying three blocks:
-
-- **ask_user deny** (preToolUse): the ask_user tool is denied with a redirect — questions land in the reply itself, as plain text, with lettered options and the recommendation marked.
-- **Session context** (sessionStart): every new or resumed session receives the reply-shape rules and the model tiers — a `# Model tiers` table read from `~/.copilot/al-agentic-dev/models.json`, falling back per tier to the shipped defaults in `skills/al-setup-models/models.default.json` with a `Defaults in use — run /al-setup-models to set your models.` line, followed by the dispatch rule for `▶ <tier> · <vehicle> · <brief> → <return>` lines. When the working directory is an AL repo (an `app.json` at the root or one directory level deep), the Speak BC vocabulary rule also applies: Insert not create, Post not submit, Ledger Entry not transaction, and so on. In a non-AL directory the vocabulary rule stays out.
-
-One platform caveat: the Copilot CLI currently honors only the **last** sessionStart `additionalContext` across all hook sources, so a user-level sessionStart context hook and this plugin's cannot both inject today — whichever loads last wins.
-
-**Migrating from v1:** earlier versions installed these reply-shape rules as a managed block in `~/.copilot/copilot-instructions.md` (between `<!-- al-agentic-dev:start -->` / `<!-- al-agentic-dev:end -->` markers). Delete that block — the hook replaces it, and the plugin never writes user files.
-
-Re-prove injection after any hooks.json change: `pwsh tests/hooks/Invoke-HookSmoke.ps1` (two paid runs; see tests/README.md).
+`hooks/hooks.json` ships one `SessionStart` hook. It runs `hooks/Write-SessionStart.ps1`, which injects the delegation rules from `hooks/session-start.md` in every session: a `▶ <model> · <brief> → <return>` line in a skill is one `Agent` call on `opus`, `sonnet`, or `haiku`, and every child runs in the lead's worktree and branch.
