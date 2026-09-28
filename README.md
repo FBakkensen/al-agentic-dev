@@ -41,7 +41,7 @@ Same plugin, no marketplace registration — and no catalog for `copilot plugin 
 
 ```
 copilot plugin list      # al-agentic-dev@al-agentic-dev (v2.4.13)
-copilot skill list       # the 25 skills, under "Plugin skills"
+copilot skill list       # the 22 skills, under "Plugin skills"
 copilot mcp list         # Plugin servers: microsoft-learn
 ```
 
