@@ -87,16 +87,14 @@ Describe 'Architecture artifact contracts' {
 
     It 'runs Pester once with compact mode-aware output' {
         $runner = Get-Content -LiteralPath (Join-Path $script:RepoRoot 'scripts' 'Invoke-Tests.ps1') -Raw
-        $instructions = Get-Content -LiteralPath (
-            Join-Path $script:RepoRoot '.github' 'copilot-instructions.md'
-        ) -Raw
+        $instructions = Get-Content -LiteralPath (Join-Path $script:RepoRoot 'CLAUDE.md') -Raw
 
         ([regex]::Matches($runner, '(?m)^\s*Invoke-Pester -Configuration ')).Count | Should -Be 1
         $runner | Should -Match '\$config\.Output\.Verbosity = ''None'''
         $runner | Should -Match '\$config\.Filter\.ExcludeTag = @\(''Process'', ''LiveFixture''\)'
         $runner | Should -Match '''Process''\s*\{\s*\$config\.Filter\.Tag = @\(''Process''\)'
         $runner | Should -Match '''LiveFixture''\s*\{\s*\$config\.Filter\.Tag = @\(''LiveFixture''\)'
-        $instructions | Should -Match 'task agent at the mechanical tier'
+        $instructions | Should -Match 'one `haiku` `Agent`'
         $instructions | Should -Match 'runs `scripts/Invoke-Tests\.ps1` once'
     }
 

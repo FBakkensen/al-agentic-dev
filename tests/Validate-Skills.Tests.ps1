@@ -26,12 +26,9 @@ BeforeAll {
     function New-SkillContent {
         param(
             [string]$Name = 'demo',
-            [string]$Body = 'Name the outcome.',
-            [string]$QuestionRule = 'Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.',
-            [switch]$WithoutQuestionRule
+            [string]$Body = 'Name the outcome.'
         )
 
-        $questionLine = if ($WithoutQuestionRule) { '' } else { "$QuestionRule`n`n" }
         return @"
 ---
 name: $Name
@@ -40,28 +37,6 @@ description: "Do the thing. Use when a task is at phase: implemented."
 
 # $Name
 
-$questionLine
-$Body
-"@
-    }
-
-    function New-AgentContent {
-        param(
-            [string]$Name = 'review-lens',
-            [string]$Description = '"Reads a diff with one lens. Use when: a review fans out."',
-            [string]$Tools = '["grep", "view"]',
-            [string]$Model = 'pinned-model-1',
-            [string]$Body = 'Apply the lens and return findings.'
-        )
-
-        return @"
----
-name: $Name
-description: $Description
-tools: $Tools
-model: $Model
----
-
 $Body
 "@
     }
@@ -69,15 +44,12 @@ $Body
     function Invoke-SkillValidator {
         param(
             [Parameter(Mandatory = $true)]
-            [string]$Root,
-
-            [string]$AgentsRoot
+            [string]$Root
         )
 
-        if (-not $AgentsRoot) { $AgentsRoot = Join-Path $Root '_no-agents' }
         $output = @(
             & {
-                Invoke-SkillsValidation -SkillsRoot $Root -AgentsRoot $AgentsRoot -ErrorAction Continue
+                Invoke-SkillsValidation -SkillsRoot $Root -ErrorAction Continue
             } *>&1
         )
         $exitCode = [int]$output[-1]
@@ -95,13 +67,10 @@ $Body
     function Invoke-SkillValidatorProcess {
         param(
             [Parameter(Mandatory = $true)]
-            [string]$Root,
-
-            [string]$AgentsRoot
+            [string]$Root
         )
 
-        if (-not $AgentsRoot) { $AgentsRoot = Join-Path $Root '_no-agents' }
-        $output = & pwsh -NoProfile -File $script:ValidatorPath -SkillsRoot $Root -AgentsRoot $AgentsRoot 2>&1
+        $output = & pwsh -NoProfile -File $script:ValidatorPath -SkillsRoot $Root 2>&1
         return [pscustomobject]@{
             ExitCode = $LASTEXITCODE
             Text     = (@($output | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine)
@@ -141,42 +110,6 @@ Name the outcome, then /al-build.
 
         $result.ExitCode | Should -Be 1
         $result.Text | Should -Match 'demo: SKILL\.md is missing'
-    }
-
-    It 'fails when a skill omits the plain-text question rule' {
-        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'no-question-rule') -Files @{
-            'demo/SKILL.md'     = (New-SkillContent -WithoutQuestionRule)
-            'al-build/SKILL.md' = (New-SkillContent -Name 'al-build')
-        }
-
-        $result = Invoke-SkillValidator -Root $root
-
-        $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'demo/SKILL\.md: missing the required plain-text question rule'
-    }
-
-    It 'fails the pre-ban question rule even in a former transition folder' {
-        $legacy = 'Ask every question in the reply itself, as plain text — never through a question or elicitation tool.'
-        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'legacy-transition') -Files @{
-            'al-scope/SKILL.md' = (New-SkillContent -Name 'al-scope' -QuestionRule $legacy)
-        }
-
-        $result = Invoke-SkillValidator -Root $root
-
-        $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'al-scope/SKILL\.md: missing the required plain-text question rule'
-    }
-
-    It 'fails the pre-ban question rule outside the transition folders' {
-        $legacy = 'Ask every question in the reply itself, as plain text — never through a question or elicitation tool.'
-        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'legacy-elsewhere') -Files @{
-            'demo/SKILL.md' = (New-SkillContent -QuestionRule $legacy)
-        }
-
-        $result = Invoke-SkillValidator -Root $root
-
-        $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'demo/SKILL\.md: missing the required plain-text question rule'
     }
 
     It 'fails when the frontmatter block does not parse' -TestCases @(
@@ -239,30 +172,9 @@ Name the outcome, then /al-build.
         $result.Text | Should -Match 'all skills are model-invocable; remove disable-model-invocation'
     }
 
-    It 'accepts a remaining pinned fork without the question rule' {
-        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'port-question-rule') -Files @{
-            'al-grill-me/SKILL.md' = (New-SkillContent -Name 'al-grill-me' -WithoutQuestionRule)
-        }
-
-        $result = Invoke-SkillValidator -Root $root
-
-        $result.ExitCode | Should -Be 0
-    }
-
-    It 'requires the question rule in an owned former fork' {
-        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'former-port-question-rule') -Files @{
-            'al-wait-what/SKILL.md' = (New-SkillContent -Name 'al-wait-what' -WithoutQuestionRule)
-        }
-
-        $result = Invoke-SkillValidator -Root $root
-
-        $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'al-wait-what/SKILL\.md: missing the required plain-text question rule'
-    }
-
     It 'accepts the harness token inside a pinned fork only' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'port-harness') -Files @{
-            'al-unslop/SKILL.md' = (New-SkillContent -Name 'al-unslop' -WithoutQuestionRule -Body 'Cut harness (as metaphor) from prose.')
+            'al-unslop/SKILL.md' = (New-SkillContent -Name 'al-unslop' -Body 'Cut harness (as metaphor) from prose.')
             'demo/SKILL.md'   = (New-SkillContent -Body 'Cut harness metaphors.')
         }
 
@@ -763,7 +675,7 @@ Describe 'Validate-Skills harness checks' -Tag 'Unit' {
         $result.Text | Should -Match 'demo/FORMAT\.md: uses harness-conditional phrasing'
     }
 
-    It 'passes the Copilot-first phrasing of the same rule' {
+    It 'passes the same rule phrased without the token' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'harness-inverted') -Files @{
             'demo/SKILL.md' = (New-SkillContent -Body 'These parallelize in full-capability subagents; when subagents are unavailable, apply them in one pass.')
         }
@@ -774,75 +686,7 @@ Describe 'Validate-Skills harness checks' -Tag 'Unit' {
     }
 }
 
-Describe 'Validate-Skills model-tier defaults checks' -Tag 'Unit' {
-    BeforeAll {
-        $script:GoodDefaults = '{"version":1,"tiers":{"frontier":{"model":"model-f","effort":"high"},"execution":{"model":"model-e","effort":"medium"},"mechanical":{"model":"model-m","effort":"max"}}}'
-    }
-
-    It 'passes a well-formed models.default.json beside al-setup-models' {
-        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'defaults-good') -Files @{
-            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
-            'al-setup-models/models.default.json' = $script:GoodDefaults
-        }
-
-        $result = Invoke-SkillValidator -Root $root
-
-        $result.ExitCode | Should -Be 0
-    }
-
-    It 'fails al-setup-models without models.default.json' {
-        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'defaults-missing') -Files @{
-            'al-setup-models/SKILL.md' = (New-SkillContent -Name 'al-setup-models')
-        }
-
-        $result = Invoke-SkillValidator -Root $root
-
-        $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'al-setup-models/models\.default\.json: missing'
-    }
-
-    It 'fails models.default.json that does not parse' {
-        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'defaults-broken') -Files @{
-            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
-            'al-setup-models/models.default.json' = '{not json'
-        }
-
-        $result = Invoke-SkillValidator -Root $root
-
-        $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'al-setup-models/models\.default\.json: does not parse'
-    }
-
-    It 'fails models.default.json whose tiers are not exactly frontier, execution, mechanical' {
-        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'defaults-tiers') -Files @{
-            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
-            'al-setup-models/models.default.json' = '{"version":1,"tiers":{"frontier":{"model":"model-f","effort":"high"},"execution":{"model":"model-e","effort":"medium"}}}'
-        }
-
-        $result = Invoke-SkillValidator -Root $root
-
-        $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'tiers must be exactly frontier, execution, mechanical'
-    }
-
-    It 'fails a tier with an empty model or effort' {
-        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'defaults-empty') -Files @{
-            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
-            'al-setup-models/models.default.json' = '{"version":1,"tiers":{"frontier":{"model":"model-f","effort":"high"},"execution":{"model":"model-e","effort":""},"mechanical":{"model":"model-m","effort":"max"}}}'
-        }
-
-        $result = Invoke-SkillValidator -Root $root
-
-        $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match "tier 'execution' needs a non-empty model and effort"
-    }
-}
-
 Describe 'Validate-Skills delegation checks' -Tag 'Unit' {
-    BeforeAll {
-        $script:GoodDefaults = '{"version":1,"tiers":{"frontier":{"model":"model-f","effort":"high"},"execution":{"model":"model-e","effort":"medium"},"mechanical":{"model":"model-m","effort":"max"}}}'
-    }
-
     It 'passes ▶ lines in the grammar, a code-span ▶, and a fenced ▶' {
         $body = @'
 Before changing a test:
@@ -901,185 +745,6 @@ For each step report `▶ <business action>` and the observed result.
         $result.ExitCode | Should -Be 1
         $expected = "demo/FORMAT.md: ▶ line outside the delegation grammar '▶ <tier> · <vehicle> · <brief> → <return>': ▶ run it"
         $result.Text | Should -Match ([regex]::Escape($expected))
-    }
-
-    It 'fails a default model name in a skill body' {
-        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'model-name-body') -Files @{
-            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
-            'al-setup-models/models.default.json' = $script:GoodDefaults
-            'demo/SKILL.md'                       = (New-SkillContent -Body 'Dispatch the gate on model-e.')
-        }
-
-        $result = Invoke-SkillValidator -Root $root
-
-        $result.ExitCode | Should -Be 1
-        $expected = "demo/SKILL.md: names the model 'model-e'; name a tier on a ▶ line instead"
-        $result.Text | Should -Match ([regex]::Escape($expected))
-    }
-
-    It 'fails a default model name in a sibling file, case-insensitively' {
-        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'model-name-sibling') -Files @{
-            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
-            'al-setup-models/models.default.json' = $script:GoodDefaults
-            'demo/SKILL.md'                       = (New-SkillContent -Body 'See [Format](FORMAT.md).')
-            'demo/FORMAT.md'                      = 'Pinned to Model-M.'
-        }
-
-        $result = Invoke-SkillValidator -Root $root
-
-        $result.ExitCode | Should -Be 1
-        $expected = "demo/FORMAT.md: names the model 'model-m'; name a tier on a ▶ line instead"
-        $result.Text | Should -Match ([regex]::Escape($expected))
-    }
-
-    It 'passes a tier name where a model name would fail' {
-        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'model-name-tier') -Files @{
-            'al-setup-models/SKILL.md'            = (New-SkillContent -Name 'al-setup-models')
-            'al-setup-models/models.default.json' = $script:GoodDefaults
-            'demo/SKILL.md'                       = (New-SkillContent -Body '▶ mechanical · task · run the gate → verdict')
-        }
-
-        $result = Invoke-SkillValidator -Root $root
-
-        $result.ExitCode | Should -Be 0
-    }
-}
-
-Describe 'Validate-Skills agent checks' -Tag 'Unit' {
-    BeforeAll {
-        function New-AgentsRoot {
-            param(
-                [Parameter(Mandatory = $true)][string]$Root,
-                [Parameter(Mandatory = $true)][hashtable]$Files
-            )
-
-            New-Item -ItemType Directory -Path $Root -Force | Out-Null
-            foreach ($relativePath in $Files.Keys) {
-                Set-Content -LiteralPath (Join-Path $Root $relativePath) -Value $Files[$relativePath] -Encoding utf8
-            }
-            return $Root
-        }
-
-        function New-AgentFixture {
-            param(
-                [Parameter(Mandatory = $true)][string]$Case,
-                [Parameter(Mandatory = $true)][hashtable]$AgentFiles
-            )
-
-            $skills = New-SkillsRoot -Root (Join-Path $TestDrive "agent-$Case-skills") -Files @{
-                'demo/SKILL.md' = (New-SkillContent)
-            }
-            $agents = New-AgentsRoot -Root (Join-Path $TestDrive "agent-$Case-agents") -Files $AgentFiles
-            return Invoke-SkillValidator -Root $skills -AgentsRoot $agents
-        }
-    }
-
-    It 'passes a well-formed agent' {
-        $result = New-AgentFixture -Case 'good' -AgentFiles @{
-            'review-lens.agent.md' = (New-AgentContent)
-        }
-
-        $result.ExitCode | Should -Be 0
-        $result.Text | Should -Match 'OK: agents/review-lens\.agent\.md'
-    }
-
-    It 'passes a block-list tools value' {
-        $content = "---`nname: review-lens`ndescription: `"Reads a diff with one lens.`"`ntools:`n  - grep`n  - view`nmodel: pinned-model-1`n---`n`nApply the lens."
-        $result = New-AgentFixture -Case 'block-tools' -AgentFiles @{
-            'review-lens.agent.md' = $content
-        }
-
-        $result.ExitCode | Should -Be 0
-    }
-
-    It 'passes when the agents folder is absent or holds no agent files' {
-        $skills = New-SkillsRoot -Root (Join-Path $TestDrive 'agent-none-skills') -Files @{
-            'demo/SKILL.md' = (New-SkillContent)
-        }
-        $keeper = New-AgentsRoot -Root (Join-Path $TestDrive 'agent-none-agents') -Files @{ '.gitkeep' = '' }
-
-        (Invoke-SkillValidator -Root $skills).ExitCode | Should -Be 0
-        (Invoke-SkillValidator -Root $skills -AgentsRoot $keeper).ExitCode | Should -Be 0
-    }
-
-    It 'fails when the frontmatter block does not parse' {
-        $result = New-AgentFixture -Case 'unparsed' -AgentFiles @{
-            'review-lens.agent.md' = "# review-lens`n`nNo frontmatter at all."
-        }
-
-        $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'agents/review-lens\.agent\.md: frontmatter block does not parse'
-    }
-
-    It 'fails on unknown, missing, or duplicate frontmatter keys' -TestCases @(
-        @{ Case = 'unknown'; Frontmatter = "name: review-lens`ndescription: `"Reads a diff.`"`ntools: [grep]`nmodel: m`nagent_type: custom" }
-        @{ Case = 'missing-tools'; Frontmatter = "name: review-lens`ndescription: `"Reads a diff.`"`nmodel: m" }
-        @{ Case = 'missing-model'; Frontmatter = "name: review-lens`ndescription: `"Reads a diff.`"`ntools: [grep]" }
-        @{ Case = 'duplicate'; Frontmatter = "name: review-lens`nname: review-lens`ndescription: `"Reads a diff.`"`ntools: [grep]`nmodel: m" }
-    ) {
-        param($Case, $Frontmatter)
-
-        $result = New-AgentFixture -Case "keys-$Case" -AgentFiles @{
-            'review-lens.agent.md' = "---`n$Frontmatter`n---`n`nApply the lens."
-        }
-
-        $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'frontmatter keys must be exactly name, description, tools, and model'
-    }
-
-    It 'fails when the name does not match the file name stem' {
-        $result = New-AgentFixture -Case 'stem' -AgentFiles @{
-            'review-lens.agent.md' = (New-AgentContent -Name 'other-lens')
-        }
-
-        $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match "name 'other-lens' does not match the file name stem 'review-lens'"
-    }
-
-    It 'fails when the model pin is empty' -TestCases @(
-        @{ Case = 'blank'; Model = '""' }
-        @{ Case = 'quoted-blank'; Model = "''" }
-    ) {
-        param($Case, $Model)
-
-        $result = New-AgentFixture -Case "model-$Case" -AgentFiles @{
-            'review-lens.agent.md' = (New-AgentContent -Model $Model)
-        }
-
-        $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'model must be a non-empty pin'
-    }
-
-    It 'fails when tools is empty' -TestCases @(
-        @{ Case = 'empty-list'; Tools = '[]' }
-        @{ Case = 'blank'; Tools = '""' }
-    ) {
-        param($Case, $Tools)
-
-        $result = New-AgentFixture -Case "tools-$Case" -AgentFiles @{
-            'review-lens.agent.md' = (New-AgentContent -Tools $Tools)
-        }
-
-        $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'tools must be a non-empty list'
-    }
-
-    It 'fails an unquoted description carrying a colon' {
-        $result = New-AgentFixture -Case 'desc-colon' -AgentFiles @{
-            'review-lens.agent.md' = (New-AgentContent -Description 'Reads a diff. Use when: a review fans out.')
-        }
-
-        $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'description contains a colon and must be quoted'
-    }
-
-    It 'fails a harness leftover in an agent body' {
-        $result = New-AgentFixture -Case 'harness' -AgentFiles @{
-            'review-lens.agent.md' = (New-AgentContent -Body 'Adapt to whatever harness runs you.')
-        }
-
-        $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'agents/review-lens\.agent\.md: uses harness-conditional phrasing'
     }
 }
 

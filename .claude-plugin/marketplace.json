@@ -1,0 +1,13 @@
+{
+  "name": "al-agentic-dev",
+  "owner": {
+    "name": "Flemming Bakkensen"
+  },
+  "plugins": [
+    {
+      "name": "al-agentic-dev",
+      "source": "./",
+      "description": "Agentic AL and Business Central development skills."
+    }
+  ]
+}

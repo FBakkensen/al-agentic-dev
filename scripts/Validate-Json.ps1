@@ -1,17 +1,17 @@
 #Requires -Version 7.2
 <#
 .SYNOPSIS
-    Validates JSON syntax repo-wide and the Copilot plugin surface.
+    Validates JSON syntax repo-wide and the Claude Code plugin surface.
 .DESCRIPTION
     Recursively validates the syntax of every .json file under the repo root using
     ConvertFrom-Json. On top of the sweep, the plugin surface is validated structurally:
-    plugin.json (name and version non-empty; the skills, agents, and mcpServers paths
-    exist), .mcp.json (at least one server; every server carries a type and a non-empty
-    tools allowlist), and .github/plugin/marketplace.json (name non-empty; at least one
-    plugins entry; every entry names a plugin, its source path exists, and an entry whose
-    source holds a plugin.json matches that manifest's name and version, as does the
-    marketplace metadata.version for the repo-root entry). All three files must exist.
-    Returns exit code 1 if anything fails.
+    .claude-plugin/plugin.json (name and version non-empty), .mcp.json (at least one
+    server; every server carries a type and no tools allowlist, which makes Claude Code
+    silently drop the server), and .claude-plugin/marketplace.json (name non-empty; at
+    least one plugins entry; every entry names a plugin and carries a source; a local
+    string source resolves to <source>/.claude-plugin/plugin.json with a matching name).
+    Re-listed object sources (url, git-subdir) are not path-checked. All three files must
+    exist. Returns exit code 1 if anything fails.
 .EXAMPLE
     pwsh scripts/Validate-Json.ps1
 #>
@@ -57,22 +57,14 @@ function Read-PluginJson {
     }
 }
 
-$pluginPath = Join-Path $RepoRoot 'plugin.json'
+$pluginPath = Join-Path $RepoRoot '.claude-plugin' 'plugin.json'
 $mcpPath = Join-Path $RepoRoot '.mcp.json'
-$marketplacePath = Join-Path $RepoRoot '.github' 'plugin' 'marketplace.json'
+$marketplacePath = Join-Path $RepoRoot '.claude-plugin' 'marketplace.json'
 
-$plugin = Read-PluginJson -Path $pluginPath -Label 'plugin.json'
+$plugin = Read-PluginJson -Path $pluginPath -Label '.claude-plugin/plugin.json'
 if ($plugin) {
-    if (-not $plugin.name) { $script:jsonValidationErrors += 'FAIL: plugin.json - name must be non-empty' }
-    if (-not $plugin.version) { $script:jsonValidationErrors += 'FAIL: plugin.json - version must be non-empty' }
-    foreach ($pathKey in @('skills', 'agents', 'mcpServers')) {
-        $value = $plugin.$pathKey
-        if (-not $value) {
-            $script:jsonValidationErrors += "FAIL: plugin.json - $pathKey must name a path"
-        } elseif (-not (Test-Path -LiteralPath (Join-Path $RepoRoot $value))) {
-            $script:jsonValidationErrors += "FAIL: plugin.json - $pathKey path does not exist: $value"
-        }
-    }
+    if (-not $plugin.name) { $script:jsonValidationErrors += 'FAIL: .claude-plugin/plugin.json - name must be non-empty' }
+    if (-not $plugin.version) { $script:jsonValidationErrors += 'FAIL: .claude-plugin/plugin.json - version must be non-empty' }
 }
 
 $mcp = Read-PluginJson -Path $mcpPath -Label '.mcp.json'
@@ -85,13 +77,13 @@ if ($mcp) {
         if (-not $server.Value.type) {
             $script:jsonValidationErrors += "FAIL: .mcp.json - server '$($server.Name)' must carry a type"
         }
-        if (-not $server.Value.tools) {
-            $script:jsonValidationErrors += "FAIL: .mcp.json - server '$($server.Name)' must carry a non-empty tools allowlist"
+        if ($server.Value.PSObject.Properties.Name -contains 'tools') {
+            $script:jsonValidationErrors += "FAIL: .mcp.json - server '$($server.Name)' carries a tools allowlist; Claude Code drops a server that has one"
         }
     }
 }
 
-$marketplace = Read-PluginJson -Path $marketplacePath -Label '.github/plugin/marketplace.json'
+$marketplace = Read-PluginJson -Path $marketplacePath -Label '.claude-plugin/marketplace.json'
 if ($marketplace) {
     if (-not $marketplace.name) { $script:jsonValidationErrors += 'FAIL: marketplace.json - name must be non-empty' }
     $plugins = @($marketplace.plugins | Where-Object { $null -ne $_ })
@@ -104,31 +96,24 @@ if ($marketplace) {
             continue
         }
         if (-not $entry.source) {
-            $script:jsonValidationErrors += "FAIL: marketplace.json - plugin '$($entry.name)' must carry a source path"
+            $script:jsonValidationErrors += "FAIL: marketplace.json - plugin '$($entry.name)' must carry a source"
             continue
         }
-        $sourcePath = Join-Path $RepoRoot $entry.source
-        if (-not (Test-Path -LiteralPath $sourcePath)) {
-            $script:jsonValidationErrors += "FAIL: marketplace.json - plugin '$($entry.name)' source does not exist: $($entry.source)"
+        # Re-listed plugins use url / git-subdir object sources; only a local path is checked.
+        if ($entry.source -isnot [string]) { continue }
+
+        $sourceManifest = Join-Path $RepoRoot $entry.source '.claude-plugin' 'plugin.json'
+        if (-not (Test-Path -LiteralPath $sourceManifest -PathType Leaf)) {
+            $script:jsonValidationErrors += "FAIL: marketplace.json - plugin '$($entry.name)' source does not resolve to a plugin manifest: $($entry.source)"
             continue
         }
-        $sourceManifest = Join-Path $sourcePath 'plugin.json'
-        if (Test-Path -LiteralPath $sourceManifest -PathType Leaf) {
-            try {
-                $manifest = Get-Content -LiteralPath $sourceManifest -Raw | ConvertFrom-Json
-                if ($entry.name -cne $manifest.name) {
-                    $script:jsonValidationErrors += "FAIL: marketplace.json - plugin '$($entry.name)' does not match the manifest name '$($manifest.name)' at $($entry.source)"
-                }
-                if ($entry.version -and $manifest.version -and ($entry.version -cne $manifest.version)) {
-                    $script:jsonValidationErrors += "FAIL: marketplace.json - plugin '$($entry.name)' version '$($entry.version)' does not match the manifest version '$($manifest.version)' at $($entry.source)"
-                }
-                $metadataVersion = $marketplace.metadata.version
-                if ($entry.source -eq './' -and $metadataVersion -and $manifest.version -and ($metadataVersion -cne $manifest.version)) {
-                    $script:jsonValidationErrors += "FAIL: marketplace.json - metadata version '$metadataVersion' does not match the manifest version '$($manifest.version)' at $($entry.source)"
-                }
-            } catch {
-                # The syntax sweep or the plugin.json check reports the parse failure.
+        try {
+            $manifest = Get-Content -LiteralPath $sourceManifest -Raw | ConvertFrom-Json
+            if ($entry.name -cne $manifest.name) {
+                $script:jsonValidationErrors += "FAIL: marketplace.json - plugin '$($entry.name)' does not match the manifest name '$($manifest.name)' at $($entry.source)"
             }
+        } catch {
+            # The syntax sweep or the plugin.json check reports the parse failure.
         }
     }
 }

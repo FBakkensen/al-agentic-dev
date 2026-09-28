@@ -1,22 +1,21 @@
-# The smoke harness
+# The test gates
 
-Three tiers guard the plugin surface. The static tier is deterministic and runs in CI; the routing and hook tiers cost AI credits and run by hand.
+The static tier is deterministic and runs in CI. The trigger evals arrive with the eval harness (#52), run by hand because every run is billed.
 
 ## Static tier — deterministic, CI-run
 
-CI runs these five on every push and pull request; run them locally before pushing:
+CI runs these four on every push to `main` and every pull request; run them locally before pushing:
 
 ```powershell
-pwsh scripts/Validate-Json.ps1        # JSON syntax repo-wide; plugin.json, .mcp.json, marketplace.json structure; one version across all three
+pwsh scripts/Validate-Json.ps1        # JSON syntax repo-wide; .claude-plugin/plugin.json, .claude-plugin/marketplace.json, and .mcp.json structure; no MCP tools allowlist
 pwsh scripts/Validate-PowerShell.ps1  # PowerShell syntax repo-wide
-pwsh scripts/Validate-Skills.ps1      # frontmatter keys, name = folder, description ≤ 1024, links stay in-folder, script ownership, retired-concept bans
-pwsh scripts/Update-Review.ps1 -Check # REVIEW.md in sync with skills.instructions.md
-Invoke-Pester tests                   # the validator suites, the hook body suite (tests/ModelTiers.Tests.ps1), and the al-build substrate tests
+pwsh scripts/Validate-Skills.ps1      # frontmatter keys, name = folder, description <= 1024, links stay in-folder, script ownership, retired-concept bans
+pwsh scripts/Invoke-Tests.ps1 -Mode Full  # the validator suites, the SessionStart hook, and the al-build substrate tests
 ```
 
-The 1024-character description cap is load-bearing, not style: on copilot CLI 1.0.80 a skill whose description exceeds it is **silently never loaded** — no warning, no log line, the skill just never fires (probed 2026-08-19 with sentinel descriptions: 900 characters loads, 1100 and 2100 vanish). `Validate-Skills.ps1` enforcing 1024 is what turns that silent drop into a red gate.
+The 1024-character description cap comes from the Agent Skills specification; Claude Code documents no limit, and the gate keeps the cap.
 
-`tests/ModelTiers.Tests.ps1` runs both sessionStart hook bodies out of `hooks.json` as processes with `HOME` pointed at a scratch folder in six states — absent, valid, unparseable, partial, unsafe, and all-broken — plus a parity case set, and asserts the injected `# Model tiers` rows and the `Defaults in use` line; the bash cases skip where `bash` is absent or does not share `HOME` (a WSL bash). Two Unit tests hold the inline default literal in each body equal to `skills/al-setup-models/models.default.json` with whitespace removed, and one holds each agent pin equal to its tier's default model.
+`tests/SessionStartHook.Tests.ps1` runs exactly the command in `hooks/hooks.json` as a process, with `${CLAUDE_PLUGIN_ROOT}` pointed at the checkout, parses stdout as JSON, and asserts the `SessionStart` event name, the `▶ <model> · <brief> → <return>` line, and the delegation-cost text.
 
 ### Diff-vs-donor
 
@@ -29,31 +28,6 @@ pwsh scripts/Compare-SkillToDonor.ps1 -Skill al-grill-me -DonorDir C:\donors\poc
 
 Exit 0 identical, 2 diverged (diff printed), 1 unresolvable. On a pinned fork the expected report is exit 2 with exactly the namespace hunks — the frontmatter `name:` line and any renamed sibling reference — and nothing else; any other hunk is a finding. `-DonorPath` overrides the in-ref path when the donor lived elsewhere than `skills/<name>`.
 
-## Routing tier — one paid run, by hand
-
-```powershell
-pwsh tests/routing/Invoke-RoutingSmoke.ps1
-```
-
-One batched `copilot -p` run: it loads this checkout's plugin, asks which skill the model would route each scenario in `scenarios.json` to, and prints a pass/miss table. A miss is a signal to inspect — LLM routing varies, so re-run before treating one as real; the script exits 0 on misses and 1 only on mechanical failure. Each run costs roughly 5 AI credits, which is why the file is not named `*.Tests.ps1`: Pester and CI never discover it.
-
-Every package that adds skills appends its scenarios to `tests/routing/scenarios.json`. Every skill is model-invocable, so a matching scenario names the skill; `"expect": "none"` is reserved for a genuine non-match.
-
-## Hook tier — two paid runs, by hand
-
-```powershell
-pwsh tests/hooks/Invoke-HookSmoke.ps1
-```
-
-Two `copilot -p` runs against this checkout's committed `hooks.json`: an AL fixture (an `app.json` at the scratch root) where the reply shape, model tiers, Speak BC voice rule, and ask_user deny must all show in the model's reply, and a plain directory where the reply shape shows while the voice rule stays absent. Static assertions prove that neither sessionStart command instructs the model to invoke `/al-unslop`. Hook injection is deterministic, so unlike routing misses any assertion failure exits 1 and prints both replies. Roughly 10 AI credits per invocation; run it after any hooks.json change.
-
 ## Loading this checkout's plugin in isolation
 
-`--plugin-dir <directory>` loads a plugin from a local directory for that session only — the user's installed plugins, `~/.copilot/settings.json`, and `enabledPlugins` stay untouched. The bundled `.mcp.json` travels with it. Run from a scratch directory so repo instruction files stay out of the session:
-
-```powershell
-Set-Location (New-Item -ItemType Directory -Path (Join-Path $env:TEMP "probe-$(New-Guid)"))
-copilot -p "<question>" --plugin-dir <path-to-this-checkout> --log-level debug --log-dir .\logs -s
-```
-
-The debug log names what loaded: `Loaded MCP config from plugin-dir plugins: …` and `Plugin activation [skills]: …`; the `<available_skills>` block in the logged system prompt is the ground truth for which skills the model can see. A same-name collision with an installed copy of this plugin would shadow one of the two — none exists today (`~/.copilot/installed-plugins/` is empty); if that changes, isolate with `XDG_CONFIG_HOME` pointed at a scratch dir and authenticate through the `GH_TOKEN` environment variable — never by copying files out of the real `~/.copilot`.
+`claude --plugin-dir <path-to-this-checkout>` loads the plugin from a local directory for that session only; installed plugins stay untouched. Pass each Base plugin's local copy with its own `--plugin-dir`, because a plugin whose `dependencies` are missing does not load.

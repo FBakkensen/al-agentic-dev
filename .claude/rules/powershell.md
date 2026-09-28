@@ -1,5 +1,6 @@
 ---
-applyTo: "**/*.ps1"
+paths:
+  - "**/*.ps1"
 ---
 
 # Editing a PowerShell script
