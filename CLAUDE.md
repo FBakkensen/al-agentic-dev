@@ -18,7 +18,37 @@ skills/al-event-model/bpmn-renderer/ package-local BPMN renderer dependencies
 skills/al-build/scripts/*.ps1   the build substrate
 skills/al-build/config/         al-build.json
 ```
-Twenty-six skills ship today. Three are the AL survivors: `al-build` — the compile-publish-test gate, provisioning, breaking-change validation, and the container lifecycle, and the contract model everything else copies — plus the two lookup-source clones `al-clone-bcapps` and `al-clone-bcquality`. Two are pinned forks whose bodies stay donor text except the al- namespace: `al-grill-me` and `al-unslop` — see the fork rule in `.claude/rules/skills.md`. The rest are authored for this set: `al-grilling`, `al-wait-what`, `al-grill-adr`, `al-miner`, `al-lookup`, `al-azure-devops-attachments`, `al-commit`, `al-pull-request`, `al-setup-models`, the design chain `al-event-model` / `al-arc42` / `al-design` / `al-scope`, `al-test-design`, `al-implement` / `al-refactor` / `al-review`, `al-next`, `al-pr-shepherd`, `al-orchestrate`, and `al-walkthrough`. Issue #52 retires `al-grill-me`, `al-unslop`, `al-grilling`, `al-wait-what`, `al-setup-models`, `al-orchestrate`, and `al-miner` in their own PRs.
+
+Twenty-six skills ship today. The two pinned forks keep donor text except the al- namespace — see the fork rule in `.claude/rules/skills.md`.
+
+- `al-build` — the compile-publish-test gate, provisioning, breaking-change validation, and the container lifecycle; the contract model everything else copies.
+- `al-clone-bcapps` — the BCApps lookup-source clone.
+- `al-clone-bcquality` — the BCQuality lookup-source clone.
+- `al-grill-me` — pinned fork: the grilling entry.
+- `al-unslop` — pinned fork: the AI-tell cut.
+- `al-grilling` — the one-decision-at-a-time stress-test interview.
+- `al-wait-what` — the contextual re-pitch.
+- `al-grill-adr` — one Original work item, the preserved request, vocabulary, and hard-to-reverse ADRs.
+- `al-miner` — session history into proposed standing lessons.
+- `al-lookup` — one platform question, a sourced answer, the precedent map.
+- `al-azure-devops-attachments` — Azure CLI upload and verified work-item attachment relations.
+- `al-commit` — full-worktree staging and independently valid commits.
+- `al-pull-request` — ready pull request creation and updates.
+- `al-setup-models` — the retiring model-tier setup.
+- `al-event-model` — the process contract and BPMN review HTML.
+- `al-arc42` — official arc42 formatting and architecture review HTML.
+- `al-design` — Level 1 module contracts.
+- `al-scope` — one Original work item with direct outcome slices.
+- `al-test-design` — user-reviewed AAA after Gherkin in Acceptance Criteria.
+- `al-implement` — proof through the module interface.
+- `al-refactor` — behavior-frozen reshape.
+- `al-review` — read-only contract verdict.
+- `al-next` — reconciliation of design, slices, receipts, and landed code.
+- `al-pr-shepherd` — one open PR to merge: CI watched, review findings fixed, main merged in with intent-preserving conflicts; the merge itself is the user's go.
+- `al-orchestrate` — one reviewed executable item through al-implement → al-refactor → al-review.
+- `al-walkthrough` — the Gherkin walk in the running Web Client through the Consumer repository's workspace MCP.
+
+Issue #52 retires `al-grill-me`, `al-unslop`, `al-grilling`, `al-wait-what`, `al-setup-models`, `al-orchestrate`, and `al-miner` in their own PRs.
 
 The folder name equals the frontmatter `name`. A skill reaches outside its folder only by naming another skill — `/al-build` — never by path.
 
