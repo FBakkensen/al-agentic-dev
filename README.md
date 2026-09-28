@@ -29,7 +29,7 @@ Add this repository as a marketplace, then install the plugin:
 
 The marketplace also lists the `bcquality` and `al-language-server-go-windows` Base plugins, so adding it is the only setup. `mattpocock-skills` installs from `claude-plugins-official`, which Claude Code registers on the first interactive session.
 
-Claude Code asks for your Azure DevOps organization (`ado_org`, for example `naveksaas`) when it enables the plugin. The bundled `ado` MCP server connects to it.
+Claude Code asks for your Azure DevOps organization (`ado_org`, for example `naveksaas`) when it enables the plugin. The bundled `ado` MCP server connects to it. Change the value later in the `/config` panel.
 
 ### Verify
 
@@ -37,9 +37,13 @@ Run `/plugin` and confirm `al-agentic-dev` is installed at version `0.9.0`, then
 
 ### Update
 
+Third-party marketplaces do not auto-update by default, so update the installed plugin yourself: select **Update now** in its `/plugin` Installed details, or run
+
 ```
-/plugin marketplace update al-agentic-dev
+claude plugin update al-agentic-dev@al-agentic-dev
 ```
+
+Restart Claude Code to apply the update. `/plugin marketplace update al-agentic-dev` refreshes only the marketplace listing.
 
 ### Azure DevOps
 
