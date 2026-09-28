@@ -29,7 +29,7 @@ Add this repository as a marketplace, then install the plugin:
 
 The marketplace also lists the `bcquality` and `al-language-server-go-windows` Base plugins, so adding it is the only setup. `mattpocock-skills` installs from `claude-plugins-official`, which Claude Code registers on the first interactive session.
 
-Claude Code asks for your Azure DevOps organization (`ado_org`, for example `naveksaas`) when it enables the plugin. The bundled `ado` MCP server connects to it. Change the value later in the `/config` panel.
+Claude Code asks for your Azure DevOps organization (`ado_org`, for example `naveksaas`) when it enables the plugin. The bundled `ado` MCP server connects to it. From Claude Code 2.1.269 you can change the value later in the `/config` panel.
 
 ### Verify
 
@@ -61,7 +61,7 @@ Verify from a consumer repo whose branch container is up: `bc_list_companies` an
 
 ## Coming from the Copilot version
 
-Earlier versions were a GitHub Copilot plugin, and before that a set of loose per-user skill folders installed with `npx skills add`. Neither works with Claude Code, and any leftover copy duplicates a skill this plugin ships.
+Earlier versions were a GitHub Copilot plugin, which does not run in Claude Code, and before that a set of loose per-user skill folders installed with `npx skills add`. Claude Code loads loose skills from `~/.claude/skills`, so a leftover copy there sits beside this plugin's skills under the same names; copies under `~/.agents` and `~/.copilot` are stale and unused.
 
 **1. Detect.** List what those installers left behind (only folders whose names this set has ever shipped — your other personal skills are untouched):
 
