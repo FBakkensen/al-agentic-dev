@@ -6,16 +6,12 @@ BeforeAll {
 }
 
 Describe 'Skill workflow contracts' {
-    It 'keeps long runs moving and reports evidence when no answer can be verified' {
-        $orchestrate = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-orchestrate' 'SKILL.md') -Raw
+    It 'reports evidence when no answer can be verified' {
         $lookup = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-lookup' 'SKILL.md') -Raw
         $review = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-review' 'SKILL.md') -Raw
         $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
         $refactor = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-refactor' 'SKILL.md') -Raw
 
-        $orchestrate | Should -Match 'dispatch the next line or repair without stopping to report progress'
-        $orchestrate | Should -Match 'Every kickoff copies the plain-text question rule at the start of this skill verbatim'
-        $orchestrate | Should -Match 'green gate, no blocking review findings, and all required walkthrough cases pass'
         $lookup | Should -Match 'name the unresolved question and each source searched'
         $lookup | Should -Match 'unresolved: <question> — searched: <source locations>'
         $lookup | Should -Match 'Hand the corresponding `verified:`, `assumed:`, or `unresolved:` ledger line'
@@ -29,12 +25,9 @@ Describe 'Skill workflow contracts' {
     It 'keeps refactor evaluation with al-refactor' {
         $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
         $refactor = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-refactor' 'SKILL.md') -Raw
-        $orchestrate = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-orchestrate' 'SKILL.md') -Raw
 
         $implement | Should -Match 'Name /al-refactor as the next move'
         $implement | Should -Not -Match 'Tidy:'
-        $orchestrate | Should -Match 'Launch a fresh /al-refactor child stacked on the implementation branch'
-        $orchestrate | Should -Not -Match 'Tidy: none'
         $refactor | Should -Match '`Tidy: none` or the exact reshapes'
     }
 
@@ -87,7 +80,6 @@ Describe 'Skill workflow contracts' {
             'al-refactor',
             'al-review',
             'al-next',
-            'al-orchestrate',
             'al-walkthrough'
         )
 

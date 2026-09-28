@@ -19,7 +19,7 @@ skills/al-build/scripts/*.ps1   the build substrate
 skills/al-build/config/         al-build.json
 ```
 
-Twenty-two skills ship today.
+Twenty-one skills ship today.
 
 - `al-build` — the compile-publish-test gate, provisioning, breaking-change validation, and the container lifecycle; the contract model everything else copies.
 - `al-clone-bcapps` — the BCApps lookup-source clone.
@@ -41,10 +41,9 @@ Twenty-two skills ship today.
 - `al-review` — read-only contract verdict.
 - `al-next` — reconciliation of design, slices, receipts, and landed code.
 - `al-pr-shepherd` — one open PR to merge: CI watched, review findings fixed, main merged in with intent-preserving conflicts; the merge itself is the user's go.
-- `al-orchestrate` — one reviewed executable item through al-implement → al-refactor → al-review.
 - `al-walkthrough` — the Gherkin walk in the running Web Client through the Consumer repository's workspace MCP.
 
-Issue #52 retires `al-setup-models`, `al-orchestrate`, and `al-miner` in their own PRs.
+Issue #52 retires `al-setup-models` and `al-miner` in their own PRs.
 
 The folder name equals the frontmatter `name`. A skill reaches outside its folder only by naming another skill — `/al-build` — never by path.
 

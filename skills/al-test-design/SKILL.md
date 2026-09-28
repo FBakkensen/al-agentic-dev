@@ -52,4 +52,4 @@ Show the scenario-to-case map before saving it. The user reviews the seam, missi
 
 ## Close
 
-The pass ends with a reviewed `Test specification` after any `Behavior` section in the executable User Story's Acceptance Criteria and no separate test work item. If Azure DevOps work-item tools are unavailable, show the exact section and stop without creating a substitute record. Otherwise name the reviewed item and hand it to /al-orchestrate or /al-implement.
+The pass ends with a reviewed `Test specification` after any `Behavior` section in the executable User Story's Acceptance Criteria and no separate test work item. If Azure DevOps work-item tools are unavailable, show the exact section and stop without creating a substitute record. Otherwise name the reviewed item and hand it to /al-implement.
