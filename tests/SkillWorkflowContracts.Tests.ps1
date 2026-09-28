@@ -12,7 +12,6 @@ Describe 'Skill workflow contracts' {
         $review = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-review' 'SKILL.md') -Raw
         $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
         $refactor = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-refactor' 'SKILL.md') -Raw
-        $lens = Get-Content -LiteralPath (Join-Path $script:RepoRoot 'agents' 'al-review-lens.agent.md') -Raw
 
         $orchestrate | Should -Match 'dispatch the next line or repair without stopping to report progress'
         $orchestrate | Should -Match 'Every kickoff copies the plain-text question rule at the start of this skill verbatim'
@@ -25,7 +24,6 @@ Describe 'Skill workflow contracts' {
         $review | Should -Match 'receipt''s `verified:` / `assumed:` / `unresolved:` entries'
         $review | Should -Match 'Blocking before Non-Blocking'
         $review | Should -Match 'show the failing case or reproducible path when possible'
-        $lens | Should -Match 'plus a failing case or reproducible path when possible'
     }
 
     It 'keeps refactor evaluation with al-refactor' {

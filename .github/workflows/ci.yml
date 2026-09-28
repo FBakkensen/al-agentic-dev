@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, feature/copilot-first-migration, flemmingbk-skills-v2]
+    branches: [main]
   pull_request:
 
 jobs:
@@ -24,10 +24,6 @@ jobs:
       - name: Validate skills
         shell: pwsh
         run: ./scripts/Validate-Skills.ps1
-
-      - name: Check REVIEW.md is in sync with skills.instructions.md
-        shell: pwsh
-        run: ./scripts/Update-Review.ps1 -Check
 
   test:
     runs-on: windows-latest

@@ -1,0 +1,21 @@
+{
+  "name": "al-agentic-dev",
+  "description": "Agentic AL and Business Central development skills.",
+  "version": "0.9.0",
+  "author": {
+    "name": "Flemming Bakkensen"
+  },
+  "userConfig": {
+    "ado_org": {
+      "type": "string",
+      "title": "Azure DevOps organization",
+      "description": "The Azure DevOps organization the bundled ado MCP server connects to, for example naveksaas.",
+      "required": true
+    }
+  },
+  "dependencies": [
+    "mattpocock-skills@claude-plugins-official",
+    "bcquality",
+    "al-language-server-go-windows"
+  ]
+}

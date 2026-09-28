@@ -15,14 +15,11 @@ BeforeAll {
         )
 
         $files = @{
-            'plugin.json'                     = @'
+            '.claude-plugin/plugin.json'      = @'
 {
   "name": "al-agentic-dev",
   "description": "Agentic AL and Business Central development skills.",
-  "version": "1.0.0",
-  "skills": "skills/",
-  "agents": "agents/",
-  "mcpServers": ".mcp.json"
+  "version": "1.0.0"
 }
 '@
             '.mcp.json'                       = @'
@@ -30,17 +27,17 @@ BeforeAll {
   "mcpServers": {
     "nab-al-tools": {
       "type": "stdio",
-      "command": "npx",
-      "tools": ["initialize", "refreshXlf"]
+      "command": "npx"
     }
   }
 }
 '@
-            '.github/plugin/marketplace.json' = @'
+            '.claude-plugin/marketplace.json' = @'
 {
   "name": "al-agentic-dev",
+  "owner": { "name": "Owner" },
   "plugins": [
-    { "name": "al-agentic-dev", "source": "./", "version": "1.0.0" }
+    { "name": "al-agentic-dev", "source": "./" }
   ]
 }
 '@
@@ -49,7 +46,6 @@ BeforeAll {
         foreach ($key in $Remove) { $files.Remove($key) }
 
         New-Item -ItemType Directory -Path (Join-Path $Root 'skills') -Force | Out-Null
-        New-Item -ItemType Directory -Path (Join-Path $Root 'agents') -Force | Out-Null
         foreach ($relativePath in $files.Keys) {
             $path = Join-Path $Root $relativePath
             New-Item -ItemType Directory -Path ([System.IO.Path]::GetDirectoryName($path)) -Force | Out-Null
@@ -128,9 +124,9 @@ Describe 'Validate-Json plugin surface' -Tag 'Unit' {
     }
 
     It 'fails when a plugin surface file is missing' -TestCases @(
-        @{ Case = 'plugin'; Remove = 'plugin.json'; Expected = 'plugin\.json is missing' }
+        @{ Case = 'plugin'; Remove = '.claude-plugin/plugin.json'; Expected = '\.claude-plugin/plugin\.json is missing' }
         @{ Case = 'mcp'; Remove = '.mcp.json'; Expected = '\.mcp\.json is missing' }
-        @{ Case = 'marketplace'; Remove = '.github/plugin/marketplace.json'; Expected = 'marketplace\.json is missing' }
+        @{ Case = 'marketplace'; Remove = '.claude-plugin/marketplace.json'; Expected = '\.claude-plugin/marketplace\.json is missing' }
     ) {
         param($Case, $Remove, $Expected)
 
@@ -142,24 +138,13 @@ Describe 'Validate-Json plugin surface' -Tag 'Unit' {
         $result.Text | Should -Match $Expected
     }
 
-    It 'fails when a manifest path does not exist on disk' {
-        $root = New-PluginRepo -Root (Join-Path $TestDrive 'path-absent')
-        Remove-Item (Join-Path $root 'agents') -Recurse -Force
-
-        $result = Invoke-JsonValidator -Root $root
-
-        $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'agents path does not exist: agents/'
-    }
-
     It 'fails when the manifest drops a required field' -TestCases @(
-        @{ Case = 'name'; Json = '{ "version": "1.0.0", "skills": "skills/", "agents": "agents/", "mcpServers": ".mcp.json" }'; Expected = 'name must be non-empty' }
-        @{ Case = 'version'; Json = '{ "name": "al-agentic-dev", "skills": "skills/", "agents": "agents/", "mcpServers": ".mcp.json" }'; Expected = 'version must be non-empty' }
-        @{ Case = 'skills'; Json = '{ "name": "al-agentic-dev", "version": "1.0.0", "agents": "agents/", "mcpServers": ".mcp.json" }'; Expected = 'skills must name a path' }
+        @{ Case = 'name'; Json = '{ "version": "1.0.0" }'; Expected = 'name must be non-empty' }
+        @{ Case = 'version'; Json = '{ "name": "al-agentic-dev" }'; Expected = 'version must be non-empty' }
     ) {
         param($Case, $Json, $Expected)
 
-        $root = New-PluginRepo -Root (Join-Path $TestDrive "manifest-$Case") -Overrides @{ 'plugin.json' = $Json }
+        $root = New-PluginRepo -Root (Join-Path $TestDrive "manifest-$Case") -Overrides @{ '.claude-plugin/plugin.json' = $Json }
 
         $result = Invoke-JsonValidator -Root $root
 
@@ -167,10 +152,10 @@ Describe 'Validate-Json plugin surface' -Tag 'Unit' {
         $result.Text | Should -Match $Expected
     }
 
-    It 'fails an MCP server without a type or a tools allowlist' -TestCases @(
-        @{ Case = 'no-type'; Json = '{ "mcpServers": { "svc": { "tools": ["a"] } } }'; Expected = "server 'svc' must carry a type" }
-        @{ Case = 'no-tools'; Json = '{ "mcpServers": { "svc": { "type": "stdio" } } }'; Expected = "server 'svc' must carry a non-empty tools allowlist" }
-        @{ Case = 'empty-tools'; Json = '{ "mcpServers": { "svc": { "type": "stdio", "tools": [] } } }'; Expected = "server 'svc' must carry a non-empty tools allowlist" }
+    It 'fails an MCP server without a type, or one that carries a tools allowlist' -TestCases @(
+        @{ Case = 'no-type'; Json = '{ "mcpServers": { "svc": { "command": "npx" } } }'; Expected = "server 'svc' must carry a type" }
+        @{ Case = 'tools'; Json = '{ "mcpServers": { "svc": { "type": "stdio", "tools": ["a"] } } }'; Expected = "server 'svc' carries a tools allowlist" }
+        @{ Case = 'empty-tools'; Json = '{ "mcpServers": { "svc": { "type": "stdio", "tools": [] } } }'; Expected = "server 'svc' carries a tools allowlist" }
         @{ Case = 'no-servers'; Json = '{ "mcpServers": {} }'; Expected = 'must carry at least one server' }
     ) {
         param($Case, $Json, $Expected)
@@ -183,21 +168,63 @@ Describe 'Validate-Json plugin surface' -Tag 'Unit' {
         $result.Text | Should -Match $Expected
     }
 
-    It 'fails a marketplace entry whose source is absent or whose name mismatches' -TestCases @(
-        @{ Case = 'source-absent'; Json = '{ "name": "al-agentic-dev", "plugins": [ { "name": "al-agentic-dev", "source": "./missing/" } ] }'; Expected = 'source does not exist: \./missing/' }
+    It 'fails a marketplace whose local entry does not resolve to the plugin manifest' -TestCases @(
+        @{ Case = 'source-absent'; Json = '{ "name": "al-agentic-dev", "plugins": [ { "name": "al-agentic-dev", "source": "./missing/" } ] }'; Expected = "source does not resolve to a plugin manifest: \./missing/" }
+        @{ Case = 'no-manifest'; Json = '{ "name": "al-agentic-dev", "plugins": [ { "name": "al-agentic-dev", "source": "./skills/" } ] }'; Expected = "source does not resolve to a plugin manifest: \./skills/" }
         @{ Case = 'name-mismatch'; Json = '{ "name": "al-agentic-dev", "plugins": [ { "name": "other-plugin", "source": "./" } ] }'; Expected = "does not match the manifest name 'al-agentic-dev'" }
+        @{ Case = 'unnamed'; Json = '{ "name": "al-agentic-dev", "plugins": [ { "source": "./" } ] }'; Expected = 'every plugins entry must name a plugin' }
+        @{ Case = 'no-source'; Json = '{ "name": "al-agentic-dev", "plugins": [ { "name": "al-agentic-dev" } ] }'; Expected = "plugin 'al-agentic-dev' must carry a source" }
         @{ Case = 'no-entries'; Json = '{ "name": "al-agentic-dev", "plugins": [] }'; Expected = 'plugins must carry at least one entry' }
-        @{ Case = 'version-mismatch'; Json = '{ "name": "al-agentic-dev", "plugins": [ { "name": "al-agentic-dev", "source": "./", "version": "9.9.9" } ] }'; Expected = "version '9\.9\.9' does not match the manifest version '1\.0\.0'" }
-        @{ Case = 'metadata-version-mismatch'; Json = '{ "name": "al-agentic-dev", "metadata": { "version": "8.8.8" }, "plugins": [ { "name": "al-agentic-dev", "source": "./", "version": "1.0.0" } ] }'; Expected = "metadata version '8\.8\.8' does not match the manifest version '1\.0\.0'" }
     ) {
         param($Case, $Json, $Expected)
 
-        $root = New-PluginRepo -Root (Join-Path $TestDrive "market-$Case") -Overrides @{ '.github/plugin/marketplace.json' = $Json }
+        $root = New-PluginRepo -Root (Join-Path $TestDrive "market-$Case") -Overrides @{ '.claude-plugin/marketplace.json' = $Json }
 
         $result = Invoke-JsonValidator -Root $root
 
         $result.ExitCode | Should -Be 1
         $result.Text | Should -Match $Expected
+    }
+
+    It 'fails a re-listed object source that Claude Code cannot install' -TestCases @(
+        @{ Case = 'github-type'; Source = '{ "source": "github", "repo": "microsoft/BCQuality" }'; Expected = "plugin 'relisted' source type must be url or git-subdir" }
+        @{ Case = 'url-missing'; Source = '{ "source": "url" }'; Expected = "plugin 'relisted' source must carry an https url" }
+        @{ Case = 'url-ssh'; Source = '{ "source": "url", "url": "git@github.com:microsoft/BCQuality.git" }'; Expected = "plugin 'relisted' source must carry an https url" }
+        @{ Case = 'url-hostless'; Source = '{ "source": "url", "url": "https://" }'; Expected = "plugin 'relisted' source must carry an https url" }
+        @{ Case = 'url-relative'; Source = '{ "source": "url", "url": "https-not/a/uri" }'; Expected = "plugin 'relisted' source must carry an https url" }
+        @{ Case = 'subdir-no-path'; Source = '{ "source": "git-subdir", "url": "https://github.com/SShadowS/al-lsp-for-agents.git" }'; Expected = "plugin 'relisted' git-subdir source must carry a path" }
+        @{ Case = 'subdir-array-path'; Source = '{ "source": "git-subdir", "url": "https://github.com/SShadowS/al-lsp-for-agents.git", "path": ["tools/formatter"] }'; Expected = "plugin 'relisted' git-subdir source must carry a path" }
+        @{ Case = 'subdir-blank-path'; Source = '{ "source": "git-subdir", "url": "https://github.com/SShadowS/al-lsp-for-agents.git", "path": "  " }'; Expected = "plugin 'relisted' git-subdir source must carry a path" }
+    ) {
+        param($Case, $Source, $Expected)
+
+        $json = "{ `"name`": `"al-agentic-dev`", `"plugins`": [ { `"name`": `"al-agentic-dev`", `"source`": `"./`" }, { `"name`": `"relisted`", `"source`": $Source } ] }"
+        $root = New-PluginRepo -Root (Join-Path $TestDrive "market-object-$Case") -Overrides @{ '.claude-plugin/marketplace.json' = $json }
+
+        $result = Invoke-JsonValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match ([regex]::Escape($Expected))
+    }
+
+    It 'passes re-listed url and git-subdir object sources without a path check' {
+        $marketplace = @'
+{
+  "name": "al-agentic-dev",
+  "owner": { "name": "Owner" },
+  "allowCrossMarketplaceDependenciesOn": ["claude-plugins-official"],
+  "plugins": [
+    { "name": "al-agentic-dev", "source": "./" },
+    { "name": "bcquality", "source": { "source": "url", "url": "HTTPS://GitHub.com/microsoft/BCQuality.git" }, "skills": ["./skills/"] },
+    { "name": "al-language-server-go-windows", "source": { "source": "git-subdir", "url": "https://github.com/SShadowS/al-lsp-for-agents.git", "path": "al-language-server-go-windows" } }
+  ]
+}
+'@
+        $root = New-PluginRepo -Root (Join-Path $TestDrive 'market-object-sources') -Overrides @{ '.claude-plugin/marketplace.json' = $marketplace }
+
+        $result = Invoke-JsonValidator -Root $root
+
+        $result.ExitCode | Should -Be 0 -Because $result.Text
     }
 
     It 'fails malformed JSON anywhere in the tree' {
@@ -219,7 +246,7 @@ Describe 'Validate-Json process wrapper' -Tag 'Process' {
     }
 
     It 'returns nonzero for an invalid plugin surface' {
-        $root = New-PluginRepo -Root (Join-Path $TestDrive 'process-bad') -Remove @('plugin.json')
+        $root = New-PluginRepo -Root (Join-Path $TestDrive 'process-bad') -Remove @('.claude-plugin/plugin.json')
 
         (Invoke-JsonValidatorProcess -Root $root).ExitCode | Should -Be 1
     }

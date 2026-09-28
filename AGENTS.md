@@ -1,3 +1,0 @@
-- Read `.github/copilot-instructions.md` before working here.
-- Read `.github/instructions/skills.instructions.md` before editing `skills/**/*.md`.
-- Read `.github/instructions/powershell.instructions.md` before editing any `.ps1`.

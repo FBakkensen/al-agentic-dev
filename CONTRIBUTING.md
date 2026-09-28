@@ -1,6 +1,6 @@
 # Contributing to al-agentic-dev
 
-Thank you for your interest in contributing to this GitHub Copilot plugin of Agent Skills for AL/Business Central development!
+Thank you for your interest in contributing to this Claude Code plugin of Agent Skills for AL/Business Central development!
 
 ## How to Contribute
 
@@ -41,8 +41,8 @@ When adding or modifying a skill:
    ```
 
 2. Keep every relative link inside the skill folder — a skill is installed on its own.
-3. Read `.github/instructions/skills.instructions.md` before writing; it is the full authoring contract.
-4. Run the five gates before opening a PR: `Validate-Json.ps1`, `Validate-PowerShell.ps1`, `Validate-Skills.ps1`, `Update-Review.ps1 -Check`, `Invoke-Pester tests`.
+3. Read `.claude/rules/skills.md` before writing; it is the full authoring contract.
+4. Run the four gates before opening a PR: `Validate-Json.ps1`, `Validate-PowerShell.ps1`, `Validate-Skills.ps1`, `Invoke-Tests.ps1 -Mode Full`.
 
 ### Commit Messages
 

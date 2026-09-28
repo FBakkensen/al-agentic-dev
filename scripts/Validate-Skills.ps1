@@ -1,50 +1,36 @@
 #Requires -Version 7.2
 <#
 .SYNOPSIS
-    Validates every skills/ folder as a Copilot-first Agent Skill and every
-    agents/*.agent.md as a packaged custom agent.
+    Validates every skills/ folder as a Claude Code plugin skill.
 .DESCRIPTION
-    Skills: each folder holds a SKILL.md whose frontmatter carries exactly the keys name
-    and description, constrained per the Agent Skills specification (agentskills.io): name
-    is 1-64 characters of lowercase a-z0-9 and single hyphens and equals the folder name
+    Each folder holds a SKILL.md whose frontmatter carries exactly the keys name and
+    description, constrained per the Agent Skills specification (agentskills.io): name is
+    1-64 characters of lowercase a-z0-9 and single hyphens and equals the folder name
     exactly; description is a non-empty single-line value of at most 1024 characters,
     quoted whenever it contains a colon. Every skill is model-invocable, so
     disable-model-invocation is not accepted.
-    Verbatim ports — now pinned forks (al-grill-me, al-unslop) —
-    ship donor bodies unchanged beyond the al- namespace, so two checks skip them: the
-    plain-text question rule (hooks.json enforces the ask_user ban at runtime) and the
-    harness token scan (al-unslop lists the word as jargon to cut). Every other check
-    applies to them unchanged.
     Every relative Markdown link in the folder's .md files resolves to a file inside that
     same folder, and only skills/al-build may name a .ps1 file or a scripts/ path — save
     for the per-skill exemptions in $scriptExemptions, each an upstream tool a named skill
     runs inside a checkout it clones.
-    Harness-conditional phrasing is banned: no skill or agent markdown contains the token
-    'harness' — tools, MCP servers, and delegation targets are named by their Copilot names.
+    Harness-conditional phrasing is banned: no skill markdown contains the token
+    'harness' — tools and delegation targets are named by their Claude Code names. The
+    pinned forks (al-grill-me, al-unslop) ship donor bodies unchanged beyond the al-
+    namespace, so the harness scan skips them; every other check applies to them.
     Task-state ceremony is retired: no skill body states a legacy lifecycle field
     (status:, phase:, blocked-on:, review:, tier:, green-gate:) or an Azure DevOps
     work-item transition (State: New|Active|Blocked|Testing|Resolved|Closed).
-    Every skill carries the shared plain-text question rule, which bans the ask_user tool
-    by name. A /name skill reference that
-    matches a folder under the skills root resolves regardless of prefix; an al-prefixed
-    reference with no folder is a violation.
-    Model tiers: when skills/al-setup-models exists, its models.default.json must parse and
-    hold exactly the tiers frontier, execution, and mechanical, each with a non-empty model
-    and effort; no model name from that file may appear in any skill markdown; and every
-    prose ▶ line matches the delegation grammar
+    A /name skill reference that matches a folder under the skills root resolves
+    regardless of prefix; an al-prefixed reference with no folder is a violation.
+    Every prose ▶ line matches the delegation grammar
     '▶ <tier> · <vehicle> · <brief> → <return>' with tier in frontier|execution|mechanical
-    and vehicle in task|session.
-    Agents: each agents/*.agent.md carries exactly the frontmatter keys name, description,
-    tools, and model; name equals the filename stem and meets the skill name spec;
-    description follows the skill description rules; model is a non-empty pin; tools is a
-    non-empty inline value or block list. Every violation is reported; any violation exits 1.
+    and vehicle in task|session. Every violation is reported; any violation exits 1.
 .EXAMPLE
     pwsh scripts/Validate-Skills.ps1
 #>
 [CmdletBinding()]
 param(
-    [string]$SkillsRoot = (Join-Path $PSScriptRoot '..' 'skills'),
-    [string]$AgentsRoot = (Join-Path $PSScriptRoot '..' 'agents')
+    [string]$SkillsRoot = (Join-Path $PSScriptRoot '..' 'skills')
 )
 
 function Get-MarkdownLinkTarget {
@@ -98,17 +84,14 @@ function Get-ProseLine {
 function Invoke-SkillsValidation {
     [CmdletBinding()]
     param(
-        [string]$SkillsRoot = (Join-Path $PSScriptRoot '..' 'skills'),
-        [string]$AgentsRoot = (Join-Path $PSScriptRoot '..' 'agents')
+        [string]$SkillsRoot = (Join-Path $PSScriptRoot '..' 'skills')
     )
 
 $violations = @()
 $root = (Resolve-Path -LiteralPath $SkillsRoot -ErrorAction Stop).Path
-# Pinned forks ship donor bodies unchanged beyond the al- namespace: the question rule
-# and the harness scan skip them (hooks.json enforces the ask_user ban at runtime); all
-# other checks apply.
+# Pinned forks ship donor bodies unchanged beyond the al- namespace: the harness scan
+# skips them (al-unslop lists the word as jargon to cut); all other checks apply.
 $verbatimPorts = @('al-grill-me', 'al-unslop')
-$questionRule = 'Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.'
 # Per-skill script exemptions, approved one at a time. The key is the skill folder; the
 # value is the exact script paths that skill may name. al-build is exempt wholesale
 # because it owns the substrate; every other entry is an upstream tool the skill runs
@@ -118,39 +101,6 @@ $scriptExemptions = @{
     'al-clone-bcquality' = @('.bcquality/tools/Build-KnowledgeIndex.ps1')
 }
 $skillFolders = @(Get-ChildItem -LiteralPath $root -Directory | ForEach-Object Name)
-
-# Model tiers: skills/al-setup-models/models.default.json is the single shipped default.
-# When that skill folder exists, the file must exist, parse, and hold exactly the three
-# tiers with a non-empty model and effort each. Its model names feed the skill-body ban.
-$modelNames = @()
-$setupFolder = Join-Path $root 'al-setup-models'
-$defaultsPath = Join-Path $setupFolder 'models.default.json'
-if (Test-Path -LiteralPath $setupFolder -PathType Container) {
-    if (-not (Test-Path -LiteralPath $defaultsPath -PathType Leaf)) {
-        $violations += 'al-setup-models/models.default.json: missing'
-    } else {
-        $defaults = $null
-        try { $defaults = Get-Content -LiteralPath $defaultsPath -Raw | ConvertFrom-Json -ErrorAction Stop } catch { $defaults = $null }
-        if (-not $defaults) {
-            $violations += 'al-setup-models/models.default.json: does not parse'
-        } else {
-            $expectedTiers = @('frontier', 'execution', 'mechanical')
-            $tierNames = @()
-            if ($defaults.tiers) { $tierNames = @($defaults.tiers.PSObject.Properties.Name) }
-            if (($tierNames -join ',') -cne ($expectedTiers -join ',')) {
-                $violations += "al-setup-models/models.default.json: tiers must be exactly frontier, execution, mechanical (found: $($tierNames -join ', '))"
-            }
-            foreach ($tier in $expectedTiers) {
-                $entry = if ($defaults.tiers) { $defaults.tiers.$tier } else { $null }
-                if (-not $entry -or -not [string]$entry.model -or -not [string]$entry.effort) {
-                    $violations += "al-setup-models/models.default.json: tier '$tier' needs a non-empty model and effort"
-                } else {
-                    $modelNames += [string]$entry.model
-                }
-            }
-        }
-    }
-}
 
 foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
     $skillCount = $violations.Count
@@ -249,14 +199,11 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
                     }
                 }
             }
-            if (-not $body.Contains($questionRule) -and $verbatimPorts -cnotcontains $skill.Name) {
-                $violations += "${relative}: missing the required plain-text question rule"
-            }
         }
 
         if ($verbatimPorts -cnotcontains $skill.Name) {
             foreach ($hit in [regex]::Matches([string]$text, 'harness', 'IgnoreCase')) {
-                $violations += "${relative}: uses harness-conditional phrasing ('$($hit.Value)'); name the Copilot tool or agent instead"
+                $violations += "${relative}: uses harness-conditional phrasing ('$($hit.Value)'); name the Claude Code tool or agent instead"
             }
         }
 
@@ -289,100 +236,10 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
                 $violations += "${relative}: ▶ line outside the delegation grammar '▶ <tier> · <vehicle> · <brief> → <return>': $($prose.Trim())"
             }
         }
-
-        foreach ($modelName in $modelNames) {
-            if ([string]$text -match [regex]::Escape($modelName)) {
-                $violations += "${relative}: names the model '$modelName'; name a tier on a ▶ line instead"
-            }
-        }
     }
 
     if ($violations.Count -eq $skillCount) {
         Write-Host "OK: $($skill.Name)" -ForegroundColor Green
-    }
-}
-
-$agentFiles = @()
-if (Test-Path -LiteralPath $AgentsRoot -PathType Container) {
-    $agentFiles = @(Get-ChildItem -LiteralPath $AgentsRoot -Filter '*.agent.md' -File | Sort-Object Name)
-}
-
-foreach ($agent in $agentFiles) {
-    $agentCount = $violations.Count
-    $agentRelative = "agents/$($agent.Name)"
-    $stem = $agent.Name -replace '\.agent\.md$', ''
-    $text = Get-Content -LiteralPath $agent.FullName -Raw
-    $lines = @($text -split '\r?\n')
-    $close = -1
-    for ($i = 1; $i -lt $lines.Count; $i++) {
-        if ($lines[$i].Trim() -eq '---') { $close = $i; break }
-    }
-
-    if ($lines[0].Trim() -ne '---' -or $close -lt 1) {
-        $violations += "${agentRelative}: frontmatter block does not parse"
-    } else {
-        $frontmatterLines = @($lines[1..($close - 1)])
-        $frontmatter = $frontmatterLines -join "`n"
-        $keys = @([regex]::Matches($frontmatter, '(?m)^([A-Za-z][\w-]*)\s*:') |
-            ForEach-Object { $_.Groups[1].Value })
-        $requiredKeys = @('name', 'description', 'tools', 'model')
-        $unknownKeys = @($keys | Where-Object { $requiredKeys -cnotcontains $_ })
-        $duplicateKeys = @($keys | Group-Object | Where-Object Count -gt 1)
-        $missingKeys = @($requiredKeys | Where-Object { $keys -cnotcontains $_ })
-        if ($unknownKeys.Count -gt 0 -or $duplicateKeys.Count -gt 0 -or $missingKeys.Count -gt 0) {
-            $violations += "${agentRelative}: frontmatter keys must be exactly name, description, tools, and model (found: $($keys -join ', '))"
-        }
-
-        $name = [regex]::Match($frontmatter, '(?m)^name\s*:\s*(.+?)\s*$').Groups[1].Value.Trim("'", '"')
-        if ($name.Length -gt 64 -or $name -cnotmatch '^[a-z0-9]+(-[a-z0-9]+)*$') {
-            $violations += "${agentRelative}: name '$name' must be 1-64 characters of lowercase letters, digits, and single hyphens"
-        }
-        if ($name -cne $stem) {
-            $violations += "${agentRelative}: name '$name' does not match the file name stem '$stem'"
-        }
-
-        $descriptionMatch = [regex]::Match($frontmatter, '(?m)^description\s*:\s*(\S.*?)\s*$')
-        $description = $descriptionMatch.Groups[1].Value
-        $isQuoted = $description.Length -ge 2 -and
-            (($description[0] -eq '"' -and $description[-1] -eq '"') -or
-             ($description[0] -eq "'" -and $description[-1] -eq "'"))
-        $descriptionBody = if ($isQuoted) { $description.Substring(1, $description.Length - 2).Trim() } else { $description }
-        if (-not $descriptionMatch.Success -or $description -match '^[>|][+-]?$' -or -not $descriptionBody) {
-            $violations += "${agentRelative}: description must be a non-empty single-line value"
-        } elseif ($descriptionBody.Length -gt 1024) {
-            $violations += "${agentRelative}: description exceeds 1024 characters"
-        }
-        if (($description -match ':\s' -or $description -match ':$') -and -not $isQuoted) {
-            $violations += "${agentRelative}: description contains a colon and must be quoted"
-        }
-
-        $model = [regex]::Match($frontmatter, '(?m)^model\s*:\s*(.+?)\s*$').Groups[1].Value.Trim("'", '"')
-        if (-not $model -or $model -match '^[>|][+-]?$') {
-            $violations += "${agentRelative}: model must be a non-empty pin"
-        }
-
-        $toolsInline = [regex]::Match($frontmatter, '(?m)^tools\s*:\s*(.*?)\s*$').Groups[1].Value
-        $hasBlockItems = $false
-        for ($i = 0; $i -lt $frontmatterLines.Count; $i++) {
-            if ($frontmatterLines[$i] -match '^tools\s*:') {
-                for ($j = $i + 1; $j -lt $frontmatterLines.Count -and $frontmatterLines[$j] -notmatch '^[A-Za-z]'; $j++) {
-                    if ($frontmatterLines[$j] -match '^\s*-\s*\S') { $hasBlockItems = $true; break }
-                }
-                break
-            }
-        }
-        $inlineEmpty = (-not $toolsInline) -or $toolsInline -match '^(\[\s*\]|""|'''')$'
-        if ($inlineEmpty -and -not $hasBlockItems) {
-            $violations += "${agentRelative}: tools must be a non-empty list"
-        }
-    }
-
-    foreach ($hit in [regex]::Matches([string]$text, 'harness', 'IgnoreCase')) {
-        $violations += "${agentRelative}: uses harness-conditional phrasing ('$($hit.Value)'); name the Copilot tool or agent instead"
-    }
-
-    if ($violations.Count -eq $agentCount) {
-        Write-Host "OK: $agentRelative" -ForegroundColor Green
     }
 }
 
@@ -397,5 +254,5 @@ return 0
 }
 
 if ($MyInvocation.InvocationName -ne '.') {
-    exit (Invoke-SkillsValidation -SkillsRoot $SkillsRoot -AgentsRoot $AgentsRoot)
+    exit (Invoke-SkillsValidation -SkillsRoot $SkillsRoot)
 }

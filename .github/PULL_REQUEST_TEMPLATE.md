@@ -12,7 +12,7 @@ Brief description of the changes.
 Name the skill folder(s) under `skills/` this touches, or "none" for repo tooling.
 
 ## Checklist
-- [ ] The five gates pass locally: `Validate-Json.ps1`, `Validate-PowerShell.ps1`, `Validate-Skills.ps1`, `Update-Review.ps1 -Check`, `Invoke-Tests.ps1 -Mode Full`
+- [ ] The four gates pass locally: `Validate-Json.ps1`, `Validate-PowerShell.ps1`, `Validate-Skills.ps1`, `Invoke-Tests.ps1 -Mode Full`
 - [ ] I have updated documentation if needed
 - [ ] PowerShell scripts work on PS 7.2+
 
