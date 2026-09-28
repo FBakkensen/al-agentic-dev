@@ -172,19 +172,6 @@ Name the outcome, then /al-build.
         $result.Text | Should -Match 'all skills are model-invocable; remove disable-model-invocation'
     }
 
-    It 'accepts the harness token inside a pinned fork only' {
-        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'port-harness') -Files @{
-            'al-unslop/SKILL.md' = (New-SkillContent -Name 'al-unslop' -Body 'Cut harness (as metaphor) from prose.')
-            'demo/SKILL.md'   = (New-SkillContent -Body 'Cut harness metaphors.')
-        }
-
-        $result = Invoke-SkillValidator -Root $root
-
-        $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match 'demo/SKILL\.md: uses harness-conditional phrasing'
-        $result.Text | Should -Not -Match 'al-unslop/SKILL\.md: uses harness-conditional phrasing'
-    }
-
     It 'fails when the name does not match the folder name' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'name-mismatch') -Files @{
             'demo/SKILL.md' = (New-SkillContent -Name 'al-demo')

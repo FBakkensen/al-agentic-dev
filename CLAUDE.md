@@ -19,15 +19,11 @@ skills/al-build/scripts/*.ps1   the build substrate
 skills/al-build/config/         al-build.json
 ```
 
-Twenty-five skills ship today. The two pinned forks keep donor text except the al- namespace — see the fork rule in `.claude/rules/skills.md`.
+Twenty-one skills ship today.
 
 - `al-build` — the compile-publish-test gate, provisioning, breaking-change validation, and the container lifecycle; the contract model everything else copies.
 - `al-clone-bcapps` — the BCApps lookup-source clone.
 - `al-clone-bcquality` — the BCQuality lookup-source clone.
-- `al-grill-me` — pinned fork: the grilling entry.
-- `al-unslop` — pinned fork: the AI-tell cut.
-- `al-grilling` — the one-decision-at-a-time stress-test interview.
-- `al-wait-what` — the contextual re-pitch.
 - `al-grill-adr` — one Original work item, the preserved request, vocabulary, and hard-to-reverse ADRs.
 - `al-miner` — session history into proposed standing lessons.
 - `al-lookup` — one platform question, a sourced answer, the precedent map.
@@ -47,7 +43,7 @@ Twenty-five skills ship today. The two pinned forks keep donor text except the a
 - `al-orchestrate` — one reviewed executable item through al-implement → al-refactor → al-review.
 - `al-walkthrough` — the Gherkin walk in the running Web Client through the Consumer repository's workspace MCP.
 
-Issue #52 retires `al-grill-me`, `al-unslop`, `al-grilling`, `al-wait-what`, `al-orchestrate`, and `al-miner` in their own PRs.
+Issue #52 retires `al-orchestrate` and `al-miner` in their own PRs.
 
 The folder name equals the frontmatter `name`. A skill reaches outside its folder only by naming another skill — `/al-build` — never by path.
 
@@ -55,7 +51,7 @@ Every skill is model-invocable. Skill frontmatter omits `disable-model-invocatio
 
 ## What never ships
 
-- The word "harness" and harness-conditional phrasing — the gate fails it; name the Claude Code tool, MCP server, or agent instead. The pinned `al-unslop` fork is the one exemption: its own rules name the word as jargon to cut.
+- The word "harness" and harness-conditional phrasing — the gate fails it; name the Claude Code tool, MCP server, or agent instead.
 - A capability paraphrase where a concrete Claude Code name exists.
 - Skill frontmatter beyond `name` and `description` — no `allowed-tools`, `model`, `tools`, `mcp-servers`, `user-invocable`, or `disable-model-invocation` on a skill.
 - Task-state ceremony — a lifecycle field (`status:`, `phase:`, `blocked-on:`, `review:`, `tier:`, `green-gate:`), an Azure DevOps work-item transition (`State: New|Active|Blocked|Testing|Resolved|Closed`), or an abstract stage gate. A concrete artifact may require user agreement before its consumer runs; that is contract readiness, not lifecycle state. The gate bans the fields in every folder.
