@@ -30,7 +30,7 @@ Exactly one total slice stays on the Original User Story. With two or more, the 
 ## Choose the next move
 
 - An executable item without reviewed AAA goes to /al-test-design.
-- An executable item with reviewed AAA goes to /al-orchestrate or /al-implement.
+- An executable item with a reviewed `Test specification`, including its `Current-to-final proof map`, goes to /al-implement.
 - A hard-to-reverse business decision goes to /al-grill-adr.
 - An unclear outcome gets a prototype before the hierarchy changes.
 
