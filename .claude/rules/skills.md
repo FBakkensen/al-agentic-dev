@@ -32,7 +32,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## Length and density
 
-15. A `SKILL.md` body is at most 60 lines — 80 for `al-build`, and donor length wins on a pinned fork. Flag anything longer and name what to cut.
+15. A `SKILL.md` body is at most 60 lines — 80 for `al-build`. Flag anything longer and name what to cut.
 16. Flag any sentence the model already obeys without it. "Be thorough", "think carefully", "read the file before editing" change nothing and cost tokens.
 17. Flag one meaning stated in two places inside a skill. Each rule has one authoritative home.
 18. Flag verification scaffolding: "verify your work", "double-check", "re-read before responding", "use a subagent to confirm". Models self-verify; the instruction produces over-verification and wasted tokens.
@@ -79,10 +79,6 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 ## Show the thing
 
 33. Artifact prose shows the thing — the page, the field, the command, the number — one sentence per fact; run narration in an artifact is a defect, its home the commit message. Chat surfaces glyph their fixed slots, shape-distinct rather than color-coded: findings as `⛔` Blocking / `⚖️` Non-Blocking headlines over one-line `⚡ Breaks:` / `📍 Proof:` / `🔧 Fix:` slots in the reviewer agents — the set-wide verdict grammar, "no blocking issues found" a legal verdict, one optional `Refactor food:` line the only home for aesthetics — and the run-narration ledes — `▸` finding / `➜` move mid-run, `✅` / `⛔` at the close — carried by the reply-shape snippet. These carried lines are deliberate, not rule-16/17 findings — live sessions ignored the shape while it was unwritten. Flag a carrier missing its line, and flag an emoji outside a defined slot — that one is decoration. The delegation line `▶ <tier> · <vehicle> · <brief> → <return>` of rule 38 is a defined slot; `al-walkthrough`'s `▶ <business action>` report line stays — it sits in a code span and names no tier.
-
-## Pinned forks
-
-34. A ported skill is a pinned fork: today `al-grill-me` (mattpocock/skills @ 885e2ca, MIT) and `al-unslop` (cursor/plugins pstack @ 60c641e, MIT). The body stays donor text except the al- namespace — the frontmatter `name:` line and any port-internal reference to a renamed sibling; `scripts/Compare-SkillToDonor.ps1` against the donor SHA is expected to show exactly those namespace hunks and nothing else. Flag any other diff — a content fix belongs upstream or in the port note of a deliberate re-port. Rules 15, 16, 17, 19, and 21 read the donor as authoritative on these files; the structural gate (frontmatter, links, scripts, retired concepts) applies unchanged.
 
 ## Azure DevOps attachments
 

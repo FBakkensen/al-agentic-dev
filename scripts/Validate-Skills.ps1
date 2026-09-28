@@ -14,9 +14,7 @@
     for the per-skill exemptions in $scriptExemptions, each an upstream tool a named skill
     runs inside a checkout it clones.
     Harness-conditional phrasing is banned: no skill markdown contains the token
-    'harness' — tools and delegation targets are named by their Claude Code names. The
-    pinned forks (al-grill-me, al-unslop) ship donor bodies unchanged beyond the al-
-    namespace, so the harness scan skips them; every other check applies to them.
+    'harness' — tools and delegation targets are named by their Claude Code names.
     Task-state ceremony is retired: no skill body states a legacy lifecycle field
     (status:, phase:, blocked-on:, review:, tier:, green-gate:) or an Azure DevOps
     work-item transition (State: New|Active|Blocked|Testing|Resolved|Closed).
@@ -89,9 +87,6 @@ function Invoke-SkillsValidation {
 
 $violations = @()
 $root = (Resolve-Path -LiteralPath $SkillsRoot -ErrorAction Stop).Path
-# Pinned forks ship donor bodies unchanged beyond the al- namespace: the harness scan
-# skips them (al-unslop lists the word as jargon to cut); all other checks apply.
-$verbatimPorts = @('al-grill-me', 'al-unslop')
 # Per-skill script exemptions, approved one at a time. The key is the skill folder; the
 # value is the exact script paths that skill may name. al-build is exempt wholesale
 # because it owns the substrate; every other entry is an upstream tool the skill runs
@@ -201,10 +196,8 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
             }
         }
 
-        if ($verbatimPorts -cnotcontains $skill.Name) {
-            foreach ($hit in [regex]::Matches([string]$text, 'harness', 'IgnoreCase')) {
-                $violations += "${relative}: uses harness-conditional phrasing ('$($hit.Value)'); name the Claude Code tool or agent instead"
-            }
+        foreach ($hit in [regex]::Matches([string]$text, 'harness', 'IgnoreCase')) {
+            $violations += "${relative}: uses harness-conditional phrasing ('$($hit.Value)'); name the Claude Code tool or agent instead"
         }
 
         foreach ($field in [regex]::Matches($body, '(?<![\w-])(status|phase|blocked-on|review|tier|green-gate)\s*:')) {
