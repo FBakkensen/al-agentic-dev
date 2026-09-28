@@ -1,6 +1,6 @@
 # Contributing to al-agentic-dev
 
-Thank you for your interest in contributing to this GitHub Copilot plugin of Agent Skills for AL/Business Central development!
+Thank you for your interest in contributing to this Claude Code plugin of Agent Skills for AL/Business Central development!
 
 ## How to Contribute
 

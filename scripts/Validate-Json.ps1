@@ -10,7 +10,8 @@
     silently drop the server), and .claude-plugin/marketplace.json (name non-empty; at
     least one plugins entry; every entry names a plugin and carries a source; a local
     string source resolves to <source>/.claude-plugin/plugin.json with a matching name).
-    Re-listed object sources (url, git-subdir) are not path-checked. All three files must
+    A re-listed object source is a url or git-subdir source with an https url, and a
+    git-subdir source carries a path; neither is path-checked locally. All three files must
     exist. Returns exit code 1 if anything fails.
 .EXAMPLE
     pwsh scripts/Validate-Json.ps1
@@ -99,8 +100,21 @@ if ($marketplace) {
             $script:jsonValidationErrors += "FAIL: marketplace.json - plugin '$($entry.name)' must carry a source"
             continue
         }
-        # Re-listed plugins use url / git-subdir object sources; only a local path is checked.
-        if ($entry.source -isnot [string]) { continue }
+        # Re-listed plugins use url / git-subdir object sources over https; they carry no local path.
+        if ($entry.source -isnot [string]) {
+            $type = $entry.source.source
+            if ($type -cnotin @('url', 'git-subdir')) {
+                $script:jsonValidationErrors += "FAIL: marketplace.json - plugin '$($entry.name)' source type must be url or git-subdir (found: $type)"
+                continue
+            }
+            if ($entry.source.url -isnot [string] -or $entry.source.url -notmatch '^https://') {
+                $script:jsonValidationErrors += "FAIL: marketplace.json - plugin '$($entry.name)' source must carry an https url"
+            }
+            if ($type -ceq 'git-subdir' -and -not $entry.source.path) {
+                $script:jsonValidationErrors += "FAIL: marketplace.json - plugin '$($entry.name)' git-subdir source must carry a path"
+            }
+            continue
+        }
 
         $sourceManifest = Join-Path $RepoRoot $entry.source '.claude-plugin' 'plugin.json'
         if (-not (Test-Path -LiteralPath $sourceManifest -PathType Leaf)) {

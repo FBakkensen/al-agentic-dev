@@ -186,6 +186,23 @@ Describe 'Validate-Json plugin surface' -Tag 'Unit' {
         $result.Text | Should -Match $Expected
     }
 
+    It 'fails a re-listed object source that Claude Code cannot install' -TestCases @(
+        @{ Case = 'github-type'; Source = '{ "source": "github", "repo": "microsoft/BCQuality" }'; Expected = "plugin 'relisted' source type must be url or git-subdir" }
+        @{ Case = 'url-missing'; Source = '{ "source": "url" }'; Expected = "plugin 'relisted' source must carry an https url" }
+        @{ Case = 'url-ssh'; Source = '{ "source": "url", "url": "git@github.com:microsoft/BCQuality.git" }'; Expected = "plugin 'relisted' source must carry an https url" }
+        @{ Case = 'subdir-no-path'; Source = '{ "source": "git-subdir", "url": "https://github.com/SShadowS/al-lsp-for-agents.git" }'; Expected = "plugin 'relisted' git-subdir source must carry a path" }
+    ) {
+        param($Case, $Source, $Expected)
+
+        $json = "{ `"name`": `"al-agentic-dev`", `"plugins`": [ { `"name`": `"al-agentic-dev`", `"source`": `"./`" }, { `"name`": `"relisted`", `"source`": $Source } ] }"
+        $root = New-PluginRepo -Root (Join-Path $TestDrive "market-object-$Case") -Overrides @{ '.claude-plugin/marketplace.json' = $json }
+
+        $result = Invoke-JsonValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match ([regex]::Escape($Expected))
+    }
+
     It 'passes re-listed url and git-subdir object sources without a path check' {
         $marketplace = @'
 {

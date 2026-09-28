@@ -677,7 +677,7 @@ Describe 'Validate-Skills harness checks' -Tag 'Unit' {
 
     It 'passes the same rule phrased without the token' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'harness-inverted') -Files @{
-            'demo/SKILL.md' = (New-SkillContent -Body 'These parallelize in full-capability subagents; when subagents are unavailable, apply them in one pass.')
+            'demo/SKILL.md' = (New-SkillContent -Body 'These parallelize in full-capability subagents.')
         }
 
         $result = Invoke-SkillValidator -Root $root
