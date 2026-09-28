@@ -19,7 +19,7 @@ skills/al-build/scripts/*.ps1   the build substrate
 skills/al-build/config/         al-build.json
 ```
 
-Twenty-one skills ship today.
+Twenty skills ship today.
 
 - `al-build` — the compile-publish-test gate, provisioning, breaking-change validation, and the container lifecycle; the contract model everything else copies.
 - `al-clone-bcapps` — the BCApps lookup-source clone.
@@ -30,7 +30,6 @@ Twenty-one skills ship today.
 - `al-azure-devops-attachments` — Azure CLI upload and verified work-item attachment relations.
 - `al-commit` — full-worktree staging and independently valid commits.
 - `al-pull-request` — ready pull request creation and updates.
-- `al-setup-models` — the retiring model-tier setup.
 - `al-event-model` — the process contract and BPMN review HTML.
 - `al-arc42` — official arc42 formatting and architecture review HTML.
 - `al-design` — Level 1 module contracts.
@@ -43,7 +42,7 @@ Twenty-one skills ship today.
 - `al-pr-shepherd` — one open PR to merge: CI watched, review findings fixed, main merged in with intent-preserving conflicts; the merge itself is the user's go.
 - `al-walkthrough` — the Gherkin walk in the running Web Client through the Consumer repository's workspace MCP.
 
-Issue #52 retires `al-setup-models` and `al-miner` in their own PRs.
+Issue #52 retires `al-miner` in its own PR.
 
 The folder name equals the frontmatter `name`. A skill reaches outside its folder only by naming another skill — `/al-build` — never by path.
 
