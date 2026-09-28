@@ -125,10 +125,6 @@ copilot plugin uninstall al-agentic-dev
 | `/al-clone-bcapps` | Clones Microsoft's W1 source at the matching BC version into `.bcapps/` for reading and searching platform code. |
 | `/al-clone-bcquality` | Clones Microsoft's BCQuality knowledge base into `.bcquality/` and builds its knowledge index. |
 | `/al-arc42` | Applies the official arc42 v9.0-EN subset to Level 1, Runtime View, and proven Level 2 content, then writes a local architecture review HTML and Azure DevOps artifacts. |
-| `/al-grilling` | Interviews you one consequential decision at a time, rebuilding the context and visual relationships from each earlier answer. |
-| `/al-grill-me` | Starts the grilling interview over a plan or design. |
-| `/al-wait-what` | Stops the flow and reconnects the last message to prior decisions with plain language and a useful visual. |
-| `/al-unslop` | Cuts AI tells from any writing; applies to every reply and artifact. |
 | `/al-miner` | Mines session history for repeated failures and steering corrections; proposes standing lessons with evidence, never landing them itself. |
 | `/al-lookup` | Answers one platform question with a source pointer — Microsoft Learn, the BCApps clone, or the BCQuality index — and grows the repo's precedent map. |
 | `/al-azure-devops-attachments` | Uploads local files through Azure CLI credentials, attaches them to an Azure DevOps work item, and guides the user through authentication when needed. |
@@ -147,7 +143,7 @@ copilot plugin uninstall al-agentic-dev
 | `/al-pr-shepherd` | Drives one open PR to merge — CI watched, Copilot findings fixed, main merged in with intent-preserving conflict resolution — merging only on your explicit go. |
 | `/al-orchestrate` | Runs one executable item with reviewed AAA through implementation, bounded refactoring, and read-only review in child sessions. |
 
-Two read-only reviewer agents ride under `agents/` — `al-review-lens` and `al-knowledge-leaf`, serving `/al-review`'s fan-out. `al-grill-me` (mattpocock/skills, MIT) and `al-unslop` (pstack, MIT) are pinned forks: their bodies stay donor text except the al- namespace, provenance pinned at the donor SHAs, and a content fix belongs upstream. `al-grilling` and `al-wait-what` began with the mattpocock donor text and are now maintained here. The two agents' pins follow the model tiers — `al-review-lens` at execution, `al-knowledge-leaf` at mechanical — and a `▶` line's tier override wins at dispatch.
+Two read-only reviewer agents ride under `agents/` — `al-review-lens` and `al-knowledge-leaf`, serving `/al-review`'s fan-out. The two agents' pins follow the model tiers — `al-review-lens` at execution, `al-knowledge-leaf` at mechanical — and a `▶` line's tier override wins at dispatch.
 
 Third-party formats and runtime dependencies are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
