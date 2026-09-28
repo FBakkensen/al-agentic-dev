@@ -107,10 +107,14 @@ if ($marketplace) {
                 $script:jsonValidationErrors += "FAIL: marketplace.json - plugin '$($entry.name)' source type must be url or git-subdir (found: $type)"
                 continue
             }
-            if ($entry.source.url -isnot [string] -or $entry.source.url -notmatch '^https://') {
+            $uri = $null
+            $isHttpsUrl = $entry.source.url -is [string] -and
+                [System.Uri]::TryCreate($entry.source.url, [System.UriKind]::Absolute, [ref]$uri) -and
+                $uri.Scheme -eq [System.Uri]::UriSchemeHttps -and $uri.Host
+            if (-not $isHttpsUrl) {
                 $script:jsonValidationErrors += "FAIL: marketplace.json - plugin '$($entry.name)' source must carry an https url"
             }
-            if ($type -ceq 'git-subdir' -and -not $entry.source.path) {
+            if ($type -ceq 'git-subdir' -and ($entry.source.path -isnot [string] -or -not $entry.source.path.Trim())) {
                 $script:jsonValidationErrors += "FAIL: marketplace.json - plugin '$($entry.name)' git-subdir source must carry a path"
             }
             continue

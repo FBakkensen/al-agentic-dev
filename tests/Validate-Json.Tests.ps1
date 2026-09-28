@@ -190,7 +190,11 @@ Describe 'Validate-Json plugin surface' -Tag 'Unit' {
         @{ Case = 'github-type'; Source = '{ "source": "github", "repo": "microsoft/BCQuality" }'; Expected = "plugin 'relisted' source type must be url or git-subdir" }
         @{ Case = 'url-missing'; Source = '{ "source": "url" }'; Expected = "plugin 'relisted' source must carry an https url" }
         @{ Case = 'url-ssh'; Source = '{ "source": "url", "url": "git@github.com:microsoft/BCQuality.git" }'; Expected = "plugin 'relisted' source must carry an https url" }
+        @{ Case = 'url-hostless'; Source = '{ "source": "url", "url": "https://" }'; Expected = "plugin 'relisted' source must carry an https url" }
+        @{ Case = 'url-relative'; Source = '{ "source": "url", "url": "https-not/a/uri" }'; Expected = "plugin 'relisted' source must carry an https url" }
         @{ Case = 'subdir-no-path'; Source = '{ "source": "git-subdir", "url": "https://github.com/SShadowS/al-lsp-for-agents.git" }'; Expected = "plugin 'relisted' git-subdir source must carry a path" }
+        @{ Case = 'subdir-array-path'; Source = '{ "source": "git-subdir", "url": "https://github.com/SShadowS/al-lsp-for-agents.git", "path": ["tools/formatter"] }'; Expected = "plugin 'relisted' git-subdir source must carry a path" }
+        @{ Case = 'subdir-blank-path'; Source = '{ "source": "git-subdir", "url": "https://github.com/SShadowS/al-lsp-for-agents.git", "path": "  " }'; Expected = "plugin 'relisted' git-subdir source must carry a path" }
     ) {
         param($Case, $Source, $Expected)
 
@@ -211,7 +215,7 @@ Describe 'Validate-Json plugin surface' -Tag 'Unit' {
   "allowCrossMarketplaceDependenciesOn": ["claude-plugins-official"],
   "plugins": [
     { "name": "al-agentic-dev", "source": "./" },
-    { "name": "bcquality", "source": { "source": "url", "url": "https://github.com/microsoft/BCQuality.git" }, "skills": ["./skills/"] },
+    { "name": "bcquality", "source": { "source": "url", "url": "HTTPS://GitHub.com/microsoft/BCQuality.git" }, "skills": ["./skills/"] },
     { "name": "al-language-server-go-windows", "source": { "source": "git-subdir", "url": "https://github.com/SShadowS/al-lsp-for-agents.git", "path": "al-language-server-go-windows" } }
   ]
 }
