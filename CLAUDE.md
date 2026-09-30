@@ -7,9 +7,8 @@ Git history is the donor archive — a retired skill returns from a commit, neve
 ## The shipped surface
 
 ```
-.claude-plugin/plugin.json      the plugin manifest: name, description, version (set only here), the ado_org userConfig, the Base plugin dependencies
+.claude-plugin/plugin.json      the plugin manifest: name, description, version (set only here), the ado_org userConfig, the bundled MCP servers — microsoft-learn and ado, none with a tools allowlist — the Base plugin dependencies
 .claude-plugin/marketplace.json the marketplace: this plugin at ./ plus the re-listed Base plugins bcquality and al-language-server-go-windows
-.mcp.json                       bundled MCP servers — microsoft-learn and ado — none with a tools allowlist
 hooks/hooks.json                the SessionStart hook: runs hooks/Write-SessionStart.ps1
 hooks/session-start.md          the delegation rules the hook injects in every session
 output-styles/AL.md             the opt-in al-agentic-dev:AL style: Speak BC and the interview-diagram rule; frontmatter name AL, keep-coding-instructions true, no force-for-plugin
@@ -54,6 +53,7 @@ Every skill is model-invocable. Skill frontmatter omits `disable-model-invocatio
 - Task-state ceremony — a lifecycle field (`status:`, `phase:`, `blocked-on:`, `review:`, `tier:`, `green-gate:`), an Azure DevOps work-item transition (`State: New|Active|Blocked|Testing|Resolved|Closed`), or an abstract stage gate. A concrete artifact may require user agreement before its consumer runs; that is contract readiness, not lifecycle state. The gate bans the fields in every folder.
 - A link that leaves the skill folder: `](../`, `](/`, any absolute path.
 - An MCP server with a `tools` allowlist — Claude Code silently drops the server; the JSON gate fails it.
+- A `.mcp.json` at the repo root — Claude Code also loads it as this repo's project MCP servers, so every dev session here would start the plugin's servers; they live in `plugin.json`'s `mcpServers`, and the JSON gate fails a root `.mcp.json`.
 - Slash-command files — out of scope until a proven defect asks for them. One hook ships: `SessionStart` injects the delegation rules in every session (ADR 0003). A new hook needs its own proven defect.
 
 Say so when a change reintroduces one of these.
