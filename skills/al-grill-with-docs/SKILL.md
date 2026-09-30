@@ -5,7 +5,7 @@ description: Use whenever /mattpocock-skills:grill-with-docs runs on an AL/Busin
 
 # al-grill-with-docs - anchor the request in its Original work item
 
-In: `/mattpocock-skills:grill-with-docs` running on an AL request. `/mattpocock-skills:grilling` owns the interview; `/mattpocock-skills:domain-modeling` owns `CONTEXT.md`, ADRs, and when to offer one. This addition adds the Azure DevOps anchor, the process questions, and the BC deltas to the glossary. Every work-item read and write follows `docs/agents/issue-tracker.md`.
+In: `/mattpocock-skills:grill-with-docs` running on an AL request. `/mattpocock-skills:grilling` owns the interview; `/mattpocock-skills:domain-modeling` owns `CONTEXT.md`, ADRs, and when to offer one. This addition adds the Azure DevOps anchor, the process questions, and the BC deltas to the glossary. Every work-item read and write follows the tracker text that the `## Agent skills` block's issue tracker line points to.
 
 ## The anchor
 
