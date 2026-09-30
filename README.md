@@ -59,32 +59,6 @@ After changing branches or `al-build.json`, restart the workspace MCP or Claude 
 
 Verify from a consumer repo whose branch container is up: `bc_list_companies` answers with the container's companies.
 
-## Coming from the Copilot version
-
-Earlier versions were a GitHub Copilot plugin, which does not run in Claude Code, and before that a set of loose per-user skill folders installed with `npx skills add`. Claude Code loads loose skills from `~/.claude/skills`, so a leftover copy there sits beside this plugin's skills under the same names; copies under `~/.agents` and `~/.copilot` are stale and unused.
-
-**1. Detect.** List what those installers left behind (only folders whose names this set has ever shipped — your other personal skills are untouched):
-
-```powershell
-$plugin = 'al-agentic-dev-overview','al-arc42','al-build','al-clone-bcapps','al-clone-bcquality','al-code-review',
-  'al-design','al-event-model','al-grill-adr','al-grill-me','al-grilling','al-implement','al-knowledge-pass','al-next',
-  'al-orchestrate','al-provision','al-quiz','al-refactor','al-refine','al-routing','al-scope','al-spec-review',
-  'al-sync-main','al-unslop','al-user-verification','al-validate-breaking-changes','al-visualize','al-wait-what','babysit-pr'
-foreach ($dir in "$HOME\.agents\skills", "$HOME\.copilot\skills", "$HOME\.claude\skills") {
-  if (Test-Path $dir) { Get-ChildItem $dir -Directory | Where-Object Name -in $plugin }
-}
-```
-
-**2. Remove.** Delete every folder the detection listed. Nothing else in those directories belongs to this plugin.
-
-**3. Remove the Copilot plugin.** If you installed the Copilot version, close every Copilot session, then uninstall it. While a session holds the plugin's MCP processes, the uninstall fails with `os error 32`.
-
-```
-copilot plugin uninstall al-agentic-dev
-```
-
-**4. Install fresh** per [Install](#install).
-
 ## The skills
 
 | Skill | What it does |

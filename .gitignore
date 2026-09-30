@@ -37,8 +37,6 @@ Desktop.ini
 
 # Build output (test results, etc.)
 .output/
-.impeccable/
-/testResults.xml
 
 # Secrets
 **/secret.json
@@ -48,6 +46,3 @@ Desktop.ini
 
 # Throwaway eval material
 experiments/
-
-# Agent session scratch (SDD ledgers, briefs, review packages)
-.superpowers/
