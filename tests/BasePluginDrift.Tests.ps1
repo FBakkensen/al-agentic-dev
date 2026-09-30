@@ -263,6 +263,87 @@ Describe 'Base plugin resolution into a directory' -Tag 'Unit' {
     }
 }
 
+Describe 'Eval copies of the Base plugins' -Tag 'Unit' {
+    BeforeAll {
+        $script:EvalScript = Join-Path $script:RepoRoot 'scripts' 'Update-EvalBasePlugins.ps1'
+        . $script:EvalScript
+
+        function Invoke-EvalCopy {
+            param([string]$Root, [string]$Destination, [hashtable]$PluginRoot)
+
+            $output = @(
+                & {
+                    Update-EvalBasePlugin -RepoRoot $Root -Destination $Destination -PluginRoot $PluginRoot -ErrorAction Continue
+                } *>&1
+            )
+            return [pscustomobject]@{
+                ExitCode = [int]$output[-1]
+                Text     = (@($output | Select-Object -SkipLast 1 | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine)
+            }
+        }
+    }
+
+    It 'writes every declared Base plugin, the one that ships no skill too, and nothing else' {
+        $root = New-ConsumerRepo -Name 'eval-copy'
+        $destination = Join-Path $TestDrive 'eval-copy' '.base-plugins'
+
+        $result = Invoke-EvalCopy -Root $root -Destination $destination -PluginRoot (New-BasePlugins -Name 'eval-copy')
+
+        $result.ExitCode | Should -Be 0 -Because $result.Text
+        Join-Path $destination 'mattpocock-skills' 'skills' 'engineering' 'tdd' 'SKILL.md' | Should -Exist
+        Join-Path $destination 'bcquality' 'skills' 'al-code-review' 'SKILL.md' | Should -Exist
+        Join-Path $destination 'al-language-server-go-windows' '.lsp.json' | Should -Exist
+        @(Get-ChildItem -LiteralPath $destination -Force).Name | Sort-Object |
+            Should -Be @('al-language-server-go-windows', 'bcquality', 'mattpocock-skills')
+    }
+
+    It 'refreshes a copy on rerun, dropping files upstream no longer ships' {
+        $root = New-ConsumerRepo -Name 'eval-refresh'
+        $destination = Join-Path $TestDrive 'eval-refresh' '.base-plugins'
+        Set-FixtureFile (Join-Path $destination 'mattpocock-skills' 'skills' 'retired' 'SKILL.md') "---`nname: retired`n---"
+
+        $result = Invoke-EvalCopy -Root $root -Destination $destination -PluginRoot (New-BasePlugins -Name 'eval-refresh')
+
+        $result.ExitCode | Should -Be 0 -Because $result.Text
+        Join-Path $destination 'mattpocock-skills' 'skills' 'retired' | Should -Not -Exist
+        Join-Path $destination 'mattpocock-skills' 'skills' 'engineering' 'tdd' 'SKILL.md' | Should -Exist
+    }
+
+    It 'exits nonzero, names the dependency, and keeps the existing copies when one cannot be fetched' {
+        $root = New-ConsumerRepo -Name 'eval-missing'
+        $destination = Join-Path $TestDrive 'eval-missing' '.base-plugins'
+        $kept = Join-Path $destination 'mattpocock-skills' 'skills' 'kept' 'SKILL.md'
+        Set-FixtureFile $kept "---`nname: kept`n---"
+
+        $result = Invoke-EvalCopy -Root $root -Destination $destination -PluginRoot (New-BasePlugins -Name 'eval-missing' -OmitBcQuality)
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "dependency 'bcquality' could not be fetched"
+        $kept | Should -Exist
+        Join-Path $destination 'bcquality' | Should -Not -Exist
+    }
+}
+
+Describe 'Eval copies process wrapper' -Tag 'Process' {
+    It 'writes into .base-plugins by default and exits nonzero when an upstream is unreachable' {
+        $script:EvalScript = Join-Path $script:RepoRoot 'scripts' 'Update-EvalBasePlugins.ps1'
+        $good = New-ConsumerRepo -Name 'eval-process-good'
+        $map = New-BasePlugins -Name 'eval-process-good'
+        $pairs = ($map.Keys | ForEach-Object { "'$_=$($map[$_])'" }) -join ','
+
+        & pwsh -NoProfile -Command "& '$script:EvalScript' -RepoRoot '$good' -PluginRoot $pairs; exit `$LASTEXITCODE" *> $null
+        $LASTEXITCODE | Should -Be 0
+        Join-Path $good '.base-plugins' 'bcquality' 'skills' 'al-code-review' 'SKILL.md' | Should -Exist
+
+        $missing = ([uri](Join-Path $TestDrive 'upstream-missing' 'bcquality')).AbsoluteUri
+        $bad = New-ConsumerRepo -Name 'eval-process-bad' -Dependencies @('bcquality') -BcQualityUrl $missing
+        $output = & pwsh -NoProfile -Command "& '$script:EvalScript' -RepoRoot '$bad'; exit `$LASTEXITCODE" 2>&1
+        $LASTEXITCODE | Should -Be 1
+        ($output -join "`n") | Should -Match "dependency 'bcquality' could not be fetched"
+        Join-Path $bad '.base-plugins' 'bcquality' | Should -Not -Exist
+    }
+}
+
 Describe 'Base plugin fetch from git sources' -Tag 'Process' {
     BeforeAll {
         function New-GitRepo {

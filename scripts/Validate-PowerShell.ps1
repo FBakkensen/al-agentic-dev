@@ -3,16 +3,25 @@
 .SYNOPSIS
     Validates PowerShell syntax for all .ps1 files in the repository.
 .DESCRIPTION
-    Recursively finds all .ps1 files and validates their syntax using the PowerShell parser.
+    Recursively finds all .ps1 files and validates their syntax using the PowerShell parser,
+    and checks the exports of every .psm1. Both sweeps skip the eval copies of the Base
+    plugins (.base-plugins/) and the eval results (evals/results/).
     Returns exit code 1 if any file fails validation.
 .EXAMPLE
     pwsh scripts/Validate-PowerShell.ps1
 #>
 [CmdletBinding()]
-param()
+param(
+    [string]$RepoRoot = (Join-Path $PSScriptRoot '..')
+)
+
+$RepoRoot = (Resolve-Path -LiteralPath $RepoRoot -ErrorAction Stop).Path
+$skipped = '^(\.base-plugins|evals[\\/]results)[\\/]'
 
 $errors = @()
-Get-ChildItem -Path $PSScriptRoot/.. -Recurse -Filter "*.ps1" | ForEach-Object {
+Get-ChildItem -Path $RepoRoot -Recurse -Filter "*.ps1" |
+    Where-Object { [System.IO.Path]::GetRelativePath($RepoRoot, $_.FullName) -notmatch $skipped } |
+    ForEach-Object {
     $tokens = $null
     $parseErrors = $null
     $null = [System.Management.Automation.Language.Parser]::ParseFile(
@@ -31,7 +40,9 @@ Get-ChildItem -Path $PSScriptRoot/.. -Recurse -Filter "*.ps1" | ForEach-Object {
 
 # Validate module exports
 Write-Host "`n--- Module Export Validation ---" -ForegroundColor Cyan
-Get-ChildItem -Path $PSScriptRoot/.. -Recurse -Filter "*.psm1" | ForEach-Object {
+Get-ChildItem -Path $RepoRoot -Recurse -Filter "*.psm1" |
+    Where-Object { [System.IO.Path]::GetRelativePath($RepoRoot, $_.FullName) -notmatch $skipped } |
+    ForEach-Object {
     try {
         $module = Import-Module $_.FullName -PassThru -Force -DisableNameChecking -ErrorAction Stop
 

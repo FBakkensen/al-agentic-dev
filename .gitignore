@@ -46,3 +46,7 @@ Desktop.ini
 
 # Throwaway eval material
 experiments/
+
+# Trigger evals: the Base plugin copies (scripts/Update-EvalBasePlugins.ps1) and run results
+.base-plugins/
+evals/results/

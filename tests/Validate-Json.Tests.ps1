@@ -236,6 +236,26 @@ Describe 'Validate-Json plugin surface' -Tag 'Unit' {
         $result.ExitCode | Should -Be 1
         $result.Text | Should -Match 'FAIL:.*broken\.json'
     }
+
+    It 'skips the eval copies of the Base plugins and the eval results, but not the eval cases' {
+        $root = New-PluginRepo -Root (Join-Path $TestDrive 'eval-skip')
+        foreach ($relative in @('.base-plugins/bcquality/broken.json', 'evals/results/run/broken.json')) {
+            $path = Join-Path $root $relative
+            New-Item -ItemType Directory -Path ([System.IO.Path]::GetDirectoryName($path)) -Force | Out-Null
+            Set-Content -LiteralPath $path -Value '{ "unclosed": ' -Encoding utf8
+        }
+
+        $result = Invoke-JsonValidator -Root $root
+        $result.ExitCode | Should -Be 0 -Because $result.Text
+        $result.Text | Should -Not -Match 'broken\.json'
+
+        New-Item -ItemType Directory -Path (Join-Path $root 'evals' 'al-build') -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $root 'evals' 'al-build' 'case.json') -Value '{ "unclosed": ' -Encoding utf8
+
+        $result = Invoke-JsonValidator -Root $root
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'FAIL:.*case\.json'
+    }
 }
 
 Describe 'Validate-Json process wrapper' -Tag 'Process' {
