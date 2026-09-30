@@ -67,19 +67,18 @@ Describe 'Skill workflow contracts' {
         $mapContracts[0] | Should -Be (Join-Path $script:SkillsRoot 'al-lookup' 'SKILL.md')
     }
 
-    It 'uses root User Stories and orders Acceptance Criteria for people before agents' {
-        $scope = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-scope' 'SKILL.md') -Raw
+    It 'slices the Original work item into child PBIs and orders Acceptance Criteria for people before agents' {
+        $toTickets = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-to-tickets' 'SKILL.md') -Raw
         $testDesign = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-test-design' 'SKILL.md') -Raw
 
-        $scope | Should -Match 'One user request creates one Original User Story'
-        $scope | Should -Match 'not the top of the Azure DevOps hierarchy'
-        $scope | Should -Match 'structural parents remain unchanged and out of scope'
-        $scope | Should -Match 'Exactly one Vertical slice creates no child'
-        $scope | Should -Match 'every slice gets one direct child User Story'
-        $scope | Should -Match '`Problem`, `Expected outcome`, `Scope`, `Process contract`, `Business process`, `Runtime View`, `Building Block View`'
-        $scope | Should -Match '`Behavior` precedes `Test specification` when both are present'
-        $scope | Should -Match 'Either section may be omitted'
-        $scope | Should -Match 'valid fenced Gherkin'
+        $toTickets | Should -Match '`Original` names a role in this workflow, not the top of the Azure DevOps hierarchy'
+        $toTickets | Should -Match 'Every existing item stays where it is, including the Original''s own structural parent'
+        $toTickets | Should -Match 'One slice creates no child'
+        $toTickets | Should -Match 'Several slices each get one direct child PBI under the Original work item'
+        $toTickets | Should -Match '`Behavior` precedes `Test specification` when both are present'
+        $toTickets | Should -Match 'Either section may be omitted'
+        $toTickets | Should -Match 'valid fenced Gherkin'
+        $toTickets | Should -Not -Match 'User Story'
         $testDesign | Should -Match 'Acceptance Criteria, after `## Behavior` when both are present'
     }
 

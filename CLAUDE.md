@@ -32,7 +32,7 @@ Twenty skills ship today.
 - `al-event-model` — the process contract and BPMN review HTML.
 - `al-arc42` — official arc42 formatting and architecture review HTML.
 - `al-design` — Level 1 module contracts.
-- `al-scope` — one Original work item with direct outcome slices.
+- `al-to-tickets` — BPMN-outcome slices, direct child PBIs, and Gherkin `Behavior` for `/mattpocock-skills:to-tickets`.
 - `al-test-design` — user-reviewed AAA after Gherkin in Acceptance Criteria.
 - `al-implement` — proof through the module interface.
 - `al-refactor` — behavior-frozen reshape.
