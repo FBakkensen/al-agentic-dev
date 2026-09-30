@@ -1,6 +1,6 @@
 # Issue tracker: Azure DevOps
 
-Work items for this repository live in the Azure DevOps org `naveksaas`. The `## Agent skills` block's issue tracker line names the backlog project, which is `NAVEKSA NEXT` for ShopFloor.
+Work items for this repository live in the Azure DevOps org `naveksaas`. The `## Agent skills` block's issue tracker line names the backlog project, and that line is the one to read; ShopFloor's, for example, is `NAVEKSA NEXT`.
 
 ## Tools
 
