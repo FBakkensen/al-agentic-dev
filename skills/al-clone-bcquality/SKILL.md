@@ -7,7 +7,7 @@ description: Clone Microsoft's BCQuality knowledge base when it is missing, susp
 
 Symbols say a name exists and `.bcapps/` shows how Microsoft builds it; BCQuality says
 what a model reviewing or writing AL gets wrong unaided — atomic rules admitted only
-because their absence produces a mistake, one review skill per knowledge domain. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+because their absence produces a mistake, one review skill per knowledge domain.
 
 ## Precondition
 

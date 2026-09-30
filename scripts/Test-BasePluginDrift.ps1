@@ -34,41 +34,7 @@ $script:KnownMarketplaces = @{
     'claude-plugins-official' = 'https://github.com/anthropics/claude-plugins-official.git'
 }
 
-function Get-NamespacedSkillReference {
-    <#
-    .SYNOPSIS
-        Emits every <ns>:<skill> candidate outside fenced blocks; the caller filters namespaces.
-    #>
-    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Text)
-
-    $pattern = '(?<![\w./:@-])/?(?<ns>[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*):(?<skill>[A-Za-z0-9_]+(?:-[A-Za-z0-9_]+)*)(?![\w-])'
-    $fenceChar = ''
-    $fenceLength = 0
-    $lineNumber = 0
-    foreach ($line in ($Text -split '\r?\n')) {
-        $lineNumber++
-        $run = [regex]::Match($line, '^\s*(?<fence>`{3,}|~{3,})')
-        if ($run.Success) {
-            $fence = $run.Groups['fence'].Value
-            if ($fenceLength -eq 0) {
-                $fenceChar = $fence[0]
-                $fenceLength = $fence.Length
-                continue
-            } elseif ($fence[0] -eq $fenceChar -and $fence.Length -ge $fenceLength) {
-                $fenceLength = 0
-                continue
-            }
-        }
-        if ($fenceLength -gt 0) { continue }
-        foreach ($match in [regex]::Matches($line, $pattern)) {
-            [pscustomobject]@{
-                Namespace = $match.Groups['ns'].Value
-                Skill     = $match.Groups['skill'].Value
-                Line      = $lineNumber
-            }
-        }
-    }
-}
+. (Join-Path $PSScriptRoot 'SkillReference.ps1')
 
 function ConvertTo-PluginRootMap {
     <#

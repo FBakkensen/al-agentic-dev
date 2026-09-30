@@ -40,7 +40,7 @@ Write `.output/bpmn/<original-work-item-id>/process.html` as a self-contained pa
 4. Minimal guarantee
 5. the generated SVG embedded inline
 
-Use no CDN, iframe, or remote asset. Open the local HTML in the GitHub Copilot app browser canvas when available; otherwise open it in the system browser or print its absolute path.
+Use no CDN, iframe, or remote asset. Show the local HTML through `show_widget`, falling back to an Artifact, then to the local file opened in the system browser or named by its absolute path.
 
 ## Completion
 

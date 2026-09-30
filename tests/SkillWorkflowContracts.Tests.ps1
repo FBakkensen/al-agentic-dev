@@ -108,7 +108,7 @@ Describe 'Skill workflow contracts' {
         $commit | Should -Match 'Stage all files by default'
         $commit | Should -Match 'maximum number of independently valid commits'
         $commit | Should -Match 'List only the work-item IDs served by that commit'
-        $commit | Should -Match 'Co-authored-by: Copilot <223556219\+Copilot@users\.noreply\.github\.com>'
+        $commit | Should -MatchExactly 'Co-Authored-By: Claude <noreply@anthropic\.com>'
 
         $pullRequest | Should -Match 'Use `<area>: <imperative change>` for the title'
         $pullRequest | Should -Match 'List every work item represented by the branch'

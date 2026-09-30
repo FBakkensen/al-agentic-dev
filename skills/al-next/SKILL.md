@@ -7,15 +7,15 @@ description: Use when a root or child User Story has landed and its Azure DevOps
 
 In: the Original Azure DevOps User Story, its child User Stories when present, work-item comments, receipts, and the landed diff. Azure DevOps is the design record; `.output/receipts/` mirrors execution evidence. If Azure DevOps work-item tools are unavailable, show the exact reconciliation update and stop without creating a substitute record.
 
-Ask one substantive question per message. Connect it to the Original User Story, the landed behavior, and verified code facts. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+Ask one substantive question per message. Connect it to the Original User Story, the landed behavior, and verified code facts.
 
 ## Show what landed
 
 Name the executable item and its receipts. Launch both together:
 
-▶ mechanical · task · receipts and work-item comments for the executable items → one summary per item
+▶ haiku · receipts and work-item comments for the executable items → one summary per item
 
-▶ mechanical · task · BC-anatomy delta table from the diff base: objects touched, schema, events, permissions, translations, tests, caller-visible behavior now present → the table
+▶ haiku · BC-anatomy delta table from the diff base: objects touched, schema, events, permissions, translations, tests, caller-visible behavior now present → the table
 
 Show the connected-object change map before the delta table. The map explains how changed production objects connect and keeps tests in a separate Proof group.
 

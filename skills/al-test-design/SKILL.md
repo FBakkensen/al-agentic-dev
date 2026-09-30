@@ -15,7 +15,7 @@ Before each substantive question, rebuild the situation from the affected Gherki
 
 Each option states which Arrange, Act, Assert, or Proof changes, what remains provable, and where proof responsibility lands, plus material risk or reversibility when relevant. Put the recommendation first, mark it, and give the reason. Use the answer to revise the map before choosing the next question.
 
-Ask one substantive question per message. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+Ask one substantive question per message.
 
 ## Choose the seam
 
@@ -23,7 +23,7 @@ Test through the smallest caller-visible module interface that proves the Gherki
 
 Before proposing cases, search the repository for existing proof by affected module interface, objects, business terms, fixtures, and assertions:
 
-▶ mechanical · task · inventory the existing proof for the affected interface, objects, and business terms → every test procedure and shared helper the changed Gherkin paths need, with paths
+▶ haiku · inventory the existing proof for the affected interface, objects, and business terms → every test procedure and shared helper the changed Gherkin paths need, with paths
 
 Widen the brief and dispatch again until every path's current proof is known; leave unrelated behavior out.
 
@@ -31,7 +31,7 @@ Design that proof set as if all current requirements had existed when its tests 
 
 Confirm every Business Central object, table, field, action, procedure, event, enum value, and dialog text through lookup in this session. Reach for standard test libraries and fixtures before inventing helpers:
 
-▶ mechanical · task · standard test libraries and fixtures for the named objects → library and fixture names with paths
+▶ haiku · standard test libraries and fixtures for the named objects → library and fixture names with paths
 
 ## Write AAA cases
 

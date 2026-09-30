@@ -5,7 +5,7 @@ description: "One platform question in, a sourced answer out in seconds. Use whe
 
 # al-lookup — the sourced answer
 
-One question in, one sourced answer out, in seconds. When looking up costs one call, looking it up is less work than faking a citation. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+One question in, one sourced answer out, in seconds. When looking up costs one call, looking it up is less work than faking a citation.
 
 ## Consult the map first
 
@@ -13,11 +13,11 @@ One question in, one sourced answer out, in seconds. When looking up costs one c
 
 ## Three sources, picked by question class
 
-| Question class | Source | Copilot name |
+| Question class | Source | Claude Code name |
 |---|---|---|
-| Platform and language semantics — what a property, trigger, or method does | Microsoft Learn MCP | microsoft_docs_search, then microsoft_docs_fetch for the full page |
-| Precedent by example — how the Base App does it | the version-matched BCApps clone | grep pointed at `.bcapps/` explicitly (it is gitignored, so a workspace-wide grep skips it), then view the file |
-| Review rules and quality precedent | the BCQuality index | `.bcquality/knowledge-index.json` — one minified line, parse it as JSON — then the article it names |
+| Platform and language semantics — what a property, trigger, or method does | Microsoft Learn MCP | `mcp__plugin_al-agentic-dev_microsoft-learn__microsoft_docs_search`, then `mcp__plugin_al-agentic-dev_microsoft-learn__microsoft_docs_fetch` for the full page |
+| Precedent by example — how the Base App does it | the version-matched BCApps clone | `Grep` pointed at `.bcapps/` explicitly (it is gitignored, so a workspace-wide `Grep` skips it), then `Read` the file |
+| Review rules and quality precedent | the BCQuality index | `Read` `.bcquality/knowledge-index.json` — one minified line, parse it as JSON — then `Read` the article it names |
 
 A miss falls through to the next source that fits the question; if none answers, name the unresolved question and each source searched instead of claiming a verified answer. A missing clone names its producer — /al-clone-bcapps or /al-clone-bcquality — and the run answers from the remaining sources. The clone is version-matched through `symbols.lock.json`: read `.bcapps/release` first, and `.bcapps/main` only for the folders release lacks — that code is next-major, ahead of what the app runs against.
 
@@ -41,9 +41,9 @@ For a fresh answer, require a clean map path before writing; a dirty path stops 
 
 If /al-commit cannot record the map change, remove only this run's row from the index and working tree, then report the exact error. The caller receives the ledger line, never ownership of a dirty map change.
 
-## Deep questions go to /research
+## Deep questions go to /mattpocock-skills:research
 
-A whole-feature shape question — which BC pattern, which tables and extensions, which Base App seams — belongs to the native /research command, with the `.bcapps/` and `.bcquality/` paths named in its prompt. al-lookup stays the in-flight fast path.
+A whole-feature shape question — which BC pattern, which tables and extensions, which Base App seams — belongs to /mattpocock-skills:research, with the `.bcapps/` and `.bcquality/` paths named in its prompt. al-lookup stays the in-flight fast path.
 
 ## Close
 

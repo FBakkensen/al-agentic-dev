@@ -7,7 +7,7 @@ description: Use only when the user asks to create or update a pull request from
 
 In: a current branch whose changes are committed, plus every applicable Azure DevOps work-item ID and available proof. Out: one ready pull request for that branch. This skill never creates or keeps a draft.
 
-Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update on an important finding or a changed direction; close with the outcome first, standing on its own.
+Before the first tool call, write one sentence. Update on an important finding or a changed direction; close with the outcome first, standing on its own.
 
 ## Read the branch
 

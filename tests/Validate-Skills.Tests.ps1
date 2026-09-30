@@ -60,17 +60,37 @@ $Body
         return New-SkillsRoot -Root $Root -Files $Files
     }
 
+    function New-PluginManifest {
+        param(
+            [Parameter(Mandatory = $true)]
+            [string]$Path,
+
+            [string[]]$Dependencies = @()
+        )
+
+        New-Item -ItemType Directory -Path ([System.IO.Path]::GetDirectoryName($Path)) -Force | Out-Null
+        @{ name = 'al-agentic-dev'; version = '0.9.0'; dependencies = @($Dependencies) } |
+            ConvertTo-Json | Set-Content -LiteralPath $Path -Encoding utf8
+        return $Path
+    }
+
     function Invoke-SkillValidator {
         param(
             [Parameter(Mandatory = $true)]
             [string]$Root,
 
-            [string]$OutputStylesRoot = (New-OutputStylesRoot -Root "$Root-styles")
+            [string]$OutputStylesRoot = (New-OutputStylesRoot -Root "$Root-styles"),
+
+            [string]$PluginManifest
         )
 
+        $validation = @{ SkillsRoot = $Root; OutputStylesRoot = $OutputStylesRoot }
+        if ($PluginManifest) {
+            $validation.PluginManifest = $PluginManifest
+        }
         $output = @(
             & {
-                Invoke-SkillsValidation -SkillsRoot $Root -OutputStylesRoot $OutputStylesRoot -ErrorAction Continue
+                Invoke-SkillsValidation @validation -ErrorAction Continue
             } *>&1
         )
         $exitCode = [int]$output[-1]
@@ -90,12 +110,17 @@ $Body
             [Parameter(Mandatory = $true)]
             [string]$Root,
 
-            [switch]$DefaultOutputStylesRoot
+            [switch]$DefaultOutputStylesRoot,
+
+            [string]$PluginManifest
         )
 
         $arguments = @('-NoProfile', '-File', $script:ValidatorPath, '-SkillsRoot', $Root)
         if (-not $DefaultOutputStylesRoot) {
             $arguments += @('-OutputStylesRoot', (New-OutputStylesRoot -Root "$Root-styles"))
+        }
+        if ($PluginManifest) {
+            $arguments += @('-PluginManifest', $PluginManifest)
         }
         $output = & pwsh @arguments 2>&1
         return [pscustomobject]@{
@@ -705,11 +730,13 @@ Describe 'Validate-Skills delegation checks' -Tag 'Unit' {
         $body = @'
 Before changing a test:
 
-▶ mechanical · task · /al-build gate on the slice → summary.json verdict, exact red cause
+▶ haiku · /al-build gate on the slice → summary.json verdict, exact red cause
 
-1. ▶ execution · session · /al-implement with the work item → branch, commit, receipt
+1. ▶ sonnet · /al-implement with the work item → red evidence, green gate line, files touched
 
-- ▶ frontier · task · judge the two module boundaries → the chosen boundary with its reason
+- ▶ opus · judge the two module boundaries → the chosen boundary with its reason
+
+   ▶ haiku · /al-build gate on the synced tree → summary.json verdict
 
 For each step report `▶ <business action>` and the observed result.
 
@@ -729,11 +756,14 @@ For each step report `▶ <business action>` and the observed result.
     }
 
     It 'fails a ▶ line outside the grammar' -TestCases @(
-        @{ Case = 'tier'; Line = '▶ quick · task · run the gate → verdict' }
-        @{ Case = 'vehicle'; Line = '▶ mechanical · agent · run the gate → verdict' }
-        @{ Case = 'return'; Line = '▶ mechanical · task · run the gate' }
+        @{ Case = 'tier-vehicle'; Line = '▶ mechanical · task · run the gate → verdict' }
+        @{ Case = 'half-task'; Line = '▶ sonnet · task · run the gate → verdict' }
+        @{ Case = 'half-session'; Line = '▶ haiku · session · /al-implement with the work item → branch' }
+        @{ Case = 'unknown-model'; Line = '▶ gpt-5 · run the gate → verdict' }
+        @{ Case = 'model-case'; Line = '▶ Sonnet · run the gate → verdict' }
+        @{ Case = 'return'; Line = '▶ haiku · run the gate' }
         @{ Case = 'prose'; Line = 'Then ▶ the worker runs the gate.' }
-        @{ Case = 'colon'; Line = '▶ mechanical: task: run the gate → verdict' }
+        @{ Case = 'colon'; Line = '▶ haiku: run the gate → verdict' }
     ) {
         param($Case, $Line)
 
@@ -744,8 +774,21 @@ For each step report `▶ <business action>` and the observed result.
         $result = Invoke-SkillValidator -Root $root
 
         $result.ExitCode | Should -Be 1
-        $expected = "demo/SKILL.md: ▶ line outside the delegation grammar '▶ <tier> · <vehicle> · <brief> → <return>': $Line"
+        $expected = "demo/SKILL.md: ▶ line outside the delegation grammar '▶ <model> · <brief> → <return>' with model opus, sonnet, or haiku: $Line"
         $result.Text | Should -Match ([regex]::Escape($expected))
+    }
+
+    It 'fails a ▶ line that runs on fable' {
+        $line = '▶ fable · judge the two module boundaries → the chosen boundary'
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'delegation-fable') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body $line)
+        }
+
+        $result = Invoke-SkillValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match ([regex]::Escape("demo/SKILL.md: ▶ line runs on fable, which bills usage credits; delegate on opus, sonnet, or haiku: $line"))
+        $result.Text | Should -Not -Match 'outside the delegation grammar'
     }
 
     It 'fails a ▶ line outside the grammar in a sibling file' {
@@ -757,8 +800,114 @@ For each step report `▶ <business action>` and the observed result.
         $result = Invoke-SkillValidator -Root $root
 
         $result.ExitCode | Should -Be 1
-        $expected = "demo/FORMAT.md: ▶ line outside the delegation grammar '▶ <tier> · <vehicle> · <brief> → <return>': ▶ run it"
+        $expected = "demo/FORMAT.md: ▶ line outside the delegation grammar '▶ <model> · <brief> → <return>' with model opus, sonnet, or haiku: ▶ run it"
         $result.Text | Should -Match ([regex]::Escape($expected))
+    }
+}
+
+Describe 'Validate-Skills namespace checks' -Tag 'Unit' {
+    BeforeAll {
+        $script:Manifest = New-PluginManifest -Path (Join-Path $TestDrive 'manifest' 'plugin.json') -Dependencies @(
+            'mattpocock-skills@claude-plugins-official'
+            'bcquality'
+        )
+    }
+
+    It 'passes a reference whose namespace a dependency declares' -TestCases @(
+        @{ Case = 'marketplace-form'; Body = 'Deep questions go to /mattpocock-skills:research.' }
+        @{ Case = 'bare-name-form'; Body = 'Standards come from /bcquality:al-code-review.' }
+        @{ Case = 'no-slash'; Body = 'The entry skill is mattpocock-skills:to-spec.' }
+    ) {
+        param($Case, $Body)
+
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive "ns-declared-$Case") -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body $Body)
+        }
+
+        $result = Invoke-SkillValidator -Root $root -PluginManifest $script:Manifest
+
+        $result.ExitCode | Should -Be 0
+    }
+
+    It 'passes a colon token that is not a skill reference' -TestCases @(
+        @{ Case = 'file-line'; Body = 'Return the precedent table with file:line for every row.' }
+        @{ Case = 'env-span'; Body = 'Set `$env:PUPPETEER_EXECUTABLE_PATH` before the render.' }
+        @{ Case = 'built-in'; Body = 'Run /simplify, then /code-review on the diff.' }
+        @{ Case = 'fenced'; Body = "``````text`n/superpowers:code-review`nal-agentic-dev:al-build`n``````" }
+    ) {
+        param($Case, $Body)
+
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive "ns-plain-$Case") -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body $Body)
+        }
+
+        $result = Invoke-SkillValidator -Root $root -PluginManifest $script:Manifest
+
+        $result.ExitCode | Should -Be 0
+    }
+
+    It 'fails a slash reference whose namespace no dependency declares' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'ns-undeclared') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body 'Hand the diff to /superpowers:code-review.')
+        }
+
+        $result = Invoke-SkillValidator -Root $root -PluginManifest $script:Manifest
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match ([regex]::Escape("demo/SKILL.md: /superpowers:code-review names 'superpowers', which no plugin manifest dependency declares"))
+    }
+
+    It 'fails an undeclared slash reference in the description' {
+        $content = (New-SkillContent) -replace 'Do the thing\.', 'Runs beside /superpowers:code-review.'
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'ns-description') -Files @{
+            'demo/SKILL.md' = $content
+        }
+
+        $result = Invoke-SkillValidator -Root $root -PluginManifest $script:Manifest
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match ([regex]::Escape("demo/SKILL.md: /superpowers:code-review names 'superpowers'"))
+    }
+
+    It 'fails our own namespace, with or without a slash, and reports it once' -TestCases @(
+        @{ Case = 'slash'; Token = '/al-agentic-dev:al-build' }
+        @{ Case = 'bare'; Token = 'al-agentic-dev:al-build' }
+    ) {
+        param($Case, $Token)
+
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive "ns-own-$Case") -Files @{
+            'demo/SKILL.md'     = (New-SkillContent -Body "Run the gate with $Token.")
+            'al-build/SKILL.md' = (New-SkillContent -Name 'al-build')
+        }
+
+        $result = Invoke-SkillValidator -Root $root -PluginManifest $script:Manifest
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match ([regex]::Escape('demo/SKILL.md: al-agentic-dev:al-build names our own skill; write it bare: /al-build'))
+        @([regex]::Matches($result.Text, 'FAIL: ')).Count | Should -Be 1
+    }
+
+    It 'fails when the plugin manifest does not exist' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'ns-no-manifest') -Files @{
+            'demo/SKILL.md' = (New-SkillContent)
+        }
+        $missing = Join-Path $TestDrive 'absent' 'plugin.json'
+
+        $result = Invoke-SkillValidator -Root $root -PluginManifest $missing
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match ([regex]::Escape("plugin manifest not found: $missing"))
+    }
+
+    It 'passes a well-formed root against a fixture manifest with no dependencies' {
+        $manifest = New-PluginManifest -Path (Join-Path $TestDrive 'manifest-empty' 'plugin.json')
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'ns-empty-manifest') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body 'Return file:line for every row.')
+        }
+
+        $result = Invoke-SkillValidator -Root $root -PluginManifest $manifest
+
+        $result.ExitCode | Should -Be 0
     }
 }
 
@@ -947,5 +1096,16 @@ Describe 'Validate-Skills process wrapper' -Tag 'Process' {
 
         $result.ExitCode | Should -Be 0
         $result.Text | Should -Match 'OK: output-styles/AL\.md'
+    }
+
+    It 'reads the namespaces from the plugin manifest it is given' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'process-manifest') -Files @{
+            'demo/SKILL.md' = (New-SkillContent -Body 'Deep questions go to /mattpocock-skills:research.')
+        }
+        $declared = New-PluginManifest -Path (Join-Path $TestDrive 'process-declared' 'plugin.json') -Dependencies @('mattpocock-skills@claude-plugins-official')
+        $empty = New-PluginManifest -Path (Join-Path $TestDrive 'process-empty' 'plugin.json')
+
+        (Invoke-SkillValidatorProcess -Root $root -PluginManifest $declared).ExitCode | Should -Be 0
+        (Invoke-SkillValidatorProcess -Root $root -PluginManifest $empty).ExitCode | Should -Be 1
     }
 }
