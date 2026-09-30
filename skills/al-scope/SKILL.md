@@ -36,4 +36,4 @@ In Acceptance Criteria, `Behavior` precedes `Test specification` when both are p
 
 Show the proposed hierarchy and Gherkin to the user. The user decides the cut.
 
-For two or more slices, create the approved child User Stories and native parent links through Azure DevOps work-item tools. For exactly one, keep the Original User Story executable and create no child. If those tools are unavailable, show the exact work-item change and stop. Close with the Original and executable User Story identifiers; the next executable item goes to /al-test-design.
+For two or more slices, create the approved child User Stories and native parent links through Azure DevOps work-item tools. For exactly one, keep the Original User Story executable and create no child. If those tools are unavailable, show the exact work-item change and stop. Close with the Original and executable User Story identifiers; the next executable item goes to /mattpocock-skills:tdd.
