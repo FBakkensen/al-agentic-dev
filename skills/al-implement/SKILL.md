@@ -5,7 +5,7 @@ description: Use when an executable User Story has reviewed Gherkin, AAA test sp
 
 # al-implement - prove the slice
 
-In: the executable Original User Story, or a child User Story and its Original User Story. Read the executable item's reviewed `Test specification`, including its `Current-to-final proof map`, and the Original User Story's process and Building Block Level 1. If the AAA seam, existing-proof disposition, or expected value is unresolved, return that question to /al-test-design before editing code.
+In: the executable Original User Story, or a child User Story and its Original User Story. Read the executable item's reviewed `Test specification`, including its `Current-to-final proof map`, and the Original User Story's process and Building Block Level 1. If the AAA seam, existing-proof disposition, or expected value is unresolved, return that question to /mattpocock-skills:tdd before editing code.
 
 Before editing, trace the narrow path through the workspace. Search for an existing module, event, interface, test, fixture, and pattern first. Confirm every BC object, table, field, procedure, event, enum value, and dialog text through lookup in this session.
 

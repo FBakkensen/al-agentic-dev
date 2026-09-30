@@ -46,6 +46,8 @@ Describe 'SessionStart hook' -Tag 'Process' {
         $context = ($result.Text | ConvertFrom-Json).hookSpecificOutput.additionalContext
         $context | Should -Match '(?m)^## Entry skills and their AL additions\r?$'
         $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:setup-matt-pocock-skills` | `/al-setup-matt-pocock-skills` |') + '\r?$')
+        $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:to-tickets` | `/al-to-tickets` |') + '\r?$')
+        $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:tdd` | `/al-tdd` |') + '\r?$')
         $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:code-review` | `/al-review` |') + '\r?$')
     }
 

@@ -23,7 +23,7 @@ Extend the Original User Story Description with `Process contract`, followed by 
 
 ## BPMN process map
 
-Use BPMN 2.0 for roles, actions, gateways, records, exceptions, decisions, and named outcomes. Every gateway is exhaustive or carries a default. Every path reaches a stable named end event that /al-scope can map to Gherkin later.
+Use BPMN 2.0 for roles, actions, gateways, records, exceptions, decisions, and named outcomes. Every gateway is exhaustive or carries a default. Every path reaches a stable named end event that /mattpocock-skills:to-tickets can map to Gherkin later.
 
 Follow [BPMN.md](BPMN.md). Create the editable BPMN source, then:
 
