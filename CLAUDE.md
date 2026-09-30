@@ -7,7 +7,7 @@ Git history is the donor archive — a retired skill returns from a commit, neve
 ## The shipped surface
 
 ```
-.claude-plugin/plugin.json      the plugin manifest: name, description, version (set only here), the ado_org userConfig, the bundled MCP servers — microsoft-learn and ado, none with a tools allowlist — the Base plugin dependencies
+.claude-plugin/plugin.json      the plugin manifest: name, description, version (set only here), the bundled MCP servers — microsoft-learn, and ado on the org naveksaas, none with a tools allowlist — the Base plugin dependencies
 .claude-plugin/marketplace.json the marketplace: this plugin at ./ plus the re-listed Base plugins bcquality and al-language-server-go-windows
 hooks/hooks.json                the SessionStart hook: runs hooks/Write-SessionStart.ps1
 hooks/session-start.md          the delegation rules the hook injects in every session
