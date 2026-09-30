@@ -81,10 +81,9 @@ These govern work on this repo and never ship. No `SKILL.md` may mention them.
 
 `main` is PR-only. A change lands on a fresh feature branch and merges through a PR. The version lives only in `.claude-plugin/plugin.json`; it stays `0.9.0` through the migration in #52, and no migration PR writes it.
 
-The session that opens a PR merges it and closes its issues; it never enables auto-merge. Since 2026-09-30 GitHub leaves a PR's `Fixes #<n>` unlinked (a11ign/a11ign#2824), so a merge alone closes nothing. Right after `gh pr create`:
+The session that opens a PR merges it; it never enables auto-merge. The merge closes the issues the PR body names with `Fixes #<n>`. Right after `gh pr create`:
 
-1. Call the `ccd_pr` `set_monitor` tool with `auto_archive_on_close: false`, so the session outlives the merge.
-2. Arm this watcher with the `Monitor` tool, `timeout_ms` 1800000. It prints `PR #<pr> changed` whenever anything on the PR changes, and exits once the PR is merged or closed:
+1. Arm this watcher with the `Monitor` tool, `timeout_ms` 1800000. It prints `PR #<pr> changed` whenever anything on the PR changes, and exits once the PR is merged or closed:
 
 ```bash
 set -o pipefail; pr=<pr>; repo=FBakkensen/al-agentic-dev; last=""
@@ -96,10 +95,8 @@ while :; do
 done
 ```
 
-3. On each line, look at the PR and do whatever it needs: merge it once it can merge, fix what fails, answer and resolve review threads, and merge `origin/main` on a conflict. Once it is merged, run `gh issue close <n> --reason completed --comment "Completed by #<pr>"` for each still-open issue the PR body closes.
-4. When the monitor expires with the PR still open, arm it again.
-
-When `gh pr view <pr> --json closingIssuesReferences` lists the issue right after `gh pr create`, GitHub links again. Then this paragraph goes, and closing comes back to the merge.
+2. On each line, look at the PR and do whatever it needs: merge it once it can merge, fix what fails, answer and resolve review threads, and merge `origin/main` on a conflict.
+3. When the monitor expires with the PR still open, arm it again.
 
 Before pushing, run `scripts/Validate-Json.ps1`, `scripts/Validate-PowerShell.ps1`, `scripts/Validate-Skills.ps1`, `scripts/Test-BasePluginDrift.ps1`, then `scripts/Invoke-Tests.ps1 -Mode Full`. CI runs the same five on pushes to `main` and on every pull request. The gates validate `skills/`, `hooks/`, `output-styles/`, and the plugin manifests; links in `README.md` and `docs/` are deliberately unchecked — not a review finding.
 
