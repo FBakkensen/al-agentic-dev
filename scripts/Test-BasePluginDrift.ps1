@@ -9,19 +9,25 @@
     upstream default branch through its url or git-subdir entry in our marketplace.
     Every <ns>:<skill> token, with or without a leading '/', outside fenced blocks in
     skills/**/*.md and hooks/session-start.md is resolved when its namespace is a declared
-    dependency. Upstream skills are found through our marketplace entry's skills paths,
-    else the upstream manifest's skills paths, else skills/*/SKILL.md; only folders holding
-    a SKILL.md count. Every unresolved reference and every dependency that cannot be
-    fetched is reported; any of them exits 1.
+    dependency in any casing. Upstream skills are found through our marketplace entry's
+    skills paths, else the upstream manifest's skills paths, else skills/*/SKILL.md, taking
+    the first step that yields a skill; only folders holding a SKILL.md count. Every
+    unresolved reference and every dependency that cannot be fetched is reported; any of
+    them exits 1.
     -PluginRoot maps namespaces to local directories ('ns=path') and skips every fetch.
+    -Destination resolves every Base plugin into <Destination>/<name> and checks nothing.
 .EXAMPLE
     pwsh scripts/Test-BasePluginDrift.ps1
+.EXAMPLE
+    pwsh scripts/Test-BasePluginDrift.ps1 -Destination .base-plugins
 #>
 [CmdletBinding()]
 param(
     [string]$RepoRoot = (Join-Path $PSScriptRoot '..'),
 
-    [string[]]$PluginRoot
+    [string[]]$PluginRoot,
+
+    [string]$Destination
 )
 
 $script:KnownMarketplaces = @{
@@ -35,6 +41,7 @@ function Get-NamespacedSkillReference {
     #>
     param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Text)
 
+    $pattern = '(?<![\w./:@-])/?(?<ns>[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*):(?<skill>[A-Za-z0-9_]+(?:-[A-Za-z0-9_]+)*)(?![\w-])'
     $fenceChar = ''
     $fenceLength = 0
     $lineNumber = 0
@@ -53,7 +60,6 @@ function Get-NamespacedSkillReference {
             }
         }
         if ($fenceLength -gt 0) { continue }
-        $pattern = '(?<![\w./:@-])/?(?<ns>[a-z0-9]+(?:-[a-z0-9]+)*):(?<skill>[a-z0-9]+(?:-[a-z0-9]+)*)(?![\w-])'
         foreach ($match in [regex]::Matches($line, $pattern)) {
             [pscustomobject]@{
                 Namespace = $match.Groups['ns'].Value
@@ -64,15 +70,27 @@ function Get-NamespacedSkillReference {
     }
 }
 
-function Get-BasePluginDependency {
-    param([Parameter(Mandatory = $true)][string]$RepoRoot)
+function ConvertTo-PluginRootMap {
+    <#
+    .SYNOPSIS
+        Turns 'ns=path' pairs, the form a process boundary can carry, into a map.
+    #>
+    param([string[]]$Pair)
 
-    $manifest = Get-Content -LiteralPath (Join-Path $RepoRoot '.claude-plugin' 'plugin.json') -Raw | ConvertFrom-Json
-    foreach ($dependency in @($manifest.PSObject.Properties['dependencies'] ? $manifest.dependencies : @())) {
-        $spec = if ($dependency -is [string]) { $dependency } else { [string]$dependency.name }
-        $name, $marketplace = $spec -split '@', 2
-        [pscustomobject]@{ Name = $name; Marketplace = $marketplace }
+    $pairs = @($Pair | Where-Object { $_ })
+    if ($pairs.Count -eq 0) {
+        return $null
     }
+    $map = @{}
+    foreach ($item in $pairs) {
+        $namespace, $path = $item -split '=', 2
+        $map[$namespace] = $path
+    }
+    $map
+}
+
+function New-TemporaryCheckoutPath {
+    Join-Path ([System.IO.Path]::GetTempPath()) ('base-plugin-' + [guid]::NewGuid().ToString('N'))
 }
 
 function Invoke-Git {
@@ -85,64 +103,60 @@ function Invoke-Git {
     $output
 }
 
-function Save-GitSource {
-    param(
-        [Parameter(Mandatory = $true)][string]$Url,
-        [Parameter(Mandatory = $true)][string]$Target,
-        [string]$Sha,
-        [string]$Ref,
-        [string]$Path
-    )
+function Invoke-GitClone {
+    # Blobs arrive on checkout only, so a sparse or tree-only read stays small.
+    param([string]$Url, [string]$Checkout)
 
-    $checkout = Join-Path ([System.IO.Path]::GetTempPath()) ("drift-" + [guid]::NewGuid().ToString('N'))
-    try {
-        if ($Sha) {
-            $null = Invoke-Git @('init', '--quiet', $checkout)
-            $null = Invoke-Git @('-C', $checkout, 'remote', 'add', 'origin', $Url)
-            $null = Invoke-Git @('-C', $checkout, 'fetch', '--quiet', '--depth', '1', '--filter=blob:none', 'origin', $Sha)
-        } else {
-            $clone = @('clone', '--quiet', '--depth', '1', '--filter=blob:none', '--no-checkout')
-            if ($Ref) { $clone += @('--branch', $Ref) }
-            $null = Invoke-Git ($clone + @($Url, $checkout))
-        }
-        if ($Path) {
-            $null = Invoke-Git @('-C', $checkout, 'sparse-checkout', 'set', '--no-cone', "/$($Path.Trim('/'))/")
-        }
-        $null = Invoke-Git @('-C', $checkout, 'checkout', '--quiet', $(if ($Sha) { 'FETCH_HEAD' } else { 'HEAD' }))
-
-        $source = if ($Path) { Join-Path $checkout $Path } else { $checkout }
-        if (-not (Test-Path -LiteralPath $source -PathType Container)) {
-            throw "$Url has no directory '$Path'."
-        }
-        New-Item -ItemType Directory -Path $Target -Force | Out-Null
-        Get-ChildItem -LiteralPath $source -Force |
-            Where-Object Name -NE '.git' |
-            Copy-Item -Destination $Target -Recurse -Force
-    } finally {
-        Remove-Item -LiteralPath $checkout -Recurse -Force -ErrorAction SilentlyContinue
-    }
+    $null = Invoke-Git @('clone', '--quiet', '--depth', '1', '--filter=blob:none', '--no-checkout', $Url, $Checkout)
 }
 
 function Save-PluginSource {
+    <#
+    .SYNOPSIS
+        Copies a url or git-subdir source, at its sha or the default branch, into Target.
+    #>
     param(
         [Parameter(Mandatory = $true)]$Source,
         [Parameter(Mandatory = $true)][string]$Target
     )
 
-    if ($Source -is [string]) {
-        throw "a relative source '$Source' outside our marketplace is not supported."
+    if ($Source -is [string] -or $Source.source -notin @('url', 'git-subdir')) {
+        throw "source '$($Source.source ?? $Source)' is not a url or git-subdir source."
     }
-    $parameters = @{
-        Target = $Target
-        Sha    = [string]$Source.PSObject.Properties['sha']?.Value
-        Ref    = [string]$Source.PSObject.Properties['ref']?.Value
+    $sha = [string]$Source.PSObject.Properties['sha']?.Value
+    $path = if ($Source.source -eq 'git-subdir') { ([string]$Source.path).Trim('/') } else { '' }
+
+    $checkout = New-TemporaryCheckoutPath
+    try {
+        if ($sha) {
+            $null = Invoke-Git @('init', '--quiet', $checkout)
+            $null = Invoke-Git @('-C', $checkout, 'remote', 'add', 'origin', $Source.url)
+            $null = Invoke-Git @('-C', $checkout, 'fetch', '--quiet', '--depth', '1', '--filter=blob:none', 'origin', $sha)
+        } else {
+            Invoke-GitClone -Url $Source.url -Checkout $checkout
+        }
+        if ($path) {
+            $null = Invoke-Git @('-C', $checkout, 'sparse-checkout', 'set', '--no-cone', "/$path/")
+        }
+        $null = Invoke-Git @('-C', $checkout, 'checkout', '--quiet', $(if ($sha) { 'FETCH_HEAD' } else { 'HEAD' }))
+
+        $pluginFolder = if ($path) { Join-Path $checkout $path } else { $checkout }
+        if (-not (Test-Path -LiteralPath $pluginFolder -PathType Container)) {
+            throw "$($Source.url) has no directory '$path'."
+        }
+        Copy-PluginFolder -From $pluginFolder -Target $Target
+    } finally {
+        Remove-Item -LiteralPath $checkout -Recurse -Force -ErrorAction SilentlyContinue
     }
-    switch ($Source.source) {
-        'url' { Save-GitSource @parameters -Url $Source.url }
-        'github' { Save-GitSource @parameters -Url "https://github.com/$($Source.repo).git" }
-        'git-subdir' { Save-GitSource @parameters -Url $Source.url -Path $Source.path }
-        default { throw "source type '$($Source.source)' is not supported." }
-    }
+}
+
+function Copy-PluginFolder {
+    param([string]$From, [string]$Target)
+
+    New-Item -ItemType Directory -Path $Target -Force | Out-Null
+    Get-ChildItem -LiteralPath $From -Force |
+        Where-Object Name -NE '.git' |
+        Copy-Item -Destination $Target -Recurse -Force
 }
 
 function Get-MarketplacePluginSource {
@@ -152,9 +166,9 @@ function Get-MarketplacePluginSource {
     if (-not $url) {
         throw "marketplace '$Marketplace' has no known repository."
     }
-    $checkout = Join-Path ([System.IO.Path]::GetTempPath()) ("drift-" + [guid]::NewGuid().ToString('N'))
+    $checkout = New-TemporaryCheckoutPath
     try {
-        $null = Invoke-Git @('clone', '--quiet', '--depth', '1', '--filter=blob:none', '--no-checkout', $url, $checkout)
+        Invoke-GitClone -Url $url -Checkout $checkout
         $json = Invoke-Git @('-C', $checkout, 'show', 'HEAD:.claude-plugin/marketplace.json') | Out-String
     } finally {
         Remove-Item -LiteralPath $checkout -Recurse -Force -ErrorAction SilentlyContinue
@@ -174,55 +188,57 @@ function Resolve-BasePlugin {
         Resolves each declared Base plugin to a local directory.
     .DESCRIPTION
         Without -PluginRoot, fetches every dependency into <Destination>/<name>. With
-        -PluginRoot ('ns=path'), maps each dependency to its directory and fetches nothing.
-        Emits one object per dependency: Name, Root, SkillPaths (our marketplace entry's
+        -PluginRoot (namespace -> directory), fetches nothing and uses each directory in
+        place, or copies it into <Destination>/<name> when -Destination is given. Emits one
+        object per declared dependency: Name, Root, SkillPaths (our marketplace entry's
         skills paths), and Error when it cannot be resolved.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$RepoRoot,
         [string]$Destination,
-        [string[]]$PluginRoot
+        [hashtable]$PluginRoot
     )
 
+    $manifest = Get-Content -LiteralPath (Join-Path $RepoRoot '.claude-plugin' 'plugin.json') -Raw | ConvertFrom-Json
     $marketplace = Get-Content -LiteralPath (Join-Path $RepoRoot '.claude-plugin' 'marketplace.json') -Raw | ConvertFrom-Json
-    $overrides = @{}
-    foreach ($pair in @($PluginRoot)) {
-        if (-not $pair) { continue }
-        $namespace, $path = $pair -split '=', 2
-        $overrides[$namespace] = $path
-    }
 
-    foreach ($dependency in @(Get-BasePluginDependency -RepoRoot $RepoRoot)) {
-        $entry = @($marketplace.plugins | Where-Object name -EQ $dependency.Name) | Select-Object -First 1
-        $skillPaths = if ($entry) { @($entry.PSObject.Properties['skills']?.Value | Where-Object { $_ }) } else { @() }
+    foreach ($dependency in @($manifest.PSObject.Properties['dependencies']?.Value)) {
+        if (-not $dependency) { continue }
+        $name, $dependencyMarketplace = ($dependency -is [string] ? $dependency : [string]$dependency.name) -split '@', 2
+        $entry = @($marketplace.plugins | Where-Object name -EQ $name) | Select-Object -First 1
         $result = [pscustomobject]@{
-            Name       = $dependency.Name
+            Name       = $name
             Root       = $null
-            SkillPaths = $skillPaths
+            SkillPaths = @(if ($entry) { $entry.PSObject.Properties['skills']?.Value | Where-Object { $_ } })
             Error      = $null
         }
         try {
+            $target = if ($Destination) { Join-Path $Destination $name }
             if ($PluginRoot) {
-                if (-not $overrides.ContainsKey($dependency.Name)) {
+                $local = $PluginRoot[$name]
+                if (-not $local) {
                     throw 'no plugin directory was supplied.'
                 }
-                if (-not (Test-Path -LiteralPath $overrides[$dependency.Name] -PathType Container)) {
-                    throw "the plugin directory '$($overrides[$dependency.Name])' does not exist."
+                if (-not (Test-Path -LiteralPath $local -PathType Container)) {
+                    throw "the plugin directory '$local' does not exist."
                 }
-                $result.Root = $overrides[$dependency.Name]
+                $result.Root = $local
+                if ($target) {
+                    Copy-PluginFolder -From $local -Target $target
+                    $result.Root = $target
+                }
             } else {
-                if (-not $Destination) {
+                if (-not $target) {
                     throw 'a destination directory is required to fetch.'
                 }
-                $target = Join-Path $Destination $dependency.Name
-                if ($dependency.Marketplace) {
-                    $upstream = Get-MarketplacePluginSource -Marketplace $dependency.Marketplace -Name $dependency.Name
-                    Save-PluginSource -Source $upstream -Target $target
-                } elseif ($entry -and $entry.source -isnot [string]) {
-                    Save-PluginSource -Source $entry.source -Target $target
+                $source = if ($dependencyMarketplace) {
+                    Get-MarketplacePluginSource -Marketplace $dependencyMarketplace -Name $name
+                } elseif ($entry) {
+                    $entry.source
                 } else {
-                    throw 'our marketplace lists no url or git-subdir source for it.'
+                    throw 'our marketplace does not list it.'
                 }
+                Save-PluginSource -Source $source -Target $target
                 $result.Root = $target
             }
         } catch {
@@ -242,30 +258,28 @@ function Get-BasePluginSkill {
         [string[]]$SkillPaths
     )
 
-    $paths = @($SkillPaths | Where-Object { $_ })
-    if ($paths.Count -eq 0) {
-        foreach ($manifestPath in @((Join-Path $Root '.claude-plugin' 'plugin.json'), (Join-Path $Root 'plugin.json'))) {
-            if (Test-Path -LiteralPath $manifestPath -PathType Leaf) {
-                $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
-                $paths = @($manifest.PSObject.Properties['skills']?.Value | Where-Object { $_ })
-                break
-            }
-        }
-    }
-    if ($paths.Count -eq 0) {
-        $paths = @('./skills/')
+    $manifestPath = Join-Path $Root '.claude-plugin' 'plugin.json'
+    $manifestPaths = if (Test-Path -LiteralPath $manifestPath -PathType Leaf) {
+        (Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json).PSObject.Properties['skills']?.Value
     }
 
-    foreach ($relative in $paths) {
-        $folder = Join-Path $Root $relative
-        if (-not (Test-Path -LiteralPath $folder -PathType Container)) { continue }
-        if (Test-Path -LiteralPath (Join-Path $folder 'SKILL.md') -PathType Leaf) {
-            (Get-Item -LiteralPath $folder).Name
-            continue
+    foreach ($paths in @($SkillPaths), @($manifestPaths), @('./skills/')) {
+        $skills = @(
+            foreach ($relative in @($paths | Where-Object { $_ })) {
+                $folder = Join-Path $Root $relative
+                if (-not (Test-Path -LiteralPath $folder -PathType Container)) { continue }
+                if (Test-Path -LiteralPath (Join-Path $folder 'SKILL.md') -PathType Leaf) {
+                    (Get-Item -LiteralPath $folder).Name
+                    continue
+                }
+                Get-ChildItem -LiteralPath $folder -Directory |
+                    Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'SKILL.md') -PathType Leaf } |
+                    ForEach-Object Name
+            }
+        )
+        if ($skills.Count -gt 0) {
+            return $skills
         }
-        Get-ChildItem -LiteralPath $folder -Directory |
-            Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'SKILL.md') -PathType Leaf } |
-            ForEach-Object Name
     }
 }
 
@@ -273,15 +287,16 @@ function Invoke-BasePluginDriftCheck {
     [CmdletBinding()]
     param(
         [string]$RepoRoot = (Join-Path $PSScriptRoot '..'),
-        [string[]]$PluginRoot
+        [hashtable]$PluginRoot
     )
 
     $RepoRoot = (Resolve-Path -LiteralPath $RepoRoot -ErrorAction Stop).Path
     $failures = [System.Collections.Generic.List[string]]::new()
-    $destination = Join-Path ([System.IO.Path]::GetTempPath()) ("base-plugins-" + [guid]::NewGuid().ToString('N'))
+    $destination = if (-not $PluginRoot) { New-TemporaryCheckoutPath }
     try {
+        $plugins = @(Resolve-BasePlugin -RepoRoot $RepoRoot -Destination $destination -PluginRoot $PluginRoot)
         $skillsByNamespace = @{}
-        foreach ($plugin in @(Resolve-BasePlugin -RepoRoot $RepoRoot -Destination $destination -PluginRoot $PluginRoot)) {
+        foreach ($plugin in $plugins) {
             if ($plugin.Error) {
                 $failures.Add("FAIL: dependency '$($plugin.Name)' could not be resolved: $($plugin.Error)")
                 continue
@@ -290,7 +305,6 @@ function Invoke-BasePluginDriftCheck {
             $skillsByNamespace[$plugin.Name] = [System.Collections.Generic.HashSet[string]]::new([string[]]$skills)
             Write-Host "OK: $($plugin.Name) ships $($skills.Count) skill(s)" -ForegroundColor Green
         }
-        $declared = @(Get-BasePluginDependency -RepoRoot $RepoRoot | ForEach-Object Name)
 
         $files = @(
             Get-ChildItem -LiteralPath (Join-Path $RepoRoot 'skills') -Recurse -File -Filter '*.md' -ErrorAction SilentlyContinue |
@@ -301,16 +315,23 @@ function Invoke-BasePluginDriftCheck {
             $relative = [System.IO.Path]::GetRelativePath($RepoRoot, $file.FullName).Replace('\', '/')
             $text = Get-Content -LiteralPath $file.FullName -Raw
             foreach ($reference in @(Get-NamespacedSkillReference -Text ([string]$text))) {
-                if ($declared -cnotcontains $reference.Namespace) { continue }
-                $skills = $skillsByNamespace[$reference.Namespace]
-                if ($null -eq $skills) { continue }
-                if (-not $skills.Contains($reference.Skill)) {
-                    $failures.Add("FAIL: ${relative}:$($reference.Line) - $($reference.Namespace):$($reference.Skill) names no skill that $($reference.Namespace) ships")
+                $namespace = @($plugins.Name | Where-Object { $_ -ieq $reference.Namespace }) | Select-Object -First 1
+                if (-not $namespace) { continue }
+                $token = "$($reference.Namespace):$($reference.Skill)"
+                if ($namespace -cne $reference.Namespace) {
+                    $failures.Add("FAIL: ${relative}:$($reference.Line) - $token spells the namespace $namespace")
+                    continue
+                }
+                $skills = $skillsByNamespace[$namespace]
+                if ($skills -and -not $skills.Contains($reference.Skill)) {
+                    $failures.Add("FAIL: ${relative}:$($reference.Line) - $token names no skill that $namespace ships")
                 }
             }
         }
     } finally {
-        Remove-Item -LiteralPath $destination -Recurse -Force -ErrorAction SilentlyContinue
+        if ($destination) {
+            Remove-Item -LiteralPath $destination -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 
     if ($failures.Count -gt 0) {
@@ -321,6 +342,33 @@ function Invoke-BasePluginDriftCheck {
     return 0
 }
 
+function Invoke-BasePluginResolution {
+    <#
+    .SYNOPSIS
+        Writes every resolved Base plugin into Destination; exits 1 when any cannot be resolved.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$RepoRoot,
+        [Parameter(Mandatory = $true)][string]$Destination,
+        [hashtable]$PluginRoot
+    )
+
+    $failed = $false
+    foreach ($plugin in @(Resolve-BasePlugin -RepoRoot $RepoRoot -Destination $Destination -PluginRoot $PluginRoot)) {
+        if ($plugin.Error) {
+            Write-Error "FAIL: dependency '$($plugin.Name)' could not be resolved: $($plugin.Error)" -ErrorAction Continue
+            $failed = $true
+        } else {
+            Write-Host "OK: $($plugin.Name) -> $($plugin.Root)" -ForegroundColor Green
+        }
+    }
+    return [int]$failed
+}
+
 if ($MyInvocation.InvocationName -ne '.') {
-    exit (Invoke-BasePluginDriftCheck -RepoRoot $RepoRoot -PluginRoot $PluginRoot)
+    $map = ConvertTo-PluginRootMap -Pair $PluginRoot
+    if ($Destination) {
+        exit (Invoke-BasePluginResolution -RepoRoot $RepoRoot -Destination $Destination -PluginRoot $map)
+    }
+    exit (Invoke-BasePluginDriftCheck -RepoRoot $RepoRoot -PluginRoot $map)
 }

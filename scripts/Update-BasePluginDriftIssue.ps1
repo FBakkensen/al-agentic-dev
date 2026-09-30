@@ -4,8 +4,10 @@
 .SYNOPSIS
     Maintains the one deduplicated Base plugin drift issue.
 .DESCRIPTION
-    On Failure, opens the issue, or reopens and comments on the oldest one, and closes any
-    open duplicates. On Success, comments on and closes every open one.
+    On Failure, opens the issue, or rewrites the body of the oldest open one (reopening the
+    oldest closed one when none is open), so daily failures never pile up comments; any
+    other open copy is closed as a duplicate. On Success, comments on and closes every
+    open one.
 #>
 
 [CmdletBinding()]
@@ -88,7 +90,7 @@ $failureText
         return
     }
 
-    $primaryIssue = $matchingIssues[0]
+    $primaryIssue = if ($openIssues.Count -gt 0) { $openIssues[0] } else { $matchingIssues[0] }
     if ($primaryIssue.State -ne 'OPEN') {
         $null = Invoke-Gh @(
             'issue', 'reopen', [string]$primaryIssue.Number,
@@ -96,12 +98,12 @@ $failureText
         )
     }
     $null = Invoke-Gh @(
-        'issue', 'comment', [string]$primaryIssue.Number,
+        'issue', 'edit', [string]$primaryIssue.Number,
         '--repo', $Repository,
         '--body', $body
     )
 
-    foreach ($duplicate in @($matchingIssues | Select-Object -Skip 1 | Where-Object State -EQ 'OPEN')) {
+    foreach ($duplicate in @($openIssues | Where-Object Number -NE $primaryIssue.Number)) {
         $null = Invoke-Gh @(
             'issue', 'comment', [string]$duplicate.Number,
             '--repo', $Repository,

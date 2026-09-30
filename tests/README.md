@@ -16,7 +16,7 @@ pwsh scripts/Invoke-Tests.ps1 -Mode Full  # the validator suites, the SessionSta
 
 The 1024-character description cap comes from the Agent Skills specification; Claude Code documents no limit, and the gate keeps the cap.
 
-The drift check fetches over anonymous https: mattpocock-skills at the commit `claude-plugins-official` lists, bcquality and the AL language server at their default branches. `.github/workflows/base-plugin-drift.yml` reruns it daily and opens, updates, or closes the one `[Drift] Base plugin skill references` issue through `scripts/Update-BasePluginDriftIssue.ps1`. `tests/BasePluginDrift.Tests.ps1` drives it through `-PluginRoot`, which maps each namespace to a TestDrive fixture and fetches nothing.
+The drift check fetches over anonymous https: mattpocock-skills at the commit `claude-plugins-official` lists, bcquality and the AL language server at their default branches. `.github/workflows/base-plugin-drift.yml` reruns it daily and opens, updates, or closes the one `[Drift] Base plugin skill references` issue through `scripts/Update-BasePluginDriftIssue.ps1`. `-Destination <dir>` only resolves, writing each Base plugin into `<dir>/<name>`. `tests/BasePluginDrift.Tests.ps1` drives it through `-PluginRoot`, which maps each namespace to a TestDrive fixture and fetches nothing, and through local `file://` git repositories in TestDrive for the fetch path.
 
 `tests/SessionStartHook.Tests.ps1` runs exactly the command in `hooks/hooks.json` as a process, with `${CLAUDE_PLUGIN_ROOT}` pointed at the checkout, parses stdout as JSON, and asserts the `SessionStart` event name, the `▶ <model> · <brief> → <return>` line, and the delegation-cost text.
 
