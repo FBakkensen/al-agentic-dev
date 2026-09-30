@@ -18,7 +18,7 @@ Gherkin, reviewed AAA expected values and proof levels, and the Level 1 module i
 
 ## Decide the list
 
-Inspect the affected proof set as if all current requirements had existed when its tests were first written. Compare the landed tests with the accepted proof map. List the avoidable layers, overlaps, and chronology-shaped tests to correct inside the affected tests and shared helpers; leave unrelated proof alone. A behavior, expected-value, or proof-level change returns to /al-test-design and the user.
+Inspect the affected proof set as if all current requirements had existed when its tests were first written. Compare the landed tests with the accepted proof map. List the avoidable layers, overlaps, and chronology-shaped tests to correct inside the affected tests and shared helpers; leave unrelated proof alone. A behavior, expected-value, or proof-level change returns to the user and /mattpocock-skills:tdd.
 
 Tidy stays inside changed files and immediate seams. Prefer canonical BC patterns and Base App helpers. An interface with one implementation is a finding; collapse it unless a second implementation or stable external contract proves the seam. A defect noticed outside the slice is a follow-up line in the receipt, not a change.
 
