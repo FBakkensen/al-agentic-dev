@@ -1,6 +1,6 @@
 ---
 name: al-review
-description: Use whenever /mattpocock-skills:code-review runs for a slice with an Azure DevOps work item, a child PBI or the Original work item itself, since the entry cannot read Azure DevOps work items; or when a landed AL slice is judged against its work item's Gherkin and proof. A plain AL code review with no work item belongs to /bcquality:al-code-review.
+description: Use whenever /mattpocock-skills:code-review runs for a slice with an Azure DevOps work item, a child PBI or the Original work item itself, or when a landed AL slice is judged against its work item's Gherkin and proof. A plain AL code review with no work item belongs to /bcquality:al-code-review.
 ---
 
 # al-review - the AL layer of mattpocock-skills:code-review
