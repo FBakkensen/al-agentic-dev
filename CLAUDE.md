@@ -89,7 +89,7 @@ The session that opens a PR merges it and closes its issues; it never enables au
 ```bash
 pr=<pr>; repo=FBakkensen/al-agentic-dev; last=""
 while :; do
-  snap=$(gh pr view $pr --repo $repo --json state,mergeStateStatus,headRefOid,statusCheckRollup,reviews,comments --jq '"\(.state) \(.mergeStateStatus) head=\(.headRefOid[0:7]) checks=\([.statusCheckRollup[] | "\(.name // .context):\(.conclusion // .status // .state)"] | sort | join(",")) reviews=\(.reviews|length) comments=\(.comments|length)"' 2>/dev/null) || { sleep 30; continue; }
+  snap=$(gh pr view $pr --repo $repo --json state,mergeStateStatus,headRefOid,statusCheckRollup,reviews,comments --jq '"\(.state) \(.mergeStateStatus) head=\(.headRefOid[0:7]) checks=\([.statusCheckRollup[] | "\(.name // .context):\(if (.conclusion // "") != "" then .conclusion else (.status // .state) end)"] | sort | join(",")) reviews=\(.reviews|length) comments=\(.comments|length)"' 2>/dev/null) || { sleep 30; continue; }
   threads=$(gh api graphql -f query="{repository(owner:\"FBakkensen\",name:\"al-agentic-dev\"){pullRequest(number:$pr){reviewThreads(first:100){nodes{isResolved}}}}}" --jq '[.data.repository.pullRequest.reviewThreads.nodes[]|select(.isResolved|not)]|length' 2>/dev/null)
   snap="PR #$pr $snap unresolved=$threads"
   if [ "$snap" != "$last" ]; then echo "$snap"; last=$snap; fi
