@@ -20,9 +20,15 @@
     work-item transition (State: New|Active|Blocked|Testing|Resolved|Closed).
     A /name skill reference that matches a folder under the skills root resolves
     regardless of prefix; an al-prefixed reference with no folder is a violation.
-    Every prose ▶ line matches the delegation grammar
-    '▶ <tier> · <vehicle> · <brief> → <return>' with tier in frontier|execution|mechanical
-    and vehicle in task|session.
+    Namespaced references use the drift check's <ns>:<skill> tokenizer (SkillReference.ps1)
+    over each whole file, description included. A namespace is declared when a dependency in
+    the plugin manifest (-PluginManifest) names it before its '@'. al-agentic-dev:<x>, with
+    or without '/', is a violation that asks for the bare /<x>; /<ns>:<skill> with an
+    undeclared namespace is a violation; a bare x:y whose x is undeclared is not a
+    reference, so file:line and $env:NAME pass.
+    Every prose ▶ line matches the delegation grammar '▶ <model> · <brief> → <return>'
+    with model opus, sonnet, or haiku, and a brief that does not open on a leftover
+    task or session vehicle. fable gets its own violation: it bills usage credits.
     The output-styles folder holds the style developers select as al-agentic-dev:AL:
     at least one style's name is exactly AL, and every style's frontmatter carries
     name exactly AL, keep-coding-instructions: true, and no force-for-plugin, in YAML
@@ -35,8 +41,11 @@
 [CmdletBinding()]
 param(
     [string]$SkillsRoot = (Join-Path $PSScriptRoot '..' 'skills'),
-    [string]$OutputStylesRoot = (Join-Path $PSScriptRoot '..' 'output-styles')
+    [string]$OutputStylesRoot = (Join-Path $PSScriptRoot '..' 'output-styles'),
+    [string]$PluginManifest = (Join-Path $PSScriptRoot '..' '.claude-plugin' 'plugin.json')
 )
+
+. (Join-Path $PSScriptRoot 'SkillReference.ps1')
 
 function Get-MarkdownLinkTarget {
     param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Text)
@@ -90,11 +99,23 @@ function Invoke-SkillsValidation {
     [CmdletBinding()]
     param(
         [string]$SkillsRoot = (Join-Path $PSScriptRoot '..' 'skills'),
-        [string]$OutputStylesRoot = (Join-Path $PSScriptRoot '..' 'output-styles')
+        [string]$OutputStylesRoot = (Join-Path $PSScriptRoot '..' 'output-styles'),
+        [string]$PluginManifest = (Join-Path $PSScriptRoot '..' '.claude-plugin' 'plugin.json')
     )
 
 $violations = @()
 $root = (Resolve-Path -LiteralPath $SkillsRoot -ErrorAction Stop).Path
+# A dependency's namespace is its plugin name, the part before '@', as the drift check reads it.
+$namespaces = @()
+if (Test-Path -LiteralPath $PluginManifest -PathType Leaf) {
+    $manifest = Get-Content -LiteralPath $PluginManifest -Raw | ConvertFrom-Json
+    $namespaces = @(foreach ($dependency in @($manifest.PSObject.Properties['dependencies']?.Value)) {
+        if (-not $dependency) { continue }
+        (($dependency -is [string]) ? $dependency : [string]$dependency.name).Split('@')[0]
+    })
+} else {
+    $violations += "plugin manifest not found: $PluginManifest"
+}
 # Per-skill script exemptions, approved one at a time. The key is the skill folder; the
 # value is the exact script paths that skill may name. al-build is exempt wholesale
 # because it owns the substrate; every other entry is an upstream tool the skill runs
@@ -219,6 +240,8 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
             $end = $mention.Index + $mention.Length
             $next = if ($end -lt $body.Length) { $body.Substring($end, [Math]::Min(2, $body.Length - $end)) } else { '' }
             if ($next -match '^\.[A-Za-z0-9]' -or $next -match '^[/\\]') { continue }
+            # /<ns>:<skill> is the namespace check's alone.
+            if ($next -match '^:[A-Za-z0-9]') { continue }
             $prev = if ($mention.Index -gt 0) { [string]$body[$mention.Index - 1] } else { ' ' }
             if ($prev -match '[\w.>/\\-]') { continue }
             $name = $mention.Value.TrimStart('/')
@@ -230,11 +253,23 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
             }
         }
 
-        $delegationGrammar = '^\s*(?:[-*]|\d+\.)?\s*▶ (frontier|execution|mechanical) · (task|session) · .+ → .+$'
+        foreach ($reference in @(Get-NamespacedSkillReference -Text ([string]$text))) {
+            $token = "$($reference.Namespace):$($reference.Skill)"
+            if ($reference.Namespace -ieq 'al-agentic-dev') {
+                $violations += "${relative}: $token names our own skill; write it bare: /$($reference.Skill)"
+            } elseif ($reference.Slash -and $namespaces -cnotcontains $reference.Namespace) {
+                $violations += "${relative}: /$token names '$($reference.Namespace)', which no plugin manifest dependency declares"
+            }
+        }
+
+        $delegationLead = '^\s*(?:[-*]|\d+\.)?\s*▶ '
+        $delegationGrammar = "$delegationLead(opus|sonnet|haiku) · (?!(?:task|session) · ).+ → .+$"
         foreach ($prose in (Get-ProseLine -Text $body)) {
             if ($prose -notmatch '▶') { continue }
-            if ($prose -notmatch $delegationGrammar) {
-                $violations += "${relative}: ▶ line outside the delegation grammar '▶ <tier> · <vehicle> · <brief> → <return>': $($prose.Trim())"
+            if ($prose -match "${delegationLead}fable · ") {
+                $violations += "${relative}: ▶ line runs on fable, which bills usage credits; delegate on opus, sonnet, or haiku: $($prose.Trim())"
+            } elseif ($prose -cnotmatch $delegationGrammar) {
+                $violations += "${relative}: ▶ line outside the delegation grammar '▶ <model> · <brief> → <return>' with model opus, sonnet, or haiku: $($prose.Trim())"
             }
         }
     }
@@ -311,5 +346,5 @@ return 0
 }
 
 if ($MyInvocation.InvocationName -ne '.') {
-    exit (Invoke-SkillsValidation -SkillsRoot $SkillsRoot -OutputStylesRoot $OutputStylesRoot)
+    exit (Invoke-SkillsValidation -SkillsRoot $SkillsRoot -OutputStylesRoot $OutputStylesRoot -PluginManifest $PluginManifest)
 }
