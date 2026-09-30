@@ -18,6 +18,7 @@ Describe 'Trigger eval suite' -Tag 'Unit' {
     It 'has a trigger case for <Skill> whose Skill grader names it' -TestCases $script:Skills {
         param($Skill)
 
+        Join-Path $script:EvalRoot $Skill 'prompt.md' | Should -Exist
         $grader = Join-Path $script:EvalRoot $Skill 'graders' 'skill-fired.md'
         $grader | Should -Exist
         $text = Get-Content -LiteralPath $grader -Raw
