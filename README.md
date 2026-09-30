@@ -29,7 +29,7 @@ Add this repository as a marketplace, then install the plugin:
 
 The marketplace also lists the `bcquality` and `al-language-server-go-windows` Base plugins, so adding it is the only setup. `mattpocock-skills` installs from `claude-plugins-official`, which Claude Code registers on the first interactive session.
 
-Claude Code asks for your Azure DevOps organization (`ado_org`, for example `naveksaas`) when it enables the plugin. The bundled `ado` MCP server connects to it. From Claude Code 2.1.269 you can change the value later in the `/config` panel.
+The bundled `ado` MCP server connects to the Azure DevOps org `naveksaas` with your Azure CLI sign-in, so installing the plugin needs no further setup.
 
 ### Verify
 

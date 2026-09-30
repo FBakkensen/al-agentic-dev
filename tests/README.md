@@ -7,7 +7,7 @@ The static tier is deterministic and runs in CI. The trigger evals under `evals/
 CI runs these five on every push to `main` and every pull request; run them locally before pushing:
 
 ```powershell
-pwsh scripts/Validate-Json.ps1        # JSON syntax repo-wide; .claude-plugin/plugin.json, .claude-plugin/marketplace.json, and .mcp.json structure; no MCP tools allowlist
+pwsh scripts/Validate-Json.ps1        # JSON syntax repo-wide; .claude-plugin/plugin.json and .claude-plugin/marketplace.json structure; plugin.json's mcpServers with no tools allowlist; no root .mcp.json
 pwsh scripts/Validate-PowerShell.ps1  # PowerShell syntax repo-wide, except .base-plugins/ and evals/results/
 pwsh scripts/Validate-Skills.ps1      # frontmatter keys, name = folder, description <= 1024, links stay in-folder, script ownership, retired-concept bans, the AL output style's name and settings
 pwsh scripts/Test-BasePluginDrift.ps1 # every <ns>:<skill> reference in skills/ and hooks/session-start.md resolves against the Base plugins' upstream heads
