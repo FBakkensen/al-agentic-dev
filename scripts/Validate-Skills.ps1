@@ -25,7 +25,8 @@
     and vehicle in task|session.
     The output-styles folder holds the style developers select as al-agentic-dev:AL:
     at least one style's name is exactly AL, and every style's frontmatter carries
-    name exactly AL, keep-coding-instructions: true, and no force-for-plugin. A case
+    name exactly AL, keep-coding-instructions: true, and no force-for-plugin, as flat
+    key: value lines Claude Code can parse. A case
     mismatch or missing setting silently hands developers the Default style; the flag
     overrides the developer's own choice. Every violation is reported; any violation exits 1.
 .EXAMPLE
@@ -261,7 +262,17 @@ foreach ($style in $styles) {
     }
 
     $frontmatter = if ($close -gt 1) { $lines[1..($close - 1)] -join "`n" } else { '' }
-    $name = [regex]::Match($frontmatter, '(?m)^name[ \t]*:[ \t]*(.+?)[ \t]*$').Groups[1].Value.Trim("'", '"')
+    # Claude Code loads a style whose YAML does not parse with every field unset, so
+    # keep-coding-instructions silently drops to false. With no YAML parser in the gate,
+    # the style is held to flat key: value lines with a plain or fully quoted scalar.
+    $flatPair = '^[A-Za-z][\w-]*:(?:[ \t]+(?:"(?:[^"\\]|\\.)*"|''(?:[^'']|'''')*''|[^\s\[\]{}&*!|>''"%@`#,](?:(?!:\s| #).)*?))?[ \t]*$'
+    foreach ($pair in ($frontmatter -split "`n")) {
+        if (-not $pair.Trim() -or $pair -match '^\s*#') { continue }
+        if ($pair -notmatch $flatPair) {
+            $violations += "${relative}: frontmatter line is not a flat key: value pair: $($pair.Trim())"
+        }
+    }
+    $name =[regex]::Match($frontmatter, '(?m)^name[ \t]*:[ \t]*(.+?)[ \t]*$').Groups[1].Value.Trim("'", '"')
     $styleNames += $name
     if ($name -cne 'AL') {
         $violations += "${relative}: name '$name' must be exactly 'AL'; any other name hands developers the Default style"

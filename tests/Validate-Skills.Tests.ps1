@@ -840,6 +840,33 @@ Describe 'Validate-Skills output-style checks' -Tag 'Unit' {
         $result.Text | Should -Match 'output-styles/AL\.md: frontmatter block does not parse'
     }
 
+    It 'fails a style whose frontmatter is not flat key-value YAML' -TestCases @(
+        @{ Case = 'flow'; Line = 'broken: [' }
+        @{ Case = 'quote'; Line = 'description: "Speak BC' }
+        @{ Case = 'nested'; Line = '  indented: value' }
+    ) {
+        param($Case, $Line)
+
+        $styles = New-OutputStylesRoot -Root (Join-Path $TestDrive "style-yaml-$Case") -Files @{
+            'AL.md' = (New-StyleContent -Frontmatter "name: AL`nkeep-coding-instructions: true`n$Line")
+        }
+
+        $result = Invoke-SkillValidator -Root $script:StyleSkills -OutputStylesRoot $styles
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match ([regex]::Escape("output-styles/AL.md: frontmatter line is not a flat key: value pair: $($Line.Trim())"))
+    }
+
+    It 'accepts quoted and plain values carrying commas and colons inside quotes' {
+        $styles = New-OutputStylesRoot -Root (Join-Path $TestDrive 'style-yaml-good') -Files @{
+            'AL.md' = (New-StyleContent -Frontmatter "name: `"AL`"`ndescription: 'Speak BC: vocabulary, and diagrams.'`nkeep-coding-instructions: true")
+        }
+
+        $result = Invoke-SkillValidator -Root $script:StyleSkills -OutputStylesRoot $styles
+
+        $result.ExitCode | Should -Be 0
+    }
+
     It 'fails when the style location holds no style named AL' -TestCases @(
         @{ Case = 'empty'; Files = @{ 'README.txt' = 'not a style' } }
         @{ Case = 'renamed'; Files = @{ 'BC.md' = "---`nname: BC`ndescription: Speak BC.`nkeep-coding-instructions: true`n---`n" } }
