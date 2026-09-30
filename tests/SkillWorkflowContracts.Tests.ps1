@@ -32,14 +32,16 @@ Describe 'Skill workflow contracts' {
     }
 
     It 'designs one coherent proof set and preserves existing proof while reshaping it' {
-        $testDesign = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-test-design' 'SKILL.md') -Raw
+        $tdd = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-tdd' 'SKILL.md') -Raw
         $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
         $refactor = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-refactor' 'SKILL.md') -Raw
         $simplify = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-simplify' 'SKILL.md') -Raw
 
-        $testDesign | Should -Match 'search the repository for existing proof'
-        $testDesign | Should -Match 'Current-to-final proof map'
-        $testDesign | Should -Match 'keep`, `reshape`, `combine`, `split`, `replace`, or `add'
+        $tdd | Should -Match 'search the repository for existing proof'
+        $tdd | Should -Match 'Current-to-final proof map'
+        $tdd | Should -Match 'keep`, `reshape`, `combine`, `split`, `replace`, or `add'
+        $tdd | Should -Match 'Every new or materially reshaped automated proof earns a red'
+        $tdd | Should -Match 'inject one compiling fault'
         $implement | Should -Match 'proof-preserving reshapes before new expectations or production changes'
         $implement | Should -Match 'require its current scope green'
         $implement | Should -Match 'rerun the gate green'
@@ -70,20 +72,19 @@ Describe 'Skill workflow contracts' {
         $mapContracts[0] | Should -Be (Join-Path $script:SkillsRoot 'al-lookup' 'SKILL.md')
     }
 
-    It 'uses root User Stories and orders Acceptance Criteria for people before agents' {
-        $scope = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-scope' 'SKILL.md') -Raw
-        $testDesign = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-test-design' 'SKILL.md') -Raw
+    It 'slices the Original work item into child PBIs and orders Acceptance Criteria for people before agents' {
+        $toTickets = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-to-tickets' 'SKILL.md') -Raw
+        $tdd = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-tdd' 'SKILL.md') -Raw
 
-        $scope | Should -Match 'One user request creates one Original User Story'
-        $scope | Should -Match 'not the top of the Azure DevOps hierarchy'
-        $scope | Should -Match 'structural parents remain unchanged and out of scope'
-        $scope | Should -Match 'Exactly one Vertical slice creates no child'
-        $scope | Should -Match 'every slice gets one direct child User Story'
-        $scope | Should -Match '`Problem`, `Expected outcome`, `Scope`, `Process contract`, `Business process`, `Runtime View`, `Building Block View`'
-        $scope | Should -Match '`Behavior` precedes `Test specification` when both are present'
-        $scope | Should -Match 'Either section may be omitted'
-        $scope | Should -Match 'valid fenced Gherkin'
-        $testDesign | Should -Match 'Acceptance Criteria, after `## Behavior` when both are present'
+        $toTickets | Should -Match '`Original` names a role in this workflow, not the top of the Azure DevOps hierarchy'
+        $toTickets | Should -Match 'Every existing item stays where it is, including the Original''s own structural parent'
+        $toTickets | Should -Match 'One slice creates no child'
+        $toTickets | Should -Match 'Several slices each get one direct child PBI under the Original work item'
+        $toTickets | Should -Match '`Behavior` precedes `Test specification` when both are present'
+        $toTickets | Should -Match 'Either section may be omitted'
+        $toTickets | Should -Match 'valid fenced Gherkin'
+        $toTickets | Should -Not -Match 'User Story'
+        $tdd | Should -Match 'Acceptance Criteria, after `## Behavior` when both are present'
     }
 
     It 'owns commits and pull requests in dedicated skills' {

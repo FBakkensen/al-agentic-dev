@@ -25,4 +25,6 @@ In an AL repository, when an entry skill below runs, load its AL addition beside
 | Entry skill | AL addition |
 |---|---|
 | `/mattpocock-skills:setup-matt-pocock-skills` | `/al-setup-matt-pocock-skills` |
+| `/mattpocock-skills:to-tickets` | `/al-to-tickets` |
+| `/mattpocock-skills:tdd` | `/al-tdd` |
 | `/simplify` | `/al-simplify` |

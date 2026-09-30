@@ -24,7 +24,7 @@ Then act, one class at a time:
 
    ▶ sonnet · the finding, the PR's promise, the files it names, and the grounding rule → the fix diff, the green gate line from /al-build, the /al-commit hashes
 
-   A comment that widens what the PR promises is a bullet, not a fix: surface it, propose it for /al-scope or /al-next to place, and wait.
+   A comment that widens what the PR promises is a bullet, not a fix: surface it, propose it for /mattpocock-skills:to-tickets or /al-next to place, and wait.
 3. **A required check red because of the PR** → diagnose and fix the root cause under the same gate rules, push, reply. An infrastructure, access, or flaky failure stops with the blocker named.
 4. **Behind main** → merge origin/main INTO the PR branch as a merge commit — a rebase rewrites what reviewers saw. Conflicts resolve by preserving both intents, each side traced to its primary sources: commits, PRs, issues. The same object or field number claimed by both sides with no overlapping logic is the one collision a worker resolves:
 
