@@ -1,6 +1,6 @@
 ---
 name: al-tdd
-description: Use whenever /mattpocock-skills:tdd runs against AL code, or when a Business Central work item's approved Gherkin needs its AAA test specification before any AL test is written.
+description: Use whenever /mattpocock-skills:tdd runs on Business Central work, in AL code that exists or in an extension whose first test is still to be written.
 ---
 
 # al-tdd - AL proof for the red-green loop
@@ -9,7 +9,7 @@ In: `/mattpocock-skills:tdd` running against AL code. The entry skill owns the l
 
 ## The agreed seams
 
-The seams `/mattpocock-skills:tdd` confirms with the user are the AAA map and the current-to-final proof map, both tested through the caller-visible interface of a Level 1 module.
+The seams `/mattpocock-skills:tdd` agrees are the AAA map and the current-to-final proof map, both tested through the caller-visible interface of a Level 1 module.
 
 Before proposing cases, search the repository for existing proof by affected module interface, objects, business terms, fixtures, and assertions:
 
@@ -25,7 +25,7 @@ Standard BC test libraries and fixtures come before new helpers:
 
 ## Test specification
 
-Write `## Test specification` into the executable work item's Acceptance Criteria, after `## Behavior` when both are present. Start with a `Current-to-final proof map`: for each existing or final test, the existing test procedure or `none`, the business behavior it proves, its final AAA case or cases, and `keep`, `reshape`, `combine`, `split`, `replace`, or `add`. Every existing proof stays mapped unless the current requirement explicitly replaces it. Each case has:
+Write `## Test specification` into the executable work item's Acceptance Criteria, after `## Behavior` when both are present. Start with a `Current-to-final proof map`: for each existing or final test, the existing test procedure or `none`, the business behavior it proves, its final AAA case or cases, and `keep`, `reshape`, `combine`, `split`, `replace`, or `add`. Each case has:
 
 - **Arrange:** business data, setup, permissions, and starting state.
 - **Act:** one verified caller-visible action.
@@ -34,7 +34,7 @@ Write `## Test specification` into the executable work item's Acceptance Criteri
 
 Every Gherkin scenario maps to at least one case, and every Trigger-to-outcome path, business branch, boundary, guarantee, and meaningful failure path appears in the map. Production object layout and helper design stay out.
 
-The user reviews both maps, including missing cases, expected values, and proof levels; the reviewed section is on the work item before the first red. Under `/mattpocock-skills:implement` a worker runs unattended: a reviewed `Test specification` already on the work item is its agreed seam set, and a missing one is a decision the worker writes out before ending its turn.
+The user reviews both maps, including missing cases, expected values, and proof levels; the reviewed section is on the work item before the first red. Under `/mattpocock-skills:implement`, a reviewed `Test specification` already on the work item is the worker's agreed seam set, and a missing one is a decision only the user can take.
 
 ## Red and green in AL
 
@@ -48,4 +48,4 @@ Every BC object, table, field, procedure, event, enum value, and dialog text in 
 
 ## Close
 
-The pass ends when every automated case has its red evidence and the gate is green, or on the exact red cause still open. Run /al-commit at every exit when `/mattpocock-skills:tdd` ran alone. A worker under `/mattpocock-skills:implement` leaves the commit to /al-implement, because /al-commit stages the whole shared worktree.
+The pass ends when every automated case has its red evidence and the gate is green, or on the exact red cause still open. Run /al-commit at every exit when `/mattpocock-skills:tdd` ran alone. A worker under `/mattpocock-skills:implement` leaves the commit to its lead, because /al-commit stages the whole shared worktree.
