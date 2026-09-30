@@ -81,12 +81,32 @@ These govern work on this repo and never ship. No `SKILL.md` may mention them.
 
 `main` is PR-only. A change lands on a fresh feature branch and merges through a PR. The version lives only in `.claude-plugin/plugin.json`; it stays `0.9.0` through the migration in #52, and no migration PR writes it.
 
-The session that opens a PR merges it and closes its issues. It never enables auto-merge, never polls, and never schedules; it acts when the PR sends an event. Since 2026-09-30 GitHub leaves a PR's `Fixes #<n>` unlinked (a11ign/a11ign#2824), so a merge alone closes nothing.
+The session that opens a PR merges it and closes its issues; it never enables auto-merge. Since 2026-09-30 GitHub leaves a PR's `Fixes #<n>` unlinked (a11ign/a11ign#2824), so a merge alone closes nothing. Right after `gh pr create`:
 
-1. Right after `gh pr create`, call the `ccd_pr` `set_monitor` tool with `auto_fix: true`, `address_comments: true`, and `auto_archive_on_close: false`. The app then wakes the session with a `<ci-monitor-event>` on every failing check, merge conflict, and review comment, and the session outlives the merge.
-2. Start `gh pr checks <pr> --watch` with Bash `run_in_background`. It exits when the PR's checks finish, and its completion notice wakes the session.
-3. On that notice with every check green and no unresolved review thread, run `gh pr merge <pr> --squash`. Once `gh pr view <pr> --json state` reads `MERGED`, run `gh issue close <n> --reason completed --comment "Completed by #<pr>"` for each issue the PR body closes that is still open.
-4. On a `<ci-monitor-event>`, fix the failure, answer and resolve the thread, or merge `origin/main` into the branch; push, then go back to step 2.
+1. Call the `ccd_pr` `set_monitor` tool with `auto_archive_on_close: false`, so the session outlives the merge.
+2. Arm this watcher with the `Monitor` tool, `timeout_ms` 1800000. It prints one line each time anything on the PR changes: state, merge status, head commit, a check, a review, a comment, or an unresolved thread. It exits once the PR is merged or closed.
+
+```bash
+pr=<pr>; repo=FBakkensen/al-agentic-dev; last=""
+while :; do
+  snap=$(gh pr view $pr --repo $repo --json state,mergeStateStatus,headRefOid,statusCheckRollup,reviews,comments --jq '"\(.state) \(.mergeStateStatus) head=\(.headRefOid[0:7]) checks=\([.statusCheckRollup[] | "\(.name // .context):\(.conclusion // .status // .state)"] | sort | join(",")) reviews=\(.reviews|length) comments=\(.comments|length)"' 2>/dev/null) || { sleep 30; continue; }
+  threads=$(gh api graphql -f query="{repository(owner:\"FBakkensen\",name:\"al-agentic-dev\"){pullRequest(number:$pr){reviewThreads(first:100){nodes{isResolved}}}}}" --jq '[.data.repository.pullRequest.reviewThreads.nodes[]|select(.isResolved|not)]|length' 2>/dev/null)
+  snap="PR #$pr $snap unresolved=$threads"
+  if [ "$snap" != "$last" ]; then echo "$snap"; last=$snap; fi
+  case "$snap" in *" MERGED "*|*" CLOSED "*) exit 0;; esac
+  sleep 30
+done
+```
+
+3. On each line, do what it calls for, then wait for the next line:
+   - `MERGED`: run `gh issue close <n> --reason completed --comment "Completed by #<pr>"` for each issue the PR body closes that is still open.
+   - `CLOSED`: nothing to close.
+   - `OPEN CLEAN`: run `gh pr merge <pr> --squash`.
+   - a check `FAILURE`: fix it and push.
+   - `unresolved` above 0, or a new review or comment: read it, fix what it finds, reply, and resolve the thread.
+   - `DIRTY`: merge `origin/main`, resolve the conflicts, and push.
+   - otherwise (checks running, a required check such as `CodeRabbit` not yet reported): nothing; the next change prints a line.
+4. When the monitor expires with the PR still open, arm it again.
 
 When `gh pr view <pr> --json closingIssuesReferences` lists the issue right after `gh pr create`, GitHub links again. Then this paragraph goes, and closing comes back to the merge.
 
