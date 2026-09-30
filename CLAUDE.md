@@ -81,13 +81,12 @@ These govern work on this repo and never ship. No `SKILL.md` may mention them.
 
 `main` is PR-only. A change lands on a fresh feature branch and merges through a PR. The version lives only in `.claude-plugin/plugin.json`; it stays `0.9.0` through the migration in #52, and no migration PR writes it.
 
-The session that opens a PR merges it and closes its issues; it never enables auto-merge. Since 2026-09-30 GitHub leaves a PR's `Fixes #<n>` unlinked (a11ign/a11ign#2824), so a merge alone closes nothing. Right after `gh pr create`, start one Bash `run_in_background` watcher. Every 60 seconds it reads `gh pr view <pr> --json state,mergeStateStatus`:
-- `CLEAN`: it runs `gh pr merge <pr> --squash --delete-branch` and keeps watching; it closes nothing until the PR reads `MERGED`.
-- `MERGED`: it runs `gh issue close <n> --reason completed --comment "Completed by #<pr>"` for each issue the PR body closes that is still open, and exits.
-- `CLOSED`: it exits, closing nothing.
-- `BLOCKED`, `BEHIND`, `DIRTY`, `UNSTABLE`, or `UNKNOWN`: it keeps waiting while CI fixes, review fixes, and conflict merges land.
+The session that opens a PR merges it and closes its issues. It never enables auto-merge, never polls, and never schedules; it acts when the PR sends an event. Since 2026-09-30 GitHub leaves a PR's `Fixes #<n>` unlinked (a11ign/a11ign#2824), so a merge alone closes nothing.
 
-Its completion notice reports the state, the merge, and each issue it closed.
+1. Right after `gh pr create`, call the `ccd_pr` `set_monitor` tool with `auto_fix: true`, `address_comments: true`, and `auto_archive_on_close: false`. The app then wakes the session with a `<ci-monitor-event>` on every failing check, merge conflict, and review comment, and the session outlives the merge.
+2. Start `gh pr checks <pr> --watch` with Bash `run_in_background`. It exits when the PR's checks finish, and its completion notice wakes the session.
+3. On that notice with every check green and no unresolved review thread, run `gh pr merge <pr> --squash`. Once `gh pr view <pr> --json state` reads `MERGED`, run `gh issue close <n> --reason completed --comment "Completed by #<pr>"` for each issue the PR body closes that is still open.
+4. On a `<ci-monitor-event>`, fix the failure, answer and resolve the thread, or merge `origin/main` into the branch; push, then go back to step 2.
 
 When `gh pr view <pr> --json closingIssuesReferences` lists the issue right after `gh pr create`, GitHub links again. Then this paragraph goes, and closing comes back to the merge.
 
