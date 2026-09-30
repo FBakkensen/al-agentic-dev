@@ -796,6 +796,22 @@ Describe 'Validate-Skills output-style checks' -Tag 'Unit' {
         $result.Text | Should -Match ([regex]::Escape("output-styles/AL.md: name '$Found' must be exactly 'AL'"))
     }
 
+    It 'fails a style whose name is not a single string' -TestCases @(
+        @{ Case = 'sequence'; Value = '[AL]' }
+        @{ Case = 'mapping'; Value = '{ AL: true }' }
+    ) {
+        param($Case, $Value)
+
+        $styles = New-OutputStylesRoot -Root (Join-Path $TestDrive "style-name-type-$Case") -Files @{
+            'AL.md' = (New-StyleContent -Frontmatter "name: $Value`ndescription: Speak BC.`nkeep-coding-instructions: true")
+        }
+
+        $result = Invoke-SkillValidator -Root $script:StyleSkills -OutputStylesRoot $styles
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match ([regex]::Escape("output-styles/AL.md: name '' must be exactly 'AL'"))
+    }
+
     It 'fails a style whose keep-coding-instructions is not true' -TestCases @(
         @{ Case = 'false'; Frontmatter = "name: AL`ndescription: Speak BC.`nkeep-coding-instructions: false" }
         @{ Case = 'missing'; Frontmatter = "name: AL`ndescription: Speak BC." }

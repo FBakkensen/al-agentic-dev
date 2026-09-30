@@ -278,7 +278,8 @@ foreach ($style in $styles) {
     # Claude Code reads lowercase field names only, and the parsed hashtable ignores case.
     $fieldNames = @($fields.Keys | ForEach-Object { [string]$_ })
 
-    $name = if ($fieldNames -ccontains 'name') { [string]$fields['name'] } else { '' }
+    # A cast would turn the sequence [AL] into the string AL; only a string scalar counts.
+    $name = if ($fieldNames -ccontains 'name' -and $fields['name'] -is [string]) { $fields['name'] } else { '' }
     $styleNames += $name
     if ($name -cne 'AL') {
         $violations += "${relative}: name '$name' must be exactly 'AL'; any other name hands developers the Default style"
