@@ -29,6 +29,6 @@ The Original work item owns the shared design. A child's Description names its o
 
 Each slice carries its `Behavior` as valid fenced Gherkin in Acceptance Criteria: `Scenario`, `Given`, `When`, and `Then`, with `Background`, `And`, `But`, and `Scenario Outline` when useful. Gherkin speaks the business process; AL object structure and test implementation stay out of it.
 
-`Behavior` precedes `Test specification` when both are present. Either section may be omitted, and its absence has no prescribed meaning. The two rules read together: every slice carries `Behavior`, while a container Original holds the shared design instead of one slice's `Behavior`, and `Test specification` arrives later through `/mattpocock-skills:tdd`.
+`Behavior` precedes `Test specification` when both are present. Either section may be omitted, and its absence has no prescribed meaning. That omission never lifts a slice's `Behavior`: it covers a container Original, which holds the shared design, and a `Test specification` that `/mattpocock-skills:tdd` writes later.
 
-The cut is done when every slice's BPMN outcome sits on exactly one executable work item, the Original for one slice or one child PBI each for several, and each of those items carries its `Behavior`.
+The cut is done when each approved slice sits on its executable work item and that item carries the slice's `Behavior`.
