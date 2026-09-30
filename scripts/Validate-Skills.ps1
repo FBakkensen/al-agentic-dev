@@ -22,13 +22,19 @@
     regardless of prefix; an al-prefixed reference with no folder is a violation.
     Every prose ▶ line matches the delegation grammar
     '▶ <tier> · <vehicle> · <brief> → <return>' with tier in frontier|execution|mechanical
-    and vehicle in task|session. Every violation is reported; any violation exits 1.
+    and vehicle in task|session.
+    The output-styles folder holds the style developers select as al-agentic-dev:AL:
+    at least one style's name is exactly AL, and every style's frontmatter carries
+    name exactly AL, keep-coding-instructions: true, and no force-for-plugin. A case
+    mismatch or missing setting silently hands developers the Default style; the flag
+    overrides the developer's own choice. Every violation is reported; any violation exits 1.
 .EXAMPLE
     pwsh scripts/Validate-Skills.ps1
 #>
 [CmdletBinding()]
 param(
-    [string]$SkillsRoot = (Join-Path $PSScriptRoot '..' 'skills')
+    [string]$SkillsRoot = (Join-Path $PSScriptRoot '..' 'skills'),
+    [string]$OutputStylesRoot = (Join-Path $PSScriptRoot '..' 'output-styles')
 )
 
 function Get-MarkdownLinkTarget {
@@ -82,7 +88,8 @@ function Get-ProseLine {
 function Invoke-SkillsValidation {
     [CmdletBinding()]
     param(
-        [string]$SkillsRoot = (Join-Path $PSScriptRoot '..' 'skills')
+        [string]$SkillsRoot = (Join-Path $PSScriptRoot '..' 'skills'),
+        [string]$OutputStylesRoot = (Join-Path $PSScriptRoot '..' 'output-styles')
     )
 
 $violations = @()
@@ -236,6 +243,45 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
     }
 }
 
+$styles = @(if (Test-Path -LiteralPath $OutputStylesRoot -PathType Container) {
+    Get-ChildItem -LiteralPath $OutputStylesRoot -Filter '*.md' -File
+})
+$styleNames = @()
+foreach ($style in $styles) {
+    $styleCount = $violations.Count
+    $relative = "output-styles/$($style.Name)"
+    $lines = @((Get-Content -LiteralPath $style.FullName -Raw) -split '\r?\n')
+    $close = -1
+    for ($i = 1; $i -lt $lines.Count; $i++) {
+        if ($lines[$i].Trim() -eq '---') { $close = $i; break }
+    }
+    if ($lines[0].Trim() -ne '---' -or $close -lt 1) {
+        $violations += "${relative}: frontmatter block does not parse"
+        continue
+    }
+
+    $frontmatter = if ($close -gt 1) { $lines[1..($close - 1)] -join "`n" } else { '' }
+    $name = [regex]::Match($frontmatter, '(?m)^name\s*:\s*(.+?)\s*$').Groups[1].Value.Trim("'", '"')
+    $styleNames += $name
+    if ($name -cne 'AL') {
+        $violations += "${relative}: name '$name' must be exactly 'AL'; any other name hands developers the Default style"
+    }
+    $keep = [regex]::Match($frontmatter, '(?m)^keep-coding-instructions\s*:\s*(.+?)\s*$').Groups[1].Value
+    if ($keep -cne 'true') {
+        $violations += "${relative}: keep-coding-instructions must be true"
+    }
+    if ($frontmatter -match '(?m)^force-for-plugin\s*:') {
+        $violations += "${relative}: force-for-plugin overrides the developer's own output style; remove it"
+    }
+
+    if ($violations.Count -eq $styleCount) {
+        Write-Host "OK: $relative" -ForegroundColor Green
+    }
+}
+if ($styleNames -cnotcontains 'AL') {
+    $violations += "output-styles holds no style named AL: $OutputStylesRoot"
+}
+
 if ($violations.Count -gt 0) {
     $violations | ForEach-Object { Write-Host "FAIL: $_" -ForegroundColor Red }
     Write-Error "$($violations.Count) skill violation(s) found."
@@ -247,5 +293,5 @@ return 0
 }
 
 if ($MyInvocation.InvocationName -ne '.') {
-    exit (Invoke-SkillsValidation -SkillsRoot $SkillsRoot)
+    exit (Invoke-SkillsValidation -SkillsRoot $SkillsRoot -OutputStylesRoot $OutputStylesRoot)
 }

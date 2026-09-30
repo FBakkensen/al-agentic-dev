@@ -12,6 +12,7 @@ Git history is the donor archive — a retired skill returns from a commit, neve
 .mcp.json                       bundled MCP servers — microsoft-learn and ado — none with a tools allowlist
 hooks/hooks.json                the SessionStart hook: runs hooks/Write-SessionStart.ps1
 hooks/session-start.md          the delegation rules the hook injects in every session
+output-styles/AL.md             the opt-in al-agentic-dev:AL style: Speak BC and the interview-diagram rule; frontmatter name AL, keep-coding-instructions true, no force-for-plugin
 skills/<name>/SKILL.md          frontmatter: name, description
 skills/<name>/<SIBLING>.md      optional format files, inside the same folder only
 skills/al-event-model/bpmn-renderer/ package-local BPMN renderer dependencies
@@ -78,7 +79,7 @@ These govern work on this repo and never ship. No `SKILL.md` may mention them.
 
 `main` is PR-only. A change lands on a fresh feature branch and merges through a PR. The version lives only in `.claude-plugin/plugin.json`; it stays `0.9.0` through the migration in #52, and no migration PR writes it.
 
-Before pushing, run `scripts/Validate-Json.ps1`, `scripts/Validate-PowerShell.ps1`, `scripts/Validate-Skills.ps1`, then `scripts/Invoke-Tests.ps1 -Mode Full`. CI runs the same four on pushes to `main` and on every pull request. The gates validate `skills/`, `hooks/`, and the plugin manifests; links in `README.md` and `docs/` are deliberately unchecked — not a review finding.
+Before pushing, run `scripts/Validate-Json.ps1`, `scripts/Validate-PowerShell.ps1`, `scripts/Validate-Skills.ps1`, then `scripts/Invoke-Tests.ps1 -Mode Full`. CI runs the same four on pushes to `main` and on every pull request. The gates validate `skills/`, `hooks/`, `output-styles/`, and the plugin manifests; links in `README.md` and `docs/` are deliberately unchecked — not a review finding.
 
 Use `scripts/Invoke-Tests.ps1 -Mode Fast` for the local loop; it excludes process-bound and live-fixture tests without changing the full gate.
 
