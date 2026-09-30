@@ -782,6 +782,7 @@ Describe 'Validate-Skills output-style checks' -Tag 'Unit' {
         @{ Case = 'lowercase'; Frontmatter = "name: al`ndescription: Speak BC.`nkeep-coding-instructions: true"; Found = 'al' }
         @{ Case = 'mixed'; Frontmatter = "name: Al`ndescription: Speak BC.`nkeep-coding-instructions: true"; Found = 'Al' }
         @{ Case = 'missing'; Frontmatter = "description: Speak BC.`nkeep-coding-instructions: true"; Found = '' }
+        @{ Case = 'next-line'; Frontmatter = "name:`nAL`ndescription: Speak BC.`nkeep-coding-instructions: true"; Found = '' }
     ) {
         param($Case, $Frontmatter, $Found)
 
@@ -798,6 +799,7 @@ Describe 'Validate-Skills output-style checks' -Tag 'Unit' {
     It 'fails a style whose keep-coding-instructions is not true' -TestCases @(
         @{ Case = 'false'; Frontmatter = "name: AL`ndescription: Speak BC.`nkeep-coding-instructions: false" }
         @{ Case = 'missing'; Frontmatter = "name: AL`ndescription: Speak BC." }
+        @{ Case = 'next-line'; Frontmatter = "name: AL`ndescription: Speak BC.`nkeep-coding-instructions:`ntrue" }
     ) {
         param($Case, $Frontmatter)
 

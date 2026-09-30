@@ -261,12 +261,12 @@ foreach ($style in $styles) {
     }
 
     $frontmatter = if ($close -gt 1) { $lines[1..($close - 1)] -join "`n" } else { '' }
-    $name = [regex]::Match($frontmatter, '(?m)^name\s*:\s*(.+?)\s*$').Groups[1].Value.Trim("'", '"')
+    $name = [regex]::Match($frontmatter, '(?m)^name[ \t]*:[ \t]*(.+?)[ \t]*$').Groups[1].Value.Trim("'", '"')
     $styleNames += $name
     if ($name -cne 'AL') {
         $violations += "${relative}: name '$name' must be exactly 'AL'; any other name hands developers the Default style"
     }
-    $keep = [regex]::Match($frontmatter, '(?m)^keep-coding-instructions\s*:\s*(.+?)\s*$').Groups[1].Value
+    $keep = [regex]::Match($frontmatter, '(?m)^keep-coding-instructions[ \t]*:[ \t]*(.+?)[ \t]*$').Groups[1].Value
     if ($keep -cne 'true') {
         $violations += "${relative}: keep-coding-instructions must be true"
     }
