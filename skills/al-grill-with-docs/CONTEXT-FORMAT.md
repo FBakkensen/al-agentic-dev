@@ -1,6 +1,6 @@
 # CONTEXT.md in an AL app
 
-`/mattpocock-skills:domain-modeling`'s format holds, with three BC deltas.
+`/mattpocock-skills:domain-modeling`'s format holds, with three BC deltas. The `_As name_:` line and the Notes facts are its only AL-shape content, an exception to the glossary-only rule on purpose.
 
 ## The BC baseline
 

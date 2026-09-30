@@ -9,7 +9,7 @@ In: `/mattpocock-skills:grill-with-docs` running on an AL request. `/mattpocock-
 
 ## The anchor
 
-Before the first round, anchor the Original work item. A request that arrives on a Feature, Bug, or PBI names its id; read that item. A request that arrives on none gets a new Original work item in the backlog project the `## Agent skills` block's issue tracker line names; say so, and create it at the first write below.
+Before the first round, anchor the Original work item. A request that arrives on a Feature, Bug, or PBI names its id; read that item. A request that arrives on none gets a new Original work item in the backlog project the `## Agent skills` block's issue tracker line names; tell the user so, and create it with the request block's write.
 
 ## The request block
 
