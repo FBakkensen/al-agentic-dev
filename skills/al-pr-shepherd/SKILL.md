@@ -5,7 +5,7 @@ description: Drive one open pull request to merge — watch CI and the Copilot r
 
 # al-pr-shepherd — one PR to landed
 
-In: one open pull request — the current branch's, or the number named in the invocation; not exactly one match → stop and say why. Out: the PR merged on the user's explicit go, or a blocked-with-reason receipt. Fix-forward on the PR branch is this skill's work; everything irreversible or human-facing is the user's. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+In: one open pull request — the current branch's, or the number named in the invocation; not exactly one match → stop and say why. Out: the PR merged on the user's explicit go, or a blocked-with-reason receipt. Fix-forward on the PR branch is this skill's work; everything irreversible or human-facing is the user's.
 
 ## Ground rules
 
@@ -22,17 +22,17 @@ Then act, one class at a time:
 1. **Human feedback** → stop the automation and ask the user; never auto-reply, auto-resolve, or change code for it.
 2. **An actionable Copilot finding** → two classes. A local repair — contained, within what the PR already promises — goes to a worker, then is pushed, replied to, resolved:
 
-   ▶ execution · task · the finding, the PR's promise, the files it names, the Speak BC paragraph, and the grounding rule → the fix diff, the green gate line from /al-build, the /al-commit hashes
+   ▶ sonnet · the finding, the PR's promise, the files it names, and the grounding rule → the fix diff, the green gate line from /al-build, the /al-commit hashes
 
    A comment that widens what the PR promises is a bullet, not a fix: surface it, propose it for /al-scope or /al-next to place, and wait.
 3. **A required check red because of the PR** → diagnose and fix the root cause under the same gate rules, push, reply. An infrastructure, access, or flaky failure stops with the blocker named.
 4. **Behind main** → merge origin/main INTO the PR branch as a merge commit — a rebase rewrites what reviewers saw. Conflicts resolve by preserving both intents, each side traced to its primary sources: commits, PRs, issues. The same object or field number claimed by both sides with no overlapping logic is the one collision a worker resolves:
 
-   ▶ execution · task · the AL number collision: origin/main's declaration, the branch-new declaration, and the idRanges bucket → both declarations kept, the branch-new number renumbered inside its bucket and verified by a workspace scan
+   ▶ sonnet · the AL number collision: origin/main's declaration, the branch-new declaration, and the idRanges bucket → both declarations kept, the branch-new number renumbered inside its bucket and verified by a workspace scan
 
    A conflict that reveals a design decision — one concept modeled twice, conflicting logic in one object — stops for the user. Before the push:
 
-   ▶ mechanical · task · /al-build gate on the synced tree → summary.json verdict, per-runner totals, exact red cause
+   ▶ haiku · /al-build gate on the synced tree → summary.json verdict, per-runner totals, exact red cause
 5. **Copilot review requested or running, or a check still running** → wait inside this turn, as described under Waiting; never end the turn on a pending state.
 6. **Checks green, no Copilot pass pending, nothing left to handle** → ask for the user's go, and on it, merge.
 

@@ -7,7 +7,7 @@ description: Use when an Original User Story's accepted process and module desig
 
 In: the Original Azure DevOps User Story, its Trigger, Success guarantee, Minimal guarantee, BPMN outcomes, Runtime View when present, and arc42 Building Block Level 1. `Original` names its role in this workflow, not the top of the Azure DevOps hierarchy; structural parents remain unchanged and out of scope. Synthesize from those artifacts and the conversation; do not reopen settled design.
 
-Ask one substantive question per message. Show the candidate slices, what each user can complete, and what stays out. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+Ask one substantive question per message. Show the candidate slices, what each user can complete, and what stays out.
 
 ## Slice by outcome
 
@@ -34,6 +34,6 @@ In Acceptance Criteria, `Behavior` precedes `Test specification` when both are p
 
 ## Land the cut
 
-Show the proposed hierarchy and Gherkin to the user. Send the complete cut to the rubber-duck agent before creation when that agent is available. The user decides the cut.
+Show the proposed hierarchy and Gherkin to the user. The user decides the cut.
 
 For two or more slices, create the approved child User Stories and native parent links through Azure DevOps work-item tools. For exactly one, keep the Original User Story executable and create no child. If those tools are unavailable, show the exact work-item change and stop. Close with the Original and executable User Story identifiers; the next executable item goes to /al-test-design.

@@ -7,7 +7,7 @@ description: Use after AL implementation or refactoring when the diff needs a le
 
 In: the diff, receipt, and the executable Original User Story or a child User Story plus its Original User Story. Read the executable item's reviewed `Test specification` from Acceptance Criteria. Read-only: report evidence and make no code, work-item, or design edits.
 
-Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Usually ask none: report findings, and make uncertainty explicit.
+Usually ask none: report findings, and make uncertainty explicit.
 
 ## Ledger first
 
@@ -28,17 +28,17 @@ Judge:
 - Level 2, when present, matches proven internals; its absence is valid for a simple module
 - permissions, translations, upgrade impact, and breaking surface are covered
 
-▶ mechanical · task · /al-build gate on the reviewed scope for missing test evidence, WARN_AS_ERROR as the repository states → summary.json verdict, per-runner totals, exact red cause
+▶ haiku · /al-build gate on the reviewed scope for missing test evidence, WARN_AS_ERROR as the repository states → summary.json verdict, per-runner totals, exact red cause
 
 ## Parallel lenses
 
 Launch these together in the background while the contract inspection above proceeds; wait only where the verdict needs their findings:
 
-▶ execution · task · al-review-lens with the one dimension `User Story contract` — the checks above as its definition — the diff scope, work items, receipt, and relevant sources → its findings
+▶ sonnet · al-review-lens with the one dimension `User Story contract` — the checks above as its definition — the diff scope, work items, receipt, and relevant sources → its findings
 
 For standards, read `.bcquality/skills/entry.md` and follow its Entry protocol with goal `review`, inputs `pr-diff`, technologies `[al]`, and all three layers; then one line per selected leaf:
 
-▶ mechanical · task · al-knowledge-leaf with the leaf path, diff scope, READ and DO paths, and the domain-filtered index slice its contract requires → the leaf's DO report
+▶ haiku · al-knowledge-leaf with the leaf path, diff scope, READ and DO paths, and the domain-filtered index slice its contract requires → the leaf's DO report
 
 Deduplicate by root cause.
 

@@ -9,7 +9,7 @@ In: the executable Original User Story, or a child User Story and its Original U
 
 Before editing, trace the narrow path through the workspace. Search for an existing module, event, interface, test, fixture, and pattern first. Confirm every BC object, table, field, procedure, event, enum value, and dialog text through lookup in this session.
 
-Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update on an important finding or a changed direction; close with the outcome first, standing on its own.
+Before the first tool call, write one sentence. Update on an important finding or a changed direction; close with the outcome first, standing on its own.
 
 ## Contract
 
@@ -19,13 +19,13 @@ Gherkin defines observable business behavior; AAA defines the reviewed proof sea
 
 Before changing an existing test, require its current scope green:
 
-▶ mechanical · task · /al-build gate on the affected test scope, WARN_AS_ERROR as the repository states → summary.json verdict, per-runner totals, exact red cause
+▶ haiku · /al-build gate on the affected test scope, WARN_AS_ERROR as the repository states → summary.json verdict, per-runner totals, exact red cause
 
 ## Prove and green, one worker per scenario
 
 For each Gherkin scenario, pick its AAA cases, production site, and seam, then dispatch; the scenarios launch together, and each worker's brief carries the three paragraphs below:
 
-▶ execution · task · one Gherkin scenario: its AAA cases, production site, seam, proof-map rows, the Speak BC paragraph, and the grounding rule → red evidence per case, the green gate line, files touched
+▶ sonnet · one Gherkin scenario: its AAA cases, production site, seam, proof-map rows, and the grounding rule → red evidence per case, the green gate line, files touched
 
 Apply the proof map's proof-preserving reshapes before new expectations or production changes. Account for every existing business assertion in the final cases unless the current requirement explicitly replaces it, rerun the gate green, and add no transitional test that the accepted map does not retain.
 
@@ -41,11 +41,11 @@ After green, trace the landed production path from its caller through every chan
 
 For one affected Level 1 module, use a Building Block Level 2 white box. For several affected Level 1 modules, use a Level 1 impact overview plus a Level 2 white box for each module whose object relations need explanation. Add a Runtime View only when call order, a transaction boundary, or an error path matters.
 
-▶ mechanical · task · /al-arc42 the chosen views from the connected-object change map → HTML path, SVG and PNG paths, alt text, publishable fragments
+▶ haiku · /al-arc42 the chosen views from the connected-object change map → HTML path, SVG and PNG paths, alt text, publishable fragments
 
-Open the HTML in the browser canvas. Keep the change markers in the receipt and executable-item comment. Add or update the Original User Story's Level 2 only when the implementation map reveals stable internal building blocks or interfaces worth preserving; publish that current-state view without change markers. A simple module may need the implementation map but no Original User Story Level 2.
+Show the HTML through `show_widget`, falling back to an Artifact, then to the local file. Keep the change markers in the receipt and executable-item comment. Add or update the Original User Story's Level 2 only when the implementation map reveals stable internal building blocks or interfaces worth preserving; publish that current-state view without change markers. A simple module may need the implementation map but no Original User Story Level 2.
 
-▶ mechanical · task · /al-azure-devops-attachments the PNG and SVG to the executable item → verified attachment URLs
+▶ haiku · /al-azure-devops-attachments the PNG and SVG to the executable item → verified attachment URLs
 
 Use the verified URLs in the comment and Original User Story fragment. Missing MCP attachment support is not a blocker; authentication trouble stays with that skill until the Azure CLI token works.
 
@@ -57,6 +57,6 @@ Write `.output/receipts/<work-item-id>.md` with the work-item ID, implementation
 
 At every exit:
 
-▶ mechanical · task · /al-commit the complete worktree, work items <ids> → commit hashes and subjects, remaining worktree
+▶ haiku · /al-commit the complete worktree, work items <ids> → commit hashes and subjects, remaining worktree
 
 Finish outcome first: what changed, what proves it, where the implementation map is attached, which module interface stayed stable, and whether Original User Story Level 2 changed. Name /al-refactor as the next move. Stop with the exact red reason when any proof is unresolved.

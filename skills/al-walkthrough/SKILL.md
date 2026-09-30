@@ -11,13 +11,13 @@ In: the implemented executable Original User Story, or a child User Story and it
 
 Read the Gherkin scenarios and BPMN outcomes. Present the exact scenario order, company or tenant, required records, and expected visible result. Ask the user to confirm before opening the client.
 
-Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Before the first tool call, write one sentence. Update on an important finding or a changed direction. Finish with the outcome first, then the detail, so the last message stands on its own.
+Before the first tool call, write one sentence. Update on an important finding or a changed direction. Finish with the outcome first, then the detail, so the last message stands on its own.
 
 ## Walk through Business Central
 
 The repository workspace MCP owns the branch and container binding. After changing branches or its configuration, restart the MCP or Copilot session before the walk. Then:
 
-▶ mechanical · task · /al-build clean republish into the bound container → deployed commit and app version
+▶ haiku · /al-build clean republish into the bound container → deployed commit and app version
 
 Record both before the first scenario.
 

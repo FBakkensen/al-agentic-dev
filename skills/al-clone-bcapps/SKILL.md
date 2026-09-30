@@ -6,7 +6,7 @@ description: Clone Microsoft's BCApps source when the checkout is missing or sus
 # /al-clone-bcapps — the platform source clone
 
 Symbols say whether a name exists; the clone shows how Microsoft implements it
-— a searchable W1 checkout of BCApps under `.bcapps/`, matched to the app's BC version — intentionally gitignored, so point grep at `.bcapps/` explicitly and view its files directly; a workspace-wide grep skips it. Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool.
+— a searchable W1 checkout of BCApps under `.bcapps/`, matched to the app's BC version — intentionally gitignored, so point `Grep` at `.bcapps/` explicitly and `Read` its files directly; a workspace-wide `Grep` skips it.
 
 ## Precondition
 

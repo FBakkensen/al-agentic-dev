@@ -7,7 +7,7 @@ description: Use when settled Business Central architecture content needs the of
 
 In: settled architecture content from /al-event-model, /al-design, /al-implement, or /al-refactor. The caller owns meaning. This skill applies the official structure in [ARC42.md](ARC42.md), creates the review surface, and returns publishable artifacts.
 
-Ask every question in the reply itself, as plain text — never through a question or elicitation tool. Never call the ask_user tool. Usually ask none. Before the first tool call, write one sentence. Update on an important finding or a changed direction; close with the outcome first, standing on its own.
+Usually ask none. Before the first tool call, write one sentence. Update on an important finding or a changed direction; close with the outcome first, standing on its own.
 
 ## Apply the requested views
 
@@ -27,11 +27,11 @@ Every BC object, table, field, procedure, event, enum value, and dialog text sho
 
 Regenerate `.output/arc42/<original-work-item-id>/architecture.html` from the settled content. Include the Original User Story title, executable-item ID when an implementation overlay is present, the exact arc42 headings, a change legend, explanatory text, and inline SVG diagrams. The HTML is a disposable review surface; the Azure DevOps User Story and executable-item receipt remain the records.
 
-Open the HTML in the GitHub Copilot app browser canvas when available. In the CLI, open it with the system browser or print its absolute path. The user reviews the actual page before publication.
+Show the HTML through `show_widget`, falling back to an Artifact, then to the local file opened in the system browser or named by its absolute path. The user reviews the actual page before publication.
 
 ## Return publishable artifacts
 
-Save each diagram as SVG and an Azure DevOps-safe PNG. Use an installed `msedge`, `chrome`, or `chromium` with `--headless --screenshot` when the browser canvas cannot capture it. Return the local HTML path, SVG and PNG paths, alt text, the executable-item comment fragment for a change overlay, and the Original User Story Description fragment for stable architecture.
+Save each diagram as SVG and an Azure DevOps-safe PNG. Capture the PNG with an installed `msedge`, `chrome`, or `chromium` and `--headless --screenshot`. Return the local HTML path, SVG and PNG paths, alt text, the executable-item comment fragment for a change overlay, and the Original User Story Description fragment for stable architecture.
 
 ## Close
 
