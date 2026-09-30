@@ -1,8 +1,8 @@
 ---
-description: Fires al-test-design. Ported from routing scenario S34.
+description: Fires al-tdd beside its entry skill.
 tags: [trigger]
 plugins: ["../..", "../../.base-plugins/mattpocock-skills", "../../.base-plugins/bcquality", "../../.base-plugins/al-language-server-go-windows"]
 allowed_tools: [Read, Glob, Grep, Skill]
 ---
 
-The slice's Gherkin is approved. Design the AAA cases with me before implementation.
+/mattpocock-skills:tdd block releasing a sales order when the customer is over its credit limit
