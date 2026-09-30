@@ -1,7 +1,7 @@
 #Requires -Version 7.2
 <#
 .SYNOPSIS
-    Validates every skills/ folder as a Claude Code plugin skill.
+    Validates every skills/ folder as a Claude Code plugin skill, and the AL output style.
 .DESCRIPTION
     Each folder holds a SKILL.md whose frontmatter carries exactly the keys name and
     description, constrained per the Agent Skills specification (agentskills.io): name is
