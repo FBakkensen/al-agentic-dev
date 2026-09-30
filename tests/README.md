@@ -9,10 +9,12 @@ CI runs these five on every push to `main` and every pull request; run them loca
 ```powershell
 pwsh scripts/Validate-Json.ps1        # JSON syntax repo-wide; .claude-plugin/plugin.json, .claude-plugin/marketplace.json, and .mcp.json structure; no MCP tools allowlist
 pwsh scripts/Validate-PowerShell.ps1  # PowerShell syntax repo-wide
-pwsh scripts/Validate-Skills.ps1      # frontmatter keys, name = folder, description <= 1024, links stay in-folder, script ownership, retired-concept bans
+pwsh scripts/Validate-Skills.ps1      # frontmatter keys, name = folder, description <= 1024, links stay in-folder, script ownership, retired-concept bans, the AL output style's name and settings
 pwsh scripts/Test-BasePluginDrift.ps1 # every <ns>:<skill> reference in skills/ and hooks/session-start.md resolves against the Base plugins' upstream heads
 pwsh scripts/Invoke-Tests.ps1 -Mode Full  # the validator suites, the SessionStart hook, and the al-build substrate tests
 ```
+
+`Validate-Skills.ps1` reads the output style's frontmatter with the `powershell-yaml` module and fails when it is missing; install it once with `Install-Module powershell-yaml -Scope CurrentUser`.
 
 The 1024-character description cap comes from the Agent Skills specification; Claude Code documents no limit, and the gate keeps the cap.
 

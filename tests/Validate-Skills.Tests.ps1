@@ -41,15 +41,36 @@ $Body
 "@
     }
 
+    function New-StyleContent {
+        param(
+            [string]$Frontmatter = "name: AL`ndescription: Speak BC and the interview-diagram rule.`nkeep-coding-instructions: true"
+        )
+
+        return "---`n$Frontmatter`n---`n`n# Speak BC`n"
+    }
+
+    function New-OutputStylesRoot {
+        param(
+            [Parameter(Mandatory = $true)]
+            [string]$Root,
+
+            [hashtable]$Files = @{ 'AL.md' = (New-StyleContent) }
+        )
+
+        return New-SkillsRoot -Root $Root -Files $Files
+    }
+
     function Invoke-SkillValidator {
         param(
             [Parameter(Mandatory = $true)]
-            [string]$Root
+            [string]$Root,
+
+            [string]$OutputStylesRoot = (New-OutputStylesRoot -Root "$Root-styles")
         )
 
         $output = @(
             & {
-                Invoke-SkillsValidation -SkillsRoot $Root -ErrorAction Continue
+                Invoke-SkillsValidation -SkillsRoot $Root -OutputStylesRoot $OutputStylesRoot -ErrorAction Continue
             } *>&1
         )
         $exitCode = [int]$output[-1]
@@ -67,10 +88,16 @@ $Body
     function Invoke-SkillValidatorProcess {
         param(
             [Parameter(Mandatory = $true)]
-            [string]$Root
+            [string]$Root,
+
+            [switch]$DefaultOutputStylesRoot
         )
 
-        $output = & pwsh -NoProfile -File $script:ValidatorPath -SkillsRoot $Root 2>&1
+        $arguments = @('-NoProfile', '-File', $script:ValidatorPath, '-SkillsRoot', $Root)
+        if (-not $DefaultOutputStylesRoot) {
+            $arguments += @('-OutputStylesRoot', (New-OutputStylesRoot -Root "$Root-styles"))
+        }
+        $output = & pwsh @arguments 2>&1
         return [pscustomobject]@{
             ExitCode = $LASTEXITCODE
             Text     = (@($output | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine)
@@ -735,6 +762,149 @@ For each step report `▶ <business action>` and the observed result.
     }
 }
 
+Describe 'Validate-Skills output-style checks' -Tag 'Unit' {
+    BeforeAll {
+        $script:StyleSkills = New-SkillsRoot -Root (Join-Path $TestDrive 'style-skills') -Files @{
+            'demo/SKILL.md' = (New-SkillContent)
+        }
+    }
+
+    It 'passes a valid AL style' {
+        $styles = New-OutputStylesRoot -Root (Join-Path $TestDrive 'style-good')
+
+        $result = Invoke-SkillValidator -Root $script:StyleSkills -OutputStylesRoot $styles
+
+        $result.ExitCode | Should -Be 0
+        $result.Text | Should -Match 'OK: output-styles/AL\.md'
+    }
+
+    It 'fails a style whose name is not exactly AL' -TestCases @(
+        @{ Case = 'lowercase'; Frontmatter = "name: al`ndescription: Speak BC.`nkeep-coding-instructions: true"; Found = 'al' }
+        @{ Case = 'mixed'; Frontmatter = "name: Al`ndescription: Speak BC.`nkeep-coding-instructions: true"; Found = 'Al' }
+        @{ Case = 'missing'; Frontmatter = "description: Speak BC.`nkeep-coding-instructions: true"; Found = '' }
+        @{ Case = 'key-case'; Frontmatter = "Name: AL`ndescription: Speak BC.`nkeep-coding-instructions: true"; Found = '' }
+    ) {
+        param($Case, $Frontmatter, $Found)
+
+        $styles = New-OutputStylesRoot -Root (Join-Path $TestDrive "style-name-$Case") -Files @{
+            'AL.md' = (New-StyleContent -Frontmatter $Frontmatter)
+        }
+
+        $result = Invoke-SkillValidator -Root $script:StyleSkills -OutputStylesRoot $styles
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match ([regex]::Escape("output-styles/AL.md: name '$Found' must be exactly 'AL'"))
+    }
+
+    It 'fails a style whose name is not a single string' -TestCases @(
+        @{ Case = 'sequence'; Value = '[AL]' }
+        @{ Case = 'mapping'; Value = '{ AL: true }' }
+    ) {
+        param($Case, $Value)
+
+        $styles = New-OutputStylesRoot -Root (Join-Path $TestDrive "style-name-type-$Case") -Files @{
+            'AL.md' = (New-StyleContent -Frontmatter "name: $Value`ndescription: Speak BC.`nkeep-coding-instructions: true")
+        }
+
+        $result = Invoke-SkillValidator -Root $script:StyleSkills -OutputStylesRoot $styles
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match ([regex]::Escape("output-styles/AL.md: name '' must be exactly 'AL'"))
+    }
+
+    It 'fails a style whose keep-coding-instructions is not true' -TestCases @(
+        @{ Case = 'false'; Frontmatter = "name: AL`ndescription: Speak BC.`nkeep-coding-instructions: false" }
+        @{ Case = 'missing'; Frontmatter = "name: AL`ndescription: Speak BC." }
+    ) {
+        param($Case, $Frontmatter)
+
+        $styles = New-OutputStylesRoot -Root (Join-Path $TestDrive "style-keep-$Case") -Files @{
+            'AL.md' = (New-StyleContent -Frontmatter $Frontmatter)
+        }
+
+        $result = Invoke-SkillValidator -Root $script:StyleSkills -OutputStylesRoot $styles
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match ([regex]::Escape('output-styles/AL.md: keep-coding-instructions must be true'))
+    }
+
+    It 'fails a style that carries force-for-plugin' -TestCases @(
+        @{ Value = 'true' }
+        @{ Value = 'false' }
+    ) {
+        param($Value)
+
+        $styles = New-OutputStylesRoot -Root (Join-Path $TestDrive "style-force-$Value") -Files @{
+            'AL.md' = (New-StyleContent -Frontmatter "name: AL`ndescription: Speak BC.`nkeep-coding-instructions: true`nforce-for-plugin: $Value")
+        }
+
+        $result = Invoke-SkillValidator -Root $script:StyleSkills -OutputStylesRoot $styles
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match ([regex]::Escape("output-styles/AL.md: force-for-plugin overrides the developer's own output style; remove it"))
+    }
+
+    It 'fails a style whose frontmatter block does not parse' {
+        $styles = New-OutputStylesRoot -Root (Join-Path $TestDrive 'style-unparsed') -Files @{
+            'AL.md' = "# Speak BC`n`nNo frontmatter."
+        }
+
+        $result = Invoke-SkillValidator -Root $script:StyleSkills -OutputStylesRoot $styles
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'output-styles/AL\.md: frontmatter block does not parse'
+    }
+
+    It 'fails a style whose frontmatter YAML does not parse' -TestCases @(
+        @{ Case = 'flow'; Frontmatter = "name: AL`nkeep-coding-instructions: true`nbroken: [" }
+        @{ Case = 'quote'; Frontmatter = "name: AL`nkeep-coding-instructions: true`ndescription: `"Speak BC" }
+        @{ Case = 'name-next-line'; Frontmatter = "name:`nAL`ndescription: Speak BC.`nkeep-coding-instructions: true" }
+        @{ Case = 'keep-next-line'; Frontmatter = "name: AL`ndescription: Speak BC.`nkeep-coding-instructions:`ntrue" }
+    ) {
+        param($Case, $Frontmatter)
+
+        $styles = New-OutputStylesRoot -Root (Join-Path $TestDrive "style-yaml-$Case") -Files @{
+            'AL.md' = (New-StyleContent -Frontmatter $Frontmatter)
+        }
+
+        $result = Invoke-SkillValidator -Root $script:StyleSkills -OutputStylesRoot $styles
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'output-styles/AL\.md: frontmatter YAML does not parse'
+    }
+
+    It 'accepts quoted values and a folded multi-line description' {
+        $styles = New-OutputStylesRoot -Root (Join-Path $TestDrive 'style-yaml-good') -Files @{
+            'AL.md' = (New-StyleContent -Frontmatter "name: `"AL`"`ndescription: >-`n  Speak BC: vocabulary,`n  and diagrams.`nkeep-coding-instructions: true")
+        }
+
+        $result = Invoke-SkillValidator -Root $script:StyleSkills -OutputStylesRoot $styles
+
+        $result.ExitCode | Should -Be 0
+    }
+
+    It 'fails when the style location holds no style named AL' -TestCases @(
+        @{ Case = 'empty'; Files = @{ 'README.txt' = 'not a style' } }
+        @{ Case = 'renamed'; Files = @{ 'BC.md' = "---`nname: BC`ndescription: Speak BC.`nkeep-coding-instructions: true`n---`n" } }
+    ) {
+        param($Case, $Files)
+
+        $styles = New-OutputStylesRoot -Root (Join-Path $TestDrive "style-none-$Case") -Files $Files
+
+        $result = Invoke-SkillValidator -Root $script:StyleSkills -OutputStylesRoot $styles
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'output-styles holds no style named AL'
+    }
+
+    It 'fails when the style location is missing' {
+        $result = Invoke-SkillValidator -Root $script:StyleSkills -OutputStylesRoot (Join-Path $TestDrive 'style-absent')
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match 'output-styles holds no style named AL'
+    }
+}
+
 Describe 'Validate-Skills reporting' -Tag 'Unit' {
     It 'reports every violation, not only the first' {
         $root = New-SkillsRoot -Root (Join-Path $TestDrive 'many-violations') -Files @{
@@ -766,5 +936,16 @@ Describe 'Validate-Skills process wrapper' -Tag 'Process' {
         }
 
         (Invoke-SkillValidatorProcess -Root $root).ExitCode | Should -Be 1
+    }
+
+    It 'validates the repository output-styles folder by default' {
+        $root = New-SkillsRoot -Root (Join-Path $TestDrive 'process-default-styles') -Files @{
+            'demo/SKILL.md' = (New-SkillContent)
+        }
+
+        $result = Invoke-SkillValidatorProcess -Root $root -DefaultOutputStylesRoot
+
+        $result.ExitCode | Should -Be 0
+        $result.Text | Should -Match 'OK: output-styles/AL\.md'
     }
 }
