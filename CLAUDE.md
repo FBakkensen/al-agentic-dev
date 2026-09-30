@@ -100,7 +100,7 @@ Every run is billed. No CI step runs the suite.
 
 1. Fetch the Base plugin copies into `.base-plugins/`: `pwsh scripts/Update-EvalBasePlugins.ps1`. Rerun it to refresh them. A case lists this plugin and every copy in `plugins:`, the AL language server included: without it, al-agentic-dev's `dependencies` go unsatisfied and the plugin silently doesn't load.
 2. Run one case: `claude plugin eval . --case <case> --ablation none --threshold 0.66`. Drop `--case` for the full suite. `--threshold 0.66` makes the exit code match the 2-of-3 bar; the default of `1.0` fails any case below 3 of 3. Use `--runs 1` while iterating, and the default 3 runs for the check before the PR.
-3. A case is `evals/<case>/prompt.md` (the four-entry `plugins:` list, `allowed_tools: [Read, Glob, Grep, Skill]`, no `model`) plus `graders/skill-fired.md`, a `tool_used` grader on `Skill` whose `input_match` names the skill. A negative case asserts `min: 0` and `max: 0` on any `al-agentic-dev:` skill. `tests/EvalSuite.Tests.ps1` fails when a skill has no case.
+3. A case is `evals/<case>/prompt.md` (the four-entry `plugins:` list, `allowed_tools: [Read, Glob, Grep, Skill]`, no `model`) plus `graders/skill-fired.md`, a `tool_used` grader on `Skill` whose `input_match` names the skill. A negative case's `graders/no-al-skill.md` asserts `min: 0` and `max: 0` on any `al-agentic-dev:` skill. `tests/EvalSuite.Tests.ps1` fails when a skill has no case.
 
 ## Agent skills
 

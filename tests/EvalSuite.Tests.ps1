@@ -26,11 +26,12 @@ Describe 'Trigger eval suite' -Tag 'Unit' {
         $text | Should -Match ([regex]::Escape("(?:al-agentic-dev:)?$Skill`""))
     }
 
-    It 'loads this plugin and every Base plugin copy, and leaves model unset, in <Case>' -TestCases $script:Cases {
+    It 'loads this plugin and every Base plugin copy, grants Skill, and leaves model unset, in <Case>' -TestCases $script:Cases {
         param($Case, $Path)
 
         $frontmatter = [regex]::Match((Get-Content -LiteralPath $Path -Raw), '(?s)\A---\r?\n(.*?)\r?\n---').Groups[1].Value
         $frontmatter | Should -Match ([regex]::Escape('plugins: ["../..", "../../.base-plugins/mattpocock-skills", "../../.base-plugins/bcquality", "../../.base-plugins/al-language-server-go-windows"]'))
+        $frontmatter | Should -Match ([regex]::Escape('allowed_tools: [Read, Glob, Grep, Skill]'))
         $frontmatter | Should -Not -Match '(?m)^model:'
     }
 }

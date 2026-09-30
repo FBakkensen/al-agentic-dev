@@ -55,10 +55,11 @@ function Update-EvalBasePlugin {
 
         foreach ($plugin in $plugins) {
             $target = Join-Path $Destination $plugin.Name
+            # Stop on a failed delete: Move-Item would otherwise nest the new copy inside the old one.
             if (Test-Path -LiteralPath $target) {
-                Remove-Item -LiteralPath $target -Recurse -Force
+                Remove-Item -LiteralPath $target -Recurse -Force -ErrorAction Stop
             }
-            Move-Item -LiteralPath $plugin.Root -Destination $target
+            Move-Item -LiteralPath $plugin.Root -Destination $target -ErrorAction Stop
             Write-Host "OK: $($plugin.Name) -> $target" -ForegroundColor Green
         }
     } finally {
