@@ -43,4 +43,4 @@ Update the receipt with `Tidy: none` or the exact cleanups, the gate result, the
 
 ▶ haiku · /al-commit the complete worktree, work items <ids> → commit hashes and subjects, remaining worktree
 
-Close `/simplify`'s run outcome first: the tidied files, the `Tidy:` line, and the green gate. Stop with the exact red reason when the gate does not pass.
+Finish outcome first, back into `/simplify`'s run: the tidied files, the `Tidy:` line, and the green gate. Stop with the exact red reason when the gate does not pass.
