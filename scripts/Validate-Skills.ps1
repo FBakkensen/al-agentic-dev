@@ -25,8 +25,8 @@
     and vehicle in task|session.
     The output-styles folder holds the style developers select as al-agentic-dev:AL:
     at least one style's name is exactly AL, and every style's frontmatter carries
-    name exactly AL, keep-coding-instructions: true, and no force-for-plugin, as flat
-    key: value lines Claude Code can parse. A case
+    name exactly AL, keep-coding-instructions: true, and no force-for-plugin, in YAML
+    that parses (read with the powershell-yaml module, which the gate requires). A case
     mismatch or missing setting silently hands developers the Default style; the flag
     overrides the developer's own choice. Every violation is reported; any violation exits 1.
 .EXAMPLE
@@ -244,6 +244,7 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
     }
 }
 
+Import-Module powershell-yaml -ErrorAction Stop
 $styles = @(if (Test-Path -LiteralPath $OutputStylesRoot -PathType Container) {
     Get-ChildItem -LiteralPath $OutputStylesRoot -Filter '*.md' -File
 })
@@ -263,25 +264,30 @@ foreach ($style in $styles) {
 
     $frontmatter = if ($close -gt 1) { $lines[1..($close - 1)] -join "`n" } else { '' }
     # Claude Code loads a style whose YAML does not parse with every field unset, so
-    # keep-coding-instructions silently drops to false. With no YAML parser in the gate,
-    # the style is held to flat key: value lines with a plain or fully quoted scalar.
-    $flatPair = '^[A-Za-z][\w-]*:(?:[ \t]+(?:"(?:[^"\\]|\\.)*"|''(?:[^'']|'''')*''|[^\s\[\]{}&*!|>''"%@`#,](?:(?!:\s| #).)*?))?[ \t]*$'
-    foreach ($pair in ($frontmatter -split "`n")) {
-        if (-not $pair.Trim() -or $pair -match '^\s*#') { continue }
-        if ($pair -notmatch $flatPair) {
-            $violations += "${relative}: frontmatter line is not a flat key: value pair: $($pair.Trim())"
-        }
+    # keep-coding-instructions silently drops to false; parse it as YAML, not by pattern.
+    try {
+        $fields = ConvertFrom-Yaml -Yaml $frontmatter -ErrorAction Stop
+    } catch {
+        $violations += "${relative}: frontmatter YAML does not parse: $(($_.Exception.Message -split '\r?\n')[0])"
+        continue
     }
-    $name =[regex]::Match($frontmatter, '(?m)^name[ \t]*:[ \t]*(.+?)[ \t]*$').Groups[1].Value.Trim("'", '"')
+    if ($fields -isnot [System.Collections.IDictionary]) {
+        $violations += "${relative}: frontmatter YAML is not a mapping of settings"
+        continue
+    }
+    # Claude Code reads lowercase field names only, and the parsed hashtable ignores case.
+    $fieldNames = @($fields.Keys | ForEach-Object { [string]$_ })
+
+    $name = if ($fieldNames -ccontains 'name') { [string]$fields['name'] } else { '' }
     $styleNames += $name
     if ($name -cne 'AL') {
         $violations += "${relative}: name '$name' must be exactly 'AL'; any other name hands developers the Default style"
     }
-    $keep = [regex]::Match($frontmatter, '(?m)^keep-coding-instructions[ \t]*:[ \t]*(.+?)[ \t]*$').Groups[1].Value
-    if ($keep -cne 'true') {
+    $keep = if ($fieldNames -ccontains 'keep-coding-instructions') { $fields['keep-coding-instructions'] } else { $null }
+    if (-not ($keep -is [bool] -and $keep)) {
         $violations += "${relative}: keep-coding-instructions must be true"
     }
-    if ($frontmatter -match '(?m)^force-for-plugin\s*:') {
+    if ($fieldNames -ccontains 'force-for-plugin') {
         $violations += "${relative}: force-for-plugin overrides the developer's own output style; remove it"
     }
 

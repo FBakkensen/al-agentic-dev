@@ -13,6 +13,8 @@ pwsh scripts/Validate-Skills.ps1      # frontmatter keys, name = folder, descrip
 pwsh scripts/Invoke-Tests.ps1 -Mode Full  # the validator suites, the SessionStart hook, and the al-build substrate tests
 ```
 
+`Validate-Skills.ps1` reads the output style's frontmatter with the `powershell-yaml` module and fails when it is missing; install it once with `Install-Module powershell-yaml -Scope CurrentUser`.
+
 The 1024-character description cap comes from the Agent Skills specification; Claude Code documents no limit, and the gate keeps the cap.
 
 `tests/SessionStartHook.Tests.ps1` runs exactly the command in `hooks/hooks.json` as a process, with `${CLAUDE_PLUGIN_ROOT}` pointed at the checkout, parses stdout as JSON, and asserts the `SessionStart` event name, the `▶ <model> · <brief> → <return>` line, and the delegation-cost text.

@@ -782,7 +782,7 @@ Describe 'Validate-Skills output-style checks' -Tag 'Unit' {
         @{ Case = 'lowercase'; Frontmatter = "name: al`ndescription: Speak BC.`nkeep-coding-instructions: true"; Found = 'al' }
         @{ Case = 'mixed'; Frontmatter = "name: Al`ndescription: Speak BC.`nkeep-coding-instructions: true"; Found = 'Al' }
         @{ Case = 'missing'; Frontmatter = "description: Speak BC.`nkeep-coding-instructions: true"; Found = '' }
-        @{ Case = 'next-line'; Frontmatter = "name:`nAL`ndescription: Speak BC.`nkeep-coding-instructions: true"; Found = '' }
+        @{ Case = 'key-case'; Frontmatter = "Name: AL`ndescription: Speak BC.`nkeep-coding-instructions: true"; Found = '' }
     ) {
         param($Case, $Frontmatter, $Found)
 
@@ -799,7 +799,6 @@ Describe 'Validate-Skills output-style checks' -Tag 'Unit' {
     It 'fails a style whose keep-coding-instructions is not true' -TestCases @(
         @{ Case = 'false'; Frontmatter = "name: AL`ndescription: Speak BC.`nkeep-coding-instructions: false" }
         @{ Case = 'missing'; Frontmatter = "name: AL`ndescription: Speak BC." }
-        @{ Case = 'next-line'; Frontmatter = "name: AL`ndescription: Speak BC.`nkeep-coding-instructions:`ntrue" }
     ) {
         param($Case, $Frontmatter)
 
@@ -840,26 +839,27 @@ Describe 'Validate-Skills output-style checks' -Tag 'Unit' {
         $result.Text | Should -Match 'output-styles/AL\.md: frontmatter block does not parse'
     }
 
-    It 'fails a style whose frontmatter is not flat key-value YAML' -TestCases @(
-        @{ Case = 'flow'; Line = 'broken: [' }
-        @{ Case = 'quote'; Line = 'description: "Speak BC' }
-        @{ Case = 'nested'; Line = '  indented: value' }
+    It 'fails a style whose frontmatter YAML does not parse' -TestCases @(
+        @{ Case = 'flow'; Frontmatter = "name: AL`nkeep-coding-instructions: true`nbroken: [" }
+        @{ Case = 'quote'; Frontmatter = "name: AL`nkeep-coding-instructions: true`ndescription: `"Speak BC" }
+        @{ Case = 'name-next-line'; Frontmatter = "name:`nAL`ndescription: Speak BC.`nkeep-coding-instructions: true" }
+        @{ Case = 'keep-next-line'; Frontmatter = "name: AL`ndescription: Speak BC.`nkeep-coding-instructions:`ntrue" }
     ) {
-        param($Case, $Line)
+        param($Case, $Frontmatter)
 
         $styles = New-OutputStylesRoot -Root (Join-Path $TestDrive "style-yaml-$Case") -Files @{
-            'AL.md' = (New-StyleContent -Frontmatter "name: AL`nkeep-coding-instructions: true`n$Line")
+            'AL.md' = (New-StyleContent -Frontmatter $Frontmatter)
         }
 
         $result = Invoke-SkillValidator -Root $script:StyleSkills -OutputStylesRoot $styles
 
         $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match ([regex]::Escape("output-styles/AL.md: frontmatter line is not a flat key: value pair: $($Line.Trim())"))
+        $result.Text | Should -Match 'output-styles/AL\.md: frontmatter YAML does not parse'
     }
 
-    It 'accepts quoted and plain values carrying commas and colons inside quotes' {
+    It 'accepts quoted values and a folded multi-line description' {
         $styles = New-OutputStylesRoot -Root (Join-Path $TestDrive 'style-yaml-good') -Files @{
-            'AL.md' = (New-StyleContent -Frontmatter "name: `"AL`"`ndescription: 'Speak BC: vocabulary, and diagrams.'`nkeep-coding-instructions: true")
+            'AL.md' = (New-StyleContent -Frontmatter "name: `"AL`"`ndescription: >-`n  Speak BC: vocabulary,`n  and diagrams.`nkeep-coding-instructions: true")
         }
 
         $result = Invoke-SkillValidator -Root $script:StyleSkills -OutputStylesRoot $styles
