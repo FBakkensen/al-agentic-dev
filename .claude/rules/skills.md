@@ -86,7 +86,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## Azure DevOps work items
 
-36. One request starts as one Original User Story. `Original` names its role in this workflow, not the top of the Azure DevOps hierarchy; structural parents remain unchanged and out of scope. With one Vertical slice, the Original User Story is executable and has no child from this workflow. With several slices, it becomes the container and every slice is one direct child User Story. Flag Azure DevOps Features introduced by this workflow and grandchildren below the Original User Story.
+36. One request has one Original work item: the Feature, Bug, or PBI it arrives on. `Original` names its role in this workflow, not the top of the Azure DevOps hierarchy; structural parents remain unchanged and out of scope. One Vertical slice creates no child; the Original work item is executable. Several slices make it the container, and each slice gets one direct child PBI. Flag an Epic introduced by this workflow, a grandchild below the Original work item, and a child of any type other than PBI.
 37. Description sections keep this order when present: `Problem`, `Expected outcome`, `Scope`, `Process contract`, `Business process`, `Runtime View`, `Building Block View`. Diagrams stay with their explanatory text. In Acceptance Criteria, `Behavior` is valid fenced Gherkin and precedes `Test specification` when both exist; either section may be absent without prescribed meaning.
 
 ## Delegation contract

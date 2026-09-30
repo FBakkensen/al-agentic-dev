@@ -17,3 +17,11 @@
 ## Delegation cost
 
 Spawn a child only for a sizeable, independent track of work whose result comes back compact. Work you can finish in a handful of tool calls, you do yourself. Keep spawn counts low. A skill's `▶` line is already that judgement: run it as written.
+
+## Entry skills and their AL additions
+
+In an AL repository, when an entry skill below runs, load its AL addition beside it with the `Skill` tool. The addition adds only what is AL- or Azure DevOps-specific; the entry skill owns the process.
+
+| Entry skill | AL addition |
+|---|---|
+| `/mattpocock-skills:setup-matt-pocock-skills` | `/al-setup-matt-pocock-skills` |

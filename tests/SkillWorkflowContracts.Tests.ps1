@@ -70,18 +70,6 @@ Describe 'Skill workflow contracts' {
     It 'uses root User Stories and orders Acceptance Criteria for people before agents' {
         $scope = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-scope' 'SKILL.md') -Raw
         $testDesign = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-test-design' 'SKILL.md') -Raw
-        $workItemSkills = @(
-            'al-grill-adr',
-            'al-event-model',
-            'al-design',
-            'al-scope',
-            'al-test-design',
-            'al-implement',
-            'al-refactor',
-            'al-review',
-            'al-next',
-            'al-walkthrough'
-        )
 
         $scope | Should -Match 'One user request creates one Original User Story'
         $scope | Should -Match 'not the top of the Azure DevOps hierarchy'
@@ -93,11 +81,6 @@ Describe 'Skill workflow contracts' {
         $scope | Should -Match 'Either section may be omitted'
         $scope | Should -Match 'valid fenced Gherkin'
         $testDesign | Should -Match 'Acceptance Criteria, after `## Behavior` when both are present'
-
-        foreach ($skill in $workItemSkills) {
-            $content = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'SKILL.md') -Raw
-            $content | Should -Not -Match '\bFeature\b' -Because "$skill must use the Original User Story contract"
-        }
     }
 
     It 'owns commits and pull requests in dedicated skills' {
