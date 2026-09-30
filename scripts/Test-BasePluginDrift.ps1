@@ -153,10 +153,11 @@ function Save-PluginSource {
 function Copy-PluginFolder {
     param([string]$From, [string]$Target)
 
-    New-Item -ItemType Directory -Path $Target -Force | Out-Null
-    Get-ChildItem -LiteralPath $From -Force |
+    # A failed copy must throw, so the caller reports the plugin unresolved instead of using a partial copy.
+    New-Item -ItemType Directory -Path $Target -Force -ErrorAction Stop | Out-Null
+    Get-ChildItem -LiteralPath $From -Force -ErrorAction Stop |
         Where-Object Name -NE '.git' |
-        Copy-Item -Destination $Target -Recurse -Force
+        Copy-Item -Destination $Target -Recurse -Force -ErrorAction Stop
 }
 
 function Get-MarketplacePluginSource {

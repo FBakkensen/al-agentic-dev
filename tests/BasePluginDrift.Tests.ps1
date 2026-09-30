@@ -322,6 +322,25 @@ Describe 'Eval copies of the Base plugins' -Tag 'Unit' {
         $kept | Should -Exist
         Join-Path $destination 'bcquality' | Should -Not -Exist
     }
+
+    It 'exits nonzero and keeps the existing copy when a file cannot be copied' -Skip:(-not $IsWindows) {
+        $root = New-ConsumerRepo -Name 'eval-copy-fail'
+        $destination = Join-Path $TestDrive 'eval-copy-fail' '.base-plugins'
+        $kept = Join-Path $destination 'bcquality' 'skills' 'kept' 'SKILL.md'
+        Set-FixtureFile $kept "---`nname: kept`n---"
+        $map = New-BasePlugins -Name 'eval-copy-fail'
+        # An exclusive handle makes the copy of this one file fail on Windows.
+        $lock = [System.IO.File]::Open((Join-Path $map['bcquality'] 'skills' 'entry.md'), 'Open', 'Read', 'None')
+        try {
+            $result = Invoke-EvalCopy -Root $root -Destination $destination -PluginRoot $map
+        } finally {
+            $lock.Dispose()
+        }
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "dependency 'bcquality' could not be fetched"
+        $kept | Should -Exist
+    }
 }
 
 Describe 'Eval copies process wrapper' -Tag 'Process' {
