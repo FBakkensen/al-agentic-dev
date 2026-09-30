@@ -25,3 +25,4 @@ In an AL repository, when an entry skill below runs, load its AL addition beside
 | Entry skill | AL addition |
 |---|---|
 | `/mattpocock-skills:setup-matt-pocock-skills` | `/al-setup-matt-pocock-skills` |
+| `/mattpocock-skills:code-review` | `/al-review` |

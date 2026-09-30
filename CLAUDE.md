@@ -36,7 +36,7 @@ Twenty skills ship today.
 - `al-test-design` — user-reviewed AAA after Gherkin in Acceptance Criteria.
 - `al-implement` — proof through the module interface.
 - `al-refactor` — behavior-frozen reshape.
-- `al-review` — read-only contract verdict.
+- `al-review` — the AL addition to `mattpocock-skills:code-review`: Spec, Standards, and Correctness axes, read-only and unmerged.
 - `al-next` — reconciliation of design, slices, receipts, and landed code.
 - `al-pr-shepherd` — one open PR to merge: CI watched, review findings fixed, main merged in with intent-preserving conflicts; the merge itself is the user's go.
 - `al-walkthrough` — the Gherkin walk in the running Web Client through the Consumer repository's workspace MCP.
