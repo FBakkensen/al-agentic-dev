@@ -1,6 +1,6 @@
 # Issue tracker: Azure DevOps
 
-Work items for this repository live in the Azure DevOps org `naveksaas`. The `## Agent skills` block's issue tracker line names the backlog project.
+Work items for this repository live in the Azure DevOps org `naveksaas`. The `## Agent skills` block's issue tracker line names the backlog project, which is `NAVEKSA NEXT` for ShopFloor.
 
 ## Tools
 
@@ -11,7 +11,7 @@ Every read and write goes through the bundled `ado` MCP server's tools, `mcp__pl
 - **Read**: an existing item is read by its id alone, which is unique across the org: `mcp__plugin_al-agentic-dev_ado__wit_work_item`, action `get`, with `expand` set to `Relations`.
 - **The Original work item** is the Feature, Bug, or PBI the request arrives on. `Original` names its role in this workflow, not the top of the Azure DevOps hierarchy; its structural parents stay as they are.
 - **A new Original work item** is created only when the request arrives on none. It is a PBI, or a Bug when the request reports a defect, created in the backlog project with `mcp__plugin_al-agentic-dev_ado__wit_work_item_write`, action `create`.
-- **Slices**: one slice creates no child, and the Original work item is executable. Several slices each get one direct child PBI in the Original's project, created with `wit_work_item_write`, action `add_child`, under the Original.
+- **Slices**: one slice creates no child, and the Original work item is executable. Several slices each get one direct child PBI in the Original's project, created with `wit_work_item_write`, action `add_child`, `workItemType` `Product Backlog Item`, under the Original. `add_child` sets only title and Description, so Acceptance Criteria follows in an `update`.
 - **Never**: create a Feature, Epic, Task, or a grandchild below the Original work item, and never move an item to another parent, project, area, iteration, or state.
 - **Comment**: `mcp__plugin_al-agentic-dev_ado__wit_work_item_comment_write`, action `add`.
 
@@ -37,7 +37,7 @@ Triage roles are Azure DevOps tags: each role string in `docs/agents/triage-labe
 
 ## When a skill says "publish to the issue tracker"
 
-Write into the Original work item: the spec into Description, or into Repro Steps on a Bug, and Gherkin and the Test specification into Acceptance Criteria. Create an item only as Work items allows: a new Original work item when the request arrives on none, and direct child PBIs when there are several slices.
+Write into the Original work item's fields as Fields places them. Create an item only as Work items allows.
 
 ## When a skill says "fetch the relevant ticket"
 
