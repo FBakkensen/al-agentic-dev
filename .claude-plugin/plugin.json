@@ -5,12 +5,17 @@
   "author": {
     "name": "Flemming Bakkensen"
   },
-  "userConfig": {
-    "ado_org": {
-      "type": "string",
-      "title": "Azure DevOps organization",
-      "description": "The Azure DevOps organization the bundled ado MCP server connects to, for example naveksaas.",
-      "required": true
+  "mcpServers": {
+    "microsoft-learn": {
+      "type": "http",
+      "url": "https://learn.microsoft.com/api/mcp"
+    },
+    "ado": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@azure-devops/mcp", "naveksaas",
+               "-d", "core", "repositories", "work-items", "search", "work",
+               "--authentication", "azcli"]
     }
   },
   "dependencies": [

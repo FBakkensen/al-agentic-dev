@@ -19,11 +19,7 @@ BeforeAll {
 {
   "name": "al-agentic-dev",
   "description": "Agentic AL and Business Central development skills.",
-  "version": "1.0.0"
-}
-'@
-            '.mcp.json'                       = @'
-{
+  "version": "1.0.0",
   "mcpServers": {
     "nab-al-tools": {
       "type": "stdio",
@@ -125,7 +121,6 @@ Describe 'Validate-Json plugin surface' -Tag 'Unit' {
 
     It 'fails when a plugin surface file is missing' -TestCases @(
         @{ Case = 'plugin'; Remove = '.claude-plugin/plugin.json'; Expected = '\.claude-plugin/plugin\.json is missing' }
-        @{ Case = 'mcp'; Remove = '.mcp.json'; Expected = '\.mcp\.json is missing' }
         @{ Case = 'marketplace'; Remove = '.claude-plugin/marketplace.json'; Expected = '\.claude-plugin/marketplace\.json is missing' }
     ) {
         param($Case, $Remove, $Expected)
@@ -153,19 +148,30 @@ Describe 'Validate-Json plugin surface' -Tag 'Unit' {
     }
 
     It 'fails an MCP server without a type, or one that carries a tools allowlist' -TestCases @(
-        @{ Case = 'no-type'; Json = '{ "mcpServers": { "svc": { "command": "npx" } } }'; Expected = "server 'svc' must carry a type" }
-        @{ Case = 'tools'; Json = '{ "mcpServers": { "svc": { "type": "stdio", "tools": ["a"] } } }'; Expected = "server 'svc' carries a tools allowlist" }
-        @{ Case = 'empty-tools'; Json = '{ "mcpServers": { "svc": { "type": "stdio", "tools": [] } } }'; Expected = "server 'svc' carries a tools allowlist" }
-        @{ Case = 'no-servers'; Json = '{ "mcpServers": {} }'; Expected = 'must carry at least one server' }
+        @{ Case = 'no-type'; Servers = '{ "svc": { "command": "npx" } }'; Expected = "server 'svc' must carry a type" }
+        @{ Case = 'tools'; Servers = '{ "svc": { "type": "stdio", "tools": ["a"] } }'; Expected = "server 'svc' carries a tools allowlist" }
+        @{ Case = 'empty-tools'; Servers = '{ "svc": { "type": "stdio", "tools": [] } }'; Expected = "server 'svc' carries a tools allowlist" }
+        @{ Case = 'no-servers'; Servers = '{}'; Expected = 'mcpServers must carry at least one server' }
+        @{ Case = 'absent'; Servers = $null; Expected = 'mcpServers must carry at least one server' }
     ) {
-        param($Case, $Json, $Expected)
+        param($Case, $Servers, $Expected)
 
-        $root = New-PluginRepo -Root (Join-Path $TestDrive "mcp-$Case") -Overrides @{ '.mcp.json' = $Json }
+        $manifest = if ($null -eq $Servers) { '{ "name": "al-agentic-dev", "version": "1.0.0" }' } else { "{ ""name"": ""al-agentic-dev"", ""version"": ""1.0.0"", ""mcpServers"": $Servers }" }
+        $root = New-PluginRepo -Root (Join-Path $TestDrive "mcp-$Case") -Overrides @{ '.claude-plugin/plugin.json' = $manifest }
 
         $result = Invoke-JsonValidator -Root $root
 
         $result.ExitCode | Should -Be 1
         $result.Text | Should -Match $Expected
+    }
+
+    It 'fails a root .mcp.json, which Claude Code also loads as the repository''s project MCP servers' {
+        $root = New-PluginRepo -Root (Join-Path $TestDrive 'root-mcp') -Overrides @{ '.mcp.json' = '{ "mcpServers": { "svc": { "type": "stdio", "command": "npx" } } }' }
+
+        $result = Invoke-JsonValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match '\.mcp\.json at the repository root loads as project MCP servers'
     }
 
     It 'fails a marketplace whose local entry does not resolve to the plugin manifest' -TestCases @(

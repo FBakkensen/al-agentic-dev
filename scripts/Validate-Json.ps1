@@ -6,13 +6,15 @@
     Recursively validates the syntax of every .json file under the repo root using
     ConvertFrom-Json, skipping node_modules, the eval copies of the Base plugins
     (.base-plugins/), and the eval results (evals/results/). On top of the sweep, the plugin surface is validated structurally:
-    .claude-plugin/plugin.json (name and version non-empty), .mcp.json (at least one
-    server; every server carries a type and no tools allowlist, which makes Claude Code
-    silently drop the server), and .claude-plugin/marketplace.json (name non-empty; at
+    .claude-plugin/plugin.json (name and version non-empty; mcpServers carries at least
+    one server, and every server carries a type and no tools allowlist, which makes
+    Claude Code silently drop the server), no .mcp.json at the repo root (Claude Code
+    would also load it as this repository's project MCP servers), and
+    .claude-plugin/marketplace.json (name non-empty; at
     least one plugins entry; every entry names a plugin and carries a source; a local
     string source resolves to <source>/.claude-plugin/plugin.json with a matching name).
     A re-listed object source is a url or git-subdir source with an https url, and a
-    git-subdir source carries a path; neither is path-checked locally. All three files must
+    git-subdir source carries a path; neither is path-checked locally. Both manifests must
     exist. Returns exit code 1 if anything fails.
 .EXAMPLE
     pwsh scripts/Validate-Json.ps1
@@ -61,29 +63,29 @@ function Read-PluginJson {
 }
 
 $pluginPath = Join-Path $RepoRoot '.claude-plugin' 'plugin.json'
-$mcpPath = Join-Path $RepoRoot '.mcp.json'
 $marketplacePath = Join-Path $RepoRoot '.claude-plugin' 'marketplace.json'
 
 $plugin = Read-PluginJson -Path $pluginPath -Label '.claude-plugin/plugin.json'
 if ($plugin) {
     if (-not $plugin.name) { $script:jsonValidationErrors += 'FAIL: .claude-plugin/plugin.json - name must be non-empty' }
     if (-not $plugin.version) { $script:jsonValidationErrors += 'FAIL: .claude-plugin/plugin.json - version must be non-empty' }
-}
 
-$mcp = Read-PluginJson -Path $mcpPath -Label '.mcp.json'
-if ($mcp) {
-    $servers = @($mcp.mcpServers.PSObject.Properties | Where-Object { $null -ne $_ })
-    if (-not $mcp.mcpServers -or $servers.Count -eq 0) {
-        $script:jsonValidationErrors += 'FAIL: .mcp.json - mcpServers must carry at least one server'
+    $servers = @($plugin.mcpServers.PSObject.Properties | Where-Object { $null -ne $_ })
+    if (-not $plugin.mcpServers -or $servers.Count -eq 0) {
+        $script:jsonValidationErrors += 'FAIL: .claude-plugin/plugin.json - mcpServers must carry at least one server'
     }
     foreach ($server in $servers) {
         if (-not $server.Value.type) {
-            $script:jsonValidationErrors += "FAIL: .mcp.json - server '$($server.Name)' must carry a type"
+            $script:jsonValidationErrors += "FAIL: .claude-plugin/plugin.json - server '$($server.Name)' must carry a type"
         }
         if ($server.Value.PSObject.Properties.Name -contains 'tools') {
-            $script:jsonValidationErrors += "FAIL: .mcp.json - server '$($server.Name)' carries a tools allowlist; Claude Code drops a server that has one"
+            $script:jsonValidationErrors += "FAIL: .claude-plugin/plugin.json - server '$($server.Name)' carries a tools allowlist; Claude Code drops a server that has one"
         }
     }
+}
+
+if (Test-Path -LiteralPath (Join-Path $RepoRoot '.mcp.json') -PathType Leaf) {
+    $script:jsonValidationErrors += 'FAIL: .mcp.json at the repository root loads as project MCP servers in every session opened here; declare the bundled servers in .claude-plugin/plugin.json mcpServers'
 }
 
 $marketplace = Read-PluginJson -Path $marketplacePath -Label '.claude-plugin/marketplace.json'
