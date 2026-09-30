@@ -31,7 +31,7 @@ Exactly one total slice stays on the Original User Story. With two or more, the 
 
 - An executable item without reviewed AAA goes to /al-test-design.
 - An executable item with a reviewed `Test specification`, including its `Current-to-final proof map`, goes to /al-implement.
-- A hard-to-reverse business decision goes to /al-grill-adr.
+- A hard-to-reverse business decision goes to /mattpocock-skills:grill-with-docs.
 - An unclear outcome gets a prototype before the hierarchy changes.
 
 ## Close

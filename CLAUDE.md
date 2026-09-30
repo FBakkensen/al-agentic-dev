@@ -24,7 +24,7 @@ Twenty skills ship today.
 - `al-build` — the compile-publish-test gate, provisioning, breaking-change validation, and the container lifecycle; the contract model everything else copies.
 - `al-clone-bcapps` — the BCApps lookup-source clone.
 - `al-clone-bcquality` — the BCQuality lookup-source clone.
-- `al-grill-adr` — one Original work item, the preserved request, vocabulary, and hard-to-reverse ADRs.
+- `al-grill-with-docs` — the Original work item anchor, the confirmed verbatim request, the process questions, and the BC glossary deltas for `/mattpocock-skills:grill-with-docs`.
 - `al-lookup` — one platform question, a sourced answer, the precedent map.
 - `al-azure-devops-attachments` — Azure CLI upload and verified work-item attachment relations.
 - `al-commit` — full-worktree staging and independently valid commits.
