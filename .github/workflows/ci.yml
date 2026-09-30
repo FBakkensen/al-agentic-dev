@@ -28,6 +28,10 @@ jobs:
           Install-Module powershell-yaml -Force -Scope CurrentUser
           ./scripts/Validate-Skills.ps1
 
+      - name: Check Base plugin drift
+        shell: pwsh
+        run: ./scripts/Test-BasePluginDrift.ps1
+
   test:
     runs-on: windows-latest
 
