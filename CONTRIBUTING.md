@@ -42,7 +42,7 @@ When adding or modifying a skill:
 
 2. Keep every relative link inside the skill folder — a skill is installed on its own.
 3. Read `.claude/rules/skills.md` before writing; it is the full authoring contract.
-4. Run the four gates before opening a PR: `Validate-Json.ps1`, `Validate-PowerShell.ps1`, `Validate-Skills.ps1`, `Invoke-Tests.ps1 -Mode Full`.
+4. Run the five gates before opening a PR: `Validate-Json.ps1`, `Validate-PowerShell.ps1`, `Validate-Skills.ps1`, `Test-BasePluginDrift.ps1`, `Invoke-Tests.ps1 -Mode Full`.
 
 ### Commit Messages
 
