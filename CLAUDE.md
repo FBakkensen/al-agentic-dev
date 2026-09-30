@@ -82,8 +82,8 @@ These govern work on this repo and never ship. No `SKILL.md` may mention them.
 `main` is PR-only. A change lands on a fresh feature branch and merges through a PR. The version lives only in `.claude-plugin/plugin.json`; it stays `0.9.0` through the migration in #52, and no migration PR writes it.
 
 The session that opens a PR merges it and closes its issues; it never enables auto-merge. Since 2026-09-30 GitHub leaves a PR's `Fixes #<n>` unlinked (a11ign/a11ign#2824), so a merge alone closes nothing. Right after `gh pr create`, start one Bash `run_in_background` watcher. Every 60 seconds it reads `gh pr view <pr> --json state,mergeStateStatus`:
-- `CLEAN`: it runs `gh pr merge <pr> --squash --delete-branch`, then `gh issue close <n> --reason completed --comment "Completed by #<pr>"` for each issue the PR body closes that is still open, and exits.
-- `MERGED`: it closes the same issues and exits.
+- `CLEAN`: it runs `gh pr merge <pr> --squash --delete-branch` and keeps watching; it closes nothing until the PR reads `MERGED`.
+- `MERGED`: it runs `gh issue close <n> --reason completed --comment "Completed by #<pr>"` for each issue the PR body closes that is still open, and exits.
 - `CLOSED`: it exits, closing nothing.
 - `BLOCKED`, `BEHIND`, `DIRTY`, `UNSTABLE`, or `UNKNOWN`: it keeps waiting while CI fixes, review fixes, and conflict merges land.
 
