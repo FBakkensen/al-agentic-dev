@@ -10,7 +10,7 @@ Git history is the donor archive — a retired skill returns from a commit, neve
 .claude-plugin/plugin.json      the plugin manifest: name, description, version (set only here), the bundled MCP servers — microsoft-learn, and ado on the org naveksaas, none with a tools allowlist — the Base plugin dependencies
 .claude-plugin/marketplace.json the marketplace: this plugin at ./ plus the re-listed Base plugins bcquality and al-language-server-go-windows
 hooks/hooks.json                the SessionStart hook: runs hooks/Write-SessionStart.ps1
-hooks/session-start.md          the delegation rules the hook injects in every session
+hooks/session-start.md          the delegation rules and the entry → addition table the hook injects in every session
 output-styles/AL.md             the opt-in al-agentic-dev:AL style: Speak BC and the interview-diagram rule; frontmatter name AL, keep-coding-instructions true, no force-for-plugin
 skills/<name>/SKILL.md          frontmatter: name, description
 skills/<name>/<SIBLING>.md      optional format files, inside the same folder only
@@ -19,7 +19,7 @@ skills/al-build/scripts/*.ps1   the build substrate
 skills/al-build/config/         al-build.json
 ```
 
-Nineteen skills ship today.
+Twenty skills ship today.
 
 - `al-build` — the compile-publish-test gate, provisioning, breaking-change validation, and the container lifecycle; the contract model everything else copies.
 - `al-clone-bcapps` — the BCApps lookup-source clone.
@@ -40,6 +40,7 @@ Nineteen skills ship today.
 - `al-next` — reconciliation of design, slices, receipts, and landed code.
 - `al-pr-shepherd` — one open PR to merge: CI watched, review findings fixed, main merged in with intent-preserving conflicts; the merge itself is the user's go.
 - `al-walkthrough` — the Gherkin walk in the running Web Client through the Consumer repository's workspace MCP.
+- `al-setup-matt-pocock-skills` — the Azure DevOps issue-tracker option and tracker text for `/mattpocock-skills:setup-matt-pocock-skills`.
 
 The folder name equals the frontmatter `name`. A skill reaches outside its folder only by naming another skill — `/al-build` — never by path.
 
@@ -54,7 +55,7 @@ Every skill is model-invocable. Skill frontmatter omits `disable-model-invocatio
 - A link that leaves the skill folder: `](../`, `](/`, any absolute path.
 - An MCP server with a `tools` allowlist — Claude Code silently drops the server; the JSON gate fails it.
 - A `.mcp.json` at the repo root — Claude Code also loads it as this repo's project MCP servers, so every dev session here would start the plugin's servers; they live in `plugin.json`'s `mcpServers`, and the JSON gate fails a root `.mcp.json`.
-- Slash-command files — out of scope until a proven defect asks for them. One hook ships: `SessionStart` injects the delegation rules in every session (ADR 0003). A new hook needs its own proven defect.
+- Slash-command files — out of scope until a proven defect asks for them. One hook ships: `SessionStart` injects the delegation rules and the entry → addition table in every session (ADR 0003). A new hook needs its own proven defect.
 
 Say so when a change reintroduces one of these.
 

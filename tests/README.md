@@ -22,7 +22,7 @@ The drift check fetches over anonymous https: mattpocock-skills at the commit `c
 
 `scripts/Update-EvalBasePlugins.ps1` reuses that resolution to write every Base plugin into `.base-plugins/` for the trigger evals, and `tests/BasePluginDrift.Tests.ps1` also covers its refresh and failure paths. `tests/EvalSuite.Tests.ps1` fails when a skill has no trigger case or a case drops a Base plugin copy or pins a model.
 
-`tests/SessionStartHook.Tests.ps1` runs exactly the command in `hooks/hooks.json` as a process, with `${CLAUDE_PLUGIN_ROOT}` pointed at the checkout, parses stdout as JSON, and asserts the `SessionStart` event name, the `▶ <model> · <brief> → <return>` line, and the delegation-cost text.
+`tests/SessionStartHook.Tests.ps1` runs exactly the command in `hooks/hooks.json` as a process, with `${CLAUDE_PLUGIN_ROOT}` pointed at the checkout, parses stdout as JSON, and asserts the `SessionStart` event name, the `▶ <model> · <brief> → <return>` line, the delegation-cost text, and the `## Entry skills and their AL additions` heading with each entry → addition row.
 
 ## Loading this checkout's plugin in isolation
 

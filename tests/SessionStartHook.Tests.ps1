@@ -39,6 +39,15 @@ Describe 'SessionStart hook' -Tag 'Process' {
         $context | Should -Match ([regex]::Escape('Spawn a child only for a sizeable, independent track of work whose result comes back compact. Work you can finish in a handful of tool calls, you do yourself. Keep spawn counts low. A skill''s `▶` line is already that judgement: run it as written.'))
     }
 
+    It 'injects the entry → addition table with a row per landed AL addition' {
+        $result = Invoke-SessionStartHook -PluginRoot $script:RepoRoot
+
+        $result.ExitCode | Should -Be 0 -Because $result.Text
+        $context = ($result.Text | ConvertFrom-Json).hookSpecificOutput.additionalContext
+        $context | Should -Match '(?m)^## Entry skills and their AL additions\r?$'
+        $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:setup-matt-pocock-skills` | `/al-setup-matt-pocock-skills` |') + '\r?$')
+    }
+
     It 'fails when the delegation text is missing' {
         $plugin = Join-Path $TestDrive 'plugin'
         New-Item -ItemType Directory -Path (Join-Path $plugin 'hooks') -Force | Out-Null

@@ -3,9 +3,9 @@
 .SYNOPSIS
     Prints the SessionStart hook payload for al-agentic-dev.
 .DESCRIPTION
-    Reads the static delegation rules from session-start.md beside this script and
-    writes them to stdout as SessionStart additionalContext. Exits 1 when the text
-    file is missing or empty.
+    Reads the static delegation rules and entry -> addition table from
+    session-start.md beside this script and writes them to stdout as SessionStart
+    additionalContext. Exits 1 when the text file is missing or empty.
 .EXAMPLE
     pwsh -NoProfile -File hooks/Write-SessionStart.ps1
 #>
