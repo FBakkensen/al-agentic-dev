@@ -4,7 +4,8 @@
     Validates JSON syntax repo-wide and the Claude Code plugin surface.
 .DESCRIPTION
     Recursively validates the syntax of every .json file under the repo root using
-    ConvertFrom-Json. On top of the sweep, the plugin surface is validated structurally:
+    ConvertFrom-Json, skipping node_modules, the eval copies of the Base plugins
+    (.base-plugins/), and the eval results (evals/results/). On top of the sweep, the plugin surface is validated structurally:
     .claude-plugin/plugin.json (name and version non-empty), .mcp.json (at least one
     server; every server carries a type and no tools allowlist, which makes Claude Code
     silently drop the server), and .claude-plugin/marketplace.json (name non-empty; at
@@ -32,6 +33,7 @@ $script:jsonValidationErrors = @()
 
 Get-ChildItem -Path $RepoRoot -Recurse -Filter "*.json" |
     Where-Object { $_.FullName -notmatch '[\\/]node_modules[\\/]' } |
+    Where-Object { [System.IO.Path]::GetRelativePath($RepoRoot, $_.FullName) -notmatch '^(\.base-plugins|evals[\\/]results)[\\/]' } |
     ForEach-Object {
     $file = $_
     try {
