@@ -1,62 +1,57 @@
 ---
 name: al-implement
-description: Use when an executable User Story has reviewed Gherkin, AAA test specification, and module contracts ready to implement in AL.
+description: Use whenever /mattpocock-skills:implement runs against AL work in a Consumer repository.
 ---
 
-# al-implement - prove the slice
+# al-implement - AL workers, reviews, and receipt for the slice
 
-In: the executable Original User Story, or a child User Story and its Original User Story. Read the executable item's reviewed `Test specification`, including its `Current-to-final proof map`, and the Original User Story's process and Building Block Level 1. If the AAA seam, existing-proof disposition, or expected value is unresolved, return that question to /mattpocock-skills:tdd before editing code.
+In: `/mattpocock-skills:implement` on the executable Original work item or its child PBI. Read its reviewed `Test specification`, including the `Current-to-final proof map`, and the Original work item's process and Building Block Level 1. The entry skill owns the process; this addition supplies the workers, the reviews, the change map, and the receipt. An unresolved AAA seam, existing-proof disposition, or expected value returns to `/mattpocock-skills:tdd` before code changes.
 
-Before editing, trace the narrow path through the workspace. Search for an existing module, event, interface, test, fixture, and pattern first. Confirm every BC object, table, field, procedure, event, enum value, and dialog text through lookup in this session.
+Trace the narrow path through the workspace first: existing module, event, interface, test, fixture, pattern. Confirm every BC object, table, field, procedure, event, enum value, and dialog text through lookup in this session, never recalled. Write BC vocabulary (Insert, Post, Validate, codeunit) and reach for the platform before new code.
 
-Before the first tool call, write one sentence. Update on an important finding or a changed direction; close with the outcome first, standing on its own.
+Gherkin defines observable business behavior; AAA defines the reviewed proof seam and expected values; Building Block Level 1 defines caller-visible module ownership; private object layout stays an implementation decision.
 
-## Contract
+## Workers
 
-Gherkin defines observable business behavior; AAA defines the reviewed proof seam and expected values; Building Block Level 1 defines caller-visible module ownership; private object layout remains an implementation decision.
-
-## Shape the proof
-
-Before changing an existing test, require its current scope green:
+Before an existing test changes, require its current scope green:
 
 ▶ haiku · /al-build gate on the affected test scope, WARN_AS_ERROR as the repository states → summary.json verdict, per-runner totals, exact red cause
 
-## Prove and green, one worker per scenario
+One worker per Gherkin scenario; the scenarios dispatch as background `Agent` calls in one message:
 
-For each Gherkin scenario, pick its AAA cases, production site, and seam, then dispatch; the scenarios launch together, and each worker's brief carries the three paragraphs below:
+▶ sonnet · one Gherkin scenario: run /mattpocock-skills:tdd with al-tdd on its AAA cases, production site, seam, proof-map rows, and the grounding rule → red evidence per case, the green gate line, files touched
 
-▶ sonnet · one Gherkin scenario: its AAA cases, production site, seam, proof-map rows, and the grounding rule → red evidence per case, the green gate line, files touched
+Each AAA case is implemented through its named module interface. One scenario may need several tests, and a `keep` test supplies evidence without a duplicate. The production change is the smallest that turns the proof green: business writes on validated or posting paths, Base App seams reused, quality properties preserved. A pre-existing bug or behavior the work item does not name is a follow-up line in the receipt, not a change, unless the proof cannot go green without it.
 
-Apply the proof map's proof-preserving reshapes before new expectations or production changes. Account for every existing business assertion in the final cases unless the current requirement explicitly replaces it, rerun the gate green, and add no transitional test that the accepted map does not retain.
-
-Implement each unit or integration AAA case through the named module interface. One Gherkin scenario may need several tests. An unchanged existing test marked `keep` supplies evidence without a duplicate. Every new or materially reshaped automated proof earns a red. If born red, require failure for the intended reason. If born green because the behavior exists, inject one compiling fault into the production site the proof targets, run its scope to red, revert the fault, and confirm green. A compile error or a failure before the assertion is not red; if no fault forces red, strengthen the assertion until it does.
-
-Write the smallest production change that makes the proof green. Keep business writes on validated or posting paths, reuse Base App seams, preserve quality properties, and avoid an AL interface with one implementation. A pre-existing bug or a behavior the User Story does not name is a follow-up line in the receipt, not a change, unless the proof cannot go green without it. Run /al-build's gate until green; a red result remains red until the output names its exact cause.
-
-A walkthrough-only case does not enter the automated red step. Keep it in the receipt for /al-walkthrough. Judge every return against its contract before the next step.
+A walkthrough-only case takes no automated red; keep it in the receipt for /al-walkthrough. Judge every return against its contract before the next step.
 
 ## Map what landed
 
-After green, trace the landed production path from its caller through every changed AL object to the records, events, and module interfaces it uses. Create a connected-object change map from the code, never from the changed-file list. Include every changed production object, only the unchanged neighbours needed to explain its connections, and a separate Proof group for changed test objects. Mark each object `Added`, `Changed`, `Existing`, or `Removed`. Label every edge with the exact procedure, event, interface implementation, or Read/Insert/Modify relation. A changed object with no explained connection remains unresolved.
+After green, trace the landed production path from its caller through every changed AL object to the records, events, and module interfaces it uses. Build the connected-object change map from the code, never from the changed-file list: every changed production object, only the unchanged neighbours that explain a connection, and a separate Proof group for changed test objects. Mark each object `Added`, `Changed`, `Existing`, or `Removed`; label every edge with the exact procedure, event, interface implementation, or Read/Insert/Modify relation. A changed object with no explained connection is unresolved.
 
-For one affected Level 1 module, use a Building Block Level 2 white box. For several affected Level 1 modules, use a Level 1 impact overview plus a Level 2 white box for each module whose object relations need explanation. Add a Runtime View only when call order, a transaction boundary, or an error path matters.
+One affected Level 1 module takes a Building Block Level 2 white box. Several take a Level 1 impact overview plus a Level 2 white box for each module whose object relations need explanation. Add a Runtime View only when call order, a transaction boundary, or an error path matters.
 
 ▶ haiku · /al-arc42 the chosen views from the connected-object change map → HTML path, SVG and PNG paths, alt text, publishable fragments
 
-Show the HTML through `show_widget`, falling back to an Artifact, then to the local file. Keep the change markers in the receipt and executable-item comment. Add or update the Original User Story's Level 2 only when the implementation map reveals stable internal building blocks or interfaces worth preserving; publish that current-state view without change markers. A simple module may need the implementation map but no Original User Story Level 2.
+Show the HTML through `show_widget`, falling back to an Artifact, then the local file. Add or update the Original work item's Level 2 only when the map reveals stable internal building blocks or interfaces worth preserving, published without change markers; a simple module may need the implementation map but no Original work item Level 2.
 
 ▶ haiku · /al-azure-devops-attachments the PNG and SVG to the executable item → verified attachment URLs
 
-Use the verified URLs in the comment and Original User Story fragment. Missing MCP attachment support is not a blocker; authentication trouble stays with that skill until the Azure CLI token works.
+Write `.output/receipts/<work-item-id>.md`: work-item ID, map paths and alt text, tests, objects changed, Level 2 decision, gate result, evidence, and `verified:` / `assumed:` / `unresolved:` ledger entries. Put the PNG and the same evidence in the executable item's comment.
 
-## Receipt
+## Review
 
-Write `.output/receipts/<work-item-id>.md` with the work-item ID, implementation-map paths and alt text, tests, objects changed, Level 2 decision, gate result, evidence, and `verified:` / `assumed:` / `unresolved:` ledger entries. Add the PNG and the same evidence to the executable-item comment when Azure DevOps tools are available.
+`/mattpocock-skills:code-review` reads committed work, so /al-commit the green slice first. Then both reviews run in parallel, background `Agent` calls in one message, over the slice range from the commit the slice started from:
+
+▶ sonnet · /mattpocock-skills:code-review with al-review, fixed point <start commit>, spec <work item id> → findings as ⛔ and ⚖️, unmerged
+▶ sonnet · the built-in /code-review at effort high over <start commit>..HEAD → findings as ⛔ and ⚖️
+
+Fix every ⛔ and /al-commit the fixes, so the slice's final commit carries none; then run both once more over the same range. A ⛔ still red stops the run for the user. ⚖️ findings go to the user, never fixed silently.
 
 ## Close
 
-At every exit:
+At every exit, including a stop for the user and an unresolved red:
 
 ▶ haiku · /al-commit the complete worktree, work items <ids> → commit hashes and subjects, remaining worktree
 
-Finish outcome first: what changed, what proves it, where the implementation map is attached, which module interface stayed stable, and whether Original User Story Level 2 changed. Name `/simplify` and `/mattpocock-skills:improve-codebase-architecture` as the next moves. Stop with the exact red reason when any proof is unresolved.
+Finish outcome first: what changed, what proves it, where the map is attached, which module interface stayed stable, and whether the Original work item's Level 2 changed. Name `/simplify` and `/mattpocock-skills:improve-codebase-architecture` as the next move. A stop names the exact red reason.
