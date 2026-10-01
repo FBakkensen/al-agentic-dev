@@ -1691,44 +1691,27 @@ function Test-BaselineFoldersDistinct {
     return -not ((& $normalize $ReleaseAppDir) -ieq (& $normalize $BaselinePackageCachePath))
 }
 
-function Find-ReleaseApp {
+function Get-BaselineFolderConflict {
     <#
     .SYNOPSIS
-        Find the .app files in a folder whose manifest carries an app id and version.
+        Return the error message when the Release .app folder and the compile baseline folder are one folder.
     .DESCRIPTION
-        Reads each .app's manifest through Read-AppManifest (symbol-feed.psm1), so the file name
-        plays no part: a feed-style name without spaces and a compiler-style name with spaces match
-        alike. A .app whose manifest cannot be read is skipped with a warning. Returns every match
-        as a FileInfo, an empty array when the folder is missing or nothing matches.
-    .PARAMETER Folder
-        The folder to search; it is not searched recursively.
-    .PARAMETER AppId
-        The app id from app.json.
-    .PARAMETER Version
-        The version AppSourceCop.json pins, compared with the manifest's 4-part version as written.
+        Returns $null when either folder is unset or the two are distinct, so a caller runs
+        `if ($message) { write it; exit 4 }` whatever is configured. The message names both keys.
+    .PARAMETER ReleaseAppDir
+        The folder breakingChange.releaseAppDir resolves to; $null when unset.
+    .PARAMETER AppSourceCop
+        The settings Get-AppSourceCopSettings returns; $null when the app has no AppSourceCop.json.
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][string]$Folder,
-        [Parameter(Mandatory)][string]$AppId,
-        [Parameter(Mandatory)][string]$Version
+        [AllowNull()]$ReleaseAppDir,
+        [AllowNull()]$AppSourceCop
     )
 
-    if (-not (Test-Path -LiteralPath $Folder -PathType Container)) { return @() }
-
-    $found = @()
-    foreach ($file in Get-ChildItem -LiteralPath $Folder -Filter '*.app' -File) {
-        try {
-            $manifest = Read-AppManifest -Path $file.FullName
-        } catch {
-            Write-BuildMessage -Type Warning -Message "Skipping $($file.Name): $($_.Exception.Message)"
-            continue
-        }
-        if ($manifest.Id.Trim('{}') -ieq $AppId.Trim('{}') -and $manifest.Version -eq $Version.Trim()) {
-            $found += $file
-        }
-    }
-    return $found
+    if (-not $ReleaseAppDir -or -not $AppSourceCop -or -not $AppSourceCop.BaselinePackageCachePath) { return $null }
+    if (Test-BaselineFoldersDistinct -ReleaseAppDir $ReleaseAppDir -BaselinePackageCachePath $AppSourceCop.BaselinePackageCachePath) { return $null }
+    return "breakingChange.releaseAppDir and AppSourceCop.json's baselinePackageCachePath name one folder ($ReleaseAppDir). Use two folders: the compile baseline fill replaces every .app in baselinePackageCachePath."
 }
 
 function Test-SymbolOnlyApp {
@@ -1809,7 +1792,7 @@ Export-ModuleMember -Function @(
     # Breaking-change baseline
     'Get-AppSourceCopSettings'
     'Test-BaselineFoldersDistinct'
-    'Find-ReleaseApp'
+    'Get-BaselineFolderConflict'
     'Test-SymbolOnlyApp'
     'Get-AlValidationVerdict'
 

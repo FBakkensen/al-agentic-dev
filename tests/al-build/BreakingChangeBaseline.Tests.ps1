@@ -161,7 +161,7 @@ Describe 'validate-breaking-changes.ps1 splat and pin check wiring' {
         }
         $build = & $offset 'Invoke-ALBuild'
         $import = & $offset 'Import-BCContainerHelper'
-        foreach ($name in 'Test-ReleasePin', 'Test-BaselineFoldersDistinct', 'Find-ReleaseApp', 'Test-SymbolOnlyApp') {
+        foreach ($name in 'Test-ReleasePin', 'Get-BaselineFolderConflict', 'Find-ReleaseApp', 'Test-SymbolOnlyApp') {
             (& $offset $name) | Should -BeLessThan $build
         }
         $build | Should -BeLessThan $import
@@ -189,6 +189,7 @@ Describe 'Release app helpers' {
 
     BeforeEach {
         Mock -ModuleName build-operations Write-BuildMessage {}
+        Mock -ModuleName symbol-feed Write-BuildMessage {}
     }
 
     Context 'Test-BaselineFoldersDistinct' {
@@ -204,6 +205,25 @@ Describe 'Release app helpers' {
             $folder = Join-Path $TestDrive 'Release'
             Test-BaselineFoldersDistinct -ReleaseAppDir $folder -BaselinePackageCachePath (Join-Path $TestDrive 'baseline') | Should -BeTrue
             Test-BaselineFoldersDistinct -ReleaseAppDir $folder -BaselinePackageCachePath (Join-Path $folder 'baseline') | Should -BeTrue
+        }
+    }
+
+    Context 'Get-BaselineFolderConflict' {
+        It 'returns a message naming both keys when the two resolve to one folder' {
+            $release = Join-Path $TestDrive 'shared'
+            $settings = [pscustomobject]@{ Path = 'AppSourceCop.json'; Version = '1.0.0.0'; BaselinePackageCachePath = (Join-Path $TestDrive 'app' '..' 'shared') }
+            $message = Get-BaselineFolderConflict -ReleaseAppDir $release -AppSourceCop $settings
+            $message | Should -Match 'breakingChange\.releaseAppDir'
+            $message | Should -Match 'baselinePackageCachePath'
+        }
+
+        It 'returns $null for two folders, an unset folder, no AppSourceCop.json, or no baseline folder' {
+            $settings = [pscustomobject]@{ Path = 'AppSourceCop.json'; Version = '1.0.0.0'; BaselinePackageCachePath = (Join-Path $TestDrive 'baseline') }
+            Get-BaselineFolderConflict -ReleaseAppDir (Join-Path $TestDrive 'release') -AppSourceCop $settings | Should -BeNullOrEmpty
+            Get-BaselineFolderConflict -ReleaseAppDir $null -AppSourceCop $settings | Should -BeNullOrEmpty
+            Get-BaselineFolderConflict -ReleaseAppDir (Join-Path $TestDrive 'release') -AppSourceCop $null | Should -BeNullOrEmpty
+            $noFolder = [pscustomobject]@{ Path = 'AppSourceCop.json'; Version = '1.0.0.0'; BaselinePackageCachePath = $null }
+            Get-BaselineFolderConflict -ReleaseAppDir (Join-Path $TestDrive 'release') -AppSourceCop $noFolder | Should -BeNullOrEmpty
         }
     }
 

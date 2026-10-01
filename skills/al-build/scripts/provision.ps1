@@ -121,9 +121,9 @@ foreach ($testAppDir in $config.TestApps) {
 # written first) and before the baseline step. A file download-baseline.ps1 rejects as not JSON
 # is its to report.
 $appSourceCop = try { Get-AppSourceCopSettings -AppDir $config.AppDir } catch { $null }
-if ($config.ReleaseAppDir -and $appSourceCop -and $appSourceCop.BaselinePackageCachePath -and
-    -not (Test-BaselineFoldersDistinct -ReleaseAppDir $config.ReleaseAppDir -BaselinePackageCachePath $appSourceCop.BaselinePackageCachePath)) {
-    Write-BuildMessage -Type Error -Message "breakingChange.releaseAppDir and AppSourceCop.json's baselinePackageCachePath name one folder ($($config.ReleaseAppDir)). Use two folders: the compile baseline fill replaces every .app in baselinePackageCachePath."
+$folderConflict = Get-BaselineFolderConflict -ReleaseAppDir $config.ReleaseAppDir -AppSourceCop $appSourceCop
+if ($folderConflict) {
+    Write-BuildMessage -Type Error -Message $folderConflict
     exit (Get-ExitCode).Contract
 }
 

@@ -83,20 +83,20 @@ if (-not $appSourceCop) {
 
 # Optional keys read through PSObject.Properties: a missing one must not throw under strict mode.
 $appSourceCopJson = Get-Content -LiteralPath $appSourceCop.Path -Raw | ConvertFrom-Json
-$readKey = {
+$readOptionalValue = {
     param([string]$Name)
     $property = if ($appSourceCopJson) { $appSourceCopJson.PSObject.Properties[$Name] } else { $null }
     if ($property) { $property.Value } else { $null }
 }
 
-$affixes = & $readKey 'mandatoryAffixes'
+$affixes = & $readOptionalValue 'mandatoryAffixes'
 if (-not $affixes -or @($affixes).Count -eq 0) {
     Write-BuildMessage -Type Error -Message "No mandatoryAffixes found"
     exit $Exit.Contract
 }
 Write-BuildMessage -Type Detail -Message "Affixes: $(@($affixes) -join ', ')"
 
-$supportedCountries = & $readKey 'supportedCountries'
+$supportedCountries = & $readOptionalValue 'supportedCountries'
 if (-not $supportedCountries -or @($supportedCountries).Count -eq 0) {
     Write-BuildMessage -Type Error -Message "No supportedCountries found"
     exit $Exit.Contract
@@ -118,9 +118,9 @@ if (-not $config.ReleaseAppDir) {
     Write-BuildMessage -Type Error -Message "breakingChange.releaseAppDir is not set (or ALBT_RELEASE_APP_DIR) - name the folder holding the real Release .app of version $($appSourceCop.Version)."
     exit $Exit.Contract
 }
-if ($appSourceCop.BaselinePackageCachePath -and
-    -not (Test-BaselineFoldersDistinct -ReleaseAppDir $config.ReleaseAppDir -BaselinePackageCachePath $appSourceCop.BaselinePackageCachePath)) {
-    Write-BuildMessage -Type Error -Message "breakingChange.releaseAppDir and AppSourceCop.json's baselinePackageCachePath name one folder ($($config.ReleaseAppDir)). Use two folders: the compile baseline fill replaces every .app in baselinePackageCachePath."
+$folderConflict = Get-BaselineFolderConflict -ReleaseAppDir $config.ReleaseAppDir -AppSourceCop $appSourceCop
+if ($folderConflict) {
+    Write-BuildMessage -Type Error -Message $folderConflict
     exit $Exit.Contract
 }
 

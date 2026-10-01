@@ -581,6 +581,46 @@ function Read-AppManifest {
     }
 }
 
+function Find-ReleaseApp {
+    <#
+    .SYNOPSIS
+        Find the .app files in a folder whose manifest carries an app id and version.
+    .DESCRIPTION
+        Reads each .app's manifest through Read-AppManifest, so the file name
+        plays no part: a feed-style name without spaces and a compiler-style name with spaces match
+        alike. A .app whose manifest cannot be read is skipped with a warning. Returns every match
+        as a FileInfo, an empty array when the folder is missing or nothing matches.
+    .PARAMETER Folder
+        The folder to search; it is not searched recursively.
+    .PARAMETER AppId
+        The app id from app.json.
+    .PARAMETER Version
+        The version AppSourceCop.json pins, compared with the manifest's 4-part version as written.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Folder,
+        [Parameter(Mandatory)][string]$AppId,
+        [Parameter(Mandatory)][string]$Version
+    )
+
+    if (-not (Test-Path -LiteralPath $Folder -PathType Container)) { return @() }
+
+    $found = @()
+    foreach ($file in Get-ChildItem -LiteralPath $Folder -Filter '*.app' -File) {
+        try {
+            $manifest = Read-AppManifest -Path $file.FullName
+        } catch {
+            Write-BuildMessage -Type Warning -Message "Skipping $($file.Name): $($_.Exception.Message)"
+            continue
+        }
+        if ($manifest.Id.Trim('{}') -ieq $AppId.Trim('{}') -and $manifest.Version -eq $Version.Trim()) {
+            $found += $file
+        }
+    }
+    return $found
+}
+
 # =============================================================================
 # Release pin
 # =============================================================================
@@ -697,6 +737,7 @@ Export-ModuleMember -Function @(
 
     # .app manifest
     'Read-AppManifest'
+    'Find-ReleaseApp'
 
     # Release pin
     'Test-ReleasePin'
