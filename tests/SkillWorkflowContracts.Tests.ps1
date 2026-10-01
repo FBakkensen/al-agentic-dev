@@ -110,9 +110,9 @@ Describe 'Skill workflow contracts' {
         $design | Should -Not -Match '/al-commit'
         $design | Should -Match 'writes no repo file'
         $design | Should -Match 'proposed `docs/patterns.md` row'
-        $implement | Should -Match 'first example in this repository, add its row to `docs/patterns.md`'
-        $implement.IndexOf('first example in this repository') | Should -BeLessThan $implement.IndexOf('/al-commit the complete worktree')
-        $toSpec | Should -Match 'consult `/mattpocock-skills:codebase-design` for each module'
+        $implement | Should -Match 'has no row for the slice''s shape, add the row al-codebase-design proposed'
+        $implement.IndexOf('has no row for the slice') | Should -BeLessThan $implement.IndexOf('/al-commit the complete worktree')
+        $toSpec | Should -Match 'consult `/mattpocock-skills:codebase-design` for each Level 1 module whose concept the Base App may already model'
     }
 
     It 'owns commits and pull requests in dedicated skills' {
