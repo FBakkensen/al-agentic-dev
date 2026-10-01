@@ -157,6 +157,16 @@ function Get-BuildConfig {
         return $Default
     }
 
+    # The real Release .app's folder: no default, $null when unset. A relative value is repo-root relative.
+    $releaseAppDir = Resolve-BreakingChangeValue 'releaseAppDir' 'ALBT_RELEASE_APP_DIR' $null
+    $releaseAppDir = if ([string]::IsNullOrWhiteSpace([string]$releaseAppDir)) {
+        $null
+    } elseif ([System.IO.Path]::IsPathRooted([string]$releaseAppDir)) {
+        [string]$releaseAppDir
+    } else {
+        Join-Path $repoRoot ([string]$releaseAppDir)
+    }
+
     $config = [PSCustomObject]@{
         AppDir                              = $appDir
         TestApps                            = $testApps
@@ -183,7 +193,7 @@ function Get-BuildConfig {
             ConvertTo-Boolean (Resolve-CoverageValue 'enabled' 'coverageEnabled' 'ALBT_COVERAGE_ENABLED' $false)
         }
         BreakingChangeEnabled               = ConvertTo-Boolean (Resolve-BreakingChangeValue 'enabled' 'ALBT_BREAKING_CHANGE_ENABLED' $false)
-        BaselinePackageCachePath            = Resolve-BreakingChangeValue 'baselinePackageCachePath' 'ALBT_BASELINE_CACHE_PATH' '.output/baseline-cache'
+        ReleaseAppDir                       = $releaseAppDir
     }
 
     return $config
@@ -277,7 +287,9 @@ function Set-BuildEnvironment {
     $env:ALBT_VALIDATE_CURRENT = $Config.ValidateCurrent
     $env:ALBT_APPLICATION_INSIGHTS_CONNECTION_STRING = $Config.ApplicationInsightsConnectionString
     $env:ALBT_BREAKING_CHANGE_ENABLED = $Config.BreakingChangeEnabled
-    $env:ALBT_BASELINE_CACHE_PATH = $Config.BaselinePackageCachePath
+    # An optional override: set when the config has a value, removed when it has none, so a value from an earlier config cannot go stale.
+    if ($Config.ReleaseAppDir) { $env:ALBT_RELEASE_APP_DIR = $Config.ReleaseAppDir }
+    else { Remove-Item Env:\ALBT_RELEASE_APP_DIR -ErrorAction SilentlyContinue }
 }
 
 # =============================================================================
@@ -1650,6 +1662,87 @@ function Get-AppSourceCopSettings {
     }
 }
 
+function Test-BaselineFoldersDistinct {
+    <#
+    .SYNOPSIS
+        Test that the Release .app folder and the compile baseline folder are two folders.
+    .DESCRIPTION
+        Returns $false when the two paths name one folder, $true otherwise. Each path is compared
+        by its full path, without a trailing separator, ignoring case. A relative path resolves
+        against the current location, so callers pass the paths each key resolves to from its own
+        base: breakingChange.releaseAppDir from the repo root, AppSourceCop.json's
+        baselinePackageCachePath from the app folder.
+    .PARAMETER ReleaseAppDir
+        The folder breakingChange.releaseAppDir resolves to.
+    .PARAMETER BaselinePackageCachePath
+        The folder AppSourceCop.json's baselinePackageCachePath resolves to.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$ReleaseAppDir,
+        [Parameter(Mandatory)][string]$BaselinePackageCachePath
+    )
+
+    $normalize = {
+        param([string]$Path)
+        $rooted = if ([System.IO.Path]::IsPathRooted($Path)) { $Path } else { Join-Path $PWD.Path $Path }
+        [System.IO.Path]::TrimEndingDirectorySeparator([System.IO.Path]::GetFullPath($rooted))
+    }
+    return -not ((& $normalize $ReleaseAppDir) -ieq (& $normalize $BaselinePackageCachePath))
+}
+
+function Get-BaselineFolderConflict {
+    <#
+    .SYNOPSIS
+        Return the error message when the Release .app folder and the compile baseline folder are one folder.
+    .DESCRIPTION
+        Returns $null when either folder is unset or the two are distinct, so a caller runs
+        `if ($message) { write it; exit 4 }` whatever is configured. The message names both keys.
+    .PARAMETER ReleaseAppDir
+        The folder breakingChange.releaseAppDir resolves to; $null when unset.
+    .PARAMETER AppSourceCop
+        The settings Get-AppSourceCopSettings returns; $null when the app has no AppSourceCop.json.
+    #>
+    [CmdletBinding()]
+    param(
+        [AllowNull()]$ReleaseAppDir,
+        [AllowNull()]$AppSourceCop
+    )
+
+    if (-not $ReleaseAppDir -or -not $AppSourceCop -or -not $AppSourceCop.BaselinePackageCachePath) { return $null }
+    if (Test-BaselineFoldersDistinct -ReleaseAppDir $ReleaseAppDir -BaselinePackageCachePath $AppSourceCop.BaselinePackageCachePath) { return $null }
+    return "breakingChange.releaseAppDir and AppSourceCop.json's baselinePackageCachePath name one folder ($ReleaseAppDir). Use two folders: the compile baseline fill replaces every .app in baselinePackageCachePath."
+}
+
+function Test-SymbolOnlyApp {
+    <#
+    .SYNOPSIS
+        Test whether a .app holds symbols only, through `al IsSymbolOnly`.
+    .DESCRIPTION
+        Runs `al IsSymbolOnly <path>` from the provisioned compiler that Get-LatestCompilerInfo
+        names. AL CLI 30.0 exits 0 for both answers and prints `Extension is symbol-only: True` or
+        `Extension is symbol-only: False`; a missing file exits 1 with a message. Throws when the
+        compiler is not provisioned, when the command exits non-zero, or when its output holds no
+        answer.
+    .PARAMETER Path
+        The .app file.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    $compilerInfo = Get-LatestCompilerInfo
+    $output = @(& $compilerInfo.CommandPath IsSymbolOnly $Path 2>&1 | ForEach-Object { "$_" })
+    $exitCode = $LASTEXITCODE
+    $text = $output -join "`n"
+    if ($exitCode -ne 0) {
+        throw "al IsSymbolOnly failed for '$Path' (exit $exitCode): $text"
+    }
+    if ($text -match 'symbol-only:\s*(True|False)') {
+        return $Matches[1] -ieq 'True'
+    }
+    throw "al IsSymbolOnly gave no answer for '$Path': $text"
+}
+
 function Get-AlValidationVerdict {
     <#
     .SYNOPSIS
@@ -1698,6 +1791,9 @@ Export-ModuleMember -Function @(
 
     # Breaking-change baseline
     'Get-AppSourceCopSettings'
+    'Test-BaselineFoldersDistinct'
+    'Get-BaselineFolderConflict'
+    'Test-SymbolOnlyApp'
     'Get-AlValidationVerdict'
 
     # Compiler

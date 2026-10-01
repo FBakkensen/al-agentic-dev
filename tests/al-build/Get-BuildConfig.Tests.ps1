@@ -52,6 +52,10 @@ Describe 'Get-BuildConfig uses Get-GitRepoRoot' {
 
 Describe 'Get-BuildConfig config model' {
     BeforeEach {
+        # Env beats al-build.json, and Set-BuildEnvironment writes ALBT_* into this process: snapshot the
+        # environment, start with both breakingChange overrides unset, and restore it in AfterEach.
+        $script:SavedEnvironment = [System.Environment]::GetEnvironmentVariables()
+        Remove-Item Env:\ALBT_RELEASE_APP_DIR, Env:\ALBT_BASELINE_CACHE_PATH -ErrorAction SilentlyContinue
         $script:ProbeRoot = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
         New-Item -ItemType Directory -Path $script:ProbeRoot -Force | Out-Null
         Push-Location $script:ProbeRoot
@@ -66,6 +70,14 @@ Describe 'Get-BuildConfig config model' {
 
     AfterEach {
         Pop-Location
+        foreach ($name in @([System.Environment]::GetEnvironmentVariables().Keys)) {
+            if (-not $script:SavedEnvironment.Contains($name)) { Remove-Item -LiteralPath "Env:\$name" }
+        }
+        foreach ($name in $script:SavedEnvironment.Keys) {
+            if ([System.Environment]::GetEnvironmentVariable($name) -ne $script:SavedEnvironment[$name]) {
+                Set-Item -LiteralPath "Env:\$name" -Value $script:SavedEnvironment[$name]
+            }
+        }
     }
 
     It 'resolves containerTestApps to absolute paths' {
@@ -85,5 +97,53 @@ Describe 'Get-BuildConfig config model' {
         $config = Get-BuildConfig
         $config.PSObject.Properties.Name | Should -Not -Contain 'UnitTestApp'
         $config.PSObject.Properties.Name | Should -Not -Contain 'UnitTestInitEvents'
+    }
+
+    It 'resolves breakingChange.releaseAppDir against the repo root' {
+        Set-Content -LiteralPath $configPath -Value '{"appDir":"app","testApps":[],"breakingChange":{"releaseAppDir":"release/app"}}'
+        (Get-BuildConfig).ReleaseAppDir | Should -Be (Join-Path $script:ProbeRoot 'release/app')
+    }
+
+    It 'keeps an absolute breakingChange.releaseAppDir as written' {
+        $absolute = Join-Path $TestDrive 'elsewhere'
+        @{ appDir = 'app'; testApps = @(); breakingChange = @{ releaseAppDir = $absolute } } |
+            ConvertTo-Json | Set-Content -LiteralPath $configPath
+        (Get-BuildConfig).ReleaseAppDir | Should -Be $absolute
+    }
+
+    It 'lets ALBT_RELEASE_APP_DIR override the al-build.json releaseAppDir' {
+        Set-Content -LiteralPath $configPath -Value '{"appDir":"app","testApps":[],"breakingChange":{"releaseAppDir":"from-json"}}'
+        $env:ALBT_RELEASE_APP_DIR = 'from-env'
+        (Get-BuildConfig).ReleaseAppDir | Should -Be (Join-Path $script:ProbeRoot 'from-env')
+    }
+
+    It 'leaves ReleaseAppDir $null when al-build.json and the environment lack it' {
+        Set-Content -LiteralPath $configPath -Value '{"appDir":"app","testApps":[],"breakingChange":{"enabled":true}}'
+        $config = Get-BuildConfig
+        $config.PSObject.Properties.Name | Should -Contain 'ReleaseAppDir'
+        $config.ReleaseAppDir | Should -BeNullOrEmpty
+    }
+
+    It 'exports ALBT_RELEASE_APP_DIR when the folder is set and removes a stale one when it is not' {
+        Set-Content -LiteralPath $configPath -Value '{"appDir":"app","testApps":[],"breakingChange":{"releaseAppDir":"release"}}'
+        $config = Get-BuildConfig
+        Set-BuildEnvironment -Config $config
+        $env:ALBT_RELEASE_APP_DIR | Should -Be (Join-Path $script:ProbeRoot 'release')
+
+        # The variable is still set from the first config; a config with no folder removes it.
+        $config.ReleaseAppDir = $null
+        Set-BuildEnvironment -Config $config
+        Test-Path Env:\ALBT_RELEASE_APP_DIR | Should -BeFalse
+    }
+
+    It 'no longer exposes a baseline cache path, though al-build.json and the environment still carry one' {
+        Set-Content -LiteralPath $configPath -Value '{"appDir":"app","testApps":[],"breakingChange":{"baselinePackageCachePath":".old"}}'
+        $env:ALBT_BASELINE_CACHE_PATH = '.older'
+        $config = Get-BuildConfig
+        $config.PSObject.Properties.Name | Should -Not -Contain 'BaselinePackageCachePath'
+
+        Remove-Item Env:\ALBT_BASELINE_CACHE_PATH
+        Set-BuildEnvironment -Config $config
+        Test-Path Env:\ALBT_BASELINE_CACHE_PATH | Should -BeFalse
     }
 }

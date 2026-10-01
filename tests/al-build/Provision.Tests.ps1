@@ -289,6 +289,35 @@ Describe 'provision.ps1 Release pin check' {
         }
     }
 
+    It 'runs the same-folder guard after both download-symbols.ps1 calls and before download-baseline.ps1' {
+        $guards = @($script:ProvisionAst.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.CommandAst] -and
+            $node.GetCommandName() -eq 'Get-BaselineFolderConflict'
+        }, $true))
+        $guards | Should -HaveCount 1
+
+        $script:SymbolCalls | Should -HaveCount 2
+        $script:BaselineCalls | Should -HaveCount 1
+        foreach ($symbolCall in $script:SymbolCalls) {
+            $guards[0].Extent.StartOffset | Should -BeGreaterThan $symbolCall.Extent.StartOffset
+        }
+
+        # The guard's message stops provision with the contract exit code, before the baseline step.
+        $stops = @($script:ProvisionAst.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.IfStatementAst] -and
+            $node.Clauses[0].Item1.Extent.Text -eq '$folderConflict'
+        }, $true))
+        $stops | Should -HaveCount 1
+        $stops[0].Extent.StartOffset | Should -BeGreaterThan $guards[0].Extent.StartOffset
+        $stops[0].Extent.EndOffset | Should -BeLessThan $script:BaselineCalls[0].Extent.StartOffset
+        $stops[0].Clauses[0].Item2.Extent.Text | Should -Match 'exit\s+\(Get-ExitCode\)\.Contract'
+
+        # The guard names no breakingChange.enabled: it runs whenever the folder resolves.
+        $guards[0].Extent.Text | Should -Match '-ReleaseAppDir\s+\$config\.ReleaseAppDir'
+    }
+
     It 'exits with download-baseline.ps1''s non-zero exit code, with no refresh-failed throw' {
         $baselineOffset = $script:BaselineCalls[0].Extent.StartOffset
         $exits = @($script:ProvisionAst.FindAll({
