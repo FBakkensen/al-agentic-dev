@@ -15,6 +15,8 @@
 .NOTES
     Optional environment variables:
       - ALBT_APP_DIR: override for default app directory when -AppDir omitted.
+      - ALBT_MSSYMBOLS_FEED, ALBT_APPSOURCESYMBOLS_FEED: replace a symbol feed root with a URL
+        or a local directory laid out as the feed's flat2 paths (see symbol-feed.psm1).
 #>
 
 param(
@@ -30,7 +32,8 @@ $ErrorActionPreference = 'Stop'
 $InformationPreference = 'Continue'
 
 # Import shared utilities
-Import-Module "$PSScriptRoot/common.psm1" -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot 'common.psm1') -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot 'symbol-feed.psm1') -DisableNameChecking
 
 $Exit = Get-ExitCode
 
@@ -43,69 +46,9 @@ $script:localDependencySkips = New-Object System.Collections.Generic.List[object
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
 
-# --- Helper Functions for Display ---
-function Get-CleanPackageName {
-    param([string]$PackageId)
-    # Remove .symbols.<guid> pattern first (for third-party packages)
-    $cleaned = $PackageId -replace '\.symbols\.[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}', ''
-    # Remove .symbols (for Microsoft packages)
-    $cleaned = $cleaned -replace '\.symbols$', ''
-    return $cleaned
-}
-
-# --- Defaults ---
-$DefaultFeeds = @(
-    'https://dynamicssmb2.pkgs.visualstudio.com/DynamicsBCPublicFeeds/_packaging/MSSymbols/nuget/v3/index.json',
-    'https://dynamicssmb2.pkgs.visualstudio.com/DynamicsBCPublicFeeds/_packaging/AppSourceSymbols/nuget/v3/index.json'
-)
-
 # --- Script-Specific Helper Functions ---
 # Note: Common utilities (Read-JsonFile, Expand-FullPath, Ensure-Directory, ConvertTo-SafePathSegment)
 # are imported from common.psm1. Only symbol-download-specific helpers are defined here.
-
-function Compare-Version {
-    param(
-        [string]$Left,
-        [string]$Right
-    )
-    if (-not $Left -and -not $Right) { return 0 }
-    if (-not $Left) { return -1 }
-    if (-not $Right) { return 1 }
-
-    $normalize = {
-        param([string]$v)
-        $parts = ($v -split '\.') | Where-Object { $_ -ne '' }
-        # Take first 4, pad with zeros
-        $nums = @()
-        for ($i = 0; $i -lt 4; $i++) {
-            if ($i -lt $parts.Count) {
-                $segment = $parts[$i]
-                $n = 0
-                if (-not [int]::TryParse($segment, [ref]$n)) {
-                    # Non-numeric; fallback to original string compare later
-                    return $null
-                }
-                $nums += $n
-            } else {
-                $nums += 0
-            }
-        }
-        return ,$nums
-    }
-
-    $lArr = & $normalize $Left
-    $rArr = & $normalize $Right
-
-    if ($lArr -and $rArr) {
-        for ($i=0; $i -lt 4; $i++) {
-            if ($lArr[$i] -lt $rArr[$i]) { return -1 }
-            if ($lArr[$i] -gt $rArr[$i]) { return 1 }
-        }
-        return 0
-    }
-
-    return [string]::Compare($Left, $Right, $true)
-}
 
 function Get-CopiedLocalDependencyIds {
     param([string]$CurrentAppDir)
@@ -304,78 +247,6 @@ function Test-PackagePresent {
     return Test-Path -LiteralPath $packagePath
 }
 
-function ConvertTo-VersionComparable {
-    param([string]$Version)
-    if (-not $Version) { return $null }
-    $parts = ($Version -split '\.') | Where-Object { $_ -ne '' }
-    $nums = @()
-    for ($i = 0; $i -lt 4; $i++) {
-        if ($i -lt $parts.Count) {
-            $segment = $parts[$i]
-            $n = 0
-            if (-not [int]::TryParse($segment, [ref]$n)) { return $Version }
-            $nums += $n
-        } else { $nums += 0 }
-    }
-    # Construct System.Version with 4 components for consistent sorting
-    try { return [System.Version]::new($nums[0], $nums[1], $nums[2], $nums[3]) } catch { return $Version }
-}
-
-function Select-PackageVersion {
-    param(
-        [string[]]$Versions,
-        [string]$MinimumVersion
-    )
-
-    if (-not $Versions -or $Versions.Count -eq 0) { return $null }
-
-    $ordered = $Versions |
-        Sort-Object -Descending -Property { ConvertTo-VersionComparable $_ }
-
-    foreach ($version in $ordered) {
-        if (-not $MinimumVersion -or (Compare-Version -Left $version -Right $MinimumVersion) -ge 0) {
-            return $version
-        }
-    }
-
-    return $ordered[0]
-}
-
-function Get-PackageFeedMetadata {
-    param(
-        [string]$PackageId,
-        [string[]]$Feeds
-    )
-
-    $packageIdLower = $PackageId.ToLowerInvariant()
-    foreach ($feed in $Feeds) {
-        if ([string]::IsNullOrWhiteSpace($feed)) { continue }
-        $baseUrl = $feed.Trim()
-        if ($baseUrl.EndsWith('/index.json')) {
-            $baseUrl = $baseUrl.Substring(0, $baseUrl.Length - '/index.json'.Length)
-        }
-        $baseUrl = $baseUrl.TrimEnd('/')
-        $indexUrl = "{0}/flat2/{1}/index.json" -f $baseUrl, $packageIdLower
-        try {
-            $response = Invoke-RestMethod -Method Get -Uri $indexUrl -ErrorAction Stop
-            if ($response -and $response.versions) {
-                return [pscustomobject]@{
-                    Feed = $baseUrl
-                    Versions = [string[]]$response.versions
-                }
-            }
-        } catch {
-            $httpResponse = $_.Exception.Response
-            if ($httpResponse -and $httpResponse.StatusCode.value__ -eq 404) {
-                continue
-            }
-            Write-Warning "Failed to query ${indexUrl}: $($_.Exception.Message)"
-        }
-    }
-
-    return $null
-}
-
 function Get-OrAddPackageMetadata {
     param(
         [string]$PackageId,
@@ -396,237 +267,6 @@ function Get-OrAddPackageMetadata {
     }
 
     return $metadata
-}
-
-function Download-PackageNupkg {
-    param(
-        [string]$Feed,
-        [string]$PackageId,
-        [string]$Version,
-        [string]$DestinationDirectory
-    )
-
-    $packageIdLower = $PackageId.ToLowerInvariant()
-    $fileName = "{0}.{1}.nupkg" -f $packageIdLower, $Version
-    $downloadUrl = "{0}/flat2/{1}/{2}/{3}" -f $Feed.TrimEnd('/'), $packageIdLower, $Version, $fileName
-    $destinationPath = Join-Path -Path $DestinationDirectory -ChildPath $fileName
-
-    $cleanPackageName = Get-CleanPackageName -PackageId $PackageId
-    Write-BuildMessage -Type Step -Message "Downloading: $cleanPackageName"
-    Write-BuildMessage -Type Detail -Message "Version: $Version"
-    Write-BuildMessage -Type Detail -Message "Source: $Feed"
-
-    try {
-        Invoke-WebRequest -Uri $downloadUrl -OutFile $destinationPath -UseBasicParsing -MaximumRedirection 5 -ErrorAction Stop | Out-Null
-    } catch {
-        throw "Failed to download package $PackageId@$Version from ${downloadUrl}: $($_.Exception.Message)"
-    }
-
-    if ((Get-Item -LiteralPath $destinationPath).Length -eq 0) {
-        throw "Downloaded package $PackageId@$Version from $downloadUrl is empty."
-    }
-
-    return $destinationPath
-}
-
-function Get-PackageDependenciesFromArchive {
-    param([System.IO.Compression.ZipArchive]$Archive)
-
-    $nuspecEntry = $Archive.Entries | Where-Object { $_.FullName -match '\.nuspec$' } | Select-Object -First 1
-    if (-not $nuspecEntry) { return @() }
-
-    $reader = New-Object System.IO.StreamReader($nuspecEntry.Open())
-    try {
-        $content = $reader.ReadToEnd()
-    } finally {
-        $reader.Dispose()
-    }
-
-    if (-not $content) { return @() }
-
-    try {
-        $xml = [xml]$content
-    } catch {
-        Write-Warning "Failed to parse nuspec for package: $($_.Exception.Message)"
-        return @()
-    }
-
-    $namespaceUri = $xml.DocumentElement.NamespaceURI
-    $namespaceManager = New-Object System.Xml.XmlNamespaceManager($xml.NameTable)
-    if ($namespaceUri) {
-        $namespaceManager.AddNamespace('ns', $namespaceUri)
-    }
-
-    $results = New-Object System.Collections.Generic.List[object]
-
-    if ($namespaceUri) {
-        $directDependencies = $xml.SelectNodes('//ns:package/ns:metadata/ns:dependencies/ns:dependency', $namespaceManager)
-        foreach ($dep in $directDependencies) {
-            if (-not $dep) { continue }
-            $id = [string]$dep.Attributes['id']?.Value
-            if (-not $id) { continue }
-            $range = [string]$dep.Attributes['version']?.Value
-            $minVersion = Get-MinimumVersionFromRange -Range $range
-            $results.Add([pscustomobject]@{ Id = $id; MinimumVersion = $minVersion }) | Out-Null
-        }
-
-        $groupDependencies = $xml.SelectNodes('//ns:package/ns:metadata/ns:dependencies/ns:group/ns:dependency', $namespaceManager)
-        foreach ($dep in $groupDependencies) {
-            if (-not $dep) { continue }
-            $id = [string]$dep.Attributes['id']?.Value
-            if (-not $id) { continue }
-            $range = [string]$dep.Attributes['version']?.Value
-            $minVersion = Get-MinimumVersionFromRange -Range $range
-            $results.Add([pscustomobject]@{ Id = $id; MinimumVersion = $minVersion }) | Out-Null
-        }
-    } else {
-        $directDependencies = $xml.SelectNodes('//package/metadata/dependencies/dependency')
-        foreach ($dep in $directDependencies) {
-            if (-not $dep) { continue }
-            $id = [string]$dep.Attributes['id']?.Value
-            if (-not $id) { continue }
-            $range = [string]$dep.Attributes['version']?.Value
-            $minVersion = Get-MinimumVersionFromRange -Range $range
-            $results.Add([pscustomobject]@{ Id = $id; MinimumVersion = $minVersion }) | Out-Null
-        }
-
-        $groupDependencies = $xml.SelectNodes('//package/metadata/dependencies/group/dependency')
-        foreach ($dep in $groupDependencies) {
-            if (-not $dep) { continue }
-            $id = [string]$dep.Attributes['id']?.Value
-            if (-not $id) { continue }
-            $range = [string]$dep.Attributes['version']?.Value
-            $minVersion = Get-MinimumVersionFromRange -Range $range
-            $results.Add([pscustomobject]@{ Id = $id; MinimumVersion = $minVersion }) | Out-Null
-        }
-    }
-
-    return $results.ToArray()
-}
-
-function Get-MinimumVersionFromRange {
-    param([string]$Range)
-
-    if (-not $Range) { return $null }
-
-    $trimmed = $Range.Trim()
-    if (-not $trimmed) { return $null }
-
-    if ($trimmed.StartsWith('[') -or $trimmed.StartsWith('(')) {
-        $trimmed = $trimmed.TrimStart('[', '(').TrimEnd(']', ')')
-        $parts = $trimmed.Split(',')
-        if ($parts.Count -eq 0 -or [string]::IsNullOrWhiteSpace($parts[0])) { return $null }
-        return $parts[0].Trim()
-    }
-
-    return $trimmed
-}
-
-function Extract-SymbolApp {
-    param(
-        [System.IO.Compression.ZipArchive]$Archive,
-        [string]$PackageId,
-        [string]$Version,
-        [string]$OutputDirectory
-    )
-
-    Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
-
-    $appEntry = $Archive.Entries | Where-Object { $_.FullName.ToLowerInvariant().EndsWith('.app') } | Select-Object -First 1
-    if (-not $appEntry) {
-        Write-Warning "No .app file found inside package $PackageId."
-        return $null
-    }
-
-    # Create filename using clean package name + version instead of full package ID
-    $cleanName = Get-CleanPackageName -PackageId $PackageId
-    $destinationName = (ConvertTo-SafePathSegment -Value "$cleanName.$Version") + '.app'
-    $destinationPath = Join-Path -Path $OutputDirectory -ChildPath $destinationName
-
-    $sourceStream = $appEntry.Open()
-    try {
-        $fileStream = [System.IO.File]::Open($destinationPath, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
-        try {
-            $sourceStream.CopyTo($fileStream)
-        } finally {
-            $fileStream.Dispose()
-        }
-    } finally {
-        $sourceStream.Dispose()
-    }
-
-    $cleanPackageName = Get-CleanPackageName -PackageId $PackageId
-    Write-BuildMessage -Type Success -Message "Extracted: $cleanPackageName"
-    Write-BuildMessage -Type Detail -Message "Location: $destinationPath"
-
-    return $destinationPath
-}
-
-function Resolve-SymbolPackage {
-    param(
-        [string]$PackageId,
-        [string]$MinimumVersion,
-        [string[]]$Feeds,
-        [string]$CacheDir
-    )
-
-    $metadata = Get-PackageFeedMetadata -PackageId $PackageId -Feeds $Feeds
-    if (-not $metadata) {
-        throw "Unable to locate package $PackageId on the configured feeds."
-    }
-
-    $selectedVersion = Select-PackageVersion -Versions $metadata.Versions -MinimumVersion $MinimumVersion
-    if (-not $selectedVersion) {
-        throw "No available versions found for package $PackageId"
-    }
-
-    $maxAvailableVersion = Select-PackageVersion -Versions $metadata.Versions -MinimumVersion $null
-
-    $tempDir = New-TemporaryDirectory
-    $downloadedNupkg = $null
-    try {
-        $downloadedNupkg = Download-PackageNupkg -Feed $metadata.Feed -PackageId $PackageId -Version $selectedVersion -DestinationDirectory $tempDir
-        $archive = [System.IO.Compression.ZipFile]::OpenRead($downloadedNupkg)
-        try {
-            $appPath = Extract-SymbolApp -Archive $archive -PackageId $PackageId -Version $selectedVersion -OutputDirectory $CacheDir
-            if (-not $appPath) {
-                throw "Package $PackageId@$selectedVersion did not contain a .app file."
-            }
-
-            $dependencies = Get-PackageDependenciesFromArchive -Archive $archive
-
-            $uniqueDependencies = @{}
-            foreach ($dependency in $dependencies) {
-                $depId = [string]$dependency.Id
-                if (-not $depId) { continue }
-                $depMinimum = $dependency.MinimumVersion
-
-                if ($uniqueDependencies.ContainsKey($depId)) {
-                    $existing = $uniqueDependencies[$depId]
-                    if ($depMinimum -and (-not $existing.MinimumVersion -or (Compare-Version -Left $depMinimum -Right $existing.MinimumVersion) -gt 0)) {
-                        $uniqueDependencies[$depId] = [pscustomobject]@{ Id = $depId; MinimumVersion = $depMinimum }
-                    }
-                } else {
-                    $uniqueDependencies[$depId] = [pscustomobject]@{ Id = $depId; MinimumVersion = $depMinimum }
-                }
-            }
-
-            $script:packageDependenciesCache[$PackageId] = @($uniqueDependencies.Values)
-
-            return [pscustomobject]@{
-                Version = $selectedVersion
-                MaxAvailableVersion = $maxAvailableVersion
-                Dependencies = @($uniqueDependencies.Values)
-            }
-        } finally {
-            $archive.Dispose()
-        }
-    } finally {
-        if ($downloadedNupkg -and (Test-Path -LiteralPath $downloadedNupkg)) {
-            Remove-Item -LiteralPath $downloadedNupkg -Force -ErrorAction SilentlyContinue
-        }
-        Remove-Item -LiteralPath $tempDir -Recurse -Force -ErrorAction SilentlyContinue
-    }
 }
 
 function Write-Manifest {
@@ -705,7 +345,7 @@ if ($packageMap.Count -eq 0) {
     exit 0
 }
 
-$feeds = $DefaultFeeds
+$feeds = @(Get-SymbolFeeds)
 
 if ($feeds.Count -eq 0) {
     throw 'No symbol feeds configured. Update script defaults.'
@@ -801,6 +441,7 @@ while ($queue.Count -gt 0) {
 
         try {
             $resolveResult = Resolve-SymbolPackage -PackageId $packageId -MinimumVersion $minimumVersion -Feeds $feeds -CacheDir $cacheDir
+            $script:packageDependenciesCache[$packageId] = @($resolveResult.Dependencies)
         } catch {
             throw "Failed to download package ${packageId}: $($_.Exception.Message)"
         }
