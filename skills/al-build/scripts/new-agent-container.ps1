@@ -118,11 +118,11 @@ if ($existingContainer) {
         Write-BuildMessage -Type Warning -Message "Remove-BcContainer failed; using docker rm -f"
         docker rm -f $AgentName 2>$null | Out-Null
     }
-    # Remove stale hosts entry
+    # Remove stale hosts entries (bare and .test)
     try {
-        Remove-HostsEntry -Hostname $AgentName
+        Remove-BCAgentContainerHost -ContainerName $AgentName
     } catch {
-        Write-BuildMessage -Type Warning -Message "Could not remove hosts entry"
+        Write-BuildMessage -Type Warning -Message "Could not remove hosts entries"
     }
     Write-BuildMessage -Type Success -Message "Previous container removed"
 }
@@ -254,21 +254,15 @@ if (-not $ready) {
 
 Write-BuildMessage -Type Success -Message "Container is healthy"
 
-# Get container IP and update hosts
+# Get container IP, write the hosts lines, and put PublicWebBaseUrl on the .test host
 Write-BuildMessage -Type Step -Message "Configuring network..."
 $containerIP = docker inspect $AgentName --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' 2>$null
-if ($containerIP) {
-    Add-HostsEntry -Hostname $AgentName -IPAddress $containerIP
-    Write-BuildMessage -Type Detail -Message "Hosts entry added: $AgentName -> $containerIP"
-}
-
-# Update PublicWebBaseUrl
-Write-BuildMessage -Type Step -Message "Updating PublicWebBaseUrl..."
 try {
-    Update-BCPublicWebBaseUrl -ContainerName $AgentName -NewHostname $AgentName | Out-Null
-    Write-BuildMessage -Type Success -Message "PublicWebBaseUrl updated"
+    Set-BCAgentContainerHost -ContainerName $AgentName -IPAddress $containerIP
+    Write-BuildMessage -Type Success -Message "Hosts entries and PublicWebBaseUrl set"
 } catch {
-    Write-BuildMessage -Type Warning -Message "Could not update PublicWebBaseUrl: $_"
+    Write-BuildMessage -Type Error -Message "Could not set the .test host or PublicWebBaseUrl: $_"
+    exit $Exit.Integration
 }
 
 # Register container

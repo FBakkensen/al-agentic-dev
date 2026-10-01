@@ -962,30 +962,22 @@ function Get-EnabledAnalyzerPath {
 # Business Central Integration
 # =============================================================================
 
-function Add-HostsEntry {
-    <#
-    .SYNOPSIS
-        Add or update an entry in the Windows hosts file
-    .DESCRIPTION
-        Safely updates C:\Windows\System32\drivers\etc\hosts with file locking,
-        retry logic, duplicate removal, and ASCII encoding. Assumes write
-        permissions are pre-granted on the hosts file.
-    .PARAMETER Hostname
-        The hostname to add (e.g., 'bctest', 'my-container')
-    .PARAMETER IPAddress
-        The IP address to map to the hostname
-    .EXAMPLE
-        Add-HostsEntry -Hostname 'bctest' -IPAddress '172.28.0.5'
-    #>
+$script:DefaultHostsFile = 'C:\Windows\System32\drivers\etc\hosts'
+
+function Update-HostsFile {
+    # Shared open, retry, and rewrite for the hosts helpers. Drops the lines that
+    # name $Hostname, appends "$IPAddress<tab>$Hostname" when an IP is given, and
+    # keeps the file ending in exactly one line break.
     param(
+        [Parameter(Mandatory = $true)]
+        [string]$HostsFile,
+
         [Parameter(Mandatory = $true)]
         [string]$Hostname,
 
-        [Parameter(Mandatory = $true)]
         [string]$IPAddress
     )
 
-    $hostsFile = 'C:\Windows\System32\drivers\etc\hosts'
     $file = $null
     $maxRetries = 10
     $attempt = 0
@@ -993,7 +985,7 @@ function Add-HostsEntry {
     while ($null -eq $file -and $attempt -lt $maxRetries) {
         try {
             $file = [System.IO.File]::Open(
-                $hostsFile,
+                $HostsFile,
                 [System.IO.FileMode]::Open,
                 [System.IO.FileAccess]::ReadWrite,
                 [System.IO.FileShare]::Read
@@ -1016,17 +1008,21 @@ function Add-HostsEntry {
         $hostsContent = [System.Text.Encoding]::ASCII.GetString($content)
 
         # Parse lines and remove any existing entry for this hostname
-        $lines = $hostsContent.Replace("`r`n", "`n").Split("`n")
+        $lines = @($hostsContent.Replace("`r`n", "`n").Split("`n"))
+        while ($lines.Count -gt 0 -and $lines[-1] -eq '') {
+            $lines = @($lines | Select-Object -First ($lines.Count - 1))
+        }
         $escapedHostname = [Regex]::Escape($Hostname)
-        $lines = $lines | Where-Object {
+        $lines = @($lines | Where-Object {
             -not ($_ -match "^\s*\S+\s+$escapedHostname(\s|#|$)")
+        })
+
+        if ($IPAddress) {
+            $lines += "$IPAddress`t$Hostname"
         }
 
-        # Add new entry
-        $lines += "$IPAddress`t$Hostname"
-
         # Write back with ASCII encoding
-        $newContent = [System.Text.Encoding]::ASCII.GetBytes(($lines -join "`r`n") + "`r`n")
+        $newContent = [System.Text.Encoding]::ASCII.GetBytes((($lines -join "`r`n") + "`r`n"))
         $file.Seek(0, [System.IO.SeekOrigin]::Begin) | Out-Null
         $file.Write($newContent, 0, $newContent.Length)
         $file.SetLength($newContent.Length)
@@ -1039,6 +1035,37 @@ function Add-HostsEntry {
     }
 }
 
+function Add-HostsEntry {
+    <#
+    .SYNOPSIS
+        Add or update an entry in the Windows hosts file
+    .DESCRIPTION
+        Safely updates C:\Windows\System32\drivers\etc\hosts with file locking,
+        retry logic, duplicate removal, and ASCII encoding. Assumes write
+        permissions are pre-granted on the hosts file. The match is on the first
+        host name after the IP, so each name takes its own line.
+    .PARAMETER Hostname
+        The hostname to add (e.g., 'bctest', 'my-container')
+    .PARAMETER IPAddress
+        The IP address to map to the hostname
+    .PARAMETER HostsFile
+        Hosts file to edit; the seam tests point at a TestDrive file. Defaults to the Windows hosts file.
+    .EXAMPLE
+        Add-HostsEntry -Hostname 'bctest' -IPAddress '172.28.0.5'
+    #>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Hostname,
+
+        [Parameter(Mandatory = $true)]
+        [string]$IPAddress,
+
+        [string]$HostsFile = $script:DefaultHostsFile
+    )
+
+    Update-HostsFile -HostsFile $HostsFile -Hostname $Hostname -IPAddress $IPAddress
+}
+
 function Remove-HostsEntry {
     <#
     .SYNOPSIS
@@ -1049,63 +1076,94 @@ function Remove-HostsEntry {
         permissions are pre-granted on the hosts file.
     .PARAMETER Hostname
         The hostname to remove
+    .PARAMETER HostsFile
+        Hosts file to edit; the seam tests point at a TestDrive file. Defaults to the Windows hosts file.
     .EXAMPLE
         Remove-HostsEntry -Hostname 'bctest'
     #>
     param(
         [Parameter(Mandatory = $true)]
-        [string]$Hostname
+        [string]$Hostname,
+
+        [string]$HostsFile = $script:DefaultHostsFile
     )
 
-    $hostsFile = 'C:\Windows\System32\drivers\etc\hosts'
-    $file = $null
-    $maxRetries = 10
-    $attempt = 0
+    Update-HostsFile -HostsFile $HostsFile -Hostname $Hostname
+}
 
-    while ($null -eq $file -and $attempt -lt $maxRetries) {
-        try {
-            $file = [System.IO.File]::Open(
-                $hostsFile,
-                [System.IO.FileMode]::Open,
-                [System.IO.FileAccess]::ReadWrite,
-                [System.IO.FileShare]::Read
-            )
-        }
-        catch [System.IO.IOException] {
-            $attempt++
-            Start-Sleep -Milliseconds 500
-        }
+function Get-BCContainerTestHostname {
+    <#
+    .SYNOPSIS
+        The <container>.test host name that serves a container's Web Client
+    .DESCRIPTION
+        The one owner of the .test name: creation, prune, and the republish
+        result all take it from here. The .test suffix can only mean local, so
+        a browser may sign in on it.
+    .PARAMETER ContainerName
+        The bare container name
+    #>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ContainerName
+    )
+
+    return "$ContainerName.test"
+}
+
+function Set-BCAgentContainerHost {
+    <#
+    .SYNOPSIS
+        Give an agent container its bare and .test hosts lines and put PublicWebBaseUrl on the .test host
+    .DESCRIPTION
+        Writes the bare name and the .test name as two hosts lines with the
+        container IP (none when the IP is empty), then sets PublicWebBaseUrl to
+        the .test host. BcContainerHelper keeps addressing the container by its
+        bare name. Throws when any step fails.
+    .PARAMETER ContainerName
+        The bare container name
+    .PARAMETER IPAddress
+        The container IP
+    .PARAMETER HostsFile
+        Hosts file to edit; defaults to the Windows hosts file.
+    #>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ContainerName,
+
+        [string]$IPAddress,
+
+        [string]$HostsFile = $script:DefaultHostsFile
+    )
+
+    $testHost = Get-BCContainerTestHostname -ContainerName $ContainerName
+
+    if ($IPAddress) {
+        Add-HostsEntry -HostsFile $HostsFile -Hostname $ContainerName -IPAddress $IPAddress
+        Add-HostsEntry -HostsFile $HostsFile -Hostname $testHost -IPAddress $IPAddress
+        Write-BuildMessage -Type Detail -Message "Hosts entries added: $ContainerName, $testHost -> $IPAddress"
     }
 
-    if ($null -eq $file) {
-        throw "Failed to open hosts file after $maxRetries attempts"
-    }
+    Update-BCPublicWebBaseUrl -ContainerName $ContainerName -NewHostname $testHost | Out-Null
+}
 
-    try {
-        # Read existing content
-        $content = New-Object System.Byte[] ($file.Length)
-        $file.Read($content, 0, $file.Length) | Out-Null
-        $hostsContent = [System.Text.Encoding]::ASCII.GetString($content)
+function Remove-BCAgentContainerHost {
+    <#
+    .SYNOPSIS
+        Remove an agent container's bare and .test hosts lines
+    .PARAMETER ContainerName
+        The bare container name
+    .PARAMETER HostsFile
+        Hosts file to edit; defaults to the Windows hosts file.
+    #>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ContainerName,
 
-        # Parse lines and remove entries for this hostname
-        $lines = $hostsContent.Replace("`r`n", "`n").Split("`n")
-        $escapedHostname = [Regex]::Escape($Hostname)
-        $lines = $lines | Where-Object {
-            -not ($_ -match "^\s*\S+\s+$escapedHostname(\s|#|$)")
-        }
+        [string]$HostsFile = $script:DefaultHostsFile
+    )
 
-        # Write back with ASCII encoding
-        $newContent = [System.Text.Encoding]::ASCII.GetBytes(($lines -join "`r`n") + "`r`n")
-        $file.Seek(0, [System.IO.SeekOrigin]::Begin) | Out-Null
-        $file.Write($newContent, 0, $newContent.Length)
-        $file.SetLength($newContent.Length)
-        $file.Flush()
-    }
-    finally {
-        if ($file) {
-            $file.Dispose()
-        }
-    }
+    Remove-HostsEntry -HostsFile $HostsFile -Hostname $ContainerName
+    Remove-HostsEntry -HostsFile $HostsFile -Hostname (Get-BCContainerTestHostname -ContainerName $ContainerName)
 }
 
 function Update-BCPublicWebBaseUrl {
@@ -1578,15 +1636,19 @@ function Remove-OrphanedAgentContainers {
         Remove orphaned and stale agent containers
     .DESCRIPTION
         Removes containers that are orphaned (branch deleted) or stale (unused > 7 days).
-        Also removes associated publish-state files and registry entries.
+        Also removes associated hosts entries (bare and .test), publish-state files, and registry entries.
     .PARAMETER WhatIf
         Preview what would be removed without making changes
     .PARAMETER StaleThresholdDays
         Number of days after which an unused container is considered stale (default: 7)
+    .PARAMETER HostsFile
+        Hosts file the bare and .test entries are removed from; defaults to the Windows hosts file.
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
-        [int]$StaleThresholdDays = 7
+        [int]$StaleThresholdDays = 7,
+
+        [string]$HostsFile = $script:DefaultHostsFile
     )
 
     $orphaned = @(Get-OrphanedAgentContainers -StaleThresholdDays $StaleThresholdDays)
@@ -1620,15 +1682,15 @@ function Remove-OrphanedAgentContainers {
                     Write-BuildMessage -Type Warning -Message "Remove-BcContainer failed; using docker rm -f"
                     docker rm -f $container.ContainerName 2>$null | Out-Null
                 }
-
-                # Remove hosts entry
-                try {
-                    Remove-HostsEntry -Hostname $container.ContainerName
-                } catch {
-                    Write-BuildMessage -Type Warning -Message "Could not remove hosts entry: $($_.Exception.Message)"
-                }
             } else {
                 Write-BuildMessage -Type Detail -Message "Container not running (already removed)"
+            }
+
+            # Remove the bare and .test hosts entries, also for a container docker no longer lists
+            try {
+                Remove-BCAgentContainerHost -ContainerName $container.ContainerName -HostsFile $HostsFile
+            } catch {
+                Write-BuildMessage -Type Warning -Message "Could not remove hosts entries: $($_.Exception.Message)"
             }
 
             # Remove publish-state files for this container
@@ -2949,6 +3011,9 @@ Export-ModuleMember -Function @(
     # Business Central Integration
     'Add-HostsEntry'
     'Remove-HostsEntry'
+    'Get-BCContainerTestHostname'
+    'Set-BCAgentContainerHost'
+    'Remove-BCAgentContainerHost'
     'Update-BCPublicWebBaseUrl'
     'New-BCLaunchConfig'
     'Get-BCCredential'
