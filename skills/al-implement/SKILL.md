@@ -50,7 +50,7 @@ Fix every ⛔ and /al-commit the fixes, so the slice's final commit carries none
 
 ## Close
 
-At every exit, including a stop for the user and an unresolved red:
+When the slice gives a shape its first example in this repository, add its row to `docs/patterns.md` from the proposed row and the objects that now realize it. At every exit, including a stop for the user and an unresolved red:
 
 ▶ haiku · /al-commit the complete worktree, work items <ids> → commit hashes and subjects, remaining worktree
 

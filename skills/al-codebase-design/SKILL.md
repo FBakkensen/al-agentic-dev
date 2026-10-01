@@ -5,7 +5,7 @@ description: Use whenever /mattpocock-skills:codebase-design runs against AL cod
 
 # al-codebase-design - BC shapes for deep modules
 
-In: `/mattpocock-skills:codebase-design` running against AL code, consulted by a developer, `/mattpocock-skills:tdd`, or `/mattpocock-skills:improve-codebase-architecture`. The entry skill owns the deep-module vocabulary; this addition supplies the Business Central shapes, the platform precedent, and the AL seam rule. It needs no work item.
+In: `/mattpocock-skills:codebase-design` running against AL code, consulted by a developer, `/mattpocock-skills:tdd`, `/mattpocock-skills:improve-codebase-architecture`, or `/al-to-spec`. The entry skill owns the deep-module vocabulary; this addition supplies the Business Central shapes, the platform precedent, and the AL seam rule. It needs no work item and writes no repo file.
 
 ## Speak in BC shapes
 
@@ -17,24 +17,16 @@ Start from the canonical shape the concept belongs to:
 - setup
 - dimensions
 
-Another verified Base App precedent can stand in when none fits.
+Every BC name shown or written here comes from a lookup in this session. Reach for the platform before designing custom structure, and write BC vocabulary: Insert, Post, Validate, Ledger Entry, codeunit, procedure.
 
-▶ sonnet · shape survey: how the Base App models the concept — tables, seams, events — read in .bcapps/release, clone through /al-clone-bcapps when absent → table of table, seam, event, file:line
+When the consultation names a concept or candidate, survey the platform for it. A consultation for vocabulary only gets the shape list and the grounding rule, with no survey.
 
-Every BC object, table, field, procedure, event, or enum value named here, in the survey and in `docs/patterns.md`, comes from a lookup in this session. Reach for the platform before designing custom structure, and write BC vocabulary: Insert, Post, Validate, Ledger Entry, codeunit, procedure.
+▶ sonnet · shape survey: how the Base App models <the named concept, in the caller's words> — tables, seams, events — read in .bcapps/release, clone through /al-clone-bcapps when absent → table of table, seam, event, file:line
 
 ## Seams
 
-An AL interface with one implementation is a hypothetical seam; leave it out until a second implementation exists.
-
-## Patterns upkeep
-
-When the Consumer repository gains its first example of a shape, record that shape in `docs/patterns.md`: the shape, the objects that realize it, and the survey row it follows. Later examples of a recorded shape add nothing.
+An AL interface with one implementation stays out unless a second implementation or a stable external contract proves the seam. An extensible enum plus an interface that other apps implement is such a contract.
 
 ## Close
 
-The pass ends when the concept has one named shape backed by the survey table and `docs/patterns.md` records any first example. When `docs/patterns.md` changed:
-
-▶ haiku · /al-commit the complete worktree — the `docs/patterns.md` change and the rest → commit hashes and subjects, remaining worktree
-
-Return the shape and the survey table to the entry skill that called.
+For a named concept, the pass ends when it has one named shape backed by the survey table. Return that shape, the table, and one proposed `docs/patterns.md` row — shape, the objects expected to realize it, the survey row it follows — to the entry skill that called. `/al-implement` records the row once the objects exist.

@@ -35,7 +35,7 @@ Embed the verified PNG URL with its explanatory text under `Business process`.
 
 ▶ haiku · /al-arc42 the Building Block Level 1 view from the settled black boxes → HTML path, SVG and PNG paths, alt text, publishable fragments
 
-Level 1 is settled when every important behavior has one module owner and each caller-visible interface is named. Add a Runtime View only when module call order, ownership, or a transaction boundary stays unclear after the BPMN map, and build it the same way:
+Before Level 1 settles, consult `/mattpocock-skills:codebase-design` for each module's concept; its survey backs the boundary. Level 1 is settled when every important behavior has one module owner and each caller-visible interface is named. Add a Runtime View only when module call order, ownership, or a transaction boundary stays unclear after the BPMN map, and build it the same way:
 
 ▶ haiku · /al-arc42 the Runtime View from the settled sequence → HTML path, SVG and PNG paths, alt text, publishable fragments
 

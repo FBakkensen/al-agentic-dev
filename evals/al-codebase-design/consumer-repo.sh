@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Seeds an AL Consumer repository: an app and its source.
+# Seeds an AL Consumer repository that /mattpocock-skills:setup-matt-pocock-skills
+# already pointed at Azure DevOps: an app, its source, and the tracker text.
 set -euo pipefail
 
-mkdir -p src
+mkdir -p src docs/agents
 
 cat > app.json <<'JSON'
 {
@@ -26,6 +27,20 @@ table 50100 "ShopFloor Setup"
     }
 }
 AL
+
+cat > CLAUDE.md <<'MD'
+## Agent skills
+
+### Issue tracker
+
+Azure DevOps work items in org `naveksaas`; new Original work items go into the `NAVEKSA NEXT` project. See `docs/agents/issue-tracker.md`.
+MD
+
+cat > docs/agents/issue-tracker.md <<'MD'
+# Issue tracker: Azure DevOps
+
+Work items for this repository live in the Azure DevOps org `naveksaas`, read and written through the bundled `ado` MCP server's tools. The Original work item is the Feature, Bug, or PBI the request arrives on; several slices each get one direct child PBI under it.
+MD
 
 git init -q
 git -c core.autocrlf=false add -A
