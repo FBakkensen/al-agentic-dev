@@ -262,6 +262,20 @@ try {
     Write-BuildMessage -Type Success -Message "Hosts entries and PublicWebBaseUrl set"
 } catch {
     Write-BuildMessage -Type Error -Message "Could not set the .test host or PublicWebBaseUrl: $_"
+    # Registration comes after this step, so prune would never remove the container; the next
+    # Ensure-BCAgentContainer would also reuse it with PublicWebBaseUrl off the .test host.
+    Write-BuildMessage -Type Warning -Message "Removing container '$AgentName' and its hosts entries"
+    try {
+        Remove-BcContainer -containerName $AgentName -ErrorAction Stop | Out-Null
+    } catch {
+        Write-BuildMessage -Type Warning -Message "Remove-BcContainer failed; using docker rm -f"
+        docker rm -f $AgentName 2>$null | Out-Null
+    }
+    try {
+        Remove-BCAgentContainerHost -ContainerName $AgentName
+    } catch {
+        Write-BuildMessage -Type Warning -Message "Could not remove hosts entries: $($_.Exception.Message)"
+    }
     exit $Exit.Integration
 }
 

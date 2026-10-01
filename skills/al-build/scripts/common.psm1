@@ -1096,9 +1096,8 @@ function Get-BCContainerTestHostname {
     .SYNOPSIS
         The <container>.test host name that serves a container's Web Client
     .DESCRIPTION
-        The one owner of the .test name: creation, prune, and the republish
-        result all take it from here. The .test suffix can only mean local, so
-        a browser may sign in on it.
+        The one owner of the .test name: creation and prune take it from here.
+        The .test suffix can only mean local, so a browser may sign in on it.
     .PARAMETER ContainerName
         The bare container name
     #>
@@ -1142,6 +1141,9 @@ function Set-BCAgentContainerHost {
         Add-HostsEntry -HostsFile $HostsFile -Hostname $testHost -IPAddress $IPAddress
         Write-BuildMessage -Type Detail -Message "Hosts entries added: $ContainerName, $testHost -> $IPAddress"
     }
+    else {
+        Write-BuildMessage -Type Warning -Message "No container IP; '$testHost' has no hosts entry, so PublicWebBaseUrl points at a host that will not resolve"
+    }
 
     Update-BCPublicWebBaseUrl -ContainerName $ContainerName -NewHostname $testHost | Out-Null
 }
@@ -1150,6 +1152,9 @@ function Remove-BCAgentContainerHost {
     <#
     .SYNOPSIS
         Remove an agent container's bare and .test hosts lines
+    .DESCRIPTION
+        Attempts both removals even when the first fails, then throws one error
+        naming every entry that failed.
     .PARAMETER ContainerName
         The bare container name
     .PARAMETER HostsFile
@@ -1162,8 +1167,19 @@ function Remove-BCAgentContainerHost {
         [string]$HostsFile = $script:DefaultHostsFile
     )
 
-    Remove-HostsEntry -HostsFile $HostsFile -Hostname $ContainerName
-    Remove-HostsEntry -HostsFile $HostsFile -Hostname (Get-BCContainerTestHostname -ContainerName $ContainerName)
+    $failures = @()
+    foreach ($name in @($ContainerName, (Get-BCContainerTestHostname -ContainerName $ContainerName))) {
+        try {
+            Remove-HostsEntry -HostsFile $HostsFile -Hostname $name
+        }
+        catch {
+            $failures += "'$name': $($_.Exception.Message)"
+        }
+    }
+
+    if ($failures.Count -gt 0) {
+        throw "Could not remove hosts entries $($failures -join '; ')"
+    }
 }
 
 function Update-BCPublicWebBaseUrl {

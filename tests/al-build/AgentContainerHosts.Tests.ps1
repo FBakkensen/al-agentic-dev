@@ -175,17 +175,21 @@ Describe 'Set-BCAgentContainerHost' {
         ($test[0] -split '\s+')[0] | Should -Be '172.28.0.5'
     }
 
-    It 'skips the hosts lines for an empty IP and still moves PublicWebBaseUrl' {
+    It 'skips the hosts lines for an empty IP, warns that the .test host has no entry, and still moves PublicWebBaseUrl' {
         $hosts = New-HostsFile
         InModuleScope common -Parameters @{ Hosts = $hosts } {
             param($Hosts)
             Mock Get-BcContainerServerConfiguration { [pscustomobject]@{ PublicWebBaseUrl = 'http://bctest:7080/BC/' } }
             Mock Set-BcContainerServerConfiguration {}
             Mock Restart-BcContainerServiceTier {}
+            Mock Write-BuildMessage {}
 
             Set-BCAgentContainerHost -ContainerName 'feat-x' -IPAddress '' -HostsFile $Hosts
 
             Should -Invoke Set-BcContainerServerConfiguration -Times 1 -Exactly
+            Should -Invoke Write-BuildMessage -Times 1 -Exactly -ParameterFilter {
+                $Type -eq 'Warning' -and $Message -like "*'feat-x.test'*no hosts entry*"
+            }
         }
         Get-HostLines -Path $hosts -Hostname 'feat-x' | Should -HaveCount 0
         Get-HostLines -Path $hosts -Hostname 'feat-x.test' | Should -HaveCount 0
@@ -212,6 +216,23 @@ Describe 'Remove-BCAgentContainerHost' {
         Get-HostLines -Path $hosts -Hostname 'feat-x' | Should -HaveCount 0
         Get-HostLines -Path $hosts -Hostname 'feat-x.test' | Should -HaveCount 0
         Get-Content -LiteralPath $hosts | Should -Contain '10.0.0.9        unrelated-host'
+    }
+
+    It 'still removes the .test line when the bare removal throws, and names the failed entry' {
+        $hosts = New-HostsFile
+        Add-HostsEntry -HostsFile $hosts -Hostname 'feat-x' -IPAddress '172.28.0.5'
+        Add-HostsEntry -HostsFile $hosts -Hostname 'feat-x.test' -IPAddress '172.28.0.5'
+        InModuleScope common -Parameters @{ Hosts = $hosts } {
+            param($Hosts)
+            Mock Remove-HostsEntry { throw 'hosts file locked' } -ParameterFilter { $Hostname -eq 'feat-x' }
+            Mock Remove-HostsEntry { Update-HostsFile -HostsFile $HostsFile -Hostname $Hostname } -ParameterFilter { $Hostname -ne 'feat-x' }
+
+            { Remove-BCAgentContainerHost -ContainerName 'feat-x' -HostsFile $Hosts } |
+                Should -Throw "*'feat-x': hosts file locked*"
+        }
+
+        Get-HostLines -Path $hosts -Hostname 'feat-x.test' | Should -HaveCount 0
+        Get-HostLines -Path $hosts -Hostname 'feat-x' | Should -HaveCount 1
     }
 }
 
@@ -258,18 +279,29 @@ Describe 'new-agent-container.ps1' {
         $try | Should -Not -BeNullOrEmpty
         $try.CatchClauses | Should -HaveCount 1
         $catchText = $try.CatchClauses[0].Body.Extent.Text
-        $catchText | Should -Match 'exit \$Exit\.Integration'
-        $catchText | Should -Match '-Type Error'
-        $catchText | Should -Not -Match '-Type Warning'
+        $catchText | Should -Match '(?s)-Type Error.*exit \$Exit\.Integration\s*\}$'
+    }
+
+    It 'removes the container it started and both hosts entries before it exits on that failure' {
+        $call = (Get-CommandsNamed 'Set-BCAgentContainerHost')[0]
+        $try = $call.Parent
+        while ($try -and $try -isnot [System.Management.Automation.Language.TryStatementAst]) { $try = $try.Parent }
+        $catchText = $try.CatchClauses[0].Body.Extent.Text
+        $exit = $catchText.IndexOf('exit $Exit.Integration')
+        $catchText.IndexOf('Remove-BcContainer -containerName $AgentName') | Should -BeGreaterThan -1
+        $catchText.IndexOf('Remove-BcContainer -containerName $AgentName') | Should -BeLessThan $exit
+        $catchText.IndexOf('Remove-BCAgentContainerHost -ContainerName $AgentName') | Should -BeGreaterThan -1
+        $catchText.IndexOf('Remove-BCAgentContainerHost -ContainerName $AgentName') | Should -BeLessThan $exit
     }
 
     It 'removes both hosts entries when it recreates an existing container' {
-        $removes = Get-CommandsNamed 'Remove-BCAgentContainerHost'
-        $removes | Should -HaveCount 1
-        Get-ParameterText $removes[0] 'ContainerName' | Should -Be '$AgentName'
-        $if = $removes[0].Parent
-        while ($if -and $if -isnot [System.Management.Automation.Language.IfStatementAst]) { $if = $if.Parent }
-        $if.Clauses[0].Item1.Extent.Text | Should -Be '$existingContainer'
+        $recreate = @(Get-CommandsNamed 'Remove-BCAgentContainerHost' | Where-Object {
+            $if = $_.Parent
+            while ($if -and $if -isnot [System.Management.Automation.Language.IfStatementAst]) { $if = $if.Parent }
+            $if -and $if.Clauses[0].Item1.Extent.Text -eq '$existingContainer'
+        })
+        $recreate | Should -HaveCount 1
+        Get-ParameterText $recreate[0] 'ContainerName' | Should -Be '$AgentName'
         Get-CommandsNamed 'Remove-HostsEntry' | Should -HaveCount 0
     }
 
