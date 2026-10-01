@@ -308,6 +308,7 @@ Describe 'provision.ps1 Release pin check' {
         $guard = $guards[0].Parent
         while ($guard -and $guard -isnot [System.Management.Automation.Language.IfStatementAst]) { $guard = $guard.Parent }
         $guard | Should -Not -BeNullOrEmpty
+        $guard.Clauses[0].Item1.Extent.Text | Should -Match '^\$config\.ReleaseAppDir\s+-and'
         $guard.Clauses[0].Item2.Extent.Text | Should -Match 'exit\s+\(Get-ExitCode\)\.Contract'
     }
 
