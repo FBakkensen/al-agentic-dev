@@ -58,8 +58,8 @@ Describe 'Add-HostsEntry and Remove-HostsEntry against a hosts file seam' {
         Add-HostsEntry -HostsFile $hosts -Hostname 'feat-x' -IPAddress '172.28.0.5'
         Add-HostsEntry -HostsFile $hosts -Hostname 'feat-x.test' -IPAddress '172.28.0.5'
 
-        $bare = Get-HostLines -Path $hosts -Hostname 'feat-x'
-        $test = Get-HostLines -Path $hosts -Hostname 'feat-x.test'
+        $bare = @(Get-HostLines -Path $hosts -Hostname 'feat-x')
+        $test = @(Get-HostLines -Path $hosts -Hostname 'feat-x.test')
         $bare | Should -HaveCount 1
         $test | Should -HaveCount 1
         ($bare[0] -split '\s+')[0] | Should -Be '172.28.0.5'
@@ -74,7 +74,7 @@ Describe 'Add-HostsEntry and Remove-HostsEntry against a hosts file seam' {
         Get-HostLines -Path $hosts -Hostname 'feat-x' | Should -HaveCount 1
 
         Add-HostsEntry -HostsFile $hosts -Hostname 'feat-x' -IPAddress '172.28.0.9'
-        $lines = Get-HostLines -Path $hosts -Hostname 'feat-x'
+        $lines = @(Get-HostLines -Path $hosts -Hostname 'feat-x')
         $lines | Should -HaveCount 1
         ($lines[0] -split '\s+')[0] | Should -Be '172.28.0.9'
     }
@@ -167,8 +167,8 @@ Describe 'Set-BCAgentContainerHost' {
             }
         }
 
-        $bare = Get-HostLines -Path $hosts -Hostname 'feat-x'
-        $test = Get-HostLines -Path $hosts -Hostname 'feat-x.test'
+        $bare = @(Get-HostLines -Path $hosts -Hostname 'feat-x')
+        $test = @(Get-HostLines -Path $hosts -Hostname 'feat-x.test')
         $bare | Should -HaveCount 1
         $test | Should -HaveCount 1
         ($bare[0] -split '\s+')[0] | Should -Be '172.28.0.5'
