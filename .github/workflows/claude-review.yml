@@ -1,0 +1,59 @@
+name: Claude Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Review
+        id: review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR: ${{ github.event.pull_request.number }}
+
+            You are the merge gate for this pull request: your verdict passes or fails the required `claude-review` check. You review and report; the PR's author fixes. CLAUDE.md's "Working here" steps — gates, PRs, monitors, merging — belong to the author.
+
+            1. Read the change: `gh pr view <PR>` for the description, `gh pr diff <PR>` for the diff, and `gh issue view <n>` for every issue the description names with `Fixes #<n>`. The PR is checked out in the working directory; read the files around each change for context.
+            2. Read the earlier review threads: `gh api repos/<REPO>/pulls/<PR>/comments`. An earlier run of this review may have raised a finding already, and a reply may show that finding was wrong.
+            3. Judge every changed file. A finding is blocking when it is:
+               - a correctness bug: the change breaks a script, test, hook, manifest, skill, or workflow, or does something other than its description claims;
+               - a violation of CLAUDE.md or a `.claude/rules/` file, "What never ships" above all;
+               - a requirement of a `Fixes` issue that the change leaves undone;
+               - a committed secret or build artifact.
+               Every other finding — wording, style, naming, a neater way — is a nit.
+            4. Post each blocking finding that has no thread yet as an inline comment with `mcp__github_inline_comment__create_inline_comment` (`confirmed: true`) on the line it concerns: what breaks, and the fix. Nits go only in the summary.
+            5. Post the summary as one comment that replaces the previous run's: `gh pr comment <PR> --edit-last --create-if-none --body "<summary>"`. It opens with `Blocking: <count>`, gives each blocking finding one line, then at most five nits.
+            6. Return `blocking: true` when any blocking finding stands — new, or raised earlier, still in the code, and unrefuted by a reply — and `summary`: the summary comment's text.
+          claude_args: |
+            --allowedTools "Read,Glob,Grep,mcp__github_inline_comment__create_inline_comment,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh issue view:*),Bash(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments:*)"
+            --json-schema '{"type":"object","properties":{"blocking":{"type":"boolean"},"summary":{"type":"string"}},"required":["blocking","summary"]}'
+
+      - name: Gate on the verdict
+        env:
+          RESULT: ${{ steps.review.outputs.structured_output }}
+        run: |
+          printf '%s' "$RESULT" | jq -r '.summary // empty' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s' "$RESULT" | jq -e '.blocking == false' > /dev/null || {
+            echo "::error::Claude review found a blocking finding or returned no verdict. Read the PR comments."
+            exit 1
+          }
