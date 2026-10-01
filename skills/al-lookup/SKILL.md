@@ -11,15 +11,14 @@ One question in, one sourced answer out, in seconds. When looking up costs one c
 
 `docs/precedent-map.md` in the consumer repo holds every answered question — a table `| date | question | answer | source |`, newest first. A hit there ends the run before any search. No file means no map yet; the first append creates it with the table header.
 
-## Three sources, picked by question class
+## Two sources, picked by question class
 
 | Question class | Source | Claude Code name |
 |---|---|---|
-| Platform and language semantics — what a property, trigger, or method does | Microsoft Learn MCP | `mcp__plugin_al-agentic-dev_microsoft-learn__microsoft_docs_search`, then `mcp__plugin_al-agentic-dev_microsoft-learn__microsoft_docs_fetch` for the full page |
+| Platform and language semantics — what a property, trigger, or method does; what an analyzer rule means | Microsoft Learn MCP | `mcp__plugin_al-agentic-dev_microsoft-learn__microsoft_docs_search`, then `mcp__plugin_al-agentic-dev_microsoft-learn__microsoft_docs_fetch` for the full page |
 | Precedent by example — how the Base App does it | the version-matched BCApps clone | `Grep` pointed at `.bcapps/` explicitly (it is gitignored, so a workspace-wide `Grep` skips it), then `Read` the file |
-| Review rules and quality precedent | the BCQuality index | `Read` `.bcquality/knowledge-index.json` — one minified line, parse it as JSON — then `Read` the article it names |
 
-A miss falls through to the next source that fits the question; if none answers, name the unresolved question and each source searched instead of claiming a verified answer. A missing clone names its producer — /al-clone-bcapps or /al-clone-bcquality — and the run answers from the remaining sources. The clone is version-matched through `symbols.lock.json`: read `.bcapps/release` first, and `.bcapps/main` only for the folders release lacks — that code is next-major, ahead of what the app runs against.
+A miss falls through to the next source that fits the question; if none answers, name the unresolved question and each source searched instead of claiming a verified answer. A missing clone names its producer, /al-clone-bcapps, and the run answers from the remaining sources. The clone is version-matched through `symbols.lock.json`: read `.bcapps/release` first, and `.bcapps/main` only for the folders release lacks — that code is next-major, ahead of what the app runs against.
 
 ## The ledger entry
 
@@ -31,7 +30,7 @@ assumed: <claim> — not verified
 unresolved: <question> — searched: <source locations>
 ```
 
-A valid pointer is a Learn URL, a BCApps file and line, or a BCQuality article path. Use `unresolved:` when no claim can be stated; name the locations actually searched, not missing clones. Writing skills carry these entries in their receipts; al-review reads the ledger first.
+A valid pointer is a Learn URL or a BCApps file and line. Use `unresolved:` when no claim can be stated; name the locations actually searched, not missing clones. Writing skills carry these entries in their receipts; al-review reads the ledger first.
 
 ## Own the map change
 
@@ -43,7 +42,7 @@ If /al-commit cannot record the map change, remove only this run's row from the 
 
 ## Deep questions go to /mattpocock-skills:research
 
-A whole-feature shape question — which BC pattern, which tables and extensions, which Base App seams — belongs to /mattpocock-skills:research, with the `.bcapps/` and `.bcquality/` paths named in its prompt. al-lookup stays the in-flight fast path.
+A whole-feature shape question — which BC pattern, which tables and extensions, which Base App seams — belongs to /mattpocock-skills:research, with the `.bcapps/` path named in its prompt. al-lookup stays the in-flight fast path.
 
 ## Close
 
