@@ -66,16 +66,10 @@ Describe 'Skill workflow contracts' {
         $improve | Should -Match 'the developer types `/mattpocock-skills:code-review` next, where al-review reads the receipt'
     }
 
-    It 'serializes fault injection across parallel scenario workers' {
-        $tdd = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-tdd' 'SKILL.md') -Raw
+    It 'runs scenario workers one at a time' {
         $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
 
-        $tdd | Should -Match 'ends its turn with that proof''s fault site and test scope'
-        $tdd | Should -Match 'only when its lead resumes it with the fault turn'
-        $implement | Should -Match 'scenarios that name the same production site go to one worker'
-        $implement | Should -Match 'fault turn from the lead through `SendMessage`, one worker at a time, the next only after that worker''s green returns'
-        $implement | Should -Not -Match 'only when its lead resumes it'
-        $tdd | Should -Not -Match 'one worker at a time'
+        $implement | Should -Match 'The workers run one at a time'
     }
 
     It 'keeps precedent map ownership with al-lookup' {
@@ -139,7 +133,7 @@ Describe 'Skill workflow contracts' {
         $pullRequest | Should -Match 'never creates or keeps a draft'
         $pullRequest | Should -Match 'Name /al-pr-shepherd as the next move'
 
-        foreach ($skill in @('al-clone-bcapps', 'al-design', 'al-grill-with-docs', 'al-implement', 'al-lookup', 'al-pr-shepherd', 'al-improve-codebase-architecture', 'al-simplify')) {
+        foreach ($skill in @('al-clone-bcapps', 'al-codebase-design', 'al-grill-with-docs', 'al-implement', 'al-lookup', 'al-pr-shepherd', 'al-improve-codebase-architecture', 'al-simplify')) {
             $content = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'SKILL.md') -Raw
             $content | Should -Match '/al-commit' -Because "$skill writes repository files"
         }

@@ -17,13 +17,13 @@ Before an existing test changes, require its current scope green:
 
 ▶ haiku · /al-build gate on the affected test scope, WARN_AS_ERROR as the repository states → summary.json verdict, per-runner totals, exact red cause
 
-One worker per Gherkin scenario, and scenarios that name the same production site go to one worker; the workers dispatch as background `Agent` calls in one message:
+One worker per Gherkin scenario. The workers run one at a time: each is dispatched after the previous worker's return meets its contract, and owns the worktree for its whole red and green cycle, injected-fault red included:
 
 ▶ sonnet · one Gherkin scenario: run /mattpocock-skills:tdd with al-tdd on its AAA cases, production site, seam, proof-map rows, and the grounding rule → red evidence per case, the green gate line, files touched
 
 Each AAA case is implemented through its named module interface. One scenario may need several tests, and a `keep` test supplies evidence without a duplicate. The production change is the smallest that turns the proof green: business writes on validated or posting paths, Base App seams reused, quality properties preserved. A pre-existing bug or behavior the work item does not name is a follow-up line in the receipt, not a change, unless the proof cannot go green without it.
 
-A walkthrough-only case takes no automated red; keep it in the receipt for /al-walkthrough. A worker that ends its turn with a fault site and scope gets its fault turn from the lead through `SendMessage`, one worker at a time, the next only after that worker's green returns. Judge every return against its contract before the next step.
+A walkthrough-only case takes no automated red; keep it in the receipt for /al-walkthrough. Judge every return against its contract before the next step.
 
 ## Map what landed
 
