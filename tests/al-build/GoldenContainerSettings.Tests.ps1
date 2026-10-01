@@ -96,10 +96,12 @@ Describe 'Golden container server settings' {
 }
 
 Describe 'Golden container without AL-Go settings' {
-    It 'attempts no AL-Go dependency install' {
+    It 'names no AL-Go command' {
         Get-ScriptCommand -Name 'Install-AlGoDependencies', 'Get-AlGoSettingsPath', 'Get-AlGoDependencyProbingPaths' |
             Should -HaveCount 0
+    }
 
+    It 'exports no Install-AlGoDependencies' {
         $module = Import-Module $script:CommonModulePath -Force -DisableNameChecking -PassThru
         try {
             $module.ExportedFunctions.Keys | Should -Not -Contain 'Install-AlGoDependencies'
