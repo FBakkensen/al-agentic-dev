@@ -8,9 +8,9 @@
 #   - a WATCH ERROR after 3 failed or empty queries in a row;
 #   - each PR's final MERGED or CLOSED once.
 # It exits when the spec has no open child.
-# Env: REALERT (seconds, default 180), REVIEWER_RE (review-bot login regex, default claude|coderabbit).
+# Env: REALERT (seconds, default 180), REVIEW_CHECK (the automatic review's check name, default claude-review).
 spec=${1:?usage: watch-team.sh <spec-number>}
-REALERT=${REALERT:-180}; REVIEWER_RE=${REVIEWER_RE:-claude|coderabbit}
+REALERT=${REALERT:-180}; REVIEW_CHECK=${REVIEW_CHECK:-claude-review}
 repo=$(gh repo view --json nameWithOwner --jq .nameWithOwner) || { echo "WATCH ERROR: gh repo view failed"; exit 1; }
 owner=${repo%/*}; name=${repo#*/}
 declare -A last since done_ known child; errs=0
@@ -33,10 +33,10 @@ while :; do
 
   for pr in "${!known[@]}"; do
     [ -n "${done_[$pr]}" ] && continue
-    j=$(gh pr view "$pr" --repo "$repo" --json state,mergeStateStatus,statusCheckRollup,headRefOid,reviews 2>&1) || { err "gh pr view #$pr: $(echo "$j" | head -c 160)"; continue; }
+    j=$(gh pr view "$pr" --repo "$repo" --json state,mergeStateStatus,statusCheckRollup 2>&1) || { err "gh pr view #$pr: $(echo "$j" | head -c 160)"; continue; }
     st=$(jq -r '.state+" "+.mergeStateStatus' <<<"$j")
     failed=$(jq -r '[.statusCheckRollup[]? | select((.conclusion // "") | test("FAILURE|CANCELLED|TIMED_OUT|ACTION_REQUIRED|ERROR")) | (.name // .context)] | join(",")' <<<"$j")
-    review=$(jq -r --arg re "$REVIEWER_RE" '.headRefOid as $h | if ([.reviews[]? | select(.author.login|test($re;"i")) | select(.commit.oid==$h)] | length) > 0 then "reviewed-head" else "pending" end' <<<"$j")
+    review=$(jq -r --arg c "$REVIEW_CHECK" '[.statusCheckRollup[]? | select((.name // .context) == $c) | (.conclusion // .status // "pending")] | first // "absent" | ascii_downcase' <<<"$j")
     th=$(gh api graphql -f query="query{repository(owner:\"$owner\",name:\"$name\"){pullRequest(number:$pr){reviewThreads(first:100){nodes{isResolved comments(first:1){nodes{body}}}}}}}" \
       --jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved|not)] | "\(length) \([.[] | select(.comments.nodes[0].body|startswith("HOLD (team-lead)"))] | length)"' 2>/dev/null) || th="? ?"
     threads=${th% *}; hold=${th#* }

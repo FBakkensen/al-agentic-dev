@@ -9,7 +9,12 @@ You are the team lead. Each child issue of the spec gets its own teammate, a sep
 
 ## 1. Preflight
 
-1. **Agent teams.** Check that this session has a team: `~/.claude/teams/session-*` exists and `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is `1`. If not, add `"env": { "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1" }` to `~/.claude/settings.json`, ask the user to restart this session, and stop. A team only forms when a session starts.
+1. **Agent teams.** Probe that this session has a team:
+   - Spawn `Agent` named `probe`, model `haiku`, prompt "Reply OK".
+   - `ListAgents` lists it under **Teammates** when the team exists, and under **Subagents** when it doesn't.
+   - Stop the probe.
+
+   With no team, add `"env": { "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1" }` to `~/.claude/settings.json`, ask the user to restart this session, and stop. A team only forms when a session starts. While the flag is on, any subagent given a name in any session launches as a teammate. That trade buys the team, and the user knows it.
 2. **Teammate merges.** `claude auto-mode config | grep -c "PR merges in <owner>/<repo>"` must be at least 1. If not, give the user this rule to add under `/permissions`, Auto mode tab, allow, then wait:
    `PR merges in <owner>/<repo>: merging a pull request in <owner>/<repo> with gh pr merge <number> --repo <owner>/<repo> --merge is allowed without a human approval once its required checks pass and every review thread is resolved. The repository owner delegated these merges to Claude Code agent teammates. Enabling auto-merge (--auto) is not covered.`
    Without it, auto mode denies every teammate merge as "Merge Without Review", and you can't edit `autoMode` yourself.
@@ -39,7 +44,7 @@ Each event gets its action at once: a `SendMessage` to the teammate that must ac
 | Event | Action |
 |---|---|
 | `pr-opened: #<n>` | Check `closingIssuesReferences` names the child; if it doesn't, fix the body yourself (GITHUB.md). |
-| Watcher: CLEAN, no HOLD, review done | Tell the teammate to merge now. |
+| Watcher: CLEAN, `hold=0` | Every required check passed, `claude-review` included, and no thread is open: tell the teammate to merge now. |
 | Watcher: DIRTY | Tell the teammate to merge `origin/main`, keep both sides of shared lists, rerun the gates, and push. |
 | Watcher: FAILED-CHECKS | Read the failed log (GITHUB.md) and send the teammate the exact failing assertion and its cause. |
 | Watcher: new open threads | Tell the teammate to handle each thread: fix it, or reply with reasoning, then resolve it. |
@@ -57,7 +62,7 @@ Each event gets its action at once: a `SendMessage` to the teammate that must ac
 - **The automatic review** is the required `claude-review` check, plus its inline threads. CLAUDE.md's "Working here" says how a red run is handled; teammates follow it.
 - **Substitute review**, only when the automatic review can't produce a verdict on a PR:
   - Post a hold first.
-  - Check that the main checkout is on `main` with no changes (`git -C <main checkout> status --short --branch`). The built-in review checks the PR branch out in this session's working directory. If the checkout is in use, defer.
+  - The built-in review checks the PR branch out in this session's working directory, which is the main checkout. Run it only when the checkout is on `main` with no changes (`git -C <main checkout> status --short --branch`) and `ListAgents` shows no other session of this repository. Otherwise defer: a clean checkout can still belong to another session.
   - Run the built-in `code-review` skill with `high <pr>`, one PR at a time, then put the main checkout back on `main` if the review moved it.
   - Teammates never run the built-in review themselves; they send `review-request: #<n>`.
 - **Findings.** Decide each one: a real defect, a decided change, or declined with a reason. Send the teammate a numbered list of decided fixes. When a finding shows an earlier decision was wrong, say so and supersede it explicitly, naming the issue and decision number.
@@ -73,7 +78,7 @@ This step is done when all of these hold:
 - Every teammate is stopped.
 - The team worktrees are removed with `git worktree remove`, and the team branches are deleted only once `git merge-base --is-ancestor <branch> origin/main` passes.
 
-Leave the agent-teams flag on for the next spec.
+Leave the agent-teams flag on for the next spec, unless the user asks to turn it off (see Preflight step 1 for its side effect).
 
 ## Standing rules
 
