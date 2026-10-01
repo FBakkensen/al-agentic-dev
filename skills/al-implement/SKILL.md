@@ -50,8 +50,8 @@ Fix every ⛔ and /al-commit the fixes, so the slice's final commit carries none
 
 ## Close
 
-At every exit, including a stop for the user and an unresolved red:
+When the slice gives a shape its first example in this repository, add its row to `docs/patterns.md` from the proposed row and the objects that now realize it. At every exit, including a stop for the user and an unresolved red:
 
 ▶ haiku · /al-commit the complete worktree, work items <ids> → commit hashes and subjects, remaining worktree
 
-When the slice gives a shape its first example in this repository, add its row to `docs/patterns.md` from the proposed row and the objects that now realize it; the commit below carries it. Finish outcome first: what changed, what proves it, where the map is attached, which module interface stayed stable, and whether the Original work item's Level 2 changed. Name `/simplify` and `/mattpocock-skills:improve-codebase-architecture` as the next move. A stop names the exact red reason.
+Finish outcome first: what changed, what proves it, where the map is attached, which module interface stayed stable, and whether the Original work item's Level 2 changed. Name `/simplify` and `/mattpocock-skills:improve-codebase-architecture` as the next move. A stop names the exact red reason.

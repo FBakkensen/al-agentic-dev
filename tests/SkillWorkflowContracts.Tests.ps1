@@ -117,6 +117,7 @@ Describe 'Skill workflow contracts' {
         $design | Should -Match 'writes no repo file'
         $design | Should -Match 'proposed `docs/patterns.md` row'
         $implement | Should -Match 'first example in this repository, add its row to `docs/patterns.md`'
+        $implement.IndexOf('first example in this repository') | Should -BeLessThan $implement.IndexOf('/al-commit the complete worktree')
         $toSpec | Should -Match 'consult `/mattpocock-skills:codebase-design` for each module'
     }
 
