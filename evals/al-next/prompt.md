@@ -5,4 +5,4 @@ plugins: ["../..", "../../.base-plugins/mattpocock-skills", "../../.base-plugins
 allowed_tools: [Read, Glob, Grep, Skill]
 ---
 
-The slice just landed — reconcile the Original work item design, direct child slices, and receipts, then identify the next executable item.
+PBI 4512 just merged — what's next?
