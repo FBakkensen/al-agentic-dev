@@ -124,10 +124,10 @@ Describe 'validate-breaking-changes.ps1 Run-AlValidation contract' {
     }
 }
 
-# download-baseline.ps1 is the Release pin check. Each case runs it as a fresh pwsh process rooted
-# at a fixture Consumer repository under TestDrive, with ALBT_APPSOURCESYMBOLS_FEED pointed at a
-# local flat2 feed, so Get-BuildConfig reads the fixture's al-build.json and nothing reaches the
-# network.
+# download-baseline.ps1 starts with the Release pin check. Each case runs it as a fresh pwsh process
+# rooted at a fixture Consumer repository under TestDrive, with ALBT_APPSOURCESYMBOLS_FEED pointed at
+# a local flat2 feed, so Get-BuildConfig reads the fixture's al-build.json and nothing reaches the
+# network. A pinned fixture names its baseline folder, so a current pin goes on to fill it.
 Describe 'download-baseline.ps1 Release pin check' -Tag 'Process' {
     BeforeAll {
         Import-Module (Join-Path $PSScriptRoot 'SymbolFeedFixture.psm1') -Force
@@ -157,7 +157,7 @@ Describe 'download-baseline.ps1 Release pin check' -Tag 'Process' {
             } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $Root 'al-build.json') -Encoding UTF8
             if (-not $NoAppSourceCop) {
                 $asc = [ordered]@{ mandatoryAffixes = @('NALICF'); supportedCountries = @('dk') }
-                if ($Pin) { $asc['version'] = $Pin }
+                if ($Pin) { $asc['version'] = $Pin; $asc['baselinePackageCachePath'] = './.appSourceCopPackages' }
                 $asc | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $appDir 'AppSourceCop.json') -Encoding UTF8
             }
         }
