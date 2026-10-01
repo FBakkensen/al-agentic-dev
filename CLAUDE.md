@@ -96,10 +96,10 @@ while :; do
 done
 ```
 
-2. On each line, look at the PR and do whatever it needs: merge it once it can merge, fix what fails, answer and resolve review threads, and merge `origin/main` on a conflict.
+2. On each line, look at the PR and do whatever it needs: merge it once it can merge, fix what fails, answer and resolve review threads, and merge `origin/main` on a conflict. A red `claude-review` is a blocking finding: push the fix, or reply on its thread why the finding is wrong and `gh run rerun` the job. A red run with no verdict — a usage limit or a timeout — just reruns.
 3. When the monitor expires with the PR still open, arm it again.
 
-Before pushing, run `scripts/Validate-Json.ps1`, `scripts/Validate-PowerShell.ps1`, `scripts/Validate-Skills.ps1`, `scripts/Test-BasePluginDrift.ps1`, then `scripts/Invoke-Tests.ps1 -Mode Full`. CI runs the same five on pushes to `main` and on every pull request. The gates validate `skills/`, `hooks/`, `output-styles/`, and the plugin manifests; links in `README.md` and `docs/` are deliberately unchecked — not a review finding.
+Before pushing, run `scripts/Validate-Json.ps1`, `scripts/Validate-PowerShell.ps1`, `scripts/Validate-Skills.ps1`, `scripts/Test-BasePluginDrift.ps1`, then `scripts/Invoke-Tests.ps1 -Mode Full`. CI runs the same five on pushes to `main` and on every pull request. Every pull request also runs the required `claude-review` check, a review on the owner's Claude subscription that posts each blocking finding as a review thread and fails while one stands; `main` merges only with every review thread resolved. The gates validate `skills/`, `hooks/`, `output-styles/`, and the plugin manifests; links in `README.md` and `docs/` are deliberately unchecked — not a review finding.
 
 Use `scripts/Invoke-Tests.ps1 -Mode Fast` for the local loop; it excludes process-bound and live-fixture tests without changing the full gate.
 
