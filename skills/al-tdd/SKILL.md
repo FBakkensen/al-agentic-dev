@@ -1,6 +1,6 @@
 ---
 name: al-tdd
-description: Use whenever /mattpocock-skills:tdd runs on Business Central work, in AL code that exists or in an extension whose first test is still to be written.
+description: Use whenever /mattpocock-skills:tdd runs against AL code.
 ---
 
 # al-tdd - AL proof for the red-green loop
