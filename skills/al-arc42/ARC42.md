@@ -8,6 +8,8 @@ Licensed under [Creative Commons Attribution-ShareAlike 4.0 International](https
 
 Architecture content placed into this template remains the content owner's property.
 
+## Implementation Decisions
+
 ### Building Block View
 
 #### Whitebox Overall System
@@ -73,7 +75,7 @@ Repeat only for architecturally relevant use cases, critical external interfaces
 
 ## Application in this plugin
 
-- The Building Block View and any Runtime View nest under `Implementation Decisions` in the Original work item's spec: in Description, or in Repro Steps on a Bug.
+- The Building Block View and any Runtime View nest under `Implementation Decisions` in the Original work item's spec: in Description, or in Repro Steps on a Bug. Only stable current-state views go there; a change overlay goes to the executable item's comment and receipt.
 - Level 1 is written before implementation and records intended module contracts.
 - Runtime View is written only when interaction order, ownership, or a transaction boundary needs explanation.
 - Level 2 is written after implementation and only for relevant, stable internal structure.

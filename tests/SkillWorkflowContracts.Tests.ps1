@@ -82,6 +82,17 @@ Describe 'Skill workflow contracts' {
         $mapContracts[0] | Should -Be (Join-Path $script:SkillsRoot 'al-lookup' 'SKILL.md')
     }
 
+    It 'keeps al-next on the tracker text, off state and parent changes, and Level 2 through al-arc42' {
+        $next = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-next' 'SKILL.md') -Raw
+        $arc42 = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-arc42' 'SKILL.md') -Raw
+
+        $next | Should -Match 'every work-item read and write follows the tracker text'
+        $next | Should -Match 'leave its state and parent to the user'
+        $next | Should -Match '▶ haiku · the settled Level 2 content and the landed diff → the formatted view through `/al-arc42`'
+        $next | Should -Match '▶ haiku · the `/al-arc42` artifacts and the Original work item → attachments published through `/al-azure-devops-attachments`'
+        $arc42 | Should -Match '(?m)^In: .*/al-next'
+    }
+
     It 'pins the spec structure under the entry skill''s seven headings' {
         $toSpec = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-to-spec' 'SKILL.md') -Raw
 

@@ -5,7 +5,7 @@ description: Use when settled Business Central architecture content needs the of
 
 # al-arc42 - format the architecture
 
-In: settled architecture content from /al-to-spec, /al-design, /al-implement, /al-improve-codebase-architecture, or /al-simplify. The caller owns meaning. This skill applies the official structure in [ARC42.md](ARC42.md), creates the review surface, and returns publishable artifacts.
+In: settled architecture content from /al-to-spec, /al-design, /al-next, /al-implement, /al-improve-codebase-architecture, or /al-simplify. The caller owns meaning. This skill applies the official structure in [ARC42.md](ARC42.md), creates the review surface, and returns publishable artifacts.
 
 Usually ask none. Before the first tool call, write one sentence. Update on an important finding or a changed direction; close with the outcome first, standing on its own.
 
@@ -15,7 +15,7 @@ Usually ask none. Before the first tool call, write one sentence. Update on an i
 - **Runtime View:** one named architecturally relevant scenario, its interaction diagram or steps, and notable interaction details.
 - **Building Block Level 2:** one selected Level 1 module as a white box, using the same white-box structure and black boxes for proven internals.
 
-The Building Block View and any Runtime View sit under `Implementation Decisions` in the Original work item. Create only the views named by the caller. Level 1 records intended module contracts. Level 2 records stable implementation structure and may be omitted for a simple module.
+The stable current-state Building Block View and any Runtime View sit under `Implementation Decisions` in the Original work item. A change overlay goes to the executable item's comment and receipt, never to the Original work item. Create only the views named by the caller. Level 1 records intended module contracts. Level 2 records stable implementation structure and may be omitted for a simple module.
 
 An implementation change map is a change overlay on the Building Block View, not a fourth arc42 view. Use Level 2 when one Level 1 module changed. When several Level 1 modules changed, add a Level 1 impact overview and the Level 2 white boxes needed to explain their internal object relations. Add a Runtime View only for important order, transaction, or error behavior.
 
@@ -35,4 +35,4 @@ Save each diagram as SVG and an Azure DevOps-safe PNG. Capture the PNG with an i
 
 ## Close
 
-The pass ends when the local HTML and Original work item fragment contain the same view, every source node appears in the PNG, and the caller has the paths needed for attachment. Commit no `.output/` artifact.
+The pass ends when every source node appears in the PNG, the caller has the paths needed for attachment, and the local HTML and the Original work item fragment contain the same view when an Original fragment is requested. An overlay-only call closes on the HTML, the PNG, and the comment fragment. Commit no `.output/` artifact.
