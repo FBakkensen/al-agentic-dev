@@ -29,4 +29,4 @@ An AL interface with one implementation stays out unless a second implementation
 
 ## Close
 
-For a named concept, the pass ends when it has one named shape backed by the survey table. Return that shape, the table, and one proposed `docs/patterns.md` row — shape, the objects expected to realize it, the survey row it follows — to the entry skill that called. `/al-implement` records the row once the objects exist.
+For a named concept, the pass ends when it has one named shape backed by the survey table. Return that shape, the table, and one proposed `docs/patterns.md` row — shape, the objects expected to realize it, the survey's Base App precedent (object and file:line) it follows — to the entry skill that called. `/al-to-spec` persists the precedent in the module's black box, and `/al-implement` records the row once the objects exist.

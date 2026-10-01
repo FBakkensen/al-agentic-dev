@@ -141,9 +141,11 @@ Describe 'Skill workflow contracts' {
         $design | Should -Not -Match '/al-commit'
         $design | Should -Match 'writes no repo file'
         $design | Should -Match 'proposed `docs/patterns.md` row'
-        $implement | Should -Match 'first example in this repository, add its row to `docs/patterns.md`'
-        $implement.IndexOf('first example in this repository') | Should -BeLessThan $implement.IndexOf('/al-commit the complete worktree')
-        $toSpec | Should -Match 'consult `/mattpocock-skills:codebase-design` for each module'
+        $implement | Should -Match 'On a green close, for each shape the slice realized that has a precedent in the Original''s Level 1 and no row in `docs/patterns.md`'
+        $implement.IndexOf('On a green close') | Should -BeLessThan $implement.IndexOf('/al-commit the complete worktree')
+        $toSpec | Should -Match 'whose concept names a Base App table, document, or posting flow'
+        $toSpec | Should -Match 'records its shape and the survey''s Base App precedent'
+        $toSpec.IndexOf('first consult `/mattpocock-skills:codebase-design`') | Should -BeLessThan $toSpec.IndexOf('/al-arc42 the Building Block Level 1 view')
     }
 
     It 'owns commits and pull requests in dedicated skills' {
