@@ -20,6 +20,12 @@
     case that needs a deterministic publish without test or replay side
     effects.
 
+    After the container check it re-asserts the Web Client host: both hosts
+    lines at the container's current IP and PublicWebBaseUrl on the .test host.
+    A failed re-assert exits non-zero before anything is unpublished. The script
+    ends with the commit, the main app's version, the .test Web Client URL, and
+    the container username; the password is never printed.
+
 .EXAMPLE
     pwsh -File publish-apps.ps1
     # Clean republish of main + test apps to the agent container
@@ -52,6 +58,8 @@ function Stop-Step {
 Import-Module "$PSScriptRoot/common.psm1" -Force -DisableNameChecking
 Import-Module "$PSScriptRoot/build-operations.psm1" -Force -DisableNameChecking
 
+$Exit = Get-ExitCode
+
 # Load configuration
 $config = Get-BuildConfig
 Set-BuildEnvironment -Config $config
@@ -70,6 +78,19 @@ $secondaryAppDirs = @(Get-CompileTargets -Config $config | ForEach-Object { $_.A
 Start-Step 'ensure-container'
 Ensure-BCAgentContainer -ContainerName $config.ContainerName
 Stop-Step 'ensure-container'
+
+# Re-assert the .test host: a container created before it, or an IP changed by a restart
+Start-Step 'sync-host'
+try {
+    $webClientUrl = Sync-BCAgentContainerHost -ContainerName $config.ContainerName
+}
+catch {
+    Write-BuildMessage -Type Error -Message "Could not re-assert the .test host or PublicWebBaseUrl: $_"
+    exit $Exit.Integration
+}
+finally {
+    Stop-Step 'sync-host'
+}
 
 # Step 2: Unpublish all apps in dependency-reverse order
 # Invoke-ALUnpublish internally skips when app is not installed → safe on fresh container.
@@ -114,3 +135,5 @@ Show-BuildTimingHistory -Count 5
 
 Write-BuildHeader 'Publish Complete'
 Write-BuildMessage -Type Success -Message "All apps published"
+
+Write-RepublishResult -Config $config -AppJson $mainAppJson -WebClientUrl $webClientUrl

@@ -1114,10 +1114,13 @@ function Set-BCAgentContainerHost {
     .SYNOPSIS
         Give an agent container its bare and .test hosts lines and put PublicWebBaseUrl on the .test host
     .DESCRIPTION
+        The one owner of "put the container on .test", for creation and republish.
         Writes the bare name and the .test name as two hosts lines with the
         container IP (none when the IP is empty), then sets PublicWebBaseUrl to
-        the .test host. BcContainerHelper keeps addressing the container by its
-        bare name. Throws when any step fails.
+        the .test host through Update-BCPublicWebBaseUrl, which makes no set and no
+        restart when it is already there. BcContainerHelper keeps addressing the
+        container by its bare name. Returns the .test PublicWebBaseUrl. Throws
+        when any step fails.
     .PARAMETER ContainerName
         The bare container name
     .PARAMETER IPAddress
@@ -1145,7 +1148,125 @@ function Set-BCAgentContainerHost {
         Write-BuildMessage -Type Warning -Message "No container IP; '$testHost' has no hosts entry, so PublicWebBaseUrl points at a host that will not resolve"
     }
 
-    Update-BCPublicWebBaseUrl -ContainerName $ContainerName -NewHostname $testHost | Out-Null
+    return Update-BCPublicWebBaseUrl -ContainerName $ContainerName -NewHostname $testHost
+}
+
+function Get-BCAgentContainerIP {
+    <#
+    .SYNOPSIS
+        The container's IP: the first non-empty address across its docker networks
+    .DESCRIPTION
+        Creation and republish both take the IP from here, so a container on
+        several networks never puts concatenated addresses in the hosts file.
+        Returns $null when the container has no IP.
+    .PARAMETER ContainerName
+        The bare container name
+    #>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ContainerName
+    )
+
+    $addresses = docker inspect $ContainerName --format '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' 2>$null
+    return ([string]$addresses) -split '\s+' | Where-Object { $_ } | Select-Object -First 1
+}
+
+function Sync-BCAgentContainerHost {
+    <#
+    .SYNOPSIS
+        Re-assert a running agent container's .test host at republish and return its Web Client base URL
+    .DESCRIPTION
+        Reads the container's current IP from docker, imports BcContainerHelper,
+        and calls Set-BCAgentContainerHost. Covers containers created before the
+        .test host and an IP that changed across a restart. Unlike creation, an
+        empty IP throws: a republish must not bind a walk to a URL that does not
+        resolve.
+    .PARAMETER ContainerName
+        The bare container name
+    .PARAMETER HostsFile
+        Hosts file to edit; defaults to the Windows hosts file.
+    #>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ContainerName,
+
+        [string]$HostsFile = $script:DefaultHostsFile
+    )
+
+    $containerIP = Get-BCAgentContainerIP -ContainerName $ContainerName
+    if (-not $containerIP) {
+        throw "No IP found for container '$ContainerName'; its .test host cannot resolve"
+    }
+
+    # Update-BCPublicWebBaseUrl does not import BcContainerHelper itself.
+    Import-BCContainerHelper
+    return Set-BCAgentContainerHost -ContainerName $ContainerName -IPAddress $containerIP -HostsFile $HostsFile
+}
+
+function Get-DeployedCommit {
+    <#
+    .SYNOPSIS
+        The HEAD short SHA of the repository root, marked when tracked files have uncommitted changes
+    .DESCRIPTION
+        The short SHA form test.ps1 and container-test.ps1 record in
+        build-timing.jsonl. publish-apps.ps1 publishes the .app compiled from the
+        working tree, so edited tracked files get ' (uncommitted changes)'; an
+        untracked file alone leaves it unmarked. Outside a work tree the answer is
+        '(not a git repository)'; in one with no commits, '(no commits)'.
+    #>
+    $root = Get-GitRepoRoot
+    $inside = $null
+    try {
+        $inside = & git -C $root rev-parse --is-inside-work-tree 2>$null
+        if ($LASTEXITCODE -ne 0) { $inside = $null }
+    }
+    catch {
+        # git missing
+    }
+    if ("$inside".Trim() -ne 'true') { return '(not a git repository)' }
+
+    $sha = & git -C $root rev-parse --short HEAD 2>$null
+    if ($LASTEXITCODE -ne 0 -or -not $sha) { return '(no commits)' }
+
+    $sha = ([string]$sha).Trim()
+    $dirty = & git -C $root status --porcelain --untracked-files=no 2>$null
+    if ($dirty) { return "$sha (uncommitted changes)" }
+    return $sha
+}
+
+function Write-RepublishResult {
+    <#
+    .SYNOPSIS
+        Print what a republish deployed: commit, version, Web Client URL, username
+    .DESCRIPTION
+        Four Info lines with the labels Commit, Version, Web Client and Username.
+        The walkthrough binds to these labels. Reads the username from the config
+        and never touches its password. Throws when the main app has no version.
+    .PARAMETER Config
+        The Get-BuildConfig object; ContainerUsername is the one property read
+    .PARAMETER AppJson
+        The main app's parsed app.json
+    .PARAMETER WebClientUrl
+        The Web Client base URL on the .test host
+    #>
+    param(
+        [Parameter(Mandatory = $true)]
+        $Config,
+
+        $AppJson,
+
+        [Parameter(Mandatory = $true)]
+        [string]$WebClientUrl
+    )
+
+    if (-not $AppJson -or -not $AppJson.version) {
+        throw "The main app's app.json is missing or has no version; the republish result needs it"
+    }
+
+    Write-BuildMessage -Type Info -Message "Commit: $(Get-DeployedCommit)"
+    Write-BuildMessage -Type Info -Message "Version: $($AppJson.version)"
+    Write-BuildMessage -Type Info -Message "Web Client: $WebClientUrl"
+    Write-BuildMessage -Type Info -Message "Username: $($Config.ContainerUsername)"
 }
 
 function Remove-BCAgentContainerHost {
@@ -1189,7 +1310,9 @@ function Update-BCPublicWebBaseUrl {
     .DESCRIPTION
         Reads the current PublicWebBaseUrl from the container's service tier,
         replaces only the hostname portion (preserving scheme, port, and path),
-        then updates the configuration and restarts the service tier.
+        then updates the configuration and restarts the service tier. When the URL
+        is already on the new hostname, it makes no set and no restart. Returns
+        the URL.
     .PARAMETER ContainerName
         Name of the BC container
     .PARAMETER NewHostname
@@ -1216,6 +1339,9 @@ function Update-BCPublicWebBaseUrl {
     # Parse and replace hostname only
     # URL format: scheme://hostname:port/path or scheme://hostname/path
     if ($currentUrl -match '^(https?://)([^:/]+)(:\d+)?(.*)$') {
+        if ($matches[2] -eq $NewHostname) {
+            return $currentUrl
+        }
         $scheme = $matches[1]
         $port = $matches[3]    # may be empty
         $path = $matches[4]    # includes leading /
@@ -2882,6 +3008,9 @@ Export-ModuleMember -Function @(
     'Remove-HostsEntry'
     'Get-BCContainerTestHostname'
     'Set-BCAgentContainerHost'
+    'Get-BCAgentContainerIP'
+    'Sync-BCAgentContainerHost'
+    'Write-RepublishResult'
     'Remove-BCAgentContainerHost'
     'Update-BCPublicWebBaseUrl'
     'New-BCLaunchConfig'

@@ -151,6 +151,21 @@ Describe 'Update-BCPublicWebBaseUrl on the .test host' {
     }
 }
 
+Describe 'Update-BCPublicWebBaseUrl when already on the host' {
+    It 'makes no set and no restart, and returns the URL unchanged' {
+        InModuleScope common {
+            Mock Get-BcContainerServerConfiguration { [pscustomobject]@{ PublicWebBaseUrl = 'http://feat-x.test:7080/BC/' } }
+            Mock Set-BcContainerServerConfiguration {}
+            Mock Restart-BcContainerServiceTier {}
+
+            Update-BCPublicWebBaseUrl -ContainerName 'feat-x' -NewHostname 'feat-x.test' | Should -Be 'http://feat-x.test:7080/BC/'
+
+            Should -Invoke Set-BcContainerServerConfiguration -Times 0 -Exactly
+            Should -Invoke Restart-BcContainerServiceTier -Times 0 -Exactly
+        }
+    }
+}
+
 Describe 'Set-BCAgentContainerHost' {
     It 'writes both hosts lines with the container IP and moves PublicWebBaseUrl to the .test host' {
         $hosts = New-HostsFile
@@ -173,6 +188,32 @@ Describe 'Set-BCAgentContainerHost' {
         $test | Should -HaveCount 1
         ($bare[0] -split '\s+')[0] | Should -Be '172.28.0.5'
         ($test[0] -split '\s+')[0] | Should -Be '172.28.0.5'
+    }
+
+    It 'returns the .test PublicWebBaseUrl it set' {
+        $hosts = New-HostsFile
+        InModuleScope common -Parameters @{ Hosts = $hosts } {
+            param($Hosts)
+            Mock Get-BcContainerServerConfiguration { [pscustomobject]@{ PublicWebBaseUrl = 'http://bctest:7080/BC/' } }
+            Mock Set-BcContainerServerConfiguration {}
+            Mock Restart-BcContainerServiceTier {}
+
+            Set-BCAgentContainerHost -ContainerName 'feat-x' -IPAddress '172.28.0.5' -HostsFile $Hosts | Should -Be 'http://feat-x.test:7080/BC/'
+        }
+    }
+
+    It 'passes through the URL Update-BCPublicWebBaseUrl returns, asking for the .test host' {
+        $hosts = New-HostsFile
+        InModuleScope common -Parameters @{ Hosts = $hosts } {
+            param($Hosts)
+            Mock Update-BCPublicWebBaseUrl { 'http://feat-x.test:7080/BC/' }
+
+            Set-BCAgentContainerHost -ContainerName 'feat-x' -IPAddress '172.28.0.5' -HostsFile $Hosts | Should -Be 'http://feat-x.test:7080/BC/'
+
+            Should -Invoke Update-BCPublicWebBaseUrl -Times 1 -Exactly -ParameterFilter {
+                $ContainerName -eq 'feat-x' -and $NewHostname -eq 'feat-x.test'
+            }
+        }
     }
 
     It 'skips the hosts lines for an empty IP, warns that the .test host has no entry, and still moves PublicWebBaseUrl' {
@@ -265,6 +306,13 @@ Describe 'new-agent-container.ps1' {
         Get-ParameterText $calls[0] 'IPAddress' | Should -Be '$containerIP'
         $health = $script:Ast.Extent.Text.IndexOf('Container is healthy')
         $calls[0].Extent.StartOffset | Should -BeGreaterThan $health
+    }
+
+    It 'takes the container IP from Get-BCAgentContainerIP, with no docker inspect of its own' {
+        $ip = @(Get-CommandsNamed 'Get-BCAgentContainerIP')
+        $ip | Should -HaveCount 1
+        Get-ParameterText $ip[0] 'ContainerName' | Should -Be '$AgentName'
+        $script:Ast.Extent.Text | Should -Not -Match 'NetworkSettings'
     }
 
     It 'does not build the .test name or call Update-BCPublicWebBaseUrl itself' {

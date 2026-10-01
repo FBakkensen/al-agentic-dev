@@ -256,9 +256,9 @@ Write-BuildMessage -Type Success -Message "Container is healthy"
 
 # Get container IP, write the hosts lines, and put PublicWebBaseUrl on the .test host
 Write-BuildMessage -Type Step -Message "Configuring network..."
-$containerIP = docker inspect $AgentName --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' 2>$null
+$containerIP = Get-BCAgentContainerIP -ContainerName $AgentName
 try {
-    Set-BCAgentContainerHost -ContainerName $AgentName -IPAddress $containerIP
+    $null = Set-BCAgentContainerHost -ContainerName $AgentName -IPAddress $containerIP
     Write-BuildMessage -Type Success -Message "Hosts entries and PublicWebBaseUrl set"
 } catch {
     Write-BuildMessage -Type Error -Message "Could not set the .test host or PublicWebBaseUrl: $_"
