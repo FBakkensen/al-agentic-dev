@@ -63,11 +63,12 @@ The PowerShell substrate ships only under `skills/al-build/`, and `/al-build` in
 
 ## Dev-time files
 
-These govern work on this repo and never ship. No `SKILL.md` may mention them.
+These govern work on this repo and never ship. No `SKILL.md` under `skills/` may mention them.
 
 - `CLAUDE.md` — this file.
 - `.claude/rules/skills.md` — the skill rules; loads when a file under `skills/` is read.
 - `.claude/rules/powershell.md` — the PowerShell rules; loads when a `.ps1` is read.
+- `.claude/skills/` — project skills for working on this repo. `spec-team-lead` leads an agent team through a spec issue's child issues: one teammate per child, merged PRs, then the spec closed. The gates and the eval suite cover `skills/` only, so project skills carry no eval case.
 - `docs/` — human-facing notes; no agent loads them, except `docs/agents/`, the tracker, triage-label, and domain-doc configuration the development skills read through the `## Agent skills` block below.
 - `scripts/`, `tests/` — the CI gates, plus `scripts/Update-EvalBasePlugins.ps1`, which fetches the Base plugin copies the evals load.
 - `evals/` — the trigger eval suite, run by hand, never by CI.
