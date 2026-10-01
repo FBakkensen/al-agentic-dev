@@ -59,4 +59,4 @@ At every exit:
 
 ▶ haiku · /al-commit the complete worktree, work items <ids> → commit hashes and subjects, remaining worktree
 
-Finish outcome first: what changed, what proves it, where the implementation map is attached, which module interface stayed stable, and whether Original User Story Level 2 changed. Name /al-refactor as the next move. Stop with the exact red reason when any proof is unresolved.
+Finish outcome first: what changed, what proves it, where the implementation map is attached, which module interface stayed stable, and whether Original User Story Level 2 changed. Name `/simplify` and `/mattpocock-skills:improve-codebase-architecture` as the next moves. Stop with the exact red reason when any proof is unresolved.

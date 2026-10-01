@@ -78,7 +78,7 @@ Describe 'Architecture artifact contracts' {
         $attachmentSkill | Should -Match 'work-item show --expand relations'
         $attachmentSkill | Should -Match 'Authentication failure never becomes a manual-upload handoff'
 
-        foreach ($caller in @('al-event-model', 'al-design', 'al-implement', 'al-refactor', 'al-simplify')) {
+        foreach ($caller in @('al-event-model', 'al-design', 'al-implement', 'al-improve-codebase-architecture', 'al-simplify')) {
             $content = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $caller 'SKILL.md') -Raw
             $content | Should -Match '/al-azure-devops-attachments'
             $content | Should -Not -Match 'manual attach'
