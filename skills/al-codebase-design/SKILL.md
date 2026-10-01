@@ -29,11 +29,11 @@ An AL interface with one implementation is a hypothetical seam; leave it out unt
 
 ## Patterns upkeep
 
-When the Consumer repository gains its first example of a shape, record that shape in `docs/patterns.md`: the shape, the objects that realize it, and the precedent row it follows. Later examples of a recorded shape add nothing.
+When the Consumer repository gains its first example of a shape, record that shape in `docs/patterns.md`: the shape, the objects that realize it, and the survey row it follows. Later examples of a recorded shape add nothing.
 
 ## Close
 
-The pass ends when the concept has one named shape, each seam has two real implementations or is dropped, and `docs/patterns.md` records any first example. When `docs/patterns.md` changed:
+The pass ends when the concept has one named shape backed by the survey table and `docs/patterns.md` records any first example. When `docs/patterns.md` changed:
 
 ▶ haiku · /al-commit the complete worktree — the `docs/patterns.md` change and the rest → commit hashes and subjects, remaining worktree
 
