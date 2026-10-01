@@ -31,9 +31,49 @@ BeforeAll {
         return $null
     }
 
+    function Get-ScriptCommand {
+        param([string[]]$Name)
+
+        @($script:GoldenContainerAst.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.CommandAst] -and
+            $node.GetCommandName() -in $Name
+        }, $true))
+    }
+
+    function Get-CommandParameterNames {
+        param([System.Management.Automation.Language.CommandAst]$Command)
+
+        $names = @()
+        foreach ($element in $Command.CommandElements) {
+            if ($element -is [System.Management.Automation.Language.CommandParameterAst]) {
+                $names += $element.ParameterName
+            }
+            elseif ($element -is [System.Management.Automation.Language.VariableExpressionAst] -and $element.Splatted) {
+                $assignments = @($script:GoldenContainerAst.FindAll({
+                    param($node)
+                    $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+                    $node.Left -is [System.Management.Automation.Language.VariableExpressionAst] -and
+                    $node.Left.VariablePath.UserPath -eq $element.VariablePath.UserPath
+                }, $true))
+                foreach ($assignment in $assignments) {
+                    $table = $assignment.Right.Find({
+                        param($node)
+                        $node -is [System.Management.Automation.Language.HashtableAst]
+                    }, $true)
+                    foreach ($pair in $table.KeyValuePairs) {
+                        $names += $pair.Item1.Extent.Text.Trim("'", '"')
+                    }
+                }
+            }
+        }
+        $names
+    }
+
     $scriptsRoot = Join-Path $PSScriptRoot '..' '..' 'skills' 'al-build' 'scripts'
     $script:GoldenContainerScriptPath = Resolve-Path (Join-Path $scriptsRoot 'new-bc-container.ps1')
     $script:BuildOperationsModulePath = Resolve-Path (Join-Path $scriptsRoot 'build-operations.psm1')
+    $script:CommonModulePath = Resolve-Path (Join-Path $scriptsRoot 'common.psm1')
 
     $tokens = $null
     $parseErrors = $null
@@ -81,6 +121,37 @@ Describe 'Golden container server settings' {
 
         $commands | Should -HaveCount 1
         Get-StaticCommandParameterValue -Command $commands[0] -ParameterName 'keyValue' | Should -Be 'true'
+    }
+}
+
+Describe 'Golden container without AL-Go settings' {
+    It 'attempts no AL-Go dependency install' {
+        Get-ScriptCommand -Name 'Install-AlGoDependencies', 'Get-AlGoSettingsPath', 'Get-AlGoDependencyProbingPaths' |
+            Should -HaveCount 0
+
+        $module = Import-Module $script:CommonModulePath -Force -DisableNameChecking -PassThru
+        try {
+            $module.ExportedFunctions.Keys | Should -Not -Contain 'Install-AlGoDependencies'
+        }
+        finally {
+            Remove-Module -ModuleInfo $module -Force
+        }
+    }
+
+    It 'imports no license' {
+        $newContainer = Get-ScriptCommand -Name 'New-BcContainer'
+        $newContainer | Should -HaveCount 1
+        Get-CommandParameterNames -Command $newContainer[0] | Should -Not -Contain 'licenseFile'
+
+        Get-ScriptCommand -Name 'Import-BcContainerLicense' | Should -HaveCount 0
+    }
+
+    It 'never prints the container password' {
+        $messageWriters = Get-ScriptCommand -Name 'Write-BuildMessage', 'Write-BuildHeader', 'Write-Host', 'Write-Information', 'Write-Output', 'Write-Warning', 'Write-Error', 'Write-Verbose'
+        $messageWriters | Should -Not -BeNullOrEmpty
+
+        @($messageWriters | Where-Object { $_.Extent.Text -match 'ContainerPassword|\.Password' }) |
+            Should -HaveCount 0
     }
 }
 
