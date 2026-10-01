@@ -52,6 +52,18 @@ Describe 'Skill workflow contracts' {
         $simplify | Should -Match 'Every new or materially reshaped proof born green takes mutation as its red'
     }
 
+    It 'serializes fault injection across parallel scenario workers' {
+        $tdd = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-tdd' 'SKILL.md') -Raw
+        $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
+
+        $tdd | Should -Match 'ends its turn with that proof''s fault site and test scope'
+        $tdd | Should -Match 'only when its lead resumes it with the fault turn'
+        $implement | Should -Match 'scenarios that name the same production site go to one worker'
+        $implement | Should -Match 'fault turn from the lead through `SendMessage`, one worker at a time, the next only after that worker''s green returns'
+        $implement | Should -Not -Match 'only when its lead resumes it'
+        $tdd | Should -Not -Match 'one worker at a time'
+    }
+
     It 'keeps precedent map ownership with al-lookup' {
         $lookup = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-lookup' 'SKILL.md') -Raw
         $mapContracts = @(Get-ChildItem -LiteralPath $script:SkillsRoot -Filter '*.md' -Recurse |
