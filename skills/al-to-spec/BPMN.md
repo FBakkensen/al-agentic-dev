@@ -34,7 +34,7 @@ Resolve the machine's existing Edge, Chrome, or Chromium executable. If Node.js,
 
 Write `.output/bpmn/<original-work-item-id>/process.html` as a self-contained page with:
 
-1. Original User Story title
+1. Original work item title
 2. Trigger
 3. Success guarantee
 4. Minimal guarantee

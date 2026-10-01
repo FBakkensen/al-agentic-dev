@@ -70,7 +70,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## AL grounding
 
-31. Every BC object, table, field, procedure, event, enum value, or dialog text a skill or agent shows, writes, or judges is confirmed by a lookup in the current session, never recalled. BC vocabulary rides with it on every line written into code or a receipt — Insert not create, Post not submit, Validate not check, Ledger Entry not transaction, codeunit not class, procedure not method — and so does production-AL thrift: reach for the platform before writing code, and an interface with a single implementation is a finding. Today `al-arc42`, `al-implement`, `al-improve-codebase-architecture`, `al-simplify`, `al-review`, `al-tdd`, `al-design`, `al-event-model`, `al-grill-with-docs`, and `al-walkthrough` carry the grounding rule; flag its absence in any new skill that writes, shows, or judges AL.
+31. Every BC object, table, field, procedure, event, enum value, or dialog text a skill or agent shows, writes, or judges is confirmed by a lookup in the current session, never recalled. BC vocabulary rides with it on every line written into code or a receipt — Insert not create, Post not submit, Validate not check, Ledger Entry not transaction, codeunit not class, procedure not method — and so does production-AL thrift: reach for the platform before writing code, and an interface with a single implementation is a finding. Today `al-arc42`, `al-implement`, `al-improve-codebase-architecture`, `al-simplify`, `al-review`, `al-tdd`, `al-design`, `al-to-spec`, `al-grill-with-docs`, and `al-walkthrough` carry the grounding rule; flag its absence in any new skill that writes, shows, or judges AL.
 
 ## Commit discipline
 
@@ -87,7 +87,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 ## Azure DevOps work items
 
 36. One request has one Original work item: the Feature, Bug, or PBI it arrives on. `Original` names its role in this workflow, not the top of the Azure DevOps hierarchy; structural parents remain unchanged and out of scope. One Vertical slice creates no child; the Original work item is executable. Several slices make it the container, and each slice gets one direct child PBI. Flag an Epic introduced by this workflow, a grandchild below the Original work item, and a child of any type other than PBI.
-37. Description sections keep this order when present: `Problem`, `Expected outcome`, `Scope`, `Process contract`, `Business process`, `Runtime View`, `Building Block View`. Diagrams stay with their explanatory text. In Acceptance Criteria, `Behavior` is valid fenced Gherkin and precedes `Test specification` when both exist; either section may be absent without prescribed meaning.
+37. The spec keeps `/mattpocock-skills:to-spec`'s headings in order: `Problem Statement`, `Solution`, `User Stories`, `Implementation Decisions`, `Testing Decisions`, `Out of Scope`, `Further Notes`. `Process contract` and `Business process` nest under `Solution`; `Building Block View` and `Runtime View` nest under `Implementation Decisions`. The spec lives in Description on a Feature or PBI, and in Repro Steps on a Bug. Diagrams stay with their explanatory text. In Acceptance Criteria, `Behavior` is valid fenced Gherkin and precedes `Test specification` when both exist; either section may be absent without prescribed meaning.
 
 ## Delegation contract
 
