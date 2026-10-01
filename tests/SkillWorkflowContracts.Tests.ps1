@@ -60,7 +60,7 @@ Describe 'Skill workflow contracts' {
         $implement | Should -Match 'after the previous worker''s return meets its contract'
         $implement | Should -Match 'as a checkpoint'
         $implement | Should -Not -Match 'fault turn'
-        $implement | Should -Not -Match 'background `Agent` calls in one message'
+        $implement | Should -Not -Match 'the workers dispatch as background'
         $tdd | Should -Not -Match 'ends its turn with that proof''s fault site'
     }
 
