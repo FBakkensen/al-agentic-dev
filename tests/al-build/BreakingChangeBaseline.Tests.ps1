@@ -534,7 +534,7 @@ Describe 'validate-breaking-changes.ps1 prerequisites' -Tag 'Process' {
         $result = Invoke-Validate -Root $fixture.Root -Feed $fixture.Feed -SymbolOnly @($script:FeedStyleName)
 
         $result.ExitCode | Should -Be 4
-        $result.Output | Should -Match ([regex]::Escape($script:FeedStyleName))
+        $result.Output | Should -Match ([regex]::Escape($script:FeedStyleName) + ' is a symbols-only')
         Assert-StoppedBeforeBuild $result
     }
 
