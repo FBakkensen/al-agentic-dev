@@ -13,17 +13,17 @@ Gherkin, the reviewed AAA expected values and proof levels, and the Level 1 modu
 
 Deepening reduces hidden complexity behind the existing caller-visible interface: one owner, tests through that interface, replaceable internals. Prefer canonical BC patterns and Base App helpers to local code. Collapse an interface with one implementation unless a second implementation or a stable external contract proves the seam. A defect noticed outside the chosen candidate is a follow-up line in the receipt, not a change.
 
-A proposed Level 1 interface change goes to the user before any refactor, as does any change to behavior, an expected value, or a proof level. Once the user approves a Level 1 change, update the Original work item's Building Block View Level 1 through /al-arc42 and /al-azure-devops-attachments before the refactor starts.
+A proposed Level 1 interface change goes to the user before any refactor, as does any change to behavior, an expected value, or a proof level. Once the user approves a Level 1 change, update the Original work item's Building Block View Level 1 through /al-arc42 and /al-azure-devops-attachments before the refactor starts, writing the returned fragment into its Description, or Repro Steps on a Bug, under `Implementation Decisions`.
 
-A test that moves behind the deepened interface is a materially reshaped proof: it accounts for every existing business assertion and earns its red as al-tdd requires under `/mattpocock-skills:tdd`, a born-green reshape included.
+A test that moves behind the deepened interface is a materially reshaped proof: it accounts for every existing business assertion and earns its red as al-tdd requires under `/mattpocock-skills:tdd`, a born-green reshape included. That red runs once the step that moves the proof is green: inject one compiling fault, get red, revert, confirm green. This intended red is not a reason to restore.
 
 ## Gate every compilable step
 
-Before the first edit, require an executable work item, Original or child PBI; without one, ask the user which item the deepening belongs to and stop. Then require the affected scope green:
+Before the first edit, require an executable work item, Original or child PBI, with its reviewed `Test specification` and `Current-to-final proof map`. Without an item, ask the user which one the deepening belongs to and end the turn with that question, with nothing to commit; without the specification, route to `/mattpocock-skills:tdd` first. Then require the affected scope green:
 
 ▶ haiku · /al-build gate on the affected scope, WARN_AS_ERROR as the repository states → summary.json verdict, per-runner totals, exact red cause
 
-A move across several AL objects does not compile until its last edit, so run /al-build's gate after each compilable step, the smallest set of edits that compiles, and finish on a green gate. Restore the last green shape when a step goes red or weakens behavior or the module contract.
+A move across several AL objects does not compile until its last edit, so run /al-build's gate after each compilable step, the smallest set of edits that compiles, and finish on a green gate. Restore the last green shape when a step goes unintentionally red or weakens behavior or the module contract.
 
 ## Map the landed shape
 
@@ -37,8 +37,8 @@ Use the verified URLs in the receipt and the Original work item's Level 2 fragme
 
 ## Close
 
-Update the receipt with the exact reshapes, the gate result, the Level 2 delta, and any new `verified:` / `assumed:` / `unresolved:` entries. At every exit — clean close, a red gate that pauses the run, or a question left with the user:
+Once a work item is named, update the receipt with the exact reshapes, the gate result, the Level 2 delta, and any new `verified:` / `assumed:` / `unresolved:` entries. At every exit — clean close, a red gate that pauses the run, or a question left with the user:
 
 ▶ haiku · /al-commit the complete worktree, work items <ids> → commit hashes and subjects, remaining worktree
 
-Finish outcome first, back into the entry's run: the reshaped files, the green gate, and that the developer types `/mattpocock-skills:code-review` next, where al-review reads the receipt. Stop with the exact red reason when the gate does not pass.
+Finish outcome first, back into the entry's run: the reshaped files, the green gate, and, after edits landed, that the developer types `/mattpocock-skills:code-review` next, where al-review reads the receipt. Stop with the exact red reason when the gate does not pass.

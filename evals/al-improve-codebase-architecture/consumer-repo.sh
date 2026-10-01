@@ -3,6 +3,7 @@
 # the committed app and tracker text, then an uncommitted field, so
 # /mattpocock-skills:improve-codebase-architecture runs in an AL repository
 # with a work tree that is not clean and the addition has a repository to read.
+# The seed is deliberately free of work items: the entry runs with none named.
 set -euo pipefail
 
 mkdir -p src docs/agents

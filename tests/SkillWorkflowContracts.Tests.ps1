@@ -58,10 +58,11 @@ Describe 'Skill workflow contracts' {
         $improve | Should -Match 'Before the first edit, require an executable work item'
         $improve | Should -Match 'require the affected scope green'
         $improve | Should -Match 'run /al-build''s gate after each compilable step'
-        $improve | Should -Match 'Restore the last green shape when a step goes red'
-        $improve | Should -Match '(?s)At every exit.*??
-?
-▶ haiku · /al-commit'
+        $improve | Should -Match 'Restore the last green shape when a step goes unintentionally red'
+        $improve | Should -Match 'At every exit'
+        $improve | Should -Match '▶ haiku · /al-commit the complete worktree'
+        $improve | Should -Match 'writing the returned fragment into its Description'
+        $improve | Should -Match 'This intended red is not a reason to restore'
         $improve | Should -Match 'the developer types `/mattpocock-skills:code-review` next, where al-review reads the receipt'
     }
 
