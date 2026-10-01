@@ -31,9 +31,20 @@ BeforeAll {
         return $null
     }
 
+    function Get-ScriptCommand {
+        param([string[]]$Name)
+
+        @($script:GoldenContainerAst.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.CommandAst] -and
+            $node.GetCommandName() -in $Name
+        }, $true))
+    }
+
     $scriptsRoot = Join-Path $PSScriptRoot '..' '..' 'skills' 'al-build' 'scripts'
     $script:GoldenContainerScriptPath = Resolve-Path (Join-Path $scriptsRoot 'new-bc-container.ps1')
     $script:BuildOperationsModulePath = Resolve-Path (Join-Path $scriptsRoot 'build-operations.psm1')
+    $script:CommonModulePath = Resolve-Path (Join-Path $scriptsRoot 'common.psm1')
 
     $tokens = $null
     $parseErrors = $null
@@ -81,6 +92,40 @@ Describe 'Golden container server settings' {
 
         $commands | Should -HaveCount 1
         Get-StaticCommandParameterValue -Command $commands[0] -ParameterName 'keyValue' | Should -Be 'true'
+    }
+}
+
+Describe 'Golden container without AL-Go settings' {
+    It 'names no AL-Go command' {
+        Get-ScriptCommand -Name 'Install-AlGoDependencies', 'Get-AlGoSettingsPath', 'Get-AlGoDependencyProbingPaths' |
+            Should -HaveCount 0
+    }
+
+    It 'exports no Install-AlGoDependencies' {
+        $module = Import-Module $script:CommonModulePath -Force -DisableNameChecking -PassThru
+        try {
+            $module.ExportedFunctions.Keys | Should -Not -Contain 'Install-AlGoDependencies'
+        }
+        finally {
+            Remove-Module -ModuleInfo $module -Force
+        }
+    }
+
+    It 'imports no license' {
+        Get-ScriptCommand -Name 'New-BcContainer' | Should -HaveCount 1
+
+        # Text, not syntax: a licenseFile parameter, splat key, or later hashtable assignment all contain it.
+        $script:GoldenContainerAst.Extent.Text | Should -Not -Match 'licenseFile'
+
+        Get-ScriptCommand -Name 'Import-BcContainerLicense' | Should -HaveCount 0
+    }
+
+    It 'never prints the container password' {
+        $messageWriters = Get-ScriptCommand -Name 'Write-BuildMessage', 'Write-BuildHeader', 'Write-Host', 'Write-Information', 'Write-Output', 'Write-Warning', 'Write-Error', 'Write-Verbose'
+        $messageWriters | Should -Not -BeNullOrEmpty
+
+        @($messageWriters | Where-Object { $_.Extent.Text -match 'ContainerPassword|\.Password\b' }) |
+            Should -HaveCount 0
     }
 }
 
