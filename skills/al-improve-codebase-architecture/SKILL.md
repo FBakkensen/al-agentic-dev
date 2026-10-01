@@ -5,23 +5,25 @@ description: Use whenever /mattpocock-skills:improve-codebase-architecture runs 
 
 # al-improve-codebase-architecture - deepen AL behind its interface
 
-In: `/mattpocock-skills:improve-codebase-architecture` running on AL code in a Consumer repository, the receipt `.output/receipts/<work-item-id>.md`, and the executable Original work item or its child PBI with the reviewed `Test specification`. The entry owns the scan, the report, and the grilling. This addition applies when the user picks a candidate and it is carried out in this session; it adds the AL freeze, the gate, and the receipt and work-item updates.
+In: `/mattpocock-skills:improve-codebase-architecture` running on AL code in a Consumer repository, the receipt `.output/receipts/<work-item-id>.md`, and, once a candidate is picked, the executable Original work item or its child PBI with the reviewed `Test specification`. The entry owns the scan, the report, and the grilling, and can run with no work item; until the user picks a candidate this addition supplies only the lookup rule. It adds the AL freeze, the gate, and the receipt and work-item updates.
 
 ## Freeze
 
 Gherkin, the reviewed AAA expected values and proof levels, and the Level 1 module interface are fixed. Read the diff, the receipt, and the `Current-to-final proof map`, and trace consumers before a seam moves. Every BC object, table, field, procedure, event, enum value, test library, or dialog text used is confirmed by a lookup in the current session.
 
-Deepening reduces hidden complexity behind the existing caller-visible interface: one owner, tests through that interface, replaceable internals. Prefer canonical BC patterns and Base App helpers to local code; an interface with one implementation is a finding.
+Deepening reduces hidden complexity behind the existing caller-visible interface: one owner, tests through that interface, replaceable internals. Prefer canonical BC patterns and Base App helpers to local code. Collapse an interface with one implementation unless a second implementation or a stable external contract proves the seam. A defect noticed outside the chosen candidate is a follow-up line in the receipt, not a change.
 
-A proposed Level 1 interface change goes to the user before any refactor, as does any change to behavior, an expected value, or a proof level.
+A proposed Level 1 interface change goes to the user before any refactor, as does any change to behavior, an expected value, or a proof level. Once the user approves a Level 1 change, update the Original work item's Building Block View Level 1 through /al-arc42 and /al-azure-devops-attachments before the refactor starts.
 
-## Gate every edit
+A test that moves behind the deepened interface is a materially reshaped proof: it accounts for every existing business assertion and earns its red as al-tdd requires under `/mattpocock-skills:tdd`, a born-green reshape included.
 
-Before the first edit, require the affected scope green:
+## Gate every compilable step
+
+Before the first edit, require an executable work item, Original or child PBI; without one, ask the user which item the deepening belongs to and stop. Then require the affected scope green:
 
 ▶ haiku · /al-build gate on the affected scope, WARN_AS_ERROR as the repository states → summary.json verdict, per-runner totals, exact red cause
 
-Run /al-build's gate after each edit and finish on a green gate. Restore the last green shape when an edit weakens behavior or the module contract.
+A move across several AL objects does not compile until its last edit, so run /al-build's gate after each compilable step, the smallest set of edits that compiles, and finish on a green gate. Restore the last green shape when a step goes red or weakens behavior or the module contract.
 
 ## Map the landed shape
 
@@ -39,4 +41,4 @@ Update the receipt with the exact reshapes, the gate result, the Level 2 delta, 
 
 ▶ haiku · /al-commit the complete worktree, work items <ids> → commit hashes and subjects, remaining worktree
 
-Finish outcome first, back into the entry's run: the reshaped files, the green gate, and that /al-review takes the receipt next. Stop with the exact red reason when the gate does not pass.
+Finish outcome first, back into the entry's run: the reshaped files, the green gate, and that the developer types `/mattpocock-skills:code-review` next, with al-review, to take the receipt. Stop with the exact red reason when the gate does not pass.

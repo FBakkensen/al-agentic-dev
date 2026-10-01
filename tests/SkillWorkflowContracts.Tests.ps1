@@ -52,6 +52,20 @@ Describe 'Skill workflow contracts' {
         $simplify | Should -Match 'Every new or materially reshaped proof born green takes mutation as its red'
     }
 
+    It 'gates each compilable step of a deepening and closes on the next entry' {
+        $improve = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-improve-codebase-architecture' 'SKILL.md') -Raw
+
+        $improve | Should -Match 'Before the first edit, require an executable work item'
+        $improve | Should -Match 'require the affected scope green'
+        $improve | Should -Match 'run /al-build''s gate after each compilable step'
+        $improve | Should -Match 'Restore the last green shape when a step goes red'
+        $improve | Should -Match 'At every exit[^
+]*?
+?
+▶ haiku · /al-commit'
+        $improve | Should -Match 'the developer types `/mattpocock-skills:code-review` next, with al-review'
+    }
+
     It 'serializes fault injection across parallel scenario workers' {
         $tdd = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-tdd' 'SKILL.md') -Raw
         $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw

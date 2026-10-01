@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Seeds an AL Consumer repository with a one-line change in the working tree:
-# the committed app and tracker text, then an uncommitted field that is already
-# clean, so /simplify reviews it and has nothing to apply.
+# the committed app and tracker text, then an uncommitted field, so
+# /mattpocock-skills:improve-codebase-architecture runs in an AL repository
+# with a work tree that is not clean and the addition has a repository to read.
 set -euo pipefail
 
 mkdir -p src docs/agents
