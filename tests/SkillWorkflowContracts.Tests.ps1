@@ -88,8 +88,8 @@ Describe 'Skill workflow contracts' {
 
         $next | Should -Match 'every work-item read and write.*tracker text'
         $next | Should -Match 'leave its state and parent to the user'
-        $next | Should -Match '▶ haiku · the settled Level 2 content.*`/al-arc42`'
-        $next | Should -Match '▶ haiku · the `/al-arc42` artifacts.*`/al-azure-devops-attachments`'
+        $next | Should -Match '▶ haiku · /al-arc42 the corrected Level 2 white box.*HTML path, SVG and PNG paths, alt text, publishable fragments'
+        $next | Should -Match '▶ haiku · /al-azure-devops-attachments the Level 2 PNG and SVG.*verified attachment URLs'
         $arc42 | Should -Match '(?m)^In: .*/al-next'
     }
 

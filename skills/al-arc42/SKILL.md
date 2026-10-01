@@ -15,7 +15,7 @@ Usually ask none. Before the first tool call, write one sentence. Update on an i
 - **Runtime View:** one named architecturally relevant scenario, its interaction diagram or steps, and notable interaction details.
 - **Building Block Level 2:** one selected Level 1 module as a white box, using the same white-box structure and black boxes for proven internals.
 
-The stable current-state Building Block View and any Runtime View sit under `Implementation Decisions` in the Original work item. A change overlay goes to the executable item's comment and receipt, never to the Original work item. Create only the views named by the caller. Level 1 records intended module contracts. Level 2 records stable implementation structure and may be omitted for a simple module.
+The stable current-state Building Block View and any Runtime View sit under `Implementation Decisions` in the Original work item. A change overlay goes to the executable item's comment and receipt, never into the Original work item's Description. When the Original is itself the executable item, its overlay goes to its comment and receipt. Create only the views named by the caller. Level 1 records intended module contracts. Level 2 records stable implementation structure and may be omitted for a simple module.
 
 An implementation change map is a change overlay on the Building Block View, not a fourth arc42 view. Use Level 2 when one Level 1 module changed. When several Level 1 modules changed, add a Level 1 impact overview and the Level 2 white boxes needed to explain their internal object relations. Add a Runtime View only for important order, transaction, or error behavior.
 
