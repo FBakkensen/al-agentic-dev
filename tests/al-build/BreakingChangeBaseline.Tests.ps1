@@ -619,28 +619,41 @@ Describe 'validate-breaking-changes.ps1 prerequisites' -Tag 'Process' {
     }
 }
 
-# download-baseline.ps1 is the Release pin check. Each case runs it as a fresh pwsh process rooted
-# at a fixture Consumer repository under TestDrive, with ALBT_APPSOURCESYMBOLS_FEED pointed at a
-# local flat2 feed, so Get-BuildConfig reads the fixture's al-build.json and nothing reaches the
-# network.
-Describe 'download-baseline.ps1 Release pin check' -Tag 'Process' {
+# download-baseline.ps1 checks the Release pin, then fills the compile baseline folder. Each case runs
+# it as a fresh pwsh process rooted at a fixture Consumer repository under TestDrive, with both symbol
+# feeds pointed at local flat2 directories, so Get-BuildConfig reads the fixture's al-build.json and
+# nothing reaches the network.
+Describe 'download-baseline.ps1' -Tag 'Process' {
     BeforeAll {
         Import-Module (Join-Path $PSScriptRoot 'SymbolFeedFixture.psm1') -Force
+        Import-Module (Resolve-Path (Join-Path $base 'symbol-feed.psm1')) -Force -DisableNameChecking
 
         $script:DownloadBaselineScript = Join-Path $base 'download-baseline.ps1'
         $script:Pwsh = Join-Path $PSHOME 'pwsh.exe'
+        $script:FolderName = '.appSourceCopPackages'
+        $script:StaleName = 'Stale.Release.1.0.0.0.app'
         $script:AppId = '3ac22135-0000-4000-8000-000000000001'
         $script:PackageId = "NAVEKSA.NAVEKSAShopFloor365MES.symbols.$($script:AppId)"
         $script:AppIdentity = @{ Id = $script:AppId; Name = 'NAVEKSA ShopFloor365 MES'; Publisher = 'NAVEKSA' }
+        $script:EmptyFeed = Join-Path $TestDrive 'empty-mssymbols'
+        New-Item -ItemType Directory -Path $script:EmptyFeed -Force | Out-Null
 
-        function New-PinFixture {
+        # A Consumer repository: app.json, al-build.json, and an AppSourceCop.json that names its
+        # baseline folder unless -NoCachePath is set. -Baseline adds the baseline folder with a
+        # committed README.md and .gitignore (ignoring *.app) and one stale .app, and commits every
+        # file to a fresh git repository; -TrackedApp commits the stale .app too.
+        function New-ConsumerFixture {
             param(
                 [Parameter(Mandatory)][string]$Root,
                 [string]$Pin,
                 [switch]$NoAppSourceCop,
-                [switch]$BreakingChangeEnabled
+                [switch]$NoCachePath,
+                [switch]$BreakingChangeEnabled,
+                [switch]$Baseline,
+                [switch]$TrackedApp
             )
             $appDir = Join-Path $Root 'app'
+            $folder = Join-Path $appDir $script:FolderName
             New-Item -ItemType Directory -Path $appDir -Force | Out-Null
             [ordered]@{
                 id = $script:AppId; name = 'NAVEKSA ShopFloor365 MES'; publisher = 'NAVEKSA'; version = '1.0.0.0'
@@ -651,10 +664,24 @@ Describe 'download-baseline.ps1 Release pin check' -Tag 'Process' {
                 breakingChange = [ordered]@{ enabled = [bool]$BreakingChangeEnabled }
             } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $Root 'al-build.json') -Encoding UTF8
             if (-not $NoAppSourceCop) {
-                $asc = [ordered]@{ mandatoryAffixes = @('NALICF'); supportedCountries = @('dk') }
-                if ($Pin) { $asc['version'] = $Pin }
-                $asc | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $appDir 'AppSourceCop.json') -Encoding UTF8
+                $cop = [ordered]@{ mandatoryAffixes = @('NALICF'); supportedCountries = @('dk') }
+                if ($Pin) { $cop['version'] = $Pin }
+                if (-not $NoCachePath) { $cop['baselinePackageCachePath'] = "./$($script:FolderName)" }
+                $cop | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $appDir 'AppSourceCop.json') -Encoding UTF8
             }
+            if (-not $Baseline) { return }
+
+            New-Item -ItemType Directory -Path $folder -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $folder 'README.md') -Value 'Baseline folder.' -Encoding UTF8
+            Set-Content -LiteralPath (Join-Path $folder '.gitignore') -Value '*.app' -Encoding UTF8
+            Set-Content -LiteralPath (Join-Path $folder $script:StaleName) -Value 'stale' -Encoding UTF8
+            git -C $Root init -q
+            git -C $Root config user.email 'test@example.invalid'
+            git -C $Root config user.name 'test'
+            git -C $Root config commit.gpgsign false
+            git -C $Root add -A
+            if ($TrackedApp) { git -C $Root add -f -- (Join-Path $folder $script:StaleName) }
+            git -C $Root commit -q -m 'fixture'
         }
 
         function New-PinFeed {
@@ -663,19 +690,25 @@ Describe 'download-baseline.ps1 Release pin check' -Tag 'Process' {
         }
 
         function Invoke-DownloadBaseline {
-            param([Parameter(Mandatory)][string]$Root, [Parameter(Mandatory)][string]$Feed)
+            param(
+                [Parameter(Mandatory)][string]$Root,
+                [Parameter(Mandatory)][string]$Feed,
+                [string]$MsFeed = $script:EmptyFeed
+            )
             # Paths travel as environment variables, so no quote in one can break the command. The
             # child's own ALBT_* variables are cleared first: they outrank the fixture's al-build.json.
             $env:PINTEST_ROOT = $Root
             $env:PINTEST_FEED = $Feed
+            $env:PINTEST_MSFEED = $MsFeed
             $env:PINTEST_SCRIPT = $script:DownloadBaselineScript
             try {
                 $command = 'Get-ChildItem Env:ALBT_* | Remove-Item; $env:ALBT_APPSOURCESYMBOLS_FEED = $env:PINTEST_FEED; ' +
+                    '$env:ALBT_MSSYMBOLS_FEED = $env:PINTEST_MSFEED; ' +
                     'Set-Location -LiteralPath $env:PINTEST_ROOT; & $env:PINTEST_SCRIPT; exit $LASTEXITCODE'
                 $output = & $script:Pwsh -NoProfile -Command $command 2>&1
                 $exitCode = $LASTEXITCODE
             } finally {
-                Remove-Item Env:PINTEST_ROOT, Env:PINTEST_FEED, Env:PINTEST_SCRIPT -ErrorAction SilentlyContinue
+                Remove-Item Env:PINTEST_ROOT, Env:PINTEST_FEED, Env:PINTEST_MSFEED, Env:PINTEST_SCRIPT -ErrorAction SilentlyContinue
             }
             [pscustomobject]@{
                 ExitCode = $exitCode
@@ -696,142 +729,360 @@ Describe 'download-baseline.ps1 Release pin check' -Tag 'Process' {
             Get-AscBase64 -Root $Root | Should -Be $Before
             (Join-Path $Root '.output' 'baseline-cache') | Should -Not -Exist
         }
+
+        function Get-BaselineApps {
+            param([string]$Root)
+            $folder = Join-Path $Root 'app' $script:FolderName
+            @(Get-ChildItem -LiteralPath $folder -File -ErrorAction SilentlyContinue | Where-Object Extension -eq '.app')
+        }
+
+        # Every file in the baseline folder with its content hash, to compare before and after a run.
+        function Get-FolderSnapshot {
+            param([string]$Root)
+            @(Get-ChildItem -LiteralPath (Join-Path $Root 'app' $script:FolderName) -File -Force | Sort-Object Name |
+                ForEach-Object { '{0}:{1}' -f $_.Name, (Get-FileHash -LiteralPath $_.FullName).Hash })
+        }
     }
 
-    It 'passes with exit 0 when the pin equals the latest Release' {
-        $root = Join-Path $TestDrive 'equal'
-        $feed = Join-Path $TestDrive 'equal-feed'
-        New-PinFixture -Root $root -Pin '26.1.9.1'
-        New-PinFeed -Root $feed -Releases @{ '26.1.4' = '26.1.4.0'; '26.1.9.1' = '26.1.9.1' }
-        $before = Get-AscBase64 -Root $root
+    Context 'Release pin check' {
+        It 'passes with exit 0 and fills the baseline folder when the pin equals the latest Release' {
+            $root = Join-Path $TestDrive 'equal'
+            $feed = Join-Path $TestDrive 'equal-feed'
+            New-ConsumerFixture -Root $root -Pin '26.1.9.1'
+            New-PinFeed -Root $feed -Releases @{ '26.1.4' = '26.1.4.0'; '26.1.9.1' = '26.1.9.1' }
+            $before = Get-AscBase64 -Root $root
 
-        $result = Invoke-DownloadBaseline -Root $root -Feed $feed
+            $result = Invoke-DownloadBaseline -Root $root -Feed $feed
 
-        $result.ExitCode | Should -Be 0
-        Assert-Untouched -Root $root -Before $before
+            $result.ExitCode | Should -Be 0 -Because $result.Output
+            Assert-Untouched -Root $root -Before $before
+            $apps = Get-BaselineApps -Root $root
+            $apps.Count | Should -Be 1
+            (Read-AppManifest -Path $apps[0].FullName).Version | Should -Be '26.1.9.1'
+        }
+
+        It 'stops with exit 4 and names the latest Release when the pin is stale' {
+            $root = Join-Path $TestDrive 'stale'
+            $feed = Join-Path $TestDrive 'stale-feed'
+            New-ConsumerFixture -Root $root -Pin '26.1.9.0'
+            New-PinFeed -Root $feed -Releases @{ '26.1.4' = '26.1.4.0'; '26.1.9.1' = '26.1.9.1' }
+            $before = Get-AscBase64 -Root $root
+
+            $result = Invoke-DownloadBaseline -Root $root -Feed $feed
+
+            $result.ExitCode | Should -Be 4
+            $result.Output | Should -Match '26\.1\.9\.1'
+            Assert-Untouched -Root $root -Before $before
+        }
+
+        It 'compares the pin with the manifest version, not the trimmed NuGet version' {
+            $feed = Join-Path $TestDrive 'trimmed-feed'
+            New-PinFeed -Root $feed -Releases @{ '26.1.9' = '26.1.9.0' }
+
+            $current = Join-Path $TestDrive 'trimmed-current'
+            New-ConsumerFixture -Root $current -Pin '26.1.9.0'
+            $currentBefore = Get-AscBase64 -Root $current
+            (Invoke-DownloadBaseline -Root $current -Feed $feed).ExitCode | Should -Be 0
+            Assert-Untouched -Root $current -Before $currentBefore
+
+            $older = Join-Path $TestDrive 'trimmed-older'
+            New-ConsumerFixture -Root $older -Pin '26.1.4.0'
+            $olderBefore = Get-AscBase64 -Root $older
+            $olderResult = Invoke-DownloadBaseline -Root $older -Feed $feed
+            $olderResult.ExitCode | Should -Be 4
+            $olderResult.Output | Should -Match '26\.1\.9\.0'
+            Assert-Untouched -Root $older -Before $olderBefore
+        }
+
+        It 'checks the pin whatever breakingChange.enabled and al.codeAnalyzers say' {
+            $feed = Join-Path $TestDrive 'enabled-feed'
+            New-PinFeed -Root $feed -Releases @{ '26.1.9' = '26.1.9.0' }
+
+            $disabled = Join-Path $TestDrive 'disabled'
+            New-ConsumerFixture -Root $disabled -Pin '26.1.4.0'
+            (Get-Content -LiteralPath (Join-Path $disabled 'al-build.json') -Raw | ConvertFrom-Json).breakingChange.enabled | Should -BeFalse
+            (Join-Path $disabled '.vscode' 'settings.json') | Should -Not -Exist
+            (Join-Path $disabled 'app' '.vscode' 'settings.json') | Should -Not -Exist
+            $before = Get-AscBase64 -Root $disabled
+            (Invoke-DownloadBaseline -Root $disabled -Feed $feed).ExitCode | Should -Be 4
+            Assert-Untouched -Root $disabled -Before $before
+
+            $enabled = Join-Path $TestDrive 'enabled'
+            New-ConsumerFixture -Root $enabled -Pin '26.1.4.0' -BreakingChangeEnabled
+            (Invoke-DownloadBaseline -Root $enabled -Feed $feed).ExitCode | Should -Be 4
+        }
+
+        It 'exits 0 and reads no feed when AppSourceCop.json is absent' {
+            $root = Join-Path $TestDrive 'no-asc'
+            New-ConsumerFixture -Root $root -NoAppSourceCop
+            $unreachable = Join-Path $TestDrive 'no-asc-missing-feed'
+
+            $result = Invoke-DownloadBaseline -Root $root -Feed $unreachable
+
+            $result.ExitCode | Should -Be 0
+            Assert-Untouched -Root $root -Before $null
+        }
+
+        It 'exits 0 and reads no feed when AppSourceCop.json carries no version' {
+            $root = Join-Path $TestDrive 'no-version'
+            New-ConsumerFixture -Root $root
+            $unreachable = Join-Path $TestDrive 'no-version-missing-feed'
+            $before = Get-AscBase64 -Root $root
+
+            $result = Invoke-DownloadBaseline -Root $root -Feed $unreachable
+
+            $result.ExitCode | Should -Be 0
+            Assert-Untouched -Root $root -Before $before
+        }
+
+        It 'stops with exit 4, naming the file, when AppSourceCop.json is not valid JSON' {
+            $root = Join-Path $TestDrive 'broken-asc'
+            New-ConsumerFixture -Root $root -NoAppSourceCop
+            Set-Content -LiteralPath (Join-Path $root 'app' 'AppSourceCop.json') -Value '{ not json' -Encoding UTF8
+            $before = Get-AscBase64 -Root $root
+
+            $result = Invoke-DownloadBaseline -Root $root -Feed (Join-Path $TestDrive 'broken-asc-feed')
+
+            $result.ExitCode | Should -Be 4
+            $result.Output | Should -Match 'AppSourceCop\.json.*not valid JSON'
+            Assert-Untouched -Root $root -Before $before
+        }
+
+        It 'exits 0 without an app folder, which holds no AppSourceCop.json' {
+            $root = Join-Path $TestDrive 'no-app-folder'
+            New-Item -ItemType Directory -Path $root -Force | Out-Null
+            [ordered]@{ appDir = 'app'; testApps = @() } | ConvertTo-Json |
+                Set-Content -LiteralPath (Join-Path $root 'al-build.json') -Encoding UTF8
+
+            (Invoke-DownloadBaseline -Root $root -Feed (Join-Path $TestDrive 'no-app-folder-feed')).ExitCode | Should -Be 0
+        }
+
+        It 'stops with exit 4 when the app has no Release on the feed' {
+            $root = Join-Path $TestDrive 'no-release'
+            $feed = Join-Path $TestDrive 'no-release-feed'
+            New-ConsumerFixture -Root $root -Pin '26.1.9.0'
+            New-FixtureFeedPackage -FeedRoot $feed -PackageId 'Contoso.Other.symbols.bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb' -NuGetVersion '1.0.0' `
+                -App @{ Id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'; Name = 'Other'; Publisher = 'Contoso'; Version = '1.0.0.0' } | Out-Null
+            $before = Get-AscBase64 -Root $root
+
+            $result = Invoke-DownloadBaseline -Root $root -Feed $feed
+
+            $result.ExitCode | Should -Be 4
+            $result.Output | Should -Match ([regex]::Escape($script:PackageId))
+            Assert-Untouched -Root $root -Before $before
+        }
+
+        It 'stops with exit 1 and names the feed when it cannot be reached' {
+            $root = Join-Path $TestDrive 'unreachable'
+            $missingFeed = Join-Path $TestDrive 'unreachable-no-such-feed'
+            New-ConsumerFixture -Root $root -Pin '26.1.9.0'
+            $before = Get-AscBase64 -Root $root
+
+            $result = Invoke-DownloadBaseline -Root $root -Feed $missingFeed
+
+            $result.ExitCode | Should -Be 1
+            $result.Output | Should -Match ([regex]::Escape($missingFeed))
+            Assert-Untouched -Root $root -Before $before
+        }
     }
 
-    It 'stops with exit 4 and names the latest Release when the pin is stale' {
-        $root = Join-Path $TestDrive 'stale'
-        $feed = Join-Path $TestDrive 'stale-feed'
-        New-PinFixture -Root $root -Pin '26.1.9.0'
-        New-PinFeed -Root $feed -Releases @{ '26.1.4' = '26.1.4.0'; '26.1.9.1' = '26.1.9.1' }
-        $before = Get-AscBase64 -Root $root
+    Context 'baseline fill' {
+        BeforeAll {
+            $script:LibraryId = '3ac22135-0000-4000-8000-000000000002'
+            $script:MsApplicationId = '3ac22135-0000-4000-8000-000000000003'
+            $script:MsSystemId = '3ac22135-0000-4000-8000-000000000004'
+            $script:LibraryPackageId = "Contoso.ContosoLib.symbols.$($script:LibraryId)"
+            $script:ApplicationPackageId = 'Microsoft.Application.symbols'
+            $script:SystemPackageId = 'Microsoft.System.symbols'
+            $script:GhostPackageId = 'Contoso.Ghost.symbols.aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 
-        $result = Invoke-DownloadBaseline -Root $root -Feed $feed
+            # Release -> Contoso Lib (AppSourceSymbols) -> Application (MSSymbols), plus System
+            # (MSSymbols) directly. Each package sits in exactly one feed, so its .app in the folder
+            # names the feed that served it; Contoso Lib lists two versions at or above its minimum. With -MissingDependency the Release's direct dependency
+            # is on neither feed.
+            function New-FillFeeds {
+                param([Parameter(Mandatory)][string]$Root, [switch]$MissingDependency)
+                $ms = Join-Path $Root 'mssymbols'
+                $appSource = Join-Path $Root 'appsourcesymbols'
+                New-FixtureFeedPackage -FeedRoot $ms -PackageId $script:ApplicationPackageId -NuGetVersion '26.0.0' `
+                    -App @{ Id = $script:MsApplicationId; Name = 'Application'; Publisher = 'Microsoft'; Version = '26.0.0.0' } | Out-Null
+                New-FixtureFeedPackage -FeedRoot $ms -PackageId $script:SystemPackageId -NuGetVersion '26.0.0' `
+                    -App @{ Id = $script:MsSystemId; Name = 'System'; Publisher = 'Microsoft'; Version = '26.0.0.0' } | Out-Null
+                foreach ($libraryVersion in '2.0.0', '2.1.0') {
+                    New-FixtureFeedPackage -FeedRoot $appSource -PackageId $script:LibraryPackageId -NuGetVersion $libraryVersion `
+                        -App @{ Id = $script:LibraryId; Name = 'Contoso Lib'; Publisher = 'Contoso'; Version = "$libraryVersion.0" } `
+                        -Dependencies @(@{ Id = $script:ApplicationPackageId; Version = '26.0.0' }) | Out-Null
+                }
+                $directId = if ($MissingDependency) { $script:GhostPackageId } else { $script:SystemPackageId }
+                foreach ($release in @{ '26.1.4' = '26.1.4.0'; '26.1.9.1' = '26.1.9.1' }.GetEnumerator()) {
+                    $app = $script:AppIdentity.Clone()
+                    $app.Version = $release.Value
+                    New-FixtureFeedPackage -FeedRoot $appSource -PackageId $script:PackageId -NuGetVersion $release.Key -App $app `
+                        -Dependencies @(@{ Id = $script:LibraryPackageId; Version = '1.0.0' }, @{ Id = $directId; Version = '26.0.0' }) | Out-Null
+                }
+                [pscustomobject]@{ Ms = $ms; AppSource = $appSource }
+            }
 
-        $result.ExitCode | Should -Be 4
-        $result.Output | Should -Match '26\.1\.9\.1'
-        Assert-Untouched -Root $root -Before $before
-    }
+            $script:Feeds = New-FillFeeds -Root (Join-Path $TestDrive 'fill-feeds')
+            $script:GhostFeeds = New-FillFeeds -Root (Join-Path $TestDrive 'fill-feeds-ghost') -MissingDependency
+        }
 
-    It 'compares the pin with the manifest version, not the trimmed NuGet version' {
-        $feed = Join-Path $TestDrive 'trimmed-feed'
-        New-PinFeed -Root $feed -Releases @{ '26.1.9' = '26.1.9.0' }
+        Context 'with a current pin' {
+            BeforeAll {
+                $script:FilledRoot = Join-Path $TestDrive 'filled'
+                New-ConsumerFixture -Root $script:FilledRoot -Pin '26.1.9.1' -Baseline
+                $script:CopBefore = [System.IO.File]::ReadAllBytes((Join-Path $script:FilledRoot 'app' 'AppSourceCop.json'))
+                $script:ReadmeBefore = (Get-FileHash -LiteralPath (Join-Path $script:FilledRoot 'app' $script:FolderName 'README.md')).Hash
+                $script:FilledResult = Invoke-DownloadBaseline -Root $script:FilledRoot -Feed $script:Feeds.AppSource -MsFeed $script:Feeds.Ms
+            }
 
-        $current = Join-Path $TestDrive 'trimmed-current'
-        New-PinFixture -Root $current -Pin '26.1.9.0'
-        $currentBefore = Get-AscBase64 -Root $current
-        (Invoke-DownloadBaseline -Root $current -Feed $feed).ExitCode | Should -Be 0
-        Assert-Untouched -Root $current -Before $currentBefore
+            It 'writes the Release and its dependencies from both feeds, transitively' {
+                $script:FilledResult.ExitCode | Should -Be 0 -Because $script:FilledResult.Output
 
-        $older = Join-Path $TestDrive 'trimmed-older'
-        New-PinFixture -Root $older -Pin '26.1.4.0'
-        $olderBefore = Get-AscBase64 -Root $older
-        $olderResult = Invoke-DownloadBaseline -Root $older -Feed $feed
-        $olderResult.ExitCode | Should -Be 4
-        $olderResult.Output | Should -Match '26\.1\.9\.0'
-        Assert-Untouched -Root $older -Before $olderBefore
-    }
+                $apps = Get-BaselineApps -Root $script:FilledRoot
+                $manifests = @($apps | ForEach-Object { Read-AppManifest -Path $_.FullName })
+                $apps.Count | Should -Be 4
+                ($manifests.Id | Sort-Object) | Should -Be (@($script:AppId, $script:LibraryId, $script:MsApplicationId, $script:MsSystemId) | Sort-Object)
+                ($manifests | Where-Object Id -eq $script:AppId).Version | Should -Be '26.1.9.1'
+            }
 
-    It 'checks the pin whatever breakingChange.enabled and al.codeAnalyzers say' {
-        $feed = Join-Path $TestDrive 'enabled-feed'
-        New-PinFeed -Root $feed -Releases @{ '26.1.9' = '26.1.9.0' }
+            It 'takes the highest version a feed lists at or above a dependency minimum' {
+                $library = Get-BaselineApps -Root $script:FilledRoot | ForEach-Object { Read-AppManifest -Path $_.FullName } | Where-Object Id -eq $script:LibraryId
+                @($library).Count | Should -Be 1
+                $library.Version | Should -Be '2.1.0.0'
+            }
 
-        $disabled = Join-Path $TestDrive 'disabled'
-        New-PinFixture -Root $disabled -Pin '26.1.4.0'
-        (Get-Content -LiteralPath (Join-Path $disabled 'al-build.json') -Raw | ConvertFrom-Json).breakingChange.enabled | Should -BeFalse
-        (Join-Path $disabled '.vscode' 'settings.json') | Should -Not -Exist
-        (Join-Path $disabled 'app' '.vscode' 'settings.json') | Should -Not -Exist
-        $before = Get-AscBase64 -Root $disabled
-        (Invoke-DownloadBaseline -Root $disabled -Feed $feed).ExitCode | Should -Be 4
-        Assert-Untouched -Root $disabled -Before $before
+            It 'changes no committed file and removes only the stale .app' {
+                git -C $script:FilledRoot status --porcelain | Should -BeNullOrEmpty
+                [System.IO.File]::ReadAllBytes((Join-Path $script:FilledRoot 'app' 'AppSourceCop.json')) | Should -Be $script:CopBefore
+                (Get-FileHash -LiteralPath (Join-Path $script:FilledRoot 'app' $script:FolderName 'README.md')).Hash | Should -Be $script:ReadmeBefore
+                (Join-Path $script:FilledRoot 'app' $script:FolderName $script:StaleName) | Should -Not -Exist
+                (Get-BaselineApps -Root $script:FilledRoot).Count | Should -Be 4
+            }
+        }
 
-        $enabled = Join-Path $TestDrive 'enabled'
-        New-PinFixture -Root $enabled -Pin '26.1.4.0' -BreakingChangeEnabled
-        (Invoke-DownloadBaseline -Root $enabled -Feed $feed).ExitCode | Should -Be 4
-    }
+        It 'stops with exit 4 naming baselinePackageCachePath and writes nothing when the key is missing' {
+            $root = Join-Path $TestDrive 'no-key'
+            New-ConsumerFixture -Root $root -Pin '26.1.9.1' -NoCachePath -Baseline
+            $before = Get-FolderSnapshot -Root $root
 
-    It 'exits 0 and reads no feed when AppSourceCop.json is absent' {
-        $root = Join-Path $TestDrive 'no-asc'
-        New-PinFixture -Root $root -NoAppSourceCop
-        $unreachable = Join-Path $TestDrive 'no-asc-missing-feed'
+            $result = Invoke-DownloadBaseline -Root $root -Feed $script:Feeds.AppSource -MsFeed $script:Feeds.Ms
 
-        $result = Invoke-DownloadBaseline -Root $root -Feed $unreachable
+            $result.ExitCode | Should -Be 4
+            $result.Output | Should -Match 'baselinePackageCachePath'
+            Get-FolderSnapshot -Root $root | Should -Be $before
+            @(Get-ChildItem -LiteralPath $root -Recurse -File -Filter '*.app').Count | Should -Be 1
+        }
 
-        $result.ExitCode | Should -Be 0
-        Assert-Untouched -Root $root -Before $null
-    }
+        It 'leaves every file in the folder as it was when the pin is stale' {
+            $root = Join-Path $TestDrive 'stale-pin'
+            New-ConsumerFixture -Root $root -Pin '26.1.4.0' -Baseline
+            $before = Get-FolderSnapshot -Root $root
 
-    It 'exits 0 and reads no feed when AppSourceCop.json carries no version' {
-        $root = Join-Path $TestDrive 'no-version'
-        New-PinFixture -Root $root
-        $unreachable = Join-Path $TestDrive 'no-version-missing-feed'
-        $before = Get-AscBase64 -Root $root
+            $result = Invoke-DownloadBaseline -Root $root -Feed $script:Feeds.AppSource -MsFeed $script:Feeds.Ms
 
-        $result = Invoke-DownloadBaseline -Root $root -Feed $unreachable
+            $result.ExitCode | Should -Be 4
+            Get-FolderSnapshot -Root $root | Should -Be $before
+        }
 
-        $result.ExitCode | Should -Be 0
-        Assert-Untouched -Root $root -Before $before
-    }
+        It 'leaves every file in the folder as it was when AppSourceCop.json has no version' {
+            $root = Join-Path $TestDrive 'no-pin'
+            New-ConsumerFixture -Root $root -Baseline
+            $before = Get-FolderSnapshot -Root $root
 
-    It 'stops with exit 4, naming the file, when AppSourceCop.json is not valid JSON' {
-        $root = Join-Path $TestDrive 'broken-asc'
-        New-PinFixture -Root $root -NoAppSourceCop
-        Set-Content -LiteralPath (Join-Path $root 'app' 'AppSourceCop.json') -Value '{ not json' -Encoding UTF8
-        $before = Get-AscBase64 -Root $root
+            $result = Invoke-DownloadBaseline -Root $root -Feed $script:Feeds.AppSource -MsFeed $script:Feeds.Ms
 
-        $result = Invoke-DownloadBaseline -Root $root -Feed (Join-Path $TestDrive 'broken-asc-feed')
+            $result.ExitCode | Should -Be 0
+            Get-FolderSnapshot -Root $root | Should -Be $before
+        }
 
-        $result.ExitCode | Should -Be 4
-        $result.Output | Should -Match 'AppSourceCop\.json.*not valid JSON'
-        Assert-Untouched -Root $root -Before $before
-    }
+        It 'stops with exit 1 naming the package, and leaves the folder as it was, when a dependency is on neither feed' {
+            $root = Join-Path $TestDrive 'ghost'
+            New-ConsumerFixture -Root $root -Pin '26.1.9.1' -Baseline
+            $before = Get-FolderSnapshot -Root $root
 
-    It 'exits 0 without an app folder, which holds no AppSourceCop.json' {
-        $root = Join-Path $TestDrive 'no-app-folder'
-        New-Item -ItemType Directory -Path $root -Force | Out-Null
-        [ordered]@{ appDir = 'app'; testApps = @() } | ConvertTo-Json |
-            Set-Content -LiteralPath (Join-Path $root 'al-build.json') -Encoding UTF8
+            $result = Invoke-DownloadBaseline -Root $root -Feed $script:GhostFeeds.AppSource -MsFeed $script:GhostFeeds.Ms
 
-        (Invoke-DownloadBaseline -Root $root -Feed (Join-Path $TestDrive 'no-app-folder-feed')).ExitCode | Should -Be 0
-    }
+            $result.ExitCode | Should -Be 1
+            $result.Output | Should -Match ([regex]::Escape($script:GhostPackageId))
+            Get-FolderSnapshot -Root $root | Should -Be $before
+        }
 
-    It 'stops with exit 4 when the app has no Release on the feed' {
-        $root = Join-Path $TestDrive 'no-release'
-        $feed = Join-Path $TestDrive 'no-release-feed'
-        New-PinFixture -Root $root -Pin '26.1.9.0'
-        New-FixtureFeedPackage -FeedRoot $feed -PackageId 'Contoso.Other.symbols.bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb' -NuGetVersion '1.0.0' `
-            -App @{ Id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'; Name = 'Other'; Publisher = 'Contoso'; Version = '1.0.0.0' } | Out-Null
-        $before = Get-AscBase64 -Root $root
+        It 'stops with exit 1 naming the package, and leaves the folder as it was, when a feed fails mid-fill' {
+            $root = Join-Path $TestDrive 'mid-fill'
+            New-ConsumerFixture -Root $root -Pin '26.1.9.1' -Baseline
+            $before = Get-FolderSnapshot -Root $root
+            $feeds = New-FillFeeds -Root (Join-Path $TestDrive 'mid-fill-feeds')
+            Remove-Item -LiteralPath (Join-Path $feeds.Ms 'flat2' $script:ApplicationPackageId.ToLowerInvariant() '26.0.0') -Recurse -Force
 
-        $result = Invoke-DownloadBaseline -Root $root -Feed $feed
+            $result = Invoke-DownloadBaseline -Root $root -Feed $feeds.AppSource -MsFeed $feeds.Ms
 
-        $result.ExitCode | Should -Be 4
-        $result.Output | Should -Match ([regex]::Escape($script:PackageId))
-        Assert-Untouched -Root $root -Before $before
-    }
+            $result.ExitCode | Should -Be 1
+            $result.Output | Should -Match ([regex]::Escape($script:ApplicationPackageId))
+            Get-FolderSnapshot -Root $root | Should -Be $before
+        }
 
-    It 'stops with exit 1 and names the feed when it cannot be reached' {
-        $root = Join-Path $TestDrive 'unreachable'
-        $missingFeed = Join-Path $TestDrive 'unreachable-no-such-feed'
-        New-PinFixture -Root $root -Pin '26.1.9.0'
-        $before = Get-AscBase64 -Root $root
+        It 'stops with exit 1 naming the feed, and leaves the folder as it was, when a feed cannot be read' {
+            $root = Join-Path $TestDrive 'unreadable-ms'
+            New-ConsumerFixture -Root $root -Pin '26.1.9.1' -Baseline
+            $before = Get-FolderSnapshot -Root $root
+            $missingMs = Join-Path $TestDrive 'unreadable-ms-no-such-feed'
 
-        $result = Invoke-DownloadBaseline -Root $root -Feed $missingFeed
+            $result = Invoke-DownloadBaseline -Root $root -Feed $script:Feeds.AppSource -MsFeed $missingMs
 
-        $result.ExitCode | Should -Be 1
-        $result.Output | Should -Match ([regex]::Escape($missingFeed))
-        Assert-Untouched -Root $root -Before $before
+            $result.ExitCode | Should -Be 1
+            $result.Output | Should -Match ([regex]::Escape($missingMs))
+            Get-FolderSnapshot -Root $root | Should -Be $before
+        }
+
+        It 'restores the old .app files and exits 1 when a file cannot be moved' {
+            $root = Join-Path $TestDrive 'swap-fails'
+            New-ConsumerFixture -Root $root -Pin '26.1.9.1' -Baseline
+            $locked = Join-Path $root 'app' $script:FolderName 'Zz.Locked.1.0.0.0.app'
+            Set-Content -LiteralPath $locked -Value 'locked' -Encoding UTF8
+            $before = Get-FolderSnapshot -Root $root
+
+            # Stale.Release moves to the backup first; the open handle then stops Zz.Locked from moving.
+            $handle = [System.IO.File]::Open($locked, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::None)
+            try {
+                $result = Invoke-DownloadBaseline -Root $root -Feed $script:Feeds.AppSource -MsFeed $script:Feeds.Ms
+            } finally {
+                $handle.Dispose()
+            }
+
+            $result.ExitCode | Should -Be 1
+            $result.Output | Should -Match 'old \*\.app files are restored'
+            Get-FolderSnapshot -Root $root | Should -Be $before
+        }
+
+        It 'stops with exit 4 and leaves the folder as it was when the latest Release is not the version asked for' {
+            $root = Join-Path $TestDrive 'manifest-differs'
+            New-ConsumerFixture -Root $root -Pin '26.1.9.1' -Baseline
+            $before = Get-FolderSnapshot -Root $root
+            $appJson = Get-Content -LiteralPath (Join-Path $root 'app' 'app.json') -Raw | ConvertFrom-Json
+            $env:ALBT_MSSYMBOLS_FEED = $script:Feeds.Ms
+            $env:ALBT_APPSOURCESYMBOLS_FEED = $script:Feeds.AppSource
+            try {
+                $result = Save-ReleaseBaseline -AppJson $appJson -Version '26.1.4.0' -Folder (Join-Path $root 'app' $script:FolderName)
+            } finally {
+                Remove-Item Env:ALBT_MSSYMBOLS_FEED, Env:ALBT_APPSOURCESYMBOLS_FEED -ErrorAction SilentlyContinue
+            }
+
+            $result.ExitCode | Should -Be 4
+            $result.Message | Should -Match '26\.1\.9\.1'
+            Get-FolderSnapshot -Root $root | Should -Be $before
+        }
+
+        It 'stops with exit 4 naming a tracked .app and changes nothing' {
+            $root = Join-Path $TestDrive 'tracked-app'
+            New-ConsumerFixture -Root $root -Pin '26.1.9.1' -Baseline -TrackedApp
+            $before = Get-FolderSnapshot -Root $root
+
+            $result = Invoke-DownloadBaseline -Root $root -Feed $script:Feeds.AppSource -MsFeed $script:Feeds.Ms
+
+            $result.ExitCode | Should -Be 4
+            $result.Output | Should -Match ([regex]::Escape($script:StaleName))
+            Get-FolderSnapshot -Root $root | Should -Be $before
+        }
     }
 }

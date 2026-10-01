@@ -14,9 +14,11 @@
     - Downloads symbol packages for app/
     - Downloads symbol packages for each test app
     - Checks the `version` pinned in the committed AppSourceCop.json against the latest Release on
-      AppSourceSymbols; a stale pin stops with exit 4 (see download-baseline.ps1)
-    - Stops with exit 4 when breakingChange.releaseAppDir and AppSourceCop.json's
-      baselinePackageCachePath name one folder, before that check
+      AppSourceSymbols; a stale pin stops with exit 4. With a current pin, fills the folder
+      `baselinePackageCachePath` names with the Release and its dependency symbols (see
+      download-baseline.ps1)
+    - Stops with exit 4 first when breakingChange.releaseAppDir and AppSourceCop.json's
+      baselinePackageCachePath name one folder
 
 .PARAMETER UpdateCompiler
     Force a clean reinstall of both compiler channels. By default each channel is
@@ -127,7 +129,9 @@ if ($folderConflict) {
     exit (Get-ExitCode).Contract
 }
 
-# Step 6: Check the Release pin. Its exit code (4 stale or no Release, 1 feed unreachable) is ours.
+# Step 6: Check the Release pin and fill the baseline folder. Its exit code (4 stale, no Release, or no
+# baselinePackageCachePath, 1 feed unreachable or a package missing) is ours; symbols.lock.json is
+# written by then even when the pin is stale.
 $downloadBaselineScript = Join-Path $PSScriptRoot 'download-baseline.ps1'
 & $downloadBaselineScript
 if ($LASTEXITCODE -ne 0) {
