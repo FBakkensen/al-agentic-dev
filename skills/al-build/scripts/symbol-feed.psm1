@@ -192,6 +192,21 @@ function Get-MinimumVersionFromRange {
 # Package lookup
 # =============================================================================
 
+function New-FeedLookupResult {
+    param(
+        [Parameter(Mandatory)][ValidateSet('Listed', 'NotListed', 'Unreadable')][string]$Status,
+        [Parameter(Mandatory)][string]$Feed,
+        [string[]]$Versions = @(),
+        [string]$Message = ''
+    )
+    return [pscustomobject]@{
+        Status   = $Status
+        Feed     = $Feed
+        Versions = $Versions
+        Message  = $Message
+    }
+}
+
 function Find-PackageInFeed {
     <#
     .SYNOPSIS
@@ -213,26 +228,16 @@ function Find-PackageInFeed {
 
     if (Test-LocalFeedRoot -Feed $baseUrl) {
         if (-not (Test-Path -LiteralPath $baseUrl -PathType Container)) {
-            return [pscustomobject]@{
-                Status   = 'Unreadable'
-                Feed     = $baseUrl
-                Versions = @()
-                Message  = "Local feed root '$baseUrl' does not exist."
-            }
+            return New-FeedLookupResult -Status Unreadable -Feed $baseUrl -Message "Local feed root '$baseUrl' does not exist."
         }
         $indexPath = Join-Path -Path $baseUrl -ChildPath (Join-Path 'flat2' (Join-Path $packageIdLower 'index.json'))
         if (-not (Test-Path -LiteralPath $indexPath -PathType Leaf)) {
-            return [pscustomobject]@{ Status = 'NotListed'; Feed = $baseUrl; Versions = @(); Message = '' }
+            return New-FeedLookupResult -Status NotListed -Feed $baseUrl
         }
         try {
             $response = Get-Content -LiteralPath $indexPath -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
         } catch {
-            return [pscustomobject]@{
-                Status   = 'Unreadable'
-                Feed     = $baseUrl
-                Versions = @()
-                Message  = "Failed to read ${indexPath}: $($_.Exception.Message)"
-            }
+            return New-FeedLookupResult -Status Unreadable -Feed $baseUrl -Message "Failed to read ${indexPath}: $($_.Exception.Message)"
         }
     } else {
         $indexUrl = "{0}/flat2/{1}/index.json" -f $baseUrl, $packageIdLower
@@ -241,28 +246,18 @@ function Find-PackageInFeed {
         } catch {
             $httpResponse = $_.Exception.PSObject.Properties['Response']
             if ($httpResponse -and $httpResponse.Value -and [int]$httpResponse.Value.StatusCode -eq 404) {
-                return [pscustomobject]@{ Status = 'NotListed'; Feed = $baseUrl; Versions = @(); Message = '' }
+                return New-FeedLookupResult -Status NotListed -Feed $baseUrl
             }
-            return [pscustomobject]@{
-                Status   = 'Unreadable'
-                Feed     = $baseUrl
-                Versions = @()
-                Message  = "Failed to query ${indexUrl}: $($_.Exception.Message)"
-            }
+            return New-FeedLookupResult -Status Unreadable -Feed $baseUrl -Message "Failed to query ${indexUrl}: $($_.Exception.Message)"
         }
     }
 
     $versionsProperty = if ($response) { $response.PSObject.Properties['versions'] } else { $null }
     if ($versionsProperty -and $versionsProperty.Value) {
-        return [pscustomobject]@{
-            Status   = 'Listed'
-            Feed     = $baseUrl
-            Versions = [string[]]$versionsProperty.Value
-            Message  = ''
-        }
+        return New-FeedLookupResult -Status Listed -Feed $baseUrl -Versions ([string[]]$versionsProperty.Value)
     }
 
-    return [pscustomobject]@{ Status = 'NotListed'; Feed = $baseUrl; Versions = @(); Message = '' }
+    return New-FeedLookupResult -Status NotListed -Feed $baseUrl
 }
 
 function Get-PackageFeedMetadata {
