@@ -18,6 +18,28 @@ BeforeAll {
         git -C $Path checkout -q -b $Branch
         git -C $Path commit -q --allow-empty -m 'init'
     }
+
+    # docker and BcContainerHelper may be absent (CI) or live (a developer
+    # machine). Mock mocks only a command that exists, so a global stub stands in
+    # when it is absent; every case mocks the command inside the common module.
+    $script:StubbedCommands = @()
+    # A stub needs the parameter a ParameterFilter reads, or the filter never matches.
+    $stubs = @{
+        'docker'             = { }
+        'Remove-BcContainer' = { param([string]$containerName) }
+    }
+    foreach ($name in $stubs.Keys) {
+        if (-not (Get-Command $name -ErrorAction SilentlyContinue)) {
+            $script:StubbedCommands += $name
+            Set-Item -Path "function:global:$name" -Value $stubs[$name]
+        }
+    }
+}
+
+AfterAll {
+    foreach ($name in $script:StubbedCommands) {
+        Remove-Item "function:global:$name" -ErrorAction SilentlyContinue
+    }
 }
 
 Describe 'Get-OrphanedAgentContainers — cross-clone isolation' -Tag 'Process' {
@@ -129,5 +151,96 @@ Describe 'Get-GitRepoIdentifier — worktree consistency' -Tag 'Process' {
 
         $primaryId | Should -Not -BeNullOrEmpty
         $linkedId  | Should -Be $primaryId
+    }
+}
+
+Describe 'Remove-OrphanedAgentContainers - hosts entries' -Tag 'Process' {
+    BeforeAll {
+        $script:OriginalHome = $env:HOME
+        $script:OriginalUserProfile = $env:USERPROFILE
+
+        $script:FakeHome = Join-Path $TestDrive 'home-prune'
+        New-Item -ItemType Directory -Path $script:FakeHome -Force | Out-Null
+        $env:HOME = $script:FakeHome
+        $env:USERPROFILE = $script:FakeHome
+
+        $script:PruneClone = Join-Path $TestDrive 'cloneP'
+        Initialize-TestClone -Path $script:PruneClone -Branch 'feat-x'
+    }
+
+    AfterAll {
+        $env:HOME = $script:OriginalHome
+        $env:USERPROFILE = $script:OriginalUserProfile
+    }
+
+    BeforeEach {
+        # 'ghost' is registered against a branch that never existed, so prune flags it.
+        Push-Location $script:PruneClone
+        Register-AgentContainer -ContainerName 'ghost' -Branch 'never-created'
+
+        $script:Hosts = Join-Path $TestDrive 'prune-hosts'
+        Set-Content -LiteralPath $script:Hosts -Encoding ascii -Value @(
+            '127.0.0.1       localhost'
+            '# my comment line'
+            "172.28.0.5`tghost"
+            "172.28.0.5`tghost.test"
+            '10.0.0.9        unrelated-host'
+        )
+    }
+
+    AfterEach {
+        Unregister-AgentContainer -ContainerName 'ghost'
+        Pop-Location
+    }
+
+    It 'removes both hosts lines for a pruned container docker lists, and keeps unrelated lines' {
+        InModuleScope common -Parameters @{ Hosts = $script:Hosts } {
+            param($Hosts)
+            Mock docker { 'ghost' }
+            Mock Remove-BcContainer {}
+
+            Remove-OrphanedAgentContainers -HostsFile $Hosts
+
+            Should -Invoke Remove-BcContainer -Times 1 -Exactly -ParameterFilter { $containerName -eq 'ghost' }
+        }
+
+        $content = Get-Content -LiteralPath $script:Hosts
+        $content | Should -Not -Match '\sghost(\.test)?(\s|$)'
+        $content | Should -Contain '127.0.0.1       localhost'
+        $content | Should -Contain '# my comment line'
+        $content | Should -Contain '10.0.0.9        unrelated-host'
+    }
+
+    It 'still removes both hosts lines and unregisters a pruned container docker no longer lists' {
+        InModuleScope common -Parameters @{ Hosts = $script:Hosts } {
+            param($Hosts)
+            Mock docker {}
+            Mock Remove-BcContainer {}
+
+            Remove-OrphanedAgentContainers -HostsFile $Hosts
+
+            Should -Invoke Remove-BcContainer -Times 0 -Exactly
+        }
+
+        $content = Get-Content -LiteralPath $script:Hosts
+        $content | Should -Not -Match '\sghost(\.test)?(\s|$)'
+        $content | Should -Contain '10.0.0.9        unrelated-host'
+        (Get-RegisteredAgentContainers).ContainsKey('ghost') | Should -BeFalse
+    }
+
+    It 'leaves the hosts file and the registry alone with -WhatIf' {
+        $before = Get-Content -LiteralPath $script:Hosts -Raw
+        InModuleScope common -Parameters @{ Hosts = $script:Hosts } {
+            param($Hosts)
+            Mock docker { 'ghost' }
+            Mock Remove-BcContainer {}
+
+            Remove-OrphanedAgentContainers -HostsFile $Hosts -WhatIf
+
+            Should -Invoke Remove-BcContainer -Times 0 -Exactly
+        }
+
+        Get-Content -LiteralPath $script:Hosts -Raw | Should -Be $before
+        (Get-RegisteredAgentContainers).ContainsKey('ghost') | Should -BeTrue
     }
 }

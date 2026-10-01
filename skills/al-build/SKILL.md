@@ -47,8 +47,8 @@ Other artifacts: `.output/TestResults/al-runner.xml` (the al-runner gate's JUnit
 | `publish-apps.ps1` | Clean republish with no build and no tests: unpublishes every app dependency-reversed, then force-publishes in dependency order. Needs compiled `.app` artifacts already present. Loads a fresh container before a human walk. |
 | `new-bc-container.ps1` | Creates and configures the golden BC container — one per BC version. |
 | `commit-bc-container.ps1` | Commits the stopped golden container to the snapshot image. A machine restart comes first — a stopped container still holds files locked that the commit needs released — and only the user can take it: ask, wait for their confirmation, then run the commit. |
-| `new-agent-container.ps1` | Spawns an agent container from the snapshot, named after the current git branch. `test.ps1` always derives that name from the branch, with no override. |
-| `prune.ps1` | Removes agent containers whose branch is gone or that sat unused past seven days. `-Preview` for a dry run. |
+| `new-agent-container.ps1` | Spawns an agent container from the snapshot, named after the current git branch. `test.ps1` always derives that name from the branch, with no override. The container is also reachable at `http://<agent-container>.test`, with `PublicWebBaseUrl` on that host so Web Client links stay on it; BcContainerHelper and `ServerUrl` keep the bare name. A failed `PublicWebBaseUrl` set fails creation. |
+| `prune.ps1` | Removes agent containers whose branch is gone or that sat unused past seven days, with both hosts entries (bare and `.test`), also for a container that is already gone. `-Preview` for a dry run. |
 | `init.ps1` | One-time per repo: writes `al-build.json` into the repo root with detected app and test directories, copied from this folder's `config/al-build.json` template. Set `testApps` afterwards. |
 | `clean.ps1` | Deletes compiled `.app` files and clears publish state so the next run republishes. |
 | `report-gate-metrics.ps1` | Gate wall-clock per workspace signature and gate scope, from `build-timing.jsonl`; `-GlobalLog` reads the cross-repo mirror. |
