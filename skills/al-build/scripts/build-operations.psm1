@@ -1608,76 +1608,47 @@ function ConvertTo-Boolean {
 # Breaking-Change Baseline
 # =============================================================================
 
-function Get-BaselineVersion {
+function Get-AppSourceCopSettings {
     <#
     .SYNOPSIS
-        Derive the baseline app version for AppSourceCop.
+        Read the committed AppSourceCop.json of an app folder.
     .DESCRIPTION
-        Prefers the trailing token of the .app filename (BcContainerHelper
-        convention: <publisher>_<name>_<version>.app), falling back to the
-        release tag (leading 'v' stripped). Returns $null when neither yields a
-        valid 2- to 4-part version — the caller fails loud rather than write a
-        bad baseline.
-    .PARAMETER AppFileName
-        The baseline .app file name (with or without the .app extension).
-    .PARAMETER ReleaseTag
-        The release tag to fall back to.
+        Returns $null when the app folder holds no AppSourceCop.json. Otherwise returns Path, Version
+        ($null when the key is absent or empty), and BaselinePackageCachePath ($null when the key
+        is absent; a relative value is resolved against the app folder, an absolute one is kept).
+        Never writes the file. Every script that needs the pin or the baseline folder reads it here,
+        so each resolves the same folder.
+    .PARAMETER AppDir
+        The app folder, which holds app.json and AppSourceCop.json.
     #>
-    param(
-        [Parameter(Mandatory)][string]$AppFileName,
-        [string]$ReleaseTag
-    )
-    $baseName = $AppFileName -replace '\.app$', ''
-    $token = ($baseName -split '_')[-1]
-    if ($token -match '^\d+(\.\d+){1,3}$') { return $token }
-    $tag = $ReleaseTag -replace '^v', ''
-    if ($tag -match '^\d+(\.\d+){1,3}$') { return $tag }
-    return $null
-}
+    param([Parameter(Mandatory)][string]$AppDir)
 
-function Set-AppSourceCopBaseline {
-    <#
-    .SYNOPSIS
-        Point an AppSourceCop.json object at a baseline (version + cache path).
-    .DESCRIPTION
-        Mutates the PSCustomObject in place, preserving existing key order and
-        single-element arrays (PSCustomObject + ConvertTo-Json round-trips both).
-        Existing version/baselinePackageCachePath values are updated, not
-        duplicated. Returns the object for chaining.
-    .PARAMETER Object
-        The AppSourceCop.json object (from ConvertFrom-Json).
-    .PARAMETER Version
-        Baseline version string.
-    .PARAMETER CachePath
-        baselinePackageCachePath value (relative to the app folder).
-    #>
-    param(
-        [Parameter(Mandatory)]$Object,
-        [Parameter(Mandatory)][string]$Version,
-        [Parameter(Mandatory)][string]$CachePath
-    )
-    foreach ($pair in @(@{ n = 'version'; v = $Version }, @{ n = 'baselinePackageCachePath'; v = $CachePath })) {
-        if ($Object.PSObject.Properties[$pair.n]) { $Object.$($pair.n) = $pair.v }
-        else { $Object | Add-Member -NotePropertyName $pair.n -NotePropertyValue $pair.v }
+    $path = Join-Path $AppDir 'AppSourceCop.json'
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return $null }
+
+    try {
+        $json = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -ErrorAction Stop
+    } catch {
+        throw "AppSourceCop.json at '$path' is not valid JSON: $($_.Exception.Message)"
     }
-    return $Object
-}
 
-function Clear-AppSourceCopBaseline {
-    <#
-    .SYNOPSIS
-        Remove the baseline version so AppSourceCop stops breaking-change checks.
-    .DESCRIPTION
-        Drops the 'version' property (the switch that activates breaking-change
-        detection per AS0003 docs), leaving affixes/countries/cache path intact.
-        Used when no release exists — detection stays cleanly off, never a false
-        green. Returns the object for chaining.
-    .PARAMETER Object
-        The AppSourceCop.json object (from ConvertFrom-Json).
-    #>
-    param([Parameter(Mandatory)]$Object)
-    if ($Object.PSObject.Properties['version']) { $Object.PSObject.Properties.Remove('version') }
-    return $Object
+    $read = {
+        param([string]$Name)
+        $property = if ($json) { $json.PSObject.Properties[$Name] } else { $null }
+        if ($property -and -not [string]::IsNullOrWhiteSpace([string]$property.Value)) { return [string]$property.Value }
+        return $null
+    }
+
+    $cachePath = & $read 'baselinePackageCachePath'
+    if ($cachePath -and -not [System.IO.Path]::IsPathRooted($cachePath)) {
+        $cachePath = Join-Path $AppDir $cachePath
+    }
+
+    return [PSCustomObject]@{
+        Path                     = $path
+        Version                  = & $read 'version'
+        BaselinePackageCachePath = $cachePath
+    }
 }
 
 function Get-AlValidationVerdict {
@@ -1727,9 +1698,7 @@ Export-ModuleMember -Function @(
     'ConvertTo-Boolean'
 
     # Breaking-change baseline
-    'Get-BaselineVersion'
-    'Set-AppSourceCopBaseline'
-    'Clear-AppSourceCopBaseline'
+    'Get-AppSourceCopSettings'
     'Get-AlValidationVerdict'
 
     # Compiler

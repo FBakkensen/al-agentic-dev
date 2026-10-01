@@ -245,3 +245,62 @@ Describe 'Install-ALRunner prerelease builds' {
         Should -Invoke -ModuleName 'build-operations' dotnet -Times 1 -Exactly
     }
 }
+
+Describe 'provision.ps1 Release pin check' {
+    BeforeAll {
+        $script:Invocations = @($script:ProvisionAst.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.CommandAst] -and
+            $node.InvocationOperator -eq [System.Management.Automation.Language.TokenKind]::Ampersand
+        }, $true))
+        $script:SymbolCalls = @($script:Invocations | Where-Object { $_.CommandElements[0].Extent.Text -eq '$downloadSymbolsScript' })
+        $script:BaselineCalls = @($script:Invocations | Where-Object { $_.CommandElements[0].Extent.Text -eq '$downloadBaselineScript' })
+    }
+
+    It 'reads no BreakingChangeEnabled' {
+        $reads = @($script:ProvisionAst.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.MemberExpressionAst] -and
+            $node.Member.Extent.Text -eq 'BreakingChangeEnabled'
+        }, $true))
+        $reads | Should -HaveCount 0
+        (Get-Content -LiteralPath $script:ProvisionPath -Raw) | Should -Not -Match 'BreakingChangeEnabled'
+    }
+
+    It 'runs download-baseline.ps1 once, unconditionally, after both download-symbols.ps1 calls' {
+        $assignments = @($script:ProvisionAst.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+            $node.Left.Extent.Text -eq '$downloadBaselineScript'
+        }, $true))
+        $assignments | Should -HaveCount 1
+        $assignments[0].Right.Extent.Text | Should -Match "download-baseline\.ps1"
+
+        $script:SymbolCalls | Should -HaveCount 2
+        $script:BaselineCalls | Should -HaveCount 1
+        foreach ($symbolCall in $script:SymbolCalls) {
+            $script:BaselineCalls[0].Extent.StartOffset | Should -BeGreaterThan $symbolCall.Extent.StartOffset
+        }
+
+        $parent = $script:BaselineCalls[0].Parent
+        while ($parent) {
+            $parent | Should -Not -BeOfType [System.Management.Automation.Language.IfStatementAst]
+            $parent = $parent.Parent
+        }
+    }
+
+    It 'exits with download-baseline.ps1''s non-zero exit code, with no refresh-failed throw' {
+        $exits = @($script:ProvisionAst.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.ExitStatementAst] -and
+            $node.Pipeline -and $node.Pipeline.Extent.Text -eq '$LASTEXITCODE' -and
+            $node.Extent.StartOffset -gt $script:BaselineCalls[0].Extent.StartOffset
+        }, $true))
+        $exits | Should -HaveCount 1
+        $guard = $exits[0].Parent
+        while ($guard -and $guard -isnot [System.Management.Automation.Language.IfStatementAst]) { $guard = $guard.Parent }
+        $guard.Clauses[0].Item1.Extent.Text | Should -Match '\$LASTEXITCODE\s+-ne\s+0'
+
+        (Get-Content -LiteralPath $script:ProvisionPath -Raw) | Should -Not -Match 'Breaking-change baseline refresh failed'
+    }
+}

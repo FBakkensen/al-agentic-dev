@@ -213,3 +213,129 @@ Describe 'Read-AppManifest' {
         { Read-AppManifest -Path $absent } | Should -Throw "*$absent*"
     }
 }
+
+Describe 'Test-ReleasePin' {
+    BeforeAll {
+        $script:PinAppId = 'dddddddd-dddd-dddd-dddd-dddddddddddd'
+        $script:PinPackageId = "Contoso.My Lib.symbols.$($script:PinAppId)" -replace ' ', ''
+        $script:PinAppJson = [pscustomobject]@{ id = $script:PinAppId; name = 'My Lib'; publisher = 'Contoso' }
+
+        function New-ReleaseFeed {
+            param([string]$Name, [hashtable]$Releases)
+            $root = Join-Path $TestDrive $Name
+            New-Item -ItemType Directory -Path $root -Force | Out-Null
+            foreach ($nuGetVersion in $Releases.Keys) {
+                $app = @{ Id = $script:PinAppId; Name = 'My Lib'; Publisher = 'Contoso'; Version = $Releases[$nuGetVersion] }
+                New-FixtureFeedPackage -FeedRoot $root -PackageId $script:PinPackageId -NuGetVersion $nuGetVersion -App $app | Out-Null
+            }
+            return $root
+        }
+    }
+
+    BeforeEach {
+        Remove-Item -LiteralPath 'Env:ALBT_APPSOURCESYMBOLS_FEED' -ErrorAction SilentlyContinue
+    }
+
+    AfterEach {
+        Remove-Item -LiteralPath 'Env:ALBT_APPSOURCESYMBOLS_FEED' -ErrorAction SilentlyContinue
+    }
+
+    It 'passes with 0 when the pin equals the manifest version of the latest Release' {
+        $env:ALBT_APPSOURCESYMBOLS_FEED = New-ReleaseFeed 'pin-ok' @{ '26.1.4' = '26.1.4.0'; '26.1.9' = '26.1.9.1' }
+
+        $result = Test-ReleasePin -AppJson $script:PinAppJson -Pin '26.1.9.1'
+
+        $result.ExitCode | Should -Be 0
+        $result.LatestRelease | Should -Be '26.1.9.1'
+    }
+
+    It 'orders versions numerically, so 26.1.10 is later than 26.1.9' {
+        $env:ALBT_APPSOURCESYMBOLS_FEED = New-ReleaseFeed 'pin-numeric' @{ '26.1.9' = '26.1.9.0'; '26.1.10' = '26.1.10.0' }
+
+        $result = Test-ReleasePin -AppJson $script:PinAppJson -Pin '26.1.9.0'
+
+        $result.ExitCode | Should -Be 4
+        $result.LatestRelease | Should -Be '26.1.10.0'
+    }
+
+    It 'stops with 4 and names the pin and the latest Release when the pin is stale' {
+        $env:ALBT_APPSOURCESYMBOLS_FEED = New-ReleaseFeed 'pin-stale' @{ '26.1.9' = '26.1.9.1' }
+
+        $result = Test-ReleasePin -AppJson $script:PinAppJson -Pin '26.1.9.0'
+
+        $result.ExitCode | Should -Be 4
+        $result.Message | Should -Be 'AppSourceCop.json pins 26.1.9.0, but the latest Release on AppSourceSymbols is 26.1.9.1. Update version in AppSourceCop.json.'
+    }
+
+    It 'does not accept the NuGet-trimmed form of a 4-part Release as the pin' {
+        $env:ALBT_APPSOURCESYMBOLS_FEED = New-ReleaseFeed 'pin-trimmed' @{ '26.1.9' = '26.1.9.0' }
+
+        $result = Test-ReleasePin -AppJson $script:PinAppJson -Pin '26.1.9'
+
+        $result.ExitCode | Should -Be 4
+        $result.LatestRelease | Should -Be '26.1.9.0'
+    }
+
+    It 'skips a prerelease version when it picks the latest Release' {
+        $env:ALBT_APPSOURCESYMBOLS_FEED = New-ReleaseFeed 'pin-prerelease' @{ '26.1.9' = '26.1.9.0'; '26.2.0-beta' = '26.2.0.0' }
+
+        (Test-ReleasePin -AppJson $script:PinAppJson -Pin '26.1.9.0').ExitCode | Should -Be 0
+    }
+
+    It 'stops with 4 when the feed lists no Release of the app' {
+        $root = Join-Path $TestDrive 'pin-empty'
+        New-Item -ItemType Directory -Path $root | Out-Null
+        $env:ALBT_APPSOURCESYMBOLS_FEED = $root
+
+        $result = Test-ReleasePin -AppJson $script:PinAppJson -Pin '26.1.9.0'
+
+        $result.ExitCode | Should -Be 4
+        $result.LatestRelease | Should -BeNullOrEmpty
+        $result.Message | Should -Be "AppSourceSymbols lists no Release of $($script:PinPackageId); AppSourceCop.json pins 26.1.9.0."
+    }
+
+    It 'stops with 1, naming the feed root, when the feed cannot be read' {
+        $absent = Join-Path $TestDrive 'pin-no-feed'
+        $env:ALBT_APPSOURCESYMBOLS_FEED = $absent
+
+        $result = Test-ReleasePin -AppJson $script:PinAppJson -Pin '26.1.9.0'
+
+        $result.ExitCode | Should -Be 1
+        $result.Message | Should -BeLike "*$absent*"
+    }
+
+    It 'stops with 1 when the latest package holds no readable .app' {
+        $root = Join-Path $TestDrive 'pin-bad-app'
+        $packageDir = Join-Path $root 'flat2' $script:PinPackageId.ToLowerInvariant()
+        New-Item -ItemType Directory -Path (Join-Path $packageDir '26.1.9') -Force | Out-Null
+        [ordered]@{ versions = @('26.1.9') } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $packageDir 'index.json')
+        $nupkg = Join-Path $packageDir '26.1.9' "$($script:PinPackageId.ToLowerInvariant()).26.1.9.nupkg"
+        $archive = [System.IO.Compression.ZipFile]::Open($nupkg, [System.IO.Compression.ZipArchiveMode]::Create)
+        try {
+            $writer = [System.IO.StreamWriter]::new($archive.CreateEntry('readme.txt').Open())
+            try { $writer.Write('no app here') } finally { $writer.Dispose() }
+        } finally { $archive.Dispose() }
+        $env:ALBT_APPSOURCESYMBOLS_FEED = $root
+
+        $result = Test-ReleasePin -AppJson $script:PinAppJson -Pin '26.1.9.0'
+
+        $result.ExitCode | Should -Be 1
+        $result.Message | Should -BeLike "*$($script:PinPackageId)*"
+    }
+
+    It 'builds the package id from publisher, the name without spaces, and the app id' {
+        $env:ALBT_APPSOURCESYMBOLS_FEED = New-ReleaseFeed 'pin-id' @{ '1.0.0' = '1.0.0.0' }
+
+        # The feed holds Contoso.MyLib.symbols.<id>; a name with another spelling finds nothing.
+        $other = [pscustomobject]@{ id = $script:PinAppId; name = 'My Other Lib'; publisher = 'Contoso' }
+        (Test-ReleasePin -AppJson $other -Pin '1.0.0.0').ExitCode | Should -Be 4
+        (Test-ReleasePin -AppJson $script:PinAppJson -Pin '1.0.0.0').ExitCode | Should -Be 0
+    }
+
+    It 'stops with 4 when app.json cannot be read' {
+        $result = Test-ReleasePin -AppJson $null -Pin '1.0.0.0'
+
+        $result.ExitCode | Should -Be 4
+        $result.Message | Should -BeLike '*app.json*'
+    }
+}

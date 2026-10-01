@@ -42,7 +42,7 @@ Other artifacts: `.output/TestResults/al-runner.xml` (the al-runner gate's JUnit
 
 | Script | What it does |
 |---|---|
-| `provision.ps1` | Per-feature setup: installs the stable and prerelease AL compiler channels side by side under the tool cache, ensures the `msdyn365bc.al.runner` dotnet tool is present at 2.10 or newer, downloads symbol packages for every app into a cache keyed by checkout path, ensures the ALCops DLL suite is complete and version-consistent without replacing a valid installation, and — when `breakingChange.enabled` — caches the previous release as the breaking-change baseline. `-UpdateCompiler` forces a clean reinstall. |
+| `provision.ps1` | Per-feature setup: installs the stable and prerelease AL compiler channels side by side under the tool cache, ensures the `msdyn365bc.al.runner` dotnet tool is present at 2.10 or newer, downloads symbol packages for every app into a cache keyed by checkout path, ensures the ALCops DLL suite is complete and version-consistent without replacing a valid installation, and checks a `version` in the committed `AppSourceCop.json` against the latest Release on AppSourceSymbols — a stale pin stops with exit `4` naming the latest Release, after the symbol downloads. `-UpdateCompiler` forces a clean reinstall. |
 | `validate-breaking-changes.ps1` | The heavyweight AppSource-style check the compile-time cop cannot do: per-country, install and upgrade, against the cached baseline. Reads the cache and never downloads — an empty cache stops with *run provision.ps1*. Exit codes are contract: `0` no break, `3` breaking change, `4` prerequisite missing, `1` environment failure. Slice-end or pre-release, never the inner loop. |
 | `publish-apps.ps1` | Clean republish with no build and no tests: unpublishes every app dependency-reversed, then force-publishes in dependency order. Needs compiled `.app` artifacts already present. Loads a fresh container before a human walk. |
 | `new-bc-container.ps1` | Creates and configures the golden BC container — one per BC version. |
@@ -53,7 +53,7 @@ Other artifacts: `.output/TestResults/al-runner.xml` (the al-runner gate's JUnit
 | `clean.ps1` | Deletes compiled `.app` files and clears publish state so the next run republishes. |
 | `report-gate-metrics.ps1` | Gate wall-clock per workspace signature and gate scope, from `build-timing.jsonl`; `-GlobalLog` reads the cross-repo mirror. |
 | `container-test.ps1` | Container tests for `containerTestApps` — see "The gate" above. Compiles before it publishes; `-Force` republishes unchanged apps. |
-| `download-symbols.ps1`, `download-baseline.ps1` | The two fetches `provision.ps1` already performs. Run one alone to refresh only the symbols or only the baseline. |
+| `download-symbols.ps1`, `download-baseline.ps1` | The two steps `provision.ps1` already performs. Run one alone to refresh only the symbols or only the pin check; `download-baseline.ps1` runs only the Release pin check and never writes `AppSourceCop.json`. |
 
 The three container scripts are one sequence, run once per BC version: `new-bc-container.ps1`, `commit-bc-container.ps1`, then `new-agent-container.ps1` for each branch off the resulting snapshot.
 
@@ -61,7 +61,7 @@ The three container scripts are one sequence, run once per BC version: `new-bc-c
 
 Resolution order, highest first: script switch, environment variable (`ALBT_*`, plus `WARN_AS_ERROR` and `RULESET_PATH`), `al-build.json` in the repo root, built-in default. The fields that change behaviour are `appDir`, `testApps`, `containerTestApps`, `coverage.enabled`, and `breakingChange.enabled`. `containerTestApps` defaults to `[]` — set it to add the container surface. A project with no AL Runner tests sets `"testApps": []`; the `["test"]` default fails loudly without a `test/` folder.
 
-Analyzer selection is `al.codeAnalyzers` in `.vscode/settings.json`, in the AL extension's own notation — `<appDir>/.vscode/settings.json` wins, the repo root file is the shared fallback. No `settings.json` means no analyzers, and a listed analyzer that cannot be resolved stops the build rather than quietly compiling with less lint coverage than asked for. Diagnostic prefixes: `AA` CodeCop, `AW` UICop, `AS` AppSourceCop, `PTE` PerTenantExtensionCop, `AC`/`DC`/`FC`/`LC`/`PC`/`TA` the ALCops family. `${AppSourceCop}` must be listed for compile-time breaking-change detection to run at all; a break then arrives as an ordinary `AS00xx` error.
+Analyzer selection is `al.codeAnalyzers` in `.vscode/settings.json`, in the AL extension's own notation — `<appDir>/.vscode/settings.json` wins, the repo root file is the shared fallback. No `settings.json` means no analyzers, and a listed analyzer that cannot be resolved stops the build rather than quietly compiling with less lint coverage than asked for. Diagnostic prefixes: `AA` CodeCop, `AW` UICop, `AS` AppSourceCop, `PTE` PerTenantExtensionCop, `AC`/`DC`/`FC`/`LC`/`PC`/`TA` the ALCops family. The Release pin check runs whatever `al.codeAnalyzers` lists. Compile-time breaking-change detection still needs `${AppSourceCop}` listed; a break then arrives as an ordinary `AS00xx` error.
 
 ## Container recovery
 
