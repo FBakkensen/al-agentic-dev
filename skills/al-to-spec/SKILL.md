@@ -9,7 +9,7 @@ In: `/mattpocock-skills:to-spec` running on an Original work item whose request 
 
 ## Where the spec lands
 
-Fill the existing Original work item and create none. The spec goes in Description on a Feature or PBI, and in Repro Steps on a Bug, under the entry's headings unchanged: Problem Statement, Solution, User Stories, Implementation Decisions, Testing Decisions, Out of Scope, Further Notes. The confirmed request under Problem Statement stays untouched.
+Fill the existing Original work item, never a new one. The spec goes in Description on a Feature or PBI, and in Repro Steps on a Bug, under the entry's headings unchanged: Problem Statement, Solution, User Stories, Implementation Decisions, Testing Decisions, Out of Scope, Further Notes. The confirmed request under Problem Statement stays untouched.
 
 ## Under Solution
 
