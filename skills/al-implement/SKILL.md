@@ -17,13 +17,15 @@ Before an existing test changes, require its current scope green:
 
 ▶ haiku · /al-build gate on the affected test scope, WARN_AS_ERROR as the repository states → summary.json verdict, per-runner totals, exact red cause
 
-One worker per Gherkin scenario. The workers run one at a time: each is dispatched after the previous worker's return meets its contract, and owns the worktree for its whole red and green cycle, injected-fault red included:
+One worker per Gherkin scenario that takes an automated red. The workers run one at a time: each is dispatched after the previous worker's return meets its contract, and owns the worktree for its whole red and green cycle, injected-fault red included. When a return meets its contract, the lead runs /al-commit on that scenario's accepted work as a checkpoint, so the next worker starts from a clean, committed worktree and its files touched are its own diff against the checkpoint:
 
 ▶ sonnet · one Gherkin scenario: run /mattpocock-skills:tdd with al-tdd on its AAA cases, production site, seam, proof-map rows, and the grounding rule → red evidence per case, the green gate line, files touched
 
 Each AAA case is implemented through its named module interface. One scenario may need several tests, and a `keep` test supplies evidence without a duplicate. The production change is the smallest that turns the proof green: business writes on validated or posting paths, Base App seams reused, quality properties preserved. A pre-existing bug or behavior the work item does not name is a follow-up line in the receipt, not a change, unless the proof cannot go green without it.
 
-A walkthrough-only case takes no automated red; keep it in the receipt for /al-walkthrough. Judge every return against its contract before the next step.
+A walkthrough-only case gets no worker; keep it in the receipt for /al-walkthrough. Judge every return against its contract before the next step. A missed return is re-dispatched with the last checkpoint commit and the failed attempt's diff in the brief; the new worker first resets only the files that attempt changed, never `.`: tracked paths restored from the checkpoint in index and worktree (`git restore --source=<checkpoint> --staged --worktree`), untracked paths that attempt created removed. Then it starts. After the last worker, require every scenario's proof green together:
+
+▶ haiku · /al-build gate on the combined test scope of every scenario, WARN_AS_ERROR as the repository states → summary.json verdict, per-runner totals, exact red cause
 
 ## Map what landed
 

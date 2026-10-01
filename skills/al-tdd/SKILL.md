@@ -48,4 +48,4 @@ Every BC object, table, field, procedure, event, enum value, and dialog text in 
 
 ## Close
 
-The pass ends when every automated case has its red evidence and the gate is green, or on the exact red cause still open. Run /al-commit at every exit when `/mattpocock-skills:tdd` ran alone. A worker under `/mattpocock-skills:implement` leaves the commit to its lead, because /al-commit stages the whole shared worktree.
+The pass ends when every automated case has its red evidence and the gate is green, or on the exact red cause still open. Run /al-commit at every exit when `/mattpocock-skills:tdd` ran alone. A worker under `/mattpocock-skills:implement` leaves the commit to its lead, because its lead commits each accepted scenario as a checkpoint.
