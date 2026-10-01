@@ -7,7 +7,7 @@ description: Use whenever /mattpocock-skills:implement runs against AL work in a
 
 In: `/mattpocock-skills:implement` on the executable Original work item or its child PBI. Read its reviewed `Test specification`, including the `Current-to-final proof map`, and the Original work item's process and Building Block Level 1. The entry skill owns the process; this addition supplies the workers, the reviews, the change map, and the receipt. An unresolved AAA seam, existing-proof disposition, or expected value returns to `/mattpocock-skills:tdd` before code changes.
 
-Trace the narrow path through the workspace first: existing module, event, interface, test, fixture, pattern. Confirm every BC object, table, field, procedure, event, enum value, and dialog text through lookup in this session, never recalled.
+Trace the narrow path through the workspace first: existing module, event, interface, test, fixture, pattern. Confirm every BC object, table, field, procedure, event, enum value, and dialog text through lookup in this session, never recalled. Write BC vocabulary (Insert, Post, Validate, codeunit) and reach for the platform before new code.
 
 Gherkin defines observable business behavior; AAA defines the reviewed proof seam and expected values; Building Block Level 1 defines caller-visible module ownership; private object layout stays an implementation decision.
 
@@ -17,7 +17,7 @@ Before an existing test changes, require its current scope green:
 
 ▶ haiku · /al-build gate on the affected test scope, WARN_AS_ERROR as the repository states → summary.json verdict, per-runner totals, exact red cause
 
-One worker per Gherkin scenario; the scenarios launch together:
+One worker per Gherkin scenario; the scenarios dispatch as background `Agent` calls in one message:
 
 ▶ sonnet · one Gherkin scenario: run /mattpocock-skills:tdd with al-tdd on its AAA cases, production site, seam, proof-map rows, and the grounding rule → red evidence per case, the green gate line, files touched
 
@@ -41,12 +41,12 @@ Write `.output/receipts/<work-item-id>.md`: work-item ID, map paths and alt text
 
 ## Review
 
-`mattpocock-skills:code-review` reads committed work, so /al-commit the green slice first. Then both reviews run over the slice range from the commit the slice started from:
+`/mattpocock-skills:code-review` reads committed work, so /al-commit the green slice first. Then both reviews run in parallel, background `Agent` calls in one message, over the slice range from the commit the slice started from:
 
 ▶ sonnet · /mattpocock-skills:code-review with al-review, fixed point <start commit>, spec <work item id> → findings as ⛔ and ⚖️, unmerged
 ▶ sonnet · the built-in /code-review at effort high over <start commit>..HEAD → findings as ⛔ and ⚖️
 
-Fix every ⛔, then run both once more. A ⛔ still red stops the run for the user. ⚖️ findings go to the user, never fixed silently.
+Fix every ⛔ and /al-commit the fixes, so the slice's final commit carries none; then run both once more over the same range. A ⛔ still red stops the run for the user. ⚖️ findings go to the user, never fixed silently.
 
 ## Close
 
