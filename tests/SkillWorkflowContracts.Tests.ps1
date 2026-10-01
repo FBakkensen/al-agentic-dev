@@ -35,6 +35,7 @@ Describe 'Skill workflow contracts' {
         $tdd = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-tdd' 'SKILL.md') -Raw
         $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
         $refactor = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-refactor' 'SKILL.md') -Raw
+        $simplify = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-simplify' 'SKILL.md') -Raw
 
         $tdd | Should -Match 'search the repository for existing proof'
         $tdd | Should -Match 'Current-to-final proof map'
@@ -49,6 +50,8 @@ Describe 'Skill workflow contracts' {
         $refactor | Should -Match 'Compare the landed tests with the accepted proof map'
         $refactor | Should -Match 'require its current scope green'
         $refactor | Should -Match 'Every new or materially reshaped proof born green takes mutation as its red'
+        $simplify | Should -Match 'require its current scope green'
+        $simplify | Should -Match 'Every new or materially reshaped proof born green takes mutation as its red'
     }
 
     It 'keeps precedent map ownership with al-lookup' {
@@ -101,7 +104,7 @@ Describe 'Skill workflow contracts' {
         $pullRequest | Should -Match 'never creates or keeps a draft'
         $pullRequest | Should -Match 'Name /al-pr-shepherd as the next move'
 
-        foreach ($skill in @('al-clone-bcapps', 'al-clone-bcquality', 'al-design', 'al-grill-with-docs', 'al-implement', 'al-lookup', 'al-pr-shepherd', 'al-refactor')) {
+        foreach ($skill in @('al-clone-bcapps', 'al-clone-bcquality', 'al-design', 'al-grill-with-docs', 'al-implement', 'al-lookup', 'al-pr-shepherd', 'al-refactor', 'al-simplify')) {
             $content = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'SKILL.md') -Raw
             $content | Should -Match '/al-commit' -Because "$skill writes repository files"
         }
