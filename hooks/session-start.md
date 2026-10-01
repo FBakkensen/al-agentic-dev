@@ -33,3 +33,4 @@ In an AL repository, when an entry skill below runs, load its AL addition beside
 | `/mattpocock-skills:codebase-design` | `/al-codebase-design` |
 | `/mattpocock-skills:code-review` | `/al-review` |
 | `/simplify` | `/al-simplify` |
+| `/mattpocock-skills:improve-codebase-architecture` | `/al-improve-codebase-architecture` |
