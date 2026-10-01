@@ -1114,10 +1114,13 @@ function Set-BCAgentContainerHost {
     .SYNOPSIS
         Give an agent container its bare and .test hosts lines and put PublicWebBaseUrl on the .test host
     .DESCRIPTION
+        The one owner of "put the container on .test", for creation and republish.
         Writes the bare name and the .test name as two hosts lines with the
         container IP (none when the IP is empty), then sets PublicWebBaseUrl to
-        the .test host. BcContainerHelper keeps addressing the container by its
-        bare name. Throws when any step fails.
+        the .test host only when it is on another host, which restarts the service
+        tier. An already-.test URL makes no set and no restart. BcContainerHelper
+        keeps addressing the container by its bare name. Returns the .test
+        PublicWebBaseUrl. Throws when any step fails.
     .PARAMETER ContainerName
         The bare container name
     .PARAMETER IPAddress
@@ -1145,7 +1148,102 @@ function Set-BCAgentContainerHost {
         Write-BuildMessage -Type Warning -Message "No container IP; '$testHost' has no hosts entry, so PublicWebBaseUrl points at a host that will not resolve"
     }
 
-    Update-BCPublicWebBaseUrl -ContainerName $ContainerName -NewHostname $testHost | Out-Null
+    $currentUrl = (Get-BcContainerServerConfiguration -containerName $ContainerName).PublicWebBaseUrl
+    if ($currentUrl -match '^https?://([^:/]+)' -and $matches[1] -eq $testHost) {
+        return $currentUrl
+    }
+
+    return Update-BCPublicWebBaseUrl -ContainerName $ContainerName -NewHostname $testHost
+}
+
+function Sync-BCAgentContainerHost {
+    <#
+    .SYNOPSIS
+        Re-assert a running agent container's .test host at republish and return its Web Client base URL
+    .DESCRIPTION
+        Reads the container's current IP from docker, imports BcContainerHelper,
+        and calls Set-BCAgentContainerHost. Covers containers created before the
+        .test host and an IP that changed across a restart. Unlike creation, an
+        empty IP throws: a republish must not bind a walk to a URL that does not
+        resolve.
+    .PARAMETER ContainerName
+        The bare container name
+    .PARAMETER HostsFile
+        Hosts file to edit; defaults to the Windows hosts file.
+    #>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ContainerName,
+
+        [string]$HostsFile = $script:DefaultHostsFile
+    )
+
+    $containerIP = docker inspect $ContainerName --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' 2>$null
+    if (-not $containerIP) {
+        throw "No IP found for container '$ContainerName'; its .test host cannot resolve"
+    }
+
+    # Update-BCPublicWebBaseUrl does not import BcContainerHelper itself.
+    Import-BCContainerHelper
+    return Set-BCAgentContainerHost -ContainerName $ContainerName -IPAddress $containerIP -HostsFile $HostsFile
+}
+
+function Get-DeployedCommit {
+    <#
+    .SYNOPSIS
+        The HEAD short SHA, marked when tracked files have uncommitted changes
+    .DESCRIPTION
+        Same git rev-parse --short HEAD form that test.ps1 and container-test.ps1
+        record in build-timing.jsonl. publish-apps.ps1 publishes the .app compiled
+        from the working tree, so edited tracked files get ' (uncommitted changes)';
+        an untracked file alone leaves it unmarked. Outside a git repository the
+        answer is '(not a git repository)'.
+    #>
+    $sha = $null
+    try {
+        $sha = & git rev-parse --short HEAD 2>$null
+        if ($LASTEXITCODE -ne 0) { $sha = $null }
+    }
+    catch {
+        # git missing or not a repo
+    }
+    if (-not $sha) { return '(not a git repository)' }
+
+    $sha = ([string]$sha).Trim()
+    $dirty = & git status --porcelain --untracked-files=no 2>$null
+    if ($dirty) { return "$sha (uncommitted changes)" }
+    return $sha
+}
+
+function Write-RepublishResult {
+    <#
+    .SYNOPSIS
+        Print what a republish deployed: commit, version, Web Client URL, username
+    .DESCRIPTION
+        Four Info lines with the labels Commit, Version, Web Client and Username.
+        The walkthrough binds to these labels. Never takes or prints the password.
+    .PARAMETER Version
+        The main app's version from its app.json
+    .PARAMETER WebClientUrl
+        The Web Client base URL on the .test host
+    .PARAMETER Username
+        The container username
+    #>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Version,
+
+        [Parameter(Mandatory = $true)]
+        [string]$WebClientUrl,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Username
+    )
+
+    Write-BuildMessage -Type Info -Message "Commit: $(Get-DeployedCommit)"
+    Write-BuildMessage -Type Info -Message "Version: $Version"
+    Write-BuildMessage -Type Info -Message "Web Client: $WebClientUrl"
+    Write-BuildMessage -Type Info -Message "Username: $Username"
 }
 
 function Remove-BCAgentContainerHost {
@@ -2882,6 +2980,8 @@ Export-ModuleMember -Function @(
     'Remove-HostsEntry'
     'Get-BCContainerTestHostname'
     'Set-BCAgentContainerHost'
+    'Sync-BCAgentContainerHost'
+    'Write-RepublishResult'
     'Remove-BCAgentContainerHost'
     'Update-BCPublicWebBaseUrl'
     'New-BCLaunchConfig'

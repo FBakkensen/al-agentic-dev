@@ -175,6 +175,34 @@ Describe 'Set-BCAgentContainerHost' {
         ($test[0] -split '\s+')[0] | Should -Be '172.28.0.5'
     }
 
+    It 'returns the .test PublicWebBaseUrl it set' {
+        $hosts = New-HostsFile
+        InModuleScope common -Parameters @{ Hosts = $hosts } {
+            param($Hosts)
+            Mock Get-BcContainerServerConfiguration { [pscustomobject]@{ PublicWebBaseUrl = 'http://bctest:7080/BC/' } }
+            Mock Set-BcContainerServerConfiguration {}
+            Mock Restart-BcContainerServiceTier {}
+
+            Set-BCAgentContainerHost -ContainerName 'feat-x' -IPAddress '172.28.0.5' -HostsFile $Hosts | Should -Be 'http://feat-x.test:7080/BC/'
+        }
+    }
+
+    It 'makes no set and no restart when PublicWebBaseUrl is already on the .test host, and returns it' {
+        $hosts = New-HostsFile
+        InModuleScope common -Parameters @{ Hosts = $hosts } {
+            param($Hosts)
+            Mock Get-BcContainerServerConfiguration { [pscustomobject]@{ PublicWebBaseUrl = 'http://feat-x.test:7080/BC/' } }
+            Mock Set-BcContainerServerConfiguration {}
+            Mock Restart-BcContainerServiceTier {}
+
+            Set-BCAgentContainerHost -ContainerName 'feat-x' -IPAddress '172.28.0.5' -HostsFile $Hosts | Should -Be 'http://feat-x.test:7080/BC/'
+
+            Should -Invoke Set-BcContainerServerConfiguration -Times 0 -Exactly
+            Should -Invoke Restart-BcContainerServiceTier -Times 0 -Exactly
+        }
+        Get-HostLines -Path $hosts -Hostname 'feat-x.test' | Should -HaveCount 1
+    }
+
     It 'skips the hosts lines for an empty IP, warns that the .test host has no entry, and still moves PublicWebBaseUrl' {
         $hosts = New-HostsFile
         InModuleScope common -Parameters @{ Hosts = $hosts } {
