@@ -30,7 +30,7 @@ Twenty skills ship today.
 - `al-pull-request` — ready pull request creation and updates.
 - `al-to-spec` — the spec in the Original work item for `/mattpocock-skills:to-spec`: process contract, BPMN review HTML, and Building Block View Level 1.
 - `al-arc42` — official arc42 formatting and architecture review HTML.
-- `al-design` — Level 1 module contracts.
+- `al-codebase-design` — the BC shapes, Base App shape survey, and AL seam rule for `/mattpocock-skills:codebase-design`.
 - `al-to-tickets` — BPMN-outcome slices, direct child PBIs, and Gherkin `Behavior` for `/mattpocock-skills:to-tickets`.
 - `al-tdd` — the AAA and proof maps as `/mattpocock-skills:tdd`'s agreed seams, mutation red, and `/al-build` as the test run.
 - `al-implement` — proof through the module interface.
