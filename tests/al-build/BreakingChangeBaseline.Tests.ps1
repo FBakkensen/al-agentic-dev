@@ -285,6 +285,19 @@ Describe 'download-baseline.ps1 Release pin check' -Tag 'Process' {
         Assert-Untouched -Root $root -Before $before
     }
 
+    It 'stops with exit 4, naming the file, when AppSourceCop.json is not valid JSON' {
+        $root = Join-Path $TestDrive 'broken-asc'
+        New-PinFixture -Root $root -NoAppSourceCop
+        Set-Content -LiteralPath (Join-Path $root 'app' 'AppSourceCop.json') -Value '{ not json' -Encoding UTF8
+        $before = Get-AscBase64 -Root $root
+
+        $result = Invoke-DownloadBaseline -Root $root -Feed (Join-Path $TestDrive 'broken-asc-feed')
+
+        $result.ExitCode | Should -Be 4
+        $result.Output | Should -Match 'AppSourceCop\.json.*not valid JSON'
+        Assert-Untouched -Root $root -Before $before
+    }
+
     It 'exits 0 without an app folder, which holds no AppSourceCop.json' {
         $root = Join-Path $TestDrive 'no-app-folder'
         New-Item -ItemType Directory -Path $root -Force | Out-Null

@@ -13,7 +13,7 @@
     The pin check is Test-ReleasePin in symbol-feed.psm1: it reads the 4-part version from the
     manifest of the .app inside the latest Release package. Exit codes are contract:
       0  the pin equals the latest Release, or there is no pin
-      4  the pin is stale, or the feed lists no Release of the app
+      4  the pin is stale, the feed lists no Release of the app, or AppSourceCop.json is not JSON
       1  the feed or its package cannot be read
 
     Never writes AppSourceCop.json. provision.ps1 runs it after the symbol downloads, and exits
@@ -42,7 +42,13 @@ Set-BuildEnvironment -Config $config
 Write-BuildHeader 'Release Pin Check'
 
 # No AppSourceCop.json (a missing app folder holds none) or no `version`: nothing to check.
-$settings = Get-AppSourceCopSettings -AppDir $config.AppDir
+try {
+    $settings = Get-AppSourceCopSettings -AppDir $config.AppDir
+} catch {
+    # A file the developer must fix is a missing prerequisite, not an environment failure.
+    Write-BuildMessage -Type Error -Message $_.Exception.Message
+    exit (Get-ExitCode).Contract
+}
 if (-not $settings -or -not $settings.Version) {
     Write-BuildMessage -Type Info -Message 'AppSourceCop.json pins no version - no Release to check.'
     exit 0
