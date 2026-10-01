@@ -27,6 +27,7 @@ In an AL repository, when an entry skill below runs, load its AL addition beside
 | `/mattpocock-skills:setup-matt-pocock-skills` | `/al-setup-matt-pocock-skills` |
 | `/mattpocock-skills:grill-with-docs` | `/al-grill-with-docs` |
 | `/mattpocock-skills:to-tickets` | `/al-to-tickets` |
+| `/mattpocock-skills:implement` | `/al-implement` |
 | `/mattpocock-skills:tdd` | `/al-tdd` |
 | `/mattpocock-skills:code-review` | `/al-review` |
 | `/simplify` | `/al-simplify` |

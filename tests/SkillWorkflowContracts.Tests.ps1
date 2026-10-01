@@ -26,7 +26,8 @@ Describe 'Skill workflow contracts' {
         $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
         $refactor = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-refactor' 'SKILL.md') -Raw
 
-        $implement | Should -Match 'Name /al-refactor as the next move'
+        $implement | Should -Match 'Name `/simplify` and `/mattpocock-skills:improve-codebase-architecture` as the next move'
+        $implement | Should -Not -Match '/al-refactor'
         $implement | Should -Not -Match 'Tidy:'
         $refactor | Should -Match '`Tidy: none` or the exact reshapes'
     }
@@ -42,11 +43,11 @@ Describe 'Skill workflow contracts' {
         $tdd | Should -Match 'keep`, `reshape`, `combine`, `split`, `replace`, or `add'
         $tdd | Should -Match 'Every new or materially reshaped automated proof earns a red'
         $tdd | Should -Match 'inject one compiling fault'
-        $implement | Should -Match 'proof-preserving reshapes before new expectations or production changes'
+        $tdd | Should -Match 'proof-preserving reshapes before new expectations or production changes'
+        $tdd | Should -Match 'rerun the gate green'
+        $tdd | Should -Match 'A compile error or a failure before the assertion is not a red'
         $implement | Should -Match 'require its current scope green'
-        $implement | Should -Match 'rerun the gate green'
-        $implement | Should -Match 'Every new or materially reshaped automated proof earns a red'
-        $implement | Should -Match 'inject one compiling fault'
+        $implement | Should -Match 'run /mattpocock-skills:tdd with al-tdd'
         $refactor | Should -Match 'Compare the landed tests with the accepted proof map'
         $refactor | Should -Match 'require its current scope green'
         $refactor | Should -Match 'Every new or materially reshaped proof born green takes mutation as its red'
