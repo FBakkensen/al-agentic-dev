@@ -52,10 +52,30 @@ Describe 'Skill workflow contracts' {
         $simplify | Should -Match 'Every new or materially reshaped proof born green takes mutation as its red'
     }
 
+    It 'gates each compilable step of a deepening and closes on the next entry' {
+        $improve = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-improve-codebase-architecture' 'SKILL.md') -Raw
+
+        $improve | Should -Match 'Before the first edit, require an executable work item'
+        $improve | Should -Match 'require the affected scope green'
+        $improve | Should -Match 'run /al-build''s gate after each compilable step'
+        $improve | Should -Match 'Restore the last green shape when a step goes unintentionally red'
+        $improve | Should -Match 'At every exit'
+        $improve | Should -Match '▶ haiku · /al-commit the complete worktree'
+        $improve | Should -Match 'writing the returned fragment into its Description'
+        $improve | Should -Match 'This intended red is not a reason to restore'
+        $improve | Should -Match 'the developer types `/mattpocock-skills:code-review` next, where al-review reads the receipt'
+    }
+
     It 'runs scenario workers one at a time' {
         $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
+        $tdd = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-tdd' 'SKILL.md') -Raw
 
         $implement | Should -Match 'The workers run one at a time'
+        $implement | Should -Match 'after the previous worker''s return meets its contract'
+        $implement | Should -Match 'as a checkpoint'
+        $implement | Should -Not -Match 'fault turn'
+        $implement | Should -Not -Match 'the workers dispatch as background'
+        $tdd | Should -Not -Match 'ends its turn with that proof''s fault site'
     }
 
     It 'keeps precedent map ownership with al-lookup' {
@@ -74,6 +94,17 @@ Describe 'Skill workflow contracts' {
         $lookup | Should -Not -Match "developer's next commit"
         @($mapContracts).Count | Should -Be 1
         $mapContracts[0] | Should -Be (Join-Path $script:SkillsRoot 'al-lookup' 'SKILL.md')
+    }
+
+    It 'keeps al-next on the tracker text, off state and parent changes, and Level 2 through al-arc42' {
+        $next = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-next' 'SKILL.md') -Raw
+        $arc42 = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-arc42' 'SKILL.md') -Raw
+
+        $next | Should -Match 'every work-item read and write.*tracker text'
+        $next | Should -Match 'leave its state and parent to the user'
+        $next | Should -Match '▶ haiku · /al-arc42 the corrected Level 2 white box.*HTML path, SVG and PNG paths, alt text, publishable fragments'
+        $next | Should -Match '▶ haiku · /al-azure-devops-attachments the Level 2 PNG and SVG.*verified attachment URLs'
+        $arc42 | Should -Match '(?m)^In: .*/al-next'
     }
 
     It 'pins the spec structure under the entry skill''s seven headings' {

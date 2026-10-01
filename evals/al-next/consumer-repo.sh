@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
-# Seeds an AL Consumer repository with a one-line change in the working tree:
-# the committed app and tracker text, then an uncommitted field, so
-# /mattpocock-skills:improve-codebase-architecture runs in an AL repository
-# with a work tree that is not clean and the addition has a repository to read.
-# The seed is deliberately free of work items: the entry runs with none named.
+# Seeds an AL Consumer repository that /mattpocock-skills:setup-matt-pocock-skills
+# already pointed at Azure DevOps, for /al-next: an app, its source, and the tracker text.
 set -euo pipefail
 
 mkdir -p src docs/agents
@@ -48,14 +45,3 @@ MD
 git init -q
 git -c core.autocrlf=false add -A
 git -c user.name=eval -c user.email=eval@example.invalid commit -q -m "ShopFloor app"
-
-cat > src/ShopFloorSetup.Table.al <<'AL'
-table 50100 "ShopFloor Setup"
-{
-    fields
-    {
-        field(1; "Primary Key"; Code[10]) { }
-        field(2; "Default Location Code"; Code[10]) { }
-    }
-}
-AL
