@@ -43,6 +43,10 @@ t=$(gh api graphql -f query='query{repository(owner:"O",name:"NAME"){pullRequest
 gh api graphql -f query='mutation($t:ID!){resolveReviewThread(input:{threadId:$t}){thread{isResolved}}}' -f t="$t"
 ```
 
+## The automatic review
+
+The required check is `claude-review`; its conclusion is the review verdict. Its blocking findings are inline review threads, and its nits go in one summary comment, authored by `github-actions`.
+
 ## Failing checks
 
 ```bash

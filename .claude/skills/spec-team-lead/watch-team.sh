@@ -14,26 +14,27 @@ REALERT=${REALERT:-180}; REVIEW_CHECK=${REVIEW_CHECK:-claude-review}
 repo=$(gh repo view --json nameWithOwner --jq .nameWithOwner) || { echo "WATCH ERROR: gh repo view failed"; exit 1; }
 owner=${repo%/*}; name=${repo#*/}
 declare -A last since done_ known child; errs=0
+ef=$(mktemp); trap 'rm -f "$ef"' EXIT   # stderr goes here, never into parsed output
 
 err() { errs=$((errs+1)); [ "$errs" -ge 3 ] && { echo "WATCH ERROR (x$errs): $1"; errs=0; }; }
 
 while :; do
   now=$(date +%s)
   kids=$(gh api graphql -f query="query{repository(owner:\"$owner\",name:\"$name\"){issue(number:$spec){subIssues(first:100){totalCount nodes{number state}}}}}" \
-    --jq '.data.repository.issue.subIssues | "\(.totalCount) " + ([.nodes[] | select(.state=="OPEN") | .number] | map(tostring) | join(","))' 2>&1)
-  if [ $? -ne 0 ] || [ -z "$kids" ] || [ "${kids%% *}" = "0" ]; then err "spec #$spec sub-issues: $(echo "$kids" | head -c 160)"; sleep 30; continue; fi
+    --jq '.data.repository.issue.subIssues | "\(.totalCount) " + ([.nodes[] | select(.state=="OPEN") | .number] | map(tostring) | join(","))' 2>"$ef")
+  if [ $? -ne 0 ] || [ -z "$kids" ] || [ "${kids%% *}" = "0" ]; then err "spec #$spec sub-issues: $(head -c 160 "$ef")${kids:+ / $kids}"; sleep 30; continue; fi
   open=${kids#* }
   if [ -z "$open" ]; then echo "ALL CHILDREN OF #$spec CLOSED"; exit 0; fi
 
-  raw=$(gh pr list --repo "$repo" --state open --limit 100 --json number,headRefName,closingIssuesReferences 2>&1)
-  if [ $? -ne 0 ]; then err "gh pr list: $(echo "$raw" | head -c 160)"; sleep 30; continue; fi
+  raw=$(gh pr list --repo "$repo" --state open --limit 100 --json number,headRefName,closingIssuesReferences 2>"$ef")
+  if [ $? -ne 0 ]; then err "gh pr list: $(head -c 160 "$ef")"; sleep 30; continue; fi
   prs=$(jq -r --arg open ",$open," '.[] | select((.headRefName|startswith("claude/team-")) or ([.closingIssuesReferences[].number | tostring] | any(. as $n | $open | contains(","+$n+",")))) | "\(.number):\([.closingIssuesReferences[].number] | map(tostring) | join("+"))"' <<<"$raw")
   errs=0
   for entry in $prs; do pr=${entry%%:*}; [ -z "${known[$pr]}" ] && { known[$pr]=1; echo "NEW PR #$pr closes #${entry#*:}"; }; child[$pr]=${entry#*:}; done
 
   for pr in "${!known[@]}"; do
     [ -n "${done_[$pr]}" ] && continue
-    j=$(gh pr view "$pr" --repo "$repo" --json state,mergeStateStatus,statusCheckRollup 2>&1) || { err "gh pr view #$pr: $(echo "$j" | head -c 160)"; continue; }
+    j=$(gh pr view "$pr" --repo "$repo" --json state,mergeStateStatus,statusCheckRollup 2>"$ef") || { err "gh pr view #$pr: $(head -c 160 "$ef")"; continue; }
     st=$(jq -r '.state+" "+.mergeStateStatus' <<<"$j")
     failed=$(jq -r '[.statusCheckRollup[]? | select((.conclusion // "") | test("FAILURE|CANCELLED|TIMED_OUT|ACTION_REQUIRED|ERROR")) | (.name // .context)] | join(",")' <<<"$j")
     review=$(jq -r --arg c "$REVIEW_CHECK" '[.statusCheckRollup[]? | select((.name // .context) == $c) | (.conclusion // .status // "pending")] | first // "absent" | ascii_downcase' <<<"$j")
