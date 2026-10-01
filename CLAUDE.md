@@ -19,11 +19,10 @@ skills/al-build/scripts/*.ps1   the build substrate
 skills/al-build/config/         al-build.json
 ```
 
-Twenty-one skills ship today.
+Twenty skills ship today.
 
 - `al-build` — the compile-publish-test gate, provisioning, breaking-change validation, and the container lifecycle; the contract model everything else copies.
 - `al-clone-bcapps` — the BCApps lookup-source clone.
-- `al-clone-bcquality` — the BCQuality lookup-source clone.
 - `al-grill-with-docs` — the Original work item anchor, the confirmed verbatim request, the process questions, and the BC glossary deltas for `/mattpocock-skills:grill-with-docs`.
 - `al-lookup` — one platform question, a sourced answer, the precedent map.
 - `al-azure-devops-attachments` — Azure CLI upload and verified work-item attachment relations.
@@ -60,7 +59,7 @@ Every skill is model-invocable. Skill frontmatter omits `disable-model-invocatio
 
 Say so when a change reintroduces one of these.
 
-The PowerShell substrate ships only under `skills/al-build/`, and `/al-build` invokes its procedures; `hooks/` is the second `.ps1` home, for the hook's printer. Outside `skills/al-build/`, a `.ps1` filename or a `scripts/` path in a skill body is a defect — that skill calls `/al-build` instead. The one listed exemption: `al-clone-bcquality` runs the BCQuality knowledge-index generator inside the checkout it clones.
+The PowerShell substrate ships only under `skills/al-build/`, and `/al-build` invokes its procedures; `hooks/` is the second `.ps1` home, for the hook's printer. Outside `skills/al-build/`, a `.ps1` filename or a `scripts/` path in a skill body is a defect — that skill calls `/al-build` instead.
 
 ## Dev-time files
 
