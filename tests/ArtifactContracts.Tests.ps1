@@ -46,7 +46,7 @@ Describe 'Architecture artifact contracts' {
         $template | Should -Match 'Runtime View'
     }
 
-    It 'maps every implementation before deciding whether Level 2 belongs on the Original User Story' {
+    It 'maps every implementation before deciding whether Level 2 belongs on the Original work item' {
         $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
         $arc42 = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-arc42' 'SKILL.md') -Raw
         $template = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-arc42' 'ARC42.md') -Raw
@@ -54,7 +54,7 @@ Describe 'Architecture artifact contracts' {
 
         $implement | Should -Match 'connected-object change map'
         $implement | Should -Match 'every changed production object'
-        $implement | Should -Match 'simple module may need the implementation map but no Original User Story Level 2'
+        $implement | Should -Match 'simple module may need the implementation map but no Original work item Level 2'
         $arc42 | Should -Match 'change overlay on the Building Block View'
         $arc42 | Should -Match 'Level 1 impact overview'
         $template | Should -Match 'executable-item receipt and comment keep the change overlay'
