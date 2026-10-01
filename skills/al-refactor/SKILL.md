@@ -22,7 +22,7 @@ Inspect the affected proof set as if all current requirements had existed when i
 
 Tidy stays inside changed files and immediate seams. Prefer canonical BC patterns and Base App helpers. An interface with one implementation is a finding; collapse it unless a second implementation or stable external contract proves the seam. A defect noticed outside the slice is a follow-up line in the receipt, not a change.
 
-Deepening reduces hidden complexity behind the existing caller-visible interface. Keep ownership singular, test through that interface, and make internals replaceable. A proposed Level 1 interface change returns to /al-design and the user before refactoring.
+Deepening reduces hidden complexity behind the existing caller-visible interface. Keep ownership singular, test through that interface, and make internals replaceable. A proposed Level 1 interface change returns to the user before refactoring.
 
 ## Reshape through a worker
 

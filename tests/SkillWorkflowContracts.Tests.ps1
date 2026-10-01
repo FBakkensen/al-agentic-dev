@@ -116,7 +116,7 @@ Describe 'Skill workflow contracts' {
         $pullRequest | Should -Match 'never creates or keeps a draft'
         $pullRequest | Should -Match 'Name /al-pr-shepherd as the next move'
 
-        foreach ($skill in @('al-clone-bcapps', 'al-design', 'al-grill-with-docs', 'al-implement', 'al-lookup', 'al-pr-shepherd', 'al-refactor', 'al-simplify')) {
+        foreach ($skill in @('al-clone-bcapps', 'al-codebase-design', 'al-grill-with-docs', 'al-implement', 'al-lookup', 'al-pr-shepherd', 'al-refactor', 'al-simplify')) {
             $content = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'SKILL.md') -Raw
             $content | Should -Match '/al-commit' -Because "$skill writes repository files"
         }
