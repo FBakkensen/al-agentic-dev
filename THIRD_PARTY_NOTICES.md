@@ -12,7 +12,7 @@ Architecture content created with the template remains the content owner's prope
 
 ## BPMN rendering dependencies
 
-The `/al-event-model` rendering procedure installs these packages at runtime:
+The `/al-to-spec` rendering procedure installs these packages at runtime:
 
 - `bpmn-to-image`, licensed under MIT
 - `bpmn-js`, licensed under the bpmn.io license

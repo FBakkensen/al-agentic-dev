@@ -12,7 +12,7 @@ Describe 'Architecture artifact contracts' {
     }
 
     It 'pins the BPMN renderer dependencies' {
-        $rendererRoot = Join-Path $script:SkillsRoot 'al-event-model' 'bpmn-renderer'
+        $rendererRoot = Join-Path $script:SkillsRoot 'al-to-spec' 'bpmn-renderer'
         $package = Get-Content -LiteralPath (Join-Path $rendererRoot 'package.json') -Raw | ConvertFrom-Json
         $lock = Get-Content -LiteralPath (Join-Path $rendererRoot 'package-lock.json') -Raw | ConvertFrom-Json -AsHashtable
 
@@ -25,7 +25,7 @@ Describe 'Architecture artifact contracts' {
     }
 
     It 'keeps BPMN source authoritative and requires local HTML review' {
-        $contract = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-event-model' 'BPMN.md') -Raw
+        $contract = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-to-spec' 'BPMN.md') -Raw
 
         $contract | Should -Match '\.bpmn.*only editable process source'
         $contract | Should -Match 'bpmn-to-image'
@@ -78,7 +78,7 @@ Describe 'Architecture artifact contracts' {
         $attachmentSkill | Should -Match 'work-item show --expand relations'
         $attachmentSkill | Should -Match 'Authentication failure never becomes a manual-upload handoff'
 
-        foreach ($caller in @('al-event-model', 'al-design', 'al-implement', 'al-refactor', 'al-simplify')) {
+        foreach ($caller in @('al-to-spec', 'al-design', 'al-implement', 'al-refactor', 'al-simplify')) {
             $content = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $caller 'SKILL.md') -Raw
             $content | Should -Match '/al-azure-devops-attachments'
             $content | Should -Not -Match 'manual attach'

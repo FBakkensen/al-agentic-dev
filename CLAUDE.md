@@ -14,7 +14,7 @@ hooks/session-start.md          the delegation rules and the entry → addition 
 output-styles/AL.md             the opt-in al-agentic-dev:AL style: Speak BC and the interview-diagram rule; frontmatter name AL, keep-coding-instructions true, no force-for-plugin
 skills/<name>/SKILL.md          frontmatter: name, description
 skills/<name>/<SIBLING>.md      optional format files, inside the same folder only
-skills/al-event-model/bpmn-renderer/ package-local BPMN renderer dependencies
+skills/al-to-spec/bpmn-renderer/ package-local BPMN renderer dependencies
 skills/al-build/scripts/*.ps1   the build substrate
 skills/al-build/config/         al-build.json
 ```
@@ -29,7 +29,7 @@ Twenty-one skills ship today.
 - `al-azure-devops-attachments` — Azure CLI upload and verified work-item attachment relations.
 - `al-commit` — full-worktree staging and independently valid commits.
 - `al-pull-request` — ready pull request creation and updates.
-- `al-event-model` — the process contract and BPMN review HTML.
+- `al-to-spec` — the spec in the Original work item for `/mattpocock-skills:to-spec`: process contract, BPMN review HTML, and Building Block View Level 1.
 - `al-arc42` — official arc42 formatting and architecture review HTML.
 - `al-design` — Level 1 module contracts.
 - `al-to-tickets` — BPMN-outcome slices, direct child PBIs, and Gherkin `Behavior` for `/mattpocock-skills:to-tickets`.
