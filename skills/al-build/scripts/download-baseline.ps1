@@ -3,7 +3,7 @@
 <#
 .SYNOPSIS
     Check the Release pin: the `version` in the committed AppSourceCop.json against the latest
-    Release on Microsoft's public AppSourceSymbols feed.
+    Release on Microsoft's public AppSourceSymbols feed, then fill the compile baseline folder.
 
 .DESCRIPTION
     Sole owner of the pin check for provisioning. A `version` in app/AppSourceCop.json turns it on,
@@ -16,8 +16,15 @@
       4  the pin is stale, the feed lists no Release of the app, or AppSourceCop.json is not JSON
       1  the feed or its package cannot be read
 
-    Never writes AppSourceCop.json. provision.ps1 runs it after the symbol downloads, and exits
-    with its exit code.
+    With a current pin it fills the folder AppSourceCop.json's `baselinePackageCachePath` names,
+    resolved against the app folder, with Save-ReleaseBaseline: the symbols-only Release and its
+    dependency symbols, Microsoft ones from MSSymbols and the rest from AppSourceSymbols. Only
+    *.app files are removed or written. More exit codes:
+      4  the version has no `baselinePackageCachePath`, or git tracks a *.app in the folder
+      1  git, a feed, or a package cannot be read, or the swap fails; the folder is left as it was
+
+    Never writes AppSourceCop.json or any other tracked file. provision.ps1 runs it after the
+    symbol downloads, and exits with its exit code.
 
 .EXAMPLE
     pwsh -File download-baseline.ps1
@@ -39,7 +46,7 @@ Import-Module (Join-Path $PSScriptRoot 'symbol-feed.psm1') -Force -DisableNameCh
 $config = Get-BuildConfig
 Set-BuildEnvironment -Config $config
 
-Write-BuildHeader 'Release Pin Check'
+Write-BuildHeader 'Release Pin Check and Baseline Fill'
 
 # No AppSourceCop.json (a missing app folder holds none) or no `version`: nothing to check.
 try {
@@ -54,10 +61,24 @@ if (-not $settings -or -not $settings.Version) {
     exit 0
 }
 
-$pin = Test-ReleasePin -AppJson (Get-AppJsonObject $config.AppDir) -Pin $settings.Version
-if ($pin.ExitCode -eq 0) {
-    Write-BuildMessage -Type Success -Message $pin.Message
-} else {
+$appJson = Get-AppJsonObject $config.AppDir
+$pin = Test-ReleasePin -AppJson $appJson -Pin $settings.Version
+if ($pin.ExitCode -ne 0) {
     Write-BuildMessage -Type Error -Message $pin.Message
+    exit $pin.ExitCode
 }
-exit $pin.ExitCode
+Write-BuildMessage -Type Success -Message $pin.Message
+
+if (-not $settings.BaselinePackageCachePath) {
+    Write-BuildMessage -Type Error -Message "AppSourceCop.json pins $($settings.Version) but sets no baselinePackageCachePath. Set baselinePackageCachePath to the folder the compile-time AppSourceCop reads its baseline from."
+    exit (Get-ExitCode).Contract
+}
+
+$fill = Save-ReleaseBaseline -AppJson $appJson -Version $settings.Version -Folder $settings.BaselinePackageCachePath
+if ($fill.ExitCode -eq 0) {
+    Write-BuildMessage -Type Success -Message $fill.Message
+    foreach ($file in $fill.Files) { Write-BuildMessage -Type Detail -Message $file }
+} else {
+    Write-BuildMessage -Type Error -Message $fill.Message
+}
+exit $fill.ExitCode

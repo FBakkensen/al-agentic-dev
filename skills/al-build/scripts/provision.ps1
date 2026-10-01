@@ -14,7 +14,9 @@
     - Downloads symbol packages for app/
     - Downloads symbol packages for each test app
     - Checks the `version` pinned in the committed AppSourceCop.json against the latest Release on
-      AppSourceSymbols; a stale pin stops with exit 4 (see download-baseline.ps1)
+      AppSourceSymbols; a stale pin stops with exit 4. With a current pin, fills the folder
+      `baselinePackageCachePath` names with the Release and its dependency symbols (see
+      download-baseline.ps1)
 
 .PARAMETER UpdateCompiler
     Force a clean reinstall of both compiler channels. By default each channel is
@@ -114,8 +116,9 @@ foreach ($testAppDir in $config.TestApps) {
     }
 }
 
-# Step 5: Check the Release pin. Runs after both symbol steps, so symbols.lock.json is written
-# even when the pin is stale; its exit code (4 stale or no Release, 1 feed unreachable) is ours.
+# Step 5: Check the Release pin and fill the baseline folder. Runs after both symbol steps, so
+# symbols.lock.json is written even when the pin is stale; its exit code (4 stale, no Release, or no
+# baselinePackageCachePath, 1 feed unreachable or a package missing) is ours.
 $downloadBaselineScript = Join-Path $PSScriptRoot 'download-baseline.ps1'
 & $downloadBaselineScript
 if ($LASTEXITCODE -ne 0) {

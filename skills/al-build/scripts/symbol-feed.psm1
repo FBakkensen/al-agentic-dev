@@ -11,6 +11,7 @@
     (flat2/<id>/index.json, flat2/<id>/<version>/<id>.<version>.nupkg, package id lower-cased).
     Read-AppManifest reads NavxManifest.xml from a .app file without the AL compiler.
     Test-ReleasePin checks an AppSourceCop.json version against the latest Release on AppSourceSymbols.
+    Save-ReleaseBaseline fills the compile baseline folder with that Release and its dependency symbols.
 
 .NOTES
     Import this module alongside common.psm1: the download and extract functions call
@@ -445,7 +446,9 @@ function Resolve-SymbolPackage {
         [string]$PackageId,
         [string]$MinimumVersion,
         [string[]]$Feeds,
-        [string]$CacheDir
+        [string]$CacheDir,
+        # An exact NuGet version to take instead of the highest at or above the minimum.
+        [string]$Version
     )
 
     $metadata = Get-PackageFeedMetadata -PackageId $PackageId -Feeds $Feeds
@@ -453,7 +456,12 @@ function Resolve-SymbolPackage {
         throw "Unable to locate package $PackageId on the configured feeds."
     }
 
-    $selectedVersion = Select-PackageVersion -Versions $metadata.Versions -MinimumVersion $MinimumVersion
+    $selectedVersion = if ($Version) {
+        if ($metadata.Versions -notcontains $Version) { throw "Package $PackageId lists no version $Version on '$($metadata.Feed)'." }
+        $Version
+    } else {
+        Select-PackageVersion -Versions $metadata.Versions -MinimumVersion $MinimumVersion
+    }
     if (-not $selectedVersion) {
         throw "No available versions found for package $PackageId"
     }
@@ -598,6 +606,46 @@ function New-ReleasePinResult {
     }
 }
 
+function Find-LatestRelease {
+    <#
+    .SYNOPSIS
+        Looks the latest Release of the app up on AppSourceSymbols.
+    .DESCRIPTION
+        Returns Status, App (id, name, publisher), PackageId, Feed, NuGetVersion, and Message.
+        Status is 'Found' (Feed and NuGetVersion name the latest Release package), 'NoApp' (app.json
+        names no id, name, and publisher), 'Unreadable' (the feed cannot be read; Message says why),
+        or 'NoRelease' (the feed lists no Release of the package). A Release version has no
+        prerelease suffix.
+    #>
+    param([AllowNull()]$AppJson)
+
+    $app = @{}
+    foreach ($key in 'id', 'name', 'publisher') {
+        $property = if ($AppJson) { $AppJson.PSObject.Properties[$key] } else { $null }
+        $app[$key] = if ($property) { [string]$property.Value } else { '' }
+    }
+    $result = [pscustomobject]@{ Status = 'NoApp'; App = $app; PackageId = $null; Feed = $null; NuGetVersion = $null; Message = '' }
+    if (-not ($app.id -and $app.name -and $app.publisher)) { return $result }
+
+    $result.PackageId = '{0}.{1}.symbols.{2}' -f $app.publisher, ($app.name -replace '\s', ''), $app.id
+    $lookup = Find-PackageInFeed -PackageId $result.PackageId -Feed (Get-SymbolFeeds -Feed AppSourceSymbols)
+    $result.Feed = $lookup.Feed
+    $result.Message = $lookup.Message
+    if ($lookup.Status -eq 'Unreadable') {
+        $result.Status = 'Unreadable'
+        return $result
+    }
+
+    $releases = @($lookup.Versions | Where-Object { $_ -match '^\d+(\.\d+){1,3}$' })
+    if ($lookup.Status -ne 'Listed' -or $releases.Count -eq 0) {
+        $result.Status = 'NoRelease'
+        return $result
+    }
+    $result.Status = 'Found'
+    $result.NuGetVersion = Select-PackageVersion -Versions $releases
+    return $result
+}
+
 function Test-ReleasePin {
     <#
     .SYNOPSIS
@@ -622,34 +670,20 @@ function Test-ReleasePin {
     )
 
     $exit = Get-ExitCode
-    $app = @{}
-    foreach ($key in 'id', 'name', 'publisher') {
-        $property = if ($AppJson) { $AppJson.PSObject.Properties[$key] } else { $null }
-        $app[$key] = if ($property) { [string]$property.Value } else { '' }
+    $release = Find-LatestRelease -AppJson $AppJson
+    switch ($release.Status) {
+        'NoApp' { return New-ReleasePinResult -ExitCode $exit.Contract -Message "app.json is missing or names no id, name, and publisher; AppSourceCop.json pins $Pin." }
+        'Unreadable' { return New-ReleasePinResult -ExitCode $exit.GeneralError -Message "AppSourceSymbols feed '$($release.Feed)' cannot be read: $($release.Message)" }
+        'NoRelease' { return New-ReleasePinResult -ExitCode $exit.Contract -Message "AppSourceSymbols lists no Release of $($release.PackageId); AppSourceCop.json pins $Pin." }
     }
-    if (-not ($app.id -and $app.name -and $app.publisher)) {
-        return New-ReleasePinResult -ExitCode $exit.Contract -Message "app.json is missing or names no id, name, and publisher; AppSourceCop.json pins $Pin."
-    }
-
-    $packageId = '{0}.{1}.symbols.{2}' -f $app.publisher, ($app.name -replace '\s', ''), $app.id
-    $feed = Get-SymbolFeeds -Feed AppSourceSymbols
-    $lookup = Find-PackageInFeed -PackageId $packageId -Feed $feed
-    if ($lookup.Status -eq 'Unreadable') {
-        return New-ReleasePinResult -ExitCode $exit.GeneralError -Message "AppSourceSymbols feed '$($lookup.Feed)' cannot be read: $($lookup.Message)"
-    }
-
-    # A Release version has no prerelease suffix.
-    $releases = @($lookup.Versions | Where-Object { $_ -match '^\d+(\.\d+){1,3}$' })
-    if ($lookup.Status -ne 'Listed' -or $releases.Count -eq 0) {
-        return New-ReleasePinResult -ExitCode $exit.Contract -Message "AppSourceSymbols lists no Release of $packageId; AppSourceCop.json pins $Pin."
-    }
-    $latestNuGetVersion = Select-PackageVersion -Versions $releases
+    $packageId = $release.PackageId
+    $latestNuGetVersion = $release.NuGetVersion
 
     $tempDir = New-TemporaryDirectory
     try {
         $manifest = $null
         try {
-            $nupkg = Download-PackageNupkg -Feed $lookup.Feed -PackageId $packageId -Version $latestNuGetVersion -DestinationDirectory $tempDir
+            $nupkg = Download-PackageNupkg -Feed $release.Feed -PackageId $packageId -Version $latestNuGetVersion -DestinationDirectory $tempDir
             $archive = [System.IO.Compression.ZipFile]::OpenRead($nupkg)
             try {
                 $appPath = Extract-SymbolApp -Archive $archive -PackageId $packageId -Version $latestNuGetVersion -OutputDirectory $tempDir
@@ -659,7 +693,7 @@ function Test-ReleasePin {
             if (-not $appPath) { throw "the package holds no .app file." }
             $manifest = Read-AppManifest -Path $appPath
         } catch {
-            return New-ReleasePinResult -ExitCode $exit.GeneralError -Message "Cannot read the latest Release of $packageId ($latestNuGetVersion) from '$($lookup.Feed)': $($_.Exception.Message)"
+            return New-ReleasePinResult -ExitCode $exit.GeneralError -Message "Cannot read the latest Release of $packageId ($latestNuGetVersion) from '$($release.Feed)': $($_.Exception.Message)"
         }
     } finally {
         Remove-Item -LiteralPath $tempDir -Recurse -Force -ErrorAction SilentlyContinue
@@ -670,6 +704,177 @@ function Test-ReleasePin {
         return New-ReleasePinResult -ExitCode $exit.Success -LatestRelease $latest -Message "AppSourceCop.json pins $latest, the latest Release of $packageId on AppSourceSymbols."
     }
     return New-ReleasePinResult -ExitCode $exit.Contract -LatestRelease $latest -Message "AppSourceCop.json pins $Pin, but the latest Release on AppSourceSymbols is $latest. Update version in AppSourceCop.json."
+}
+
+# =============================================================================
+# Compile baseline
+# =============================================================================
+
+function New-ReleaseBaselineResult {
+    param(
+        [Parameter(Mandatory)][int]$ExitCode,
+        [Parameter(Mandatory)][string]$Message,
+        [string[]]$Files = @()
+    )
+    return [pscustomobject]@{ ExitCode = $ExitCode; Message = $Message; Files = @($Files) }
+}
+
+function New-PackageRequest {
+    # One package for the fill to resolve: the Release (an exact NuGet Version, one feed) or a dependency (a minimum, every feed).
+    param([string]$Id, [string[]]$Feeds, [string]$Minimum, [string]$Version)
+    return [pscustomobject]@{ Id = $Id; Feeds = $Feeds; Minimum = $Minimum; Version = $Version }
+}
+
+function Get-TrackedAppFile {
+    # The *.app files directly in $Folder that git tracks. Outside a git work tree none is tracked;
+    # git missing from PATH throws, so the guard is never skipped without a word.
+    param([Parameter(Mandatory)][string]$Folder)
+
+    if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw 'git is not on PATH, so the fill cannot tell which *.app files git tracks.' }
+    if (-not (Test-Path -LiteralPath $Folder -PathType Container)) { return @() }
+    git -C $Folder rev-parse --is-inside-work-tree *> $null
+    if ($LASTEXITCODE -ne 0) { return @() }
+    $listed = git -C $Folder ls-files -z
+    if ($LASTEXITCODE -ne 0) { throw "git ls-files failed in '$Folder'." }
+    return @(($listed -join '') -split "`0" | Where-Object { $_ -match '^[^/\\]+\.app$' })
+}
+
+function Select-PackageFeed {
+    # The first feed that lists the package. A feed that cannot be read stops the fill, so an id never
+    # falls through to the next feed on an outage; only a feed that does not list it does.
+    param([Parameter(Mandatory)][string]$PackageId, [Parameter(Mandatory)][string[]]$Feeds)
+
+    foreach ($feed in $Feeds) {
+        $lookup = Find-PackageInFeed -PackageId $PackageId -Feed $feed
+        if ($lookup.Status -eq 'Listed') { return $lookup.Feed }
+        if ($lookup.Status -eq 'Unreadable') { throw "feed '$($lookup.Feed)' cannot be read: $($lookup.Message)" }
+    }
+    throw 'no configured feed lists it.'
+}
+
+function Save-ReleaseBaseline {
+    <#
+    .SYNOPSIS
+        Fills the compile baseline folder with the symbols-only Release and its dependency symbols.
+    .DESCRIPTION
+        Takes the latest Release package from AppSourceSymbols and walks its .nuspec dependencies
+        transitively: each package comes from the first feed that lists it (MSSymbols, then
+        AppSourceSymbols) at the highest version that feed lists, and a feed that cannot be read
+        stops the fill. The whole closure is extracted into a staging folder first. Only a complete
+        closure replaces the folder's *.app files: the old ones move to a backup folder, the staged
+        ones move in with {cleanName}.{version}.app names, and a failed move deletes what moved in
+        and restores the backup. Every other file in the folder stays.
+        Returns ExitCode, Message, and Files (the written paths): 0 when the folder is filled, 4
+        when git tracks a *.app in the folder or the latest Release is not Version, and 1 when
+        git, a feed, or a package cannot be read. On 4 and 1 the folder is exactly as it was.
+    .PARAMETER AppJson
+        The parsed app.json: id, name, and publisher.
+    .PARAMETER Version
+        The 4-part Release version AppSourceCop.json pins, which the Release .app manifest must carry.
+    .PARAMETER Folder
+        The baseline folder, resolved.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]$AppJson,
+        [Parameter(Mandatory)][string]$Version,
+        [Parameter(Mandatory)][string]$Folder
+    )
+
+    $exit = Get-ExitCode
+
+    try {
+        $tracked = @(Get-TrackedAppFile -Folder $Folder)
+    } catch {
+        return New-ReleaseBaselineResult -ExitCode $exit.GeneralError -Message "Cannot fill '$Folder': $($_.Exception.Message)"
+    }
+    if ($tracked.Count -gt 0) {
+        return New-ReleaseBaselineResult -ExitCode $exit.Contract -Message "Git tracks $($tracked -join ', ') in '$Folder'. The fill replaces untracked *.app files only; untrack them."
+    }
+
+    $latest = Find-LatestRelease -AppJson $AppJson
+    if ($latest.Status -ne 'Found') {
+        $reason = switch ($latest.Status) {
+            'NoApp' { 'app.json names no id, name, and publisher.' }
+            'Unreadable' { "AppSourceSymbols feed '$($latest.Feed)' cannot be read: $($latest.Message)" }
+            'NoRelease' { "AppSourceSymbols lists no Release of $($latest.PackageId)." }
+        }
+        return New-ReleaseBaselineResult -ExitCode $exit.GeneralError -Message "Cannot fill '$Folder': $reason"
+    }
+
+    $staging = New-TemporaryDirectory
+    $backup = $null
+    try {
+        $feeds = @(Get-SymbolFeeds)
+        $queue = [System.Collections.Generic.Queue[object]]::new()
+        $queue.Enqueue((New-PackageRequest -Id $latest.PackageId -Feeds @($latest.Feed) -Version $latest.NuGetVersion))
+        $minimums = @{}
+        $resolvedVersions = @{}
+        while ($queue.Count -gt 0) {
+            $item = $queue.Dequeue()
+            if ($resolvedVersions.ContainsKey($item.Id)) { continue }
+
+            $resolveArguments = @{ PackageId = $item.Id; MinimumVersion = $minimums[$item.Id]; CacheDir = $staging }
+            if ($item.Version) { $resolveArguments.Version = $item.Version }
+            try {
+                $resolveArguments.Feeds = @(Select-PackageFeed -PackageId $item.Id -Feeds $item.Feeds)
+                $resolved = Resolve-SymbolPackage @resolveArguments
+            } catch {
+                return New-ReleaseBaselineResult -ExitCode $exit.GeneralError -Message "Cannot fill '$Folder': package $($item.Id) failed: $($_.Exception.Message)"
+            }
+            $resolvedVersions[$item.Id] = $resolved.Version
+            foreach ($dependency in $resolved.Dependencies) {
+                $dependencyId = [string]$dependency.Id
+                $minimum = $dependency.MinimumVersion
+                if ($minimum -and (-not $minimums[$dependencyId] -or (Compare-Version -Left $minimum -Right $minimums[$dependencyId]) -gt 0)) {
+                    $minimums[$dependencyId] = $minimum
+                }
+                $queue.Enqueue((New-PackageRequest -Id $dependencyId -Feeds $feeds))
+            }
+        }
+        foreach ($id in $resolvedVersions.Keys) {
+            if ($minimums[$id] -and (Compare-Version -Left $resolvedVersions[$id] -Right $minimums[$id]) -lt 0) {
+                Write-BuildMessage -Type Warning -Message "$id resolves to $($resolvedVersions[$id]), below the required $($minimums[$id]); no feed lists a higher version."
+            }
+        }
+
+        $stagedApps = @(Get-ChildItem -LiteralPath $staging -File | Where-Object { $_.Extension -ieq '.app' })
+        $release = $stagedApps | ForEach-Object { Read-AppManifest -Path $_.FullName } | Where-Object { $_.Id -ieq $latest.App.id } | Select-Object -First 1
+        if (-not $release -or $release.Version -ne $Version.Trim()) {
+            $found = if ($release) { $release.Version } else { 'no Release' }
+            return New-ReleaseBaselineResult -ExitCode $exit.Contract -Message "Cannot fill '$Folder': the latest Release of $($latest.PackageId) on AppSourceSymbols is $found, not the pinned $Version."
+        }
+
+        # Swap: the old *.app files go to a backup, the closure moves in, and a failure undoes both.
+        Ensure-Directory -Path $Folder
+        $backup = New-TemporaryDirectory
+        $written = [System.Collections.Generic.List[string]]::new()
+        try {
+            Get-ChildItem -LiteralPath $Folder -File | Where-Object { $_.Extension -ieq '.app' } |
+                ForEach-Object { Move-Item -LiteralPath $_.FullName -Destination (Join-Path $backup $_.Name) -ErrorAction Stop }
+            foreach ($stagedApp in $stagedApps) {
+                $destination = Join-Path $Folder $stagedApp.Name
+                Move-Item -LiteralPath $stagedApp.FullName -Destination $destination -ErrorAction Stop
+                $written.Add($destination)
+            }
+        } catch {
+            $failure = $_.Exception.Message
+            try {
+                foreach ($path in $written) { Remove-Item -LiteralPath $path -Force -ErrorAction Stop }
+                Get-ChildItem -LiteralPath $backup -File |
+                    ForEach-Object { Move-Item -LiteralPath $_.FullName -Destination (Join-Path $Folder $_.Name) -Force -ErrorAction Stop }
+            } catch {
+                $kept = $backup
+                $backup = $null
+                return New-ReleaseBaselineResult -ExitCode $exit.GeneralError -Message "Cannot fill '$Folder': $failure Restoring the old *.app files failed too: $($_.Exception.Message) They are kept in '$kept'."
+            }
+            return New-ReleaseBaselineResult -ExitCode $exit.GeneralError -Message "Cannot fill '$Folder': $failure The old *.app files are restored."
+        }
+        return New-ReleaseBaselineResult -ExitCode $exit.Success -Message "Filled '$Folder' with $($written.Count) symbol package(s): the Release $Version and its dependencies." -Files $written.ToArray()
+    } finally {
+        Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction SilentlyContinue
+        if ($backup) { Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue }
+    }
 }
 
 # =============================================================================
@@ -700,4 +905,7 @@ Export-ModuleMember -Function @(
 
     # Release pin
     'Test-ReleasePin'
+
+    # Compile baseline
+    'Save-ReleaseBaseline'
 )
