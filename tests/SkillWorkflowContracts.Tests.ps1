@@ -54,8 +54,14 @@ Describe 'Skill workflow contracts' {
 
     It 'runs scenario workers one at a time' {
         $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
+        $tdd = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-tdd' 'SKILL.md') -Raw
 
         $implement | Should -Match 'The workers run one at a time'
+        $implement | Should -Match 'after the previous worker''s return meets its contract'
+        $implement | Should -Match 'as a checkpoint'
+        $implement | Should -Not -Match 'fault turn'
+        $implement | Should -Not -Match 'background `Agent` calls in one message'
+        $tdd | Should -Not -Match 'ends its turn with that proof''s fault site'
     }
 
     It 'keeps precedent map ownership with al-lookup' {
