@@ -23,10 +23,15 @@ BeforeAll {
     # machine). Mock mocks only a command that exists, so a global stub stands in
     # when it is absent; every case mocks the command inside the common module.
     $script:StubbedCommands = @()
-    foreach ($name in 'docker', 'Remove-BcContainer') {
+    # A stub needs the parameter a ParameterFilter reads, or the filter never matches.
+    $stubs = @{
+        'docker'             = { }
+        'Remove-BcContainer' = { param([string]$containerName) }
+    }
+    foreach ($name in $stubs.Keys) {
         if (-not (Get-Command $name -ErrorAction SilentlyContinue)) {
             $script:StubbedCommands += $name
-            Set-Item -Path "function:global:$name" -Value { }
+            Set-Item -Path "function:global:$name" -Value $stubs[$name]
         }
     }
 }
