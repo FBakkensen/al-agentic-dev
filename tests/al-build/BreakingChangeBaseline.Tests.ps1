@@ -175,7 +175,7 @@ Describe 'download-baseline.ps1 Release pin check' -Tag 'Process' {
         function Invoke-DownloadBaseline {
             param([Parameter(Mandatory)][string]$Root, [Parameter(Mandatory)][string]$Feed)
             # The child inherits this process's ALBT_* variables, which outrank the fixture's al-build.json.
-            $command = "Get-ChildItem Env:ALBT_* | Remove-Item; `$env:ALBT_APPSOURCESYMBOLS_FEED = '$Feed'; Set-Location -LiteralPath '$Root'; & '$script:DownloadBaselineScript'"
+            $command = "Get-ChildItem Env:ALBT_* | Remove-Item; `$env:ALBT_APPSOURCESYMBOLS_FEED = '$Feed'; Set-Location -LiteralPath '$Root'; & '$script:DownloadBaselineScript'; exit `$LASTEXITCODE"
             $output = & $script:Pwsh -NoProfile -Command $command 2>&1
             [pscustomobject]@{
                 ExitCode = $LASTEXITCODE
