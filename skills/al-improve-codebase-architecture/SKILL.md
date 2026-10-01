@@ -1,6 +1,6 @@
 ---
 name: al-improve-codebase-architecture
-description: Use whenever /mattpocock-skills:improve-codebase-architecture runs against AL code, or when a deeper reshape of AL codeunits, tables, or pages is carried out in the session with its Azure DevOps work item's behavior fixed.
+description: Use whenever /mattpocock-skills:improve-codebase-architecture runs against AL code, to carry a chosen deepening candidate out behind the module interface with the Azure DevOps work item's behavior fixed.
 ---
 
 # al-improve-codebase-architecture - deepen AL behind its interface
