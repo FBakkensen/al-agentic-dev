@@ -41,35 +41,6 @@ BeforeAll {
         }, $true))
     }
 
-    function Get-CommandParameterNames {
-        param([System.Management.Automation.Language.CommandAst]$Command)
-
-        $names = @()
-        foreach ($element in $Command.CommandElements) {
-            if ($element -is [System.Management.Automation.Language.CommandParameterAst]) {
-                $names += $element.ParameterName
-            }
-            elseif ($element -is [System.Management.Automation.Language.VariableExpressionAst] -and $element.Splatted) {
-                $assignments = @($script:GoldenContainerAst.FindAll({
-                    param($node)
-                    $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
-                    $node.Left -is [System.Management.Automation.Language.VariableExpressionAst] -and
-                    $node.Left.VariablePath.UserPath -eq $element.VariablePath.UserPath
-                }, $true))
-                foreach ($assignment in $assignments) {
-                    $table = $assignment.Right.Find({
-                        param($node)
-                        $node -is [System.Management.Automation.Language.HashtableAst]
-                    }, $true)
-                    foreach ($pair in $table.KeyValuePairs) {
-                        $names += $pair.Item1.Extent.Text.Trim("'", '"')
-                    }
-                }
-            }
-        }
-        $names
-    }
-
     $scriptsRoot = Join-Path $PSScriptRoot '..' '..' 'skills' 'al-build' 'scripts'
     $script:GoldenContainerScriptPath = Resolve-Path (Join-Path $scriptsRoot 'new-bc-container.ps1')
     $script:BuildOperationsModulePath = Resolve-Path (Join-Path $scriptsRoot 'build-operations.psm1')
@@ -139,9 +110,10 @@ Describe 'Golden container without AL-Go settings' {
     }
 
     It 'imports no license' {
-        $newContainer = Get-ScriptCommand -Name 'New-BcContainer'
-        $newContainer | Should -HaveCount 1
-        Get-CommandParameterNames -Command $newContainer[0] | Should -Not -Contain 'licenseFile'
+        Get-ScriptCommand -Name 'New-BcContainer' | Should -HaveCount 1
+
+        # Text, not syntax: a licenseFile parameter, splat key, or later hashtable assignment all contain it.
+        $script:GoldenContainerAst.Extent.Text | Should -Not -Match 'licenseFile'
 
         Get-ScriptCommand -Name 'Import-BcContainerLicense' | Should -HaveCount 0
     }
@@ -150,7 +122,7 @@ Describe 'Golden container without AL-Go settings' {
         $messageWriters = Get-ScriptCommand -Name 'Write-BuildMessage', 'Write-BuildHeader', 'Write-Host', 'Write-Information', 'Write-Output', 'Write-Warning', 'Write-Error', 'Write-Verbose'
         $messageWriters | Should -Not -BeNullOrEmpty
 
-        @($messageWriters | Where-Object { $_.Extent.Text -match 'ContainerPassword|\.Password' }) |
+        @($messageWriters | Where-Object { $_.Extent.Text -match 'ContainerPassword|\.Password\b' }) |
             Should -HaveCount 0
     }
 }
