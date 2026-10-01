@@ -151,6 +151,21 @@ Describe 'Update-BCPublicWebBaseUrl on the .test host' {
     }
 }
 
+Describe 'Update-BCPublicWebBaseUrl when already on the host' {
+    It 'makes no set and no restart, and returns the URL unchanged' {
+        InModuleScope common {
+            Mock Get-BcContainerServerConfiguration { [pscustomobject]@{ PublicWebBaseUrl = 'http://feat-x.test:7080/BC/' } }
+            Mock Set-BcContainerServerConfiguration {}
+            Mock Restart-BcContainerServiceTier {}
+
+            Update-BCPublicWebBaseUrl -ContainerName 'feat-x' -NewHostname 'feat-x.test' | Should -Be 'http://feat-x.test:7080/BC/'
+
+            Should -Invoke Set-BcContainerServerConfiguration -Times 0 -Exactly
+            Should -Invoke Restart-BcContainerServiceTier -Times 0 -Exactly
+        }
+    }
+}
+
 Describe 'Set-BCAgentContainerHost' {
     It 'writes both hosts lines with the container IP and moves PublicWebBaseUrl to the .test host' {
         $hosts = New-HostsFile
@@ -187,20 +202,18 @@ Describe 'Set-BCAgentContainerHost' {
         }
     }
 
-    It 'makes no set and no restart when PublicWebBaseUrl is already on the .test host, and returns it' {
+    It 'passes through the URL Update-BCPublicWebBaseUrl returns, asking for the .test host' {
         $hosts = New-HostsFile
         InModuleScope common -Parameters @{ Hosts = $hosts } {
             param($Hosts)
-            Mock Get-BcContainerServerConfiguration { [pscustomobject]@{ PublicWebBaseUrl = 'http://feat-x.test:7080/BC/' } }
-            Mock Set-BcContainerServerConfiguration {}
-            Mock Restart-BcContainerServiceTier {}
+            Mock Update-BCPublicWebBaseUrl { 'http://feat-x.test:7080/BC/' }
 
             Set-BCAgentContainerHost -ContainerName 'feat-x' -IPAddress '172.28.0.5' -HostsFile $Hosts | Should -Be 'http://feat-x.test:7080/BC/'
 
-            Should -Invoke Set-BcContainerServerConfiguration -Times 0 -Exactly
-            Should -Invoke Restart-BcContainerServiceTier -Times 0 -Exactly
+            Should -Invoke Update-BCPublicWebBaseUrl -Times 1 -Exactly -ParameterFilter {
+                $ContainerName -eq 'feat-x' -and $NewHostname -eq 'feat-x.test'
+            }
         }
-        Get-HostLines -Path $hosts -Hostname 'feat-x.test' | Should -HaveCount 1
     }
 
     It 'skips the hosts lines for an empty IP, warns that the .test host has no entry, and still moves PublicWebBaseUrl' {

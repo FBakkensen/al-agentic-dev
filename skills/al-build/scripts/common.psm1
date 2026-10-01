@@ -1117,10 +1117,10 @@ function Set-BCAgentContainerHost {
         The one owner of "put the container on .test", for creation and republish.
         Writes the bare name and the .test name as two hosts lines with the
         container IP (none when the IP is empty), then sets PublicWebBaseUrl to
-        the .test host only when it is on another host, which restarts the service
-        tier. An already-.test URL makes no set and no restart. BcContainerHelper
-        keeps addressing the container by its bare name. Returns the .test
-        PublicWebBaseUrl. Throws when any step fails.
+        the .test host through Update-BCPublicWebBaseUrl, which makes no set and no
+        restart when it is already there. BcContainerHelper keeps addressing the
+        container by its bare name. Returns the .test PublicWebBaseUrl. Throws
+        when any step fails.
     .PARAMETER ContainerName
         The bare container name
     .PARAMETER IPAddress
@@ -1146,11 +1146,6 @@ function Set-BCAgentContainerHost {
     }
     else {
         Write-BuildMessage -Type Warning -Message "No container IP; '$testHost' has no hosts entry, so PublicWebBaseUrl points at a host that will not resolve"
-    }
-
-    $currentUrl = (Get-BcContainerServerConfiguration -containerName $ContainerName).PublicWebBaseUrl
-    if ($currentUrl -match '^https?://([^:/]+)' -and $matches[1] -eq $testHost) {
-        return $currentUrl
     }
 
     return Update-BCPublicWebBaseUrl -ContainerName $ContainerName -NewHostname $testHost
@@ -1193,8 +1188,8 @@ function Get-DeployedCommit {
     .SYNOPSIS
         The HEAD short SHA, marked when tracked files have uncommitted changes
     .DESCRIPTION
-        Same git rev-parse --short HEAD form that test.ps1 and container-test.ps1
-        record in build-timing.jsonl. publish-apps.ps1 publishes the .app compiled
+        The short SHA form test.ps1 and container-test.ps1 record in
+        build-timing.jsonl. publish-apps.ps1 publishes the .app compiled
         from the working tree, so edited tracked files get ' (uncommitted changes)';
         an untracked file alone leaves it unmarked. Outside a git repository the
         answer is '(not a git repository)'.
@@ -1287,7 +1282,9 @@ function Update-BCPublicWebBaseUrl {
     .DESCRIPTION
         Reads the current PublicWebBaseUrl from the container's service tier,
         replaces only the hostname portion (preserving scheme, port, and path),
-        then updates the configuration and restarts the service tier.
+        then updates the configuration and restarts the service tier. When the URL
+        is already on the new hostname, it makes no set and no restart. Returns
+        the URL.
     .PARAMETER ContainerName
         Name of the BC container
     .PARAMETER NewHostname
@@ -1314,6 +1311,9 @@ function Update-BCPublicWebBaseUrl {
     # Parse and replace hostname only
     # URL format: scheme://hostname:port/path or scheme://hostname/path
     if ($currentUrl -match '^(https?://)([^:/]+)(:\d+)?(.*)$') {
+        if ($matches[2] -eq $NewHostname) {
+            return $currentUrl
+        }
         $scheme = $matches[1]
         $port = $matches[3]    # may be empty
         $path = $matches[4]    # includes leading /
