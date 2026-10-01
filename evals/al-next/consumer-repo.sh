@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Seeds an AL Consumer repository that /mattpocock-skills:setup-matt-pocock-skills
-# already pointed at Azure DevOps: an app, its source, and the tracker text.
+# already pointed at Azure DevOps, for /al-next: an app, its source, and the tracker text.
 set -euo pipefail
 
 mkdir -p src docs/agents

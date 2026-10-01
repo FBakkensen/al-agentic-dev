@@ -5,7 +5,7 @@ description: Use when an Original work item or one of its child PBIs has landed 
 
 # al-next - reconcile the request
 
-In: the Original work item (a Feature, Bug, or PBI), its direct child PBIs when present, the work-item comments, the receipts, and the landed diff. Azure DevOps is the design record, and every work-item read and write follows the tracker text the `## Agent skills` block's issue tracker line points to, Acceptance Criteria updates included; `.output/receipts/` mirrors execution evidence. If Azure DevOps work-item tools are unavailable, show the exact reconciliation update and stop without creating a substitute record.
+In: the Original work item (a Feature, Bug, or PBI), its direct child PBIs when present, the work-item comments, the receipts, and the landed diff. Azure DevOps is the design record, and every work-item read and write, Acceptance Criteria updates included, follows the Consumer repository's tracker text; `.output/receipts/` mirrors execution evidence. If Azure DevOps work-item tools are unavailable, show the exact reconciliation update and stop without creating a substitute record.
 
 Ask one substantive question per message. Connect it to the Original work item, the landed behavior, and verified code facts.
 
@@ -24,6 +24,8 @@ Show the connected-object change map before the delta table. The map explains ho
 Read the spec from Description, or from Repro Steps on a Bug, under `/mattpocock-skills:to-spec`'s headings. Compare the landed code with the process contract and Business process under `Solution`, and with the Building Block View Level 1, the Runtime View, black boxes, and Level 2 when present under `Implementation Decisions`. Compare the landed code with the executable item's `Behavior` Gherkin and `Test specification` in Acceptance Criteria, and the executable-item change map with the landed diff. Report drift and send the correction to the entry skill the developer types: `/mattpocock-skills:implement` for behavior drift, `/simplify` or `/mattpocock-skills:improve-codebase-architecture` for shape drift. When implementation proved a better stable internal shape, dispatch the Level 2 update to the Original work item:
 
 ▶ haiku · the settled Level 2 content and the landed diff → the formatted view through `/al-arc42`
+
+When the formatted view returns, attach it:
 
 ▶ haiku · the `/al-arc42` artifacts and the Original work item → attachments published through `/al-azure-devops-attachments`
 
