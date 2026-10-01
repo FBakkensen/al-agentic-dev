@@ -27,7 +27,7 @@ Read the spec from Description, or from Repro Steps on a Bug, under `/mattpocock
 
 When the formatted view returns, attach it:
 
-▶ haiku · the `/al-arc42` artifacts and the Original work item → attachments published through `/al-azure-devops-attachments`
+▶ haiku · the `/al-arc42` artifacts, the Original work item, and the Consumer repository's tracker text → attachments published through `/al-azure-devops-attachments`
 
 A Level 2 change records current structure; the executable-item map records what changed.
 
