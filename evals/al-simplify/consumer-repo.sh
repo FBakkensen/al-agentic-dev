@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Seeds an AL Consumer repository with a landed slice still in the working tree:
-# the committed app and tracker text, then an uncommitted codeunit change for
-# /simplify to review.
+# Seeds an AL Consumer repository with a one-line change in the working tree:
+# the committed app and tracker text, then an uncommitted field that is already
+# clean, so /simplify reviews it and has nothing to apply.
 set -euo pipefail
 
 mkdir -p src docs/agents
@@ -25,21 +25,7 @@ table 50100 "ShopFloor Setup"
     fields
     {
         field(1; "Primary Key"; Code[10]) { }
-        field(2; "Default Location Code"; Code[10]) { }
     }
-}
-AL
-
-cat > src/ShopFloorMgt.Codeunit.al <<'AL'
-codeunit 50100 "ShopFloor Mgt."
-{
-    procedure GetDefaultLocationCode(): Code[10]
-    var
-        ShopFloorSetup: Record "ShopFloor Setup";
-    begin
-        ShopFloorSetup.Get();
-        exit(ShopFloorSetup."Default Location Code");
-    end;
 }
 AL
 
@@ -61,28 +47,13 @@ git init -q
 git -c core.autocrlf=false add -A
 git -c user.name=eval -c user.email=eval@example.invalid commit -q -m "ShopFloor app"
 
-cat > src/ShopFloorMgt.Codeunit.al <<'AL'
-codeunit 50100 "ShopFloor Mgt."
+cat > src/ShopFloorSetup.Table.al <<'AL'
+table 50100 "ShopFloor Setup"
 {
-    procedure GetDefaultLocationCode(): Code[10]
-    var
-        ShopFloorSetup: Record "ShopFloor Setup";
-    begin
-        ShopFloorSetup.Get();
-        exit(ShopFloorSetup."Default Location Code");
-    end;
-
-    procedure HasDefaultLocation(): Boolean
-    var
-        ShopFloorSetup: Record "ShopFloor Setup";
-        LocationCode: Code[10];
-    begin
-        ShopFloorSetup.Get();
-        LocationCode := ShopFloorSetup."Default Location Code";
-        if LocationCode <> '' then
-            exit(true)
-        else
-            exit(false);
-    end;
+    fields
+    {
+        field(1; "Primary Key"; Code[10]) { }
+        field(2; "Default Location Code"; Code[10]) { }
+    }
 }
 AL
