@@ -191,8 +191,7 @@ Describe 'Remove-OrphanedAgentContainers - hosts entries' -Tag 'Process' {
     It 'removes both hosts lines for a pruned container docker lists, and keeps unrelated lines' {
         InModuleScope common -Parameters @{ Hosts = $script:Hosts } {
             param($Hosts)
-            Mock docker { 'ghost' } -ParameterFilter { $args[0] -eq 'ps' }
-            Mock docker {}
+            Mock docker { 'ghost' }
             Mock Remove-BcContainer {}
 
             Remove-OrphanedAgentContainers -HostsFile $Hosts
@@ -228,8 +227,7 @@ Describe 'Remove-OrphanedAgentContainers - hosts entries' -Tag 'Process' {
         $before = Get-Content -LiteralPath $script:Hosts -Raw
         InModuleScope common -Parameters @{ Hosts = $script:Hosts } {
             param($Hosts)
-            Mock docker { 'ghost' } -ParameterFilter { $args[0] -eq 'ps' }
-            Mock docker {}
+            Mock docker { 'ghost' }
             Mock Remove-BcContainer {}
 
             Remove-OrphanedAgentContainers -HostsFile $Hosts -WhatIf
