@@ -137,18 +137,46 @@ Describe 'publish-apps.ps1 call order and password' {
         $result[0].Extent.StartOffset | Should -BeGreaterThan $complete
     }
 
-    It 'passes the URL the re-assert returned and the configured username to the result' {
+    It 'passes the config, the main app.json and the URL the re-assert returned to the result' {
         $script:Content | Should -Match '(?s)\$webClientUrl\s*=\s*Sync-BCAgentContainerHost'
-        $script:Content | Should -Match 'Write-RepublishResult\b[^\r\n]*-WebClientUrl \$webClientUrl'
-        $script:Content | Should -Match 'Write-RepublishResult\b[^\r\n]*-Username \$config\.ContainerUsername'
+        $script:Content | Should -Match 'Write-RepublishResult\b[^\r\n]*-Config \$config\b'
+        $script:Content | Should -Match 'Write-RepublishResult\b[^\r\n]*-AppJson \$mainAppJson\b'
+        $script:Content | Should -Match 'Write-RepublishResult\b[^\r\n]*-WebClientUrl \$webClientUrl\b'
+    }
+
+    It 'closes the sync-host timing step in a finally, so a thrown re-assert still stops it' {
+        $call = (Get-CommandsNamed 'Sync-BCAgentContainerHost')[0]
+        $try = $call.Parent
+        while ($try -and $try -isnot [System.Management.Automation.Language.TryStatementAst]) { $try = $try.Parent }
+        $try.Finally.Extent.Text | Should -Match "Stop-Step 'sync-host'"
+    }
+
+    It 'keeps the password out of Write-RepublishResult in common.psm1' {
+        $commonPath = Join-Path $PSScriptRoot '..' '..' 'skills' 'al-build' 'scripts' 'common.psm1'
+        $tokens = $null; $errors = $null
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $commonPath), [ref]$tokens, [ref]$errors)
+        $fn = @($ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Write-RepublishResult' }, $true))
+        $fn | Should -HaveCount 1
+        $fn[0].Extent.Text | Should -Not -Match 'ContainerPassword'
     }
 }
 
 Describe 'Write-RepublishResult' {
+    BeforeAll {
+        # The real inputs: a config that carries a password, and a main app.json read from disk.
+        $script:Config = [pscustomobject]@{ ContainerName = 'feat-x'; ContainerUsername = 'walker'; ContainerPassword = 'S3cret!' }
+        $appDir = Join-Path $TestDrive 'main-app'
+        New-Item -ItemType Directory -Path $appDir | Out-Null
+        Set-Content -LiteralPath (Join-Path $appDir 'app.json') -Value '{ "name": "Main", "version": "27.3.1.0" }'
+        $script:AppJson = Get-AppJsonObject $appDir
+        $script:Url = 'http://feat-x.test:7080/BC/'
+    }
+
     It 'names the commit, the version, a URL on the .test host, and the username' {
-        InModuleScope common {
+        InModuleScope common -Parameters @{ Config = $script:Config; AppJson = $script:AppJson; Url = $script:Url } {
+            param($Config, $AppJson, $Url)
             Mock Get-DeployedCommit { 'abc1234' }
-            $lines = @(& { Write-RepublishResult -Version '27.3.1.0' -WebClientUrl 'http://feat-x.test:7080/BC/' -Username 'walker' } 6>&1 | ForEach-Object { "$_" })
+            $lines = @(& { Write-RepublishResult -Config $Config -AppJson $AppJson -WebClientUrl $Url } 6>&1 | ForEach-Object { "$_" })
             $lines | Should -Contain 'Commit: abc1234'
             $lines | Should -Contain 'Version: 27.3.1.0'
             $lines | Should -Contain 'Web Client: http://feat-x.test:7080/BC/'
@@ -157,24 +185,38 @@ Describe 'Write-RepublishResult' {
     }
 
     It 'writes every line on the information stream while VerbosePreference is SilentlyContinue' {
-        InModuleScope common {
+        InModuleScope common -Parameters @{ Config = $script:Config; AppJson = $script:AppJson; Url = $script:Url } {
+            param($Config, $AppJson, $Url)
             Mock Get-DeployedCommit { 'abc1234' }
             $VerbosePreference = 'SilentlyContinue'
-            $info = @(& { Write-RepublishResult -Version '27.3.1.0' -WebClientUrl 'http://feat-x.test:7080/BC/' -Username 'walker' } 6>&1 | ForEach-Object { "$_" })
+            $info = @(& { Write-RepublishResult -Config $Config -AppJson $AppJson -WebClientUrl $Url } 6>&1 | ForEach-Object { "$_" })
             foreach ($label in 'Commit: abc1234', 'Version: 27.3.1.0', 'Web Client: http://feat-x.test:7080/BC/', 'Username: walker') {
                 $info | Should -Contain $label
             }
-            $verbose = @(& { Write-RepublishResult -Version '27.3.1.0' -WebClientUrl 'http://feat-x.test:7080/BC/' -Username 'walker' } 6>$null 4>&1)
+            $verbose = @(& { Write-RepublishResult -Config $Config -AppJson $AppJson -WebClientUrl $Url } 6>$null 4>&1)
             $verbose | Should -HaveCount 0
         }
     }
 
     It 'never carries the password on any stream' {
-        InModuleScope common {
+        InModuleScope common -Parameters @{ Config = $script:Config; AppJson = $script:AppJson; Url = $script:Url } {
+            param($Config, $AppJson, $Url)
+            $Config.ContainerPassword | Should -Be 'S3cret!'
             Mock Get-DeployedCommit { 'abc1234' }
-            $all = (& { Write-RepublishResult -Version '27.3.1.0' -WebClientUrl 'http://feat-x.test:7080/BC/' -Username 'walker' } *>&1 | ForEach-Object { "$_" }) -join "`n"
+            $all = (& { Write-RepublishResult -Config $Config -AppJson $AppJson -WebClientUrl $Url } *>&1 | ForEach-Object { "$_" }) -join "`n"
             $all | Should -Not -BeNullOrEmpty
             $all | Should -Not -Match ([regex]::Escape('S3cret!'))
+        }
+    }
+
+    It 'throws, and writes no result line, when the main app has no app.json' {
+        InModuleScope common -Parameters @{ Config = $script:Config; Url = $script:Url } {
+            param($Config, $Url)
+            Mock Get-DeployedCommit { 'abc1234' }
+            $lines = [System.Collections.Generic.List[string]]::new()
+            { & { Write-RepublishResult -Config $Config -AppJson $null -WebClientUrl $Url } 6>&1 | ForEach-Object { $lines.Add("$_") } } |
+                Should -Throw '*app.json*'
+            $lines | Should -HaveCount 0
         }
     }
 }
@@ -187,6 +229,7 @@ Describe 'Write-RepublishResult commit line' -Tag 'Process' {
             if ($LASTEXITCODE -ne 0) { throw "git $($GitArgs -join ' ') failed" }
         }
         function script:New-Repo {
+            param([switch]$NoCommit)
             $repo = Join-Path $TestDrive ('repo-' + [guid]::NewGuid().ToString('N'))
             New-Item -ItemType Directory -Path $repo | Out-Null
             Push-Location $repo
@@ -195,18 +238,24 @@ Describe 'Write-RepublishResult commit line' -Tag 'Process' {
                 Invoke-Git @('config', 'user.email', 'test@example.com')
                 Invoke-Git @('config', 'user.name', 'Test')
                 Invoke-Git @('config', 'commit.gpgsign', 'false')
-                Set-Content -LiteralPath (Join-Path $repo 'tracked.txt') -Value 'one'
-                Invoke-Git @('add', 'tracked.txt')
-                Invoke-Git @('commit', '-q', '-m', 'first')
+                New-Item -ItemType Directory -Path (Join-Path $repo 'sub') | Out-Null
+                if (-not $NoCommit) {
+                    Set-Content -LiteralPath (Join-Path $repo 'tracked.txt') -Value 'one'
+                    Invoke-Git @('add', 'tracked.txt')
+                    Invoke-Git @('commit', '-q', '-m', 'first')
+                }
             }
             finally { Pop-Location }
             return $repo
         }
+        # The commit line a result written from $Cwd carries.
         function script:Get-CommitLine {
-            param([string]$Repo)
-            Push-Location $Repo
+            param([string]$Cwd)
+            $config = [pscustomobject]@{ ContainerUsername = 'walker' }
+            $appJson = [pscustomobject]@{ version = '1.0.0.0' }
+            Push-Location $Cwd
             try {
-                $lines = Get-ResultLines { Write-RepublishResult -Version '1.0.0.0' -WebClientUrl 'http://feat-x.test/BC/' -Username 'walker' }
+                $lines = Get-ResultLines { Write-RepublishResult -Config $config -AppJson $appJson -WebClientUrl 'http://feat-x.test/BC/' }
             }
             finally { Pop-Location }
             return @($lines | Where-Object { $_ -like 'Commit: *' })
@@ -240,6 +289,21 @@ Describe 'Write-RepublishResult commit line' -Tag 'Process' {
         $line = @(Get-CommitLine $repo)
         $line | Should -HaveCount 1
         $line[0] | Should -Be "Commit: $(Get-HeadShort $repo)"
+    }
+
+    It 'reads the repository root when it runs from a subdirectory, including its dirty state' {
+        $repo = New-Repo
+        Set-Content -LiteralPath (Join-Path $repo 'tracked.txt') -Value 'two'
+        $line = @(Get-CommitLine (Join-Path $repo 'sub'))
+        $line | Should -HaveCount 1
+        $line[0] | Should -Be "Commit: $(Get-HeadShort $repo) (uncommitted changes)"
+    }
+
+    It 'says there are no commits in a repository without one' {
+        $repo = New-Repo -NoCommit
+        $line = @(Get-CommitLine $repo)
+        $line | Should -HaveCount 1
+        $line[0] | Should -Be 'Commit: (no commits)'
     }
 
     It 'says so outside a git repository' {
@@ -359,6 +423,25 @@ Describe 'Sync-BCAgentContainerHost' {
 
             { Sync-BCAgentContainerHost -ContainerName 'feat-x' -HostsFile $Hosts } | Should -Throw '*service tier unreachable*'
         }
+    }
+
+    It 'takes the first IP of a container on several networks, never the concatenation' {
+        $hosts = New-HostsFile
+        InModuleScope common -Parameters @{ Hosts = $hosts } {
+            param($Hosts)
+            Mock Import-BCContainerHelper {}
+            Mock docker { '172.28.0.9 10.0.0.2 ' }
+            Mock Get-BcContainerServerConfiguration { [pscustomobject]@{ PublicWebBaseUrl = 'http://feat-x.test:7080/BC/' } }
+            Mock Set-BcContainerServerConfiguration {}
+            Mock Restart-BcContainerServiceTier {}
+
+            Get-BCAgentContainerIP -ContainerName 'feat-x' | Should -Be '172.28.0.9'
+            Sync-BCAgentContainerHost -ContainerName 'feat-x' -HostsFile $Hosts | Out-Null
+        }
+        $bare = @(Get-HostLines -Path $hosts -Hostname 'feat-x')
+        $bare | Should -HaveCount 1
+        ($bare[0] -split '\s+')[0] | Should -Be '172.28.0.9'
+        $bare[0] | Should -Not -Match '10\.0\.0\.2'
     }
 
     It 'throws, and writes no hosts line, when the container has no IP' {

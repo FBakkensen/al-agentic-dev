@@ -88,7 +88,9 @@ catch {
     Write-BuildMessage -Type Error -Message "Could not re-assert the .test host or PublicWebBaseUrl: $_"
     exit $Exit.Integration
 }
-Stop-Step 'sync-host'
+finally {
+    Stop-Step 'sync-host'
+}
 
 # Step 2: Unpublish all apps in dependency-reverse order
 # Invoke-ALUnpublish internally skips when app is not installed → safe on fresh container.
@@ -134,5 +136,4 @@ Show-BuildTimingHistory -Count 5
 Write-BuildHeader 'Publish Complete'
 Write-BuildMessage -Type Success -Message "All apps published"
 
-$version = if ($mainAppJson) { $mainAppJson.version } else { '(unknown)' }
-Write-RepublishResult -Version $version -WebClientUrl $webClientUrl -Username $config.ContainerUsername
+Write-RepublishResult -Config $config -AppJson $mainAppJson -WebClientUrl $webClientUrl

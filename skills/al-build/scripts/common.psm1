@@ -1151,6 +1151,26 @@ function Set-BCAgentContainerHost {
     return Update-BCPublicWebBaseUrl -ContainerName $ContainerName -NewHostname $testHost
 }
 
+function Get-BCAgentContainerIP {
+    <#
+    .SYNOPSIS
+        The container's IP: the first non-empty address across its docker networks
+    .DESCRIPTION
+        Creation and republish both take the IP from here, so a container on
+        several networks never puts concatenated addresses in the hosts file.
+        Returns $null when the container has no IP.
+    .PARAMETER ContainerName
+        The bare container name
+    #>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ContainerName
+    )
+
+    $addresses = docker inspect $ContainerName --format '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' 2>$null
+    return ([string]$addresses) -split '\s+' | Where-Object { $_ } | Select-Object -First 1
+}
+
 function Sync-BCAgentContainerHost {
     <#
     .SYNOPSIS
@@ -1173,7 +1193,7 @@ function Sync-BCAgentContainerHost {
         [string]$HostsFile = $script:DefaultHostsFile
     )
 
-    $containerIP = docker inspect $ContainerName --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' 2>$null
+    $containerIP = Get-BCAgentContainerIP -ContainerName $ContainerName
     if (-not $containerIP) {
         throw "No IP found for container '$ContainerName'; its .test host cannot resolve"
     }
@@ -1186,26 +1206,30 @@ function Sync-BCAgentContainerHost {
 function Get-DeployedCommit {
     <#
     .SYNOPSIS
-        The HEAD short SHA, marked when tracked files have uncommitted changes
+        The HEAD short SHA of the repository root, marked when tracked files have uncommitted changes
     .DESCRIPTION
         The short SHA form test.ps1 and container-test.ps1 record in
-        build-timing.jsonl. publish-apps.ps1 publishes the .app compiled
-        from the working tree, so edited tracked files get ' (uncommitted changes)';
-        an untracked file alone leaves it unmarked. Outside a git repository the
-        answer is '(not a git repository)'.
+        build-timing.jsonl. publish-apps.ps1 publishes the .app compiled from the
+        working tree, so edited tracked files get ' (uncommitted changes)'; an
+        untracked file alone leaves it unmarked. Outside a work tree the answer is
+        '(not a git repository)'; in one with no commits, '(no commits)'.
     #>
-    $sha = $null
+    $root = Get-GitRepoRoot
+    $inside = $null
     try {
-        $sha = & git rev-parse --short HEAD 2>$null
-        if ($LASTEXITCODE -ne 0) { $sha = $null }
+        $inside = & git -C $root rev-parse --is-inside-work-tree 2>$null
+        if ($LASTEXITCODE -ne 0) { $inside = $null }
     }
     catch {
-        # git missing or not a repo
+        # git missing
     }
-    if (-not $sha) { return '(not a git repository)' }
+    if ("$inside".Trim() -ne 'true') { return '(not a git repository)' }
+
+    $sha = & git -C $root rev-parse --short HEAD 2>$null
+    if ($LASTEXITCODE -ne 0 -or -not $sha) { return '(no commits)' }
 
     $sha = ([string]$sha).Trim()
-    $dirty = & git status --porcelain --untracked-files=no 2>$null
+    $dirty = & git -C $root status --porcelain --untracked-files=no 2>$null
     if ($dirty) { return "$sha (uncommitted changes)" }
     return $sha
 }
@@ -1216,29 +1240,33 @@ function Write-RepublishResult {
         Print what a republish deployed: commit, version, Web Client URL, username
     .DESCRIPTION
         Four Info lines with the labels Commit, Version, Web Client and Username.
-        The walkthrough binds to these labels. Never takes or prints the password.
-    .PARAMETER Version
-        The main app's version from its app.json
+        The walkthrough binds to these labels. Reads the username from the config
+        and never touches its password. Throws when the main app has no version.
+    .PARAMETER Config
+        The Get-BuildConfig object; ContainerUsername is the one property read
+    .PARAMETER AppJson
+        The main app's parsed app.json
     .PARAMETER WebClientUrl
         The Web Client base URL on the .test host
-    .PARAMETER Username
-        The container username
     #>
     param(
         [Parameter(Mandatory = $true)]
-        [string]$Version,
+        $Config,
+
+        $AppJson,
 
         [Parameter(Mandatory = $true)]
-        [string]$WebClientUrl,
-
-        [Parameter(Mandatory = $true)]
-        [string]$Username
+        [string]$WebClientUrl
     )
 
+    if (-not $AppJson -or -not $AppJson.version) {
+        throw "The main app's app.json is missing or has no version; the republish result needs it"
+    }
+
     Write-BuildMessage -Type Info -Message "Commit: $(Get-DeployedCommit)"
-    Write-BuildMessage -Type Info -Message "Version: $Version"
+    Write-BuildMessage -Type Info -Message "Version: $($AppJson.version)"
     Write-BuildMessage -Type Info -Message "Web Client: $WebClientUrl"
-    Write-BuildMessage -Type Info -Message "Username: $Username"
+    Write-BuildMessage -Type Info -Message "Username: $($Config.ContainerUsername)"
 }
 
 function Remove-BCAgentContainerHost {
@@ -2980,6 +3008,7 @@ Export-ModuleMember -Function @(
     'Remove-HostsEntry'
     'Get-BCContainerTestHostname'
     'Set-BCAgentContainerHost'
+    'Get-BCAgentContainerIP'
     'Sync-BCAgentContainerHost'
     'Write-RepublishResult'
     'Remove-BCAgentContainerHost'

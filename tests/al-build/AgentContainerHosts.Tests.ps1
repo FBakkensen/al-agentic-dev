@@ -308,6 +308,13 @@ Describe 'new-agent-container.ps1' {
         $calls[0].Extent.StartOffset | Should -BeGreaterThan $health
     }
 
+    It 'takes the container IP from Get-BCAgentContainerIP, with no docker inspect of its own' {
+        $ip = @(Get-CommandsNamed 'Get-BCAgentContainerIP')
+        $ip | Should -HaveCount 1
+        Get-ParameterText $ip[0] 'ContainerName' | Should -Be '$AgentName'
+        $script:Ast.Extent.Text | Should -Not -Match 'NetworkSettings'
+    }
+
     It 'does not build the .test name or call Update-BCPublicWebBaseUrl itself' {
         $script:Ast.Extent.Text | Should -Not -Match '\$\{?\w+\}?\.test|''\.test''|"\.test'
         Get-CommandsNamed 'Update-BCPublicWebBaseUrl' | Should -HaveCount 0
