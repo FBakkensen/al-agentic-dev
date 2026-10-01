@@ -50,7 +50,7 @@ Fix every ⛔ and /al-commit the fixes, so the slice's final commit carries none
 
 ## Close
 
-When `docs/patterns.md` has no row for the slice's shape, add the row al-codebase-design proposed (recorded in the receipt) with the objects that now realize it.
+On a green close, for each shape the slice realized that has a precedent in the Original's Level 1 and no row in `docs/patterns.md`, add the row from that precedent with the objects that now realize it, creating `docs/patterns.md` with its first row. A slice with no surveyed shape records nothing.
 
 At every exit, including a stop for the user and an unresolved red:
 

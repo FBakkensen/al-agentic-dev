@@ -31,11 +31,9 @@ Embed the verified PNG URL with its explanatory text under `Business process`.
 
 ## Under Implementation Decisions
 
-`Building Block View` Level 1 nests here, and a `Runtime View` after it when needed. At the entry's seam step, settle Level 1 through /al-arc42:
+`Building Block View` Level 1 nests here, and a `Runtime View` after it when needed. At the entry's seam step, first consult `/mattpocock-skills:codebase-design` for each Level 1 module whose concept names a Base App table, document, or posting flow: its survey backs the boundary, and the module's black box records its shape and the survey's Base App precedent, an object plus file:line. Then settle Level 1 through /al-arc42:
 
 ▶ haiku · /al-arc42 the Building Block Level 1 view from the settled black boxes → HTML path, SVG and PNG paths, alt text, publishable fragments
-
-Before Level 1 settles, consult `/mattpocock-skills:codebase-design` for each Level 1 module whose concept the Base App may already model; its survey backs the boundary.
 
 Level 1 is settled when every important behavior has one module owner and each caller-visible interface is named. Add a Runtime View only when module call order, ownership, or a transaction boundary stays unclear after the BPMN map, and build it the same way:
 
