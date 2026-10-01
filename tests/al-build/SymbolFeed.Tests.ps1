@@ -26,13 +26,17 @@ BeforeAll {
 
 AfterAll {
     foreach ($name in $script:OverrideNames) {
-        [Environment]::SetEnvironmentVariable($name, $script:SavedOverrides[$name])
+        if ($null -eq $script:SavedOverrides[$name]) {
+            Remove-Item -LiteralPath "Env:$name" -ErrorAction SilentlyContinue
+        } else {
+            Set-Item -LiteralPath "Env:$name" -Value $script:SavedOverrides[$name]
+        }
     }
 }
 
 Describe 'Get-SymbolFeeds' {
     BeforeEach {
-        foreach ($name in $script:OverrideNames) { [Environment]::SetEnvironmentVariable($name, $null) }
+        foreach ($name in $script:OverrideNames) { Remove-Item -LiteralPath "Env:$name" -ErrorAction SilentlyContinue }
     }
 
     It 'returns the two public feeds, MSSymbols first, with no override set' {
