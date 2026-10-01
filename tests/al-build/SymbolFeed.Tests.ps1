@@ -103,12 +103,14 @@ Describe 'Find-PackageInFeed against a local feed root' {
         $emptyRoot = Join-Path $TestDrive 'empty-feed'
         New-Item -ItemType Directory -Path $emptyRoot | Out-Null
 
-        $metadata = Get-PackageFeedMetadata -PackageId $script:LibPackageId -Feeds @($absent, $emptyRoot, $script:Root) -WarningVariable warnings -WarningAction SilentlyContinue
+        $output = @(Get-PackageFeedMetadata -PackageId $script:LibPackageId -Feeds @($absent, $emptyRoot, $script:Root) 3>&1)
 
+        $warnings = @($output | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })
+        $metadata = @($output | Where-Object { $_ -isnot [System.Management.Automation.WarningRecord] })[0]
         $metadata.Feed | Should -Be $script:Root
         $metadata.Versions | Should -Be @('26.1.9')
-        @($warnings) | Should -HaveCount 1
-        "$($warnings[0])" | Should -BeLike "*$absent*"
+        $warnings | Should -HaveCount 1
+        $warnings[0].Message | Should -BeLike "*$absent*"
     }
 
     It 'returns nothing when no feed lists the package' {
