@@ -31,7 +31,7 @@ A Level 2 change records current structure; the executable-item map records what
 
 ## Reconcile the slices
 
-Exactly one total slice stays on the Original work item. With two or more, the Original work item is their container and every slice is one direct child PBI. Add a newly proven slice only after the user approves its independent outcome and Gherkin. When a second slice is approved, move the first slice's `Behavior` from the Original work item's Acceptance Criteria into its own direct child PBI; the Original work item becomes the container. When a slice's separate value disappeared, fold its Gherkin into the surviving slice with the user's approval, comment on the retired slice, and leave its state and parent to the user. No skill step moves a work item to another state or parent. Never create grandchildren or work items for modules, tests, diagrams, or implementation tasks.
+Exactly one total slice stays on the Original work item. With two or more, the Original work item is their container and every slice is one direct child PBI. Add a newly proven slice only after the user approves its independent outcome and Gherkin. When a second slice is approved, move the first slice's `Behavior` from the Original work item's Acceptance Criteria into its own direct child PBI; the Original work item becomes the container. When a slice's separate value disappeared, fold its Gherkin into the surviving slice with the user's approval, comment on the retired slice, and leave its state and parent to the user. Never create grandchildren or work items for modules, tests, diagrams, or implementation tasks.
 
 ## Choose the next move
 
