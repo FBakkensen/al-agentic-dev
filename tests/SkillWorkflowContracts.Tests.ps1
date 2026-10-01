@@ -59,11 +59,10 @@ Describe 'Skill workflow contracts' {
         $improve | Should -Match 'require the affected scope green'
         $improve | Should -Match 'run /al-build''s gate after each compilable step'
         $improve | Should -Match 'Restore the last green shape when a step goes red'
-        $improve | Should -Match 'At every exit[^
-]*?
+        $improve | Should -Match '(?s)At every exit.*??
 ?
 ▶ haiku · /al-commit'
-        $improve | Should -Match 'the developer types `/mattpocock-skills:code-review` next, with al-review'
+        $improve | Should -Match 'the developer types `/mattpocock-skills:code-review` next, where al-review reads the receipt'
     }
 
     It 'serializes fault injection across parallel scenario workers' {

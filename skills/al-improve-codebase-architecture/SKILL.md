@@ -5,7 +5,7 @@ description: Use whenever /mattpocock-skills:improve-codebase-architecture runs 
 
 # al-improve-codebase-architecture - deepen AL behind its interface
 
-In: `/mattpocock-skills:improve-codebase-architecture` running on AL code in a Consumer repository, the receipt `.output/receipts/<work-item-id>.md`, and, once a candidate is picked, the executable Original work item or its child PBI with the reviewed `Test specification`. The entry owns the scan, the report, and the grilling, and can run with no work item; until the user picks a candidate this addition supplies only the lookup rule. It adds the AL freeze, the gate, and the receipt and work-item updates.
+In: `/mattpocock-skills:improve-codebase-architecture` running on AL code in a Consumer repository, the receipt `.output/receipts/<work-item-id>.md`, and, once a candidate is picked, the executable Original work item or its child PBI with the reviewed `Test specification`. The entry owns the scan, the report, and the grilling, and can run with no work item; until the user picks a candidate this addition supplies only the lookup rule in Freeze. It adds the AL freeze, the gate, and the receipt and work-item updates.
 
 ## Freeze
 
@@ -41,4 +41,4 @@ Update the receipt with the exact reshapes, the gate result, the Level 2 delta, 
 
 ▶ haiku · /al-commit the complete worktree, work items <ids> → commit hashes and subjects, remaining worktree
 
-Finish outcome first, back into the entry's run: the reshaped files, the green gate, and that the developer types `/mattpocock-skills:code-review` next, with al-review, to take the receipt. Stop with the exact red reason when the gate does not pass.
+Finish outcome first, back into the entry's run: the reshaped files, the green gate, and that the developer types `/mattpocock-skills:code-review` next, where al-review reads the receipt. Stop with the exact red reason when the gate does not pass.
