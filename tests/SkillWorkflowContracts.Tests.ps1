@@ -108,6 +108,18 @@ Describe 'Skill workflow contracts' {
         $tdd | Should -Match 'Acceptance Criteria, after `## Behavior` when both are present'
     }
 
+    It 'keeps al-codebase-design read-only and records the first pattern example where the code lands' {
+        $design = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-codebase-design' 'SKILL.md') -Raw
+        $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
+        $toSpec = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-to-spec' 'SKILL.md') -Raw
+
+        $design | Should -Not -Match '/al-commit'
+        $design | Should -Match 'writes no repo file'
+        $design | Should -Match 'proposed `docs/patterns.md` row'
+        $implement | Should -Match 'first example in this repository, add its row to `docs/patterns.md`'
+        $toSpec | Should -Match 'consult `/mattpocock-skills:codebase-design` for each module'
+    }
+
     It 'owns commits and pull requests in dedicated skills' {
         $commit = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-commit' 'SKILL.md') -Raw
         $pullRequest = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pull-request' 'SKILL.md') -Raw
@@ -125,7 +137,7 @@ Describe 'Skill workflow contracts' {
         $pullRequest | Should -Match 'never creates or keeps a draft'
         $pullRequest | Should -Match 'Name /al-pr-shepherd as the next move'
 
-        foreach ($skill in @('al-clone-bcapps', 'al-codebase-design', 'al-grill-with-docs', 'al-implement', 'al-lookup', 'al-pr-shepherd', 'al-improve-codebase-architecture', 'al-simplify')) {
+        foreach ($skill in @('al-clone-bcapps', 'al-grill-with-docs', 'al-implement', 'al-lookup', 'al-pr-shepherd', 'al-improve-codebase-architecture', 'al-simplify')) {
             $content = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'SKILL.md') -Raw
             $content | Should -Match '/al-commit' -Because "$skill writes repository files"
         }
