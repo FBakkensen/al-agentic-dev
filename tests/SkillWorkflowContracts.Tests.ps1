@@ -73,6 +73,17 @@ Describe 'Skill workflow contracts' {
         $mapContracts[0] | Should -Be (Join-Path $script:SkillsRoot 'al-lookup' 'SKILL.md')
     }
 
+    It 'pins the spec structure under the entry skill''s seven headings' {
+        $toSpec = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-to-spec' 'SKILL.md') -Raw
+
+        $headings = 'Problem Statement', 'Solution', 'User Stories', 'Implementation Decisions', 'Testing Decisions', 'Out of Scope', 'Further Notes'
+        $toSpec | Should -Match ([regex]::Escape($headings -join ', '))
+        $toSpec | Should -Match '`Process contract` \(Trigger, Success guarantee, Minimal guarantee\), then `Business process`, nest under Solution'
+        $toSpec | Should -Match '`Building Block View` Level 1 nests here, and a `Runtime View` after it'
+        $toSpec | Should -Match 'Description on a Feature or PBI, and in Repro Steps on a Bug'
+        $toSpec | Should -Not -Match 'User Story'
+    }
+
     It 'slices the Original work item into child PBIs and orders Acceptance Criteria for people before agents' {
         $toTickets = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-to-tickets' 'SKILL.md') -Raw
         $tdd = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-tdd' 'SKILL.md') -Raw

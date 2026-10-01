@@ -5,7 +5,7 @@ description: Use when settled Business Central architecture content needs the of
 
 # al-arc42 - format the architecture
 
-In: settled architecture content from /al-event-model, /al-design, /al-implement, /al-refactor, or /al-simplify. The caller owns meaning. This skill applies the official structure in [ARC42.md](ARC42.md), creates the review surface, and returns publishable artifacts.
+In: settled architecture content from /al-to-spec, /al-design, /al-implement, /al-refactor, or /al-simplify. The caller owns meaning. This skill applies the official structure in [ARC42.md](ARC42.md), creates the review surface, and returns publishable artifacts.
 
 Usually ask none. Before the first tool call, write one sentence. Update on an important finding or a changed direction; close with the outcome first, standing on its own.
 
