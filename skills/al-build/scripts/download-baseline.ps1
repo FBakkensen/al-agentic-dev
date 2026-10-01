@@ -21,7 +21,7 @@
     dependency symbols, Microsoft ones from MSSymbols and the rest from AppSourceSymbols. Only
     *.app files are removed or written. More exit codes:
       4  the version has no `baselinePackageCachePath`, or git tracks a *.app in the folder
-      1  a dependency cannot be fetched; the folder is left as it was
+      1  git, a feed, or a package cannot be read, or the swap fails; the folder is left as it was
 
     Never writes AppSourceCop.json or any other tracked file. provision.ps1 runs it after the
     symbol downloads, and exits with its exit code.

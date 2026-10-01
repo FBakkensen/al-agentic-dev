@@ -403,7 +403,7 @@ Describe 'download-baseline.ps1' -Tag 'Process' {
 
             # Release -> Contoso Lib (AppSourceSymbols) -> Application (MSSymbols), plus System
             # (MSSymbols) directly. Each package sits in exactly one feed, so its .app in the folder
-            # names the feed that served it. With -MissingDependency the Release's direct dependency
+            # names the feed that served it; Contoso Lib lists two versions at or above its minimum. With -MissingDependency the Release's direct dependency
             # is on neither feed.
             function New-FillFeeds {
                 param([Parameter(Mandatory)][string]$Root, [switch]$MissingDependency)
@@ -413,9 +413,11 @@ Describe 'download-baseline.ps1' -Tag 'Process' {
                     -App @{ Id = $script:MsApplicationId; Name = 'Application'; Publisher = 'Microsoft'; Version = '26.0.0.0' } | Out-Null
                 New-FixtureFeedPackage -FeedRoot $ms -PackageId $script:SystemPackageId -NuGetVersion '26.0.0' `
                     -App @{ Id = $script:MsSystemId; Name = 'System'; Publisher = 'Microsoft'; Version = '26.0.0.0' } | Out-Null
-                New-FixtureFeedPackage -FeedRoot $appSource -PackageId $script:LibraryPackageId -NuGetVersion '2.0.0' `
-                    -App @{ Id = $script:LibraryId; Name = 'Contoso Lib'; Publisher = 'Contoso'; Version = '2.0.0.0' } `
-                    -Dependencies @(@{ Id = $script:ApplicationPackageId; Version = '26.0.0' }) | Out-Null
+                foreach ($libraryVersion in '2.0.0', '2.1.0') {
+                    New-FixtureFeedPackage -FeedRoot $appSource -PackageId $script:LibraryPackageId -NuGetVersion $libraryVersion `
+                        -App @{ Id = $script:LibraryId; Name = 'Contoso Lib'; Publisher = 'Contoso'; Version = "$libraryVersion.0" } `
+                        -Dependencies @(@{ Id = $script:ApplicationPackageId; Version = '26.0.0' }) | Out-Null
+                }
                 $directId = if ($MissingDependency) { $script:GhostPackageId } else { $script:SystemPackageId }
                 foreach ($release in @{ '26.1.4' = '26.1.4.0'; '26.1.9.1' = '26.1.9.1' }.GetEnumerator()) {
                     $app = $script:AppIdentity.Clone()
@@ -447,6 +449,12 @@ Describe 'download-baseline.ps1' -Tag 'Process' {
                 $apps.Count | Should -Be 4
                 ($manifests.Id | Sort-Object) | Should -Be (@($script:AppId, $script:LibraryId, $script:MsApplicationId, $script:MsSystemId) | Sort-Object)
                 ($manifests | Where-Object Id -eq $script:AppId).Version | Should -Be '26.1.9.1'
+            }
+
+            It 'takes the highest version a feed lists at or above a dependency minimum' {
+                $library = Get-BaselineApps -Root $script:FilledRoot | ForEach-Object { Read-AppManifest -Path $_.FullName } | Where-Object Id -eq $script:LibraryId
+                @($library).Count | Should -Be 1
+                $library.Version | Should -Be '2.1.0.0'
             }
 
             It 'changes no committed file and removes only the stale .app' {
@@ -516,6 +524,57 @@ Describe 'download-baseline.ps1' -Tag 'Process' {
 
             $result.ExitCode | Should -Be 1
             $result.Output | Should -Match ([regex]::Escape($script:ApplicationPackageId))
+            Get-FolderSnapshot -Root $root | Should -Be $before
+        }
+
+        It 'stops with exit 1 naming the feed, and leaves the folder as it was, when a feed cannot be read' {
+            $root = Join-Path $TestDrive 'unreadable-ms'
+            New-ConsumerFixture -Root $root -Pin '26.1.9.1' -Baseline
+            $before = Get-FolderSnapshot -Root $root
+            $missingMs = Join-Path $TestDrive 'unreadable-ms-no-such-feed'
+
+            $result = Invoke-DownloadBaseline -Root $root -Feed $script:Feeds.AppSource -MsFeed $missingMs
+
+            $result.ExitCode | Should -Be 1
+            $result.Output | Should -Match ([regex]::Escape($missingMs))
+            Get-FolderSnapshot -Root $root | Should -Be $before
+        }
+
+        It 'restores the old .app files and exits 1 when a file cannot be moved' {
+            $root = Join-Path $TestDrive 'swap-fails'
+            New-ConsumerFixture -Root $root -Pin '26.1.9.1' -Baseline
+            $locked = Join-Path $root 'app' $script:FolderName 'Zz.Locked.1.0.0.0.app'
+            Set-Content -LiteralPath $locked -Value 'locked' -Encoding UTF8
+            $before = Get-FolderSnapshot -Root $root
+
+            # Stale.Release moves to the backup first; the open handle then stops Zz.Locked from moving.
+            $handle = [System.IO.File]::Open($locked, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::None)
+            try {
+                $result = Invoke-DownloadBaseline -Root $root -Feed $script:Feeds.AppSource -MsFeed $script:Feeds.Ms
+            } finally {
+                $handle.Dispose()
+            }
+
+            $result.ExitCode | Should -Be 1
+            $result.Output | Should -Match 'old \*\.app files are restored'
+            Get-FolderSnapshot -Root $root | Should -Be $before
+        }
+
+        It 'stops with exit 4 and leaves the folder as it was when the latest Release is not the version asked for' {
+            $root = Join-Path $TestDrive 'manifest-differs'
+            New-ConsumerFixture -Root $root -Pin '26.1.9.1' -Baseline
+            $before = Get-FolderSnapshot -Root $root
+            $appJson = Get-Content -LiteralPath (Join-Path $root 'app' 'app.json') -Raw | ConvertFrom-Json
+            $env:ALBT_MSSYMBOLS_FEED = $script:Feeds.Ms
+            $env:ALBT_APPSOURCESYMBOLS_FEED = $script:Feeds.AppSource
+            try {
+                $result = Save-ReleaseBaseline -AppJson $appJson -Version '26.1.4.0' -Folder (Join-Path $root 'app' $script:FolderName)
+            } finally {
+                Remove-Item Env:ALBT_MSSYMBOLS_FEED, Env:ALBT_APPSOURCESYMBOLS_FEED -ErrorAction SilentlyContinue
+            }
+
+            $result.ExitCode | Should -Be 4
+            $result.Message | Should -Match '26\.1\.9\.1'
             Get-FolderSnapshot -Root $root | Should -Be $before
         }
 

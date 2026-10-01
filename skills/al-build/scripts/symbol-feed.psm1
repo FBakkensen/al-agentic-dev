@@ -726,13 +726,30 @@ function New-PackageRequest {
 }
 
 function Get-TrackedAppFile {
-    # The *.app files directly in $Folder that git tracks; none when git or a repository is absent.
+    # The *.app files directly in $Folder that git tracks. Outside a git work tree none is tracked;
+    # git missing from PATH throws, so the guard is never skipped without a word.
     param([Parameter(Mandatory)][string]$Folder)
 
-    if (-not (Test-Path -LiteralPath $Folder -PathType Container) -or -not (Get-Command git -ErrorAction SilentlyContinue)) { return @() }
-    $listed = git -C $Folder ls-files -z 2>$null
-    if ($LASTEXITCODE -ne 0 -or -not $listed) { return @() }
+    if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw 'git is not on PATH, so the fill cannot tell which *.app files git tracks.' }
+    if (-not (Test-Path -LiteralPath $Folder -PathType Container)) { return @() }
+    git -C $Folder rev-parse --is-inside-work-tree *> $null
+    if ($LASTEXITCODE -ne 0) { return @() }
+    $listed = git -C $Folder ls-files -z
+    if ($LASTEXITCODE -ne 0) { throw "git ls-files failed in '$Folder'." }
     return @(($listed -join '') -split "`0" | Where-Object { $_ -match '^[^/\\]+\.app$' })
+}
+
+function Select-PackageFeed {
+    # The first feed that lists the package. A feed that cannot be read stops the fill, so an id never
+    # falls through to the next feed on an outage; only a feed that does not list it does.
+    param([Parameter(Mandatory)][string]$PackageId, [Parameter(Mandatory)][string[]]$Feeds)
+
+    foreach ($feed in $Feeds) {
+        $lookup = Find-PackageInFeed -PackageId $PackageId -Feed $feed
+        if ($lookup.Status -eq 'Listed') { return $lookup.Feed }
+        if ($lookup.Status -eq 'Unreadable') { throw "feed '$($lookup.Feed)' cannot be read: $($lookup.Message)" }
+    }
+    throw 'no configured feed lists it.'
 }
 
 function Save-ReleaseBaseline {
@@ -742,12 +759,14 @@ function Save-ReleaseBaseline {
     .DESCRIPTION
         Takes the latest Release package from AppSourceSymbols and walks its .nuspec dependencies
         transitively: each package comes from the first feed that lists it (MSSymbols, then
-        AppSourceSymbols) at the highest version it lists. The whole closure is extracted into a
-        staging folder first; only a complete closure replaces the folder's *.app files, with
-        {cleanName}.{version}.app names. Every other file in the folder stays.
+        AppSourceSymbols) at the highest version that feed lists, and a feed that cannot be read
+        stops the fill. The whole closure is extracted into a staging folder first. Only a complete
+        closure replaces the folder's *.app files: the old ones move to a backup folder, the staged
+        ones move in with {cleanName}.{version}.app names, and a failed move deletes what moved in
+        and restores the backup. Every other file in the folder stays.
         Returns ExitCode, Message, and Files (the written paths): 0 when the folder is filled, 4
-        when git tracks a *.app in the folder or the latest Release is not Version, and 1 when a
-        package cannot be fetched. On 4 and 1 the folder is exactly as it was.
+        when git tracks a *.app in the folder or the latest Release is not Version, and 1 when
+        git, a feed, or a package cannot be read. On 4 and 1 the folder is exactly as it was.
     .PARAMETER AppJson
         The parsed app.json: id, name, and publisher.
     .PARAMETER Version
@@ -764,7 +783,11 @@ function Save-ReleaseBaseline {
 
     $exit = Get-ExitCode
 
-    $tracked = @(Get-TrackedAppFile -Folder $Folder)
+    try {
+        $tracked = @(Get-TrackedAppFile -Folder $Folder)
+    } catch {
+        return New-ReleaseBaselineResult -ExitCode $exit.GeneralError -Message "Cannot fill '$Folder': $($_.Exception.Message)"
+    }
     if ($tracked.Count -gt 0) {
         return New-ReleaseBaselineResult -ExitCode $exit.Contract -Message "Git tracks $($tracked -join ', ') in '$Folder'. The fill replaces untracked *.app files only; untrack them."
     }
@@ -780,24 +803,38 @@ function Save-ReleaseBaseline {
     }
 
     $staging = New-TemporaryDirectory
+    $backup = $null
     try {
         $feeds = @(Get-SymbolFeeds)
         $queue = [System.Collections.Generic.Queue[object]]::new()
         $queue.Enqueue((New-PackageRequest -Id $latest.PackageId -Feeds @($latest.Feed) -Version $latest.NuGetVersion))
-        $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+        $minimums = @{}
+        $resolvedVersions = @{}
         while ($queue.Count -gt 0) {
             $item = $queue.Dequeue()
-            if (-not $seen.Add($item.Id)) { continue }
+            if ($resolvedVersions.ContainsKey($item.Id)) { continue }
 
-            $resolveArguments = @{ PackageId = $item.Id; MinimumVersion = $item.Minimum; Feeds = $item.Feeds; CacheDir = $staging }
+            $resolveArguments = @{ PackageId = $item.Id; MinimumVersion = $minimums[$item.Id]; CacheDir = $staging }
             if ($item.Version) { $resolveArguments.Version = $item.Version }
             try {
+                $resolveArguments.Feeds = @(Select-PackageFeed -PackageId $item.Id -Feeds $item.Feeds)
                 $resolved = Resolve-SymbolPackage @resolveArguments
             } catch {
                 return New-ReleaseBaselineResult -ExitCode $exit.GeneralError -Message "Cannot fill '$Folder': package $($item.Id) failed: $($_.Exception.Message)"
             }
+            $resolvedVersions[$item.Id] = $resolved.Version
             foreach ($dependency in $resolved.Dependencies) {
-                $queue.Enqueue((New-PackageRequest -Id ([string]$dependency.Id) -Feeds $feeds -Minimum $dependency.MinimumVersion))
+                $dependencyId = [string]$dependency.Id
+                $minimum = $dependency.MinimumVersion
+                if ($minimum -and (-not $minimums[$dependencyId] -or (Compare-Version -Left $minimum -Right $minimums[$dependencyId]) -gt 0)) {
+                    $minimums[$dependencyId] = $minimum
+                }
+                $queue.Enqueue((New-PackageRequest -Id $dependencyId -Feeds $feeds))
+            }
+        }
+        foreach ($id in $resolvedVersions.Keys) {
+            if ($minimums[$id] -and (Compare-Version -Left $resolvedVersions[$id] -Right $minimums[$id]) -lt 0) {
+                Write-BuildMessage -Type Warning -Message "$id resolves to $($resolvedVersions[$id]), below the required $($minimums[$id]); no feed lists a higher version."
             }
         }
 
@@ -808,14 +845,35 @@ function Save-ReleaseBaseline {
             return New-ReleaseBaselineResult -ExitCode $exit.Contract -Message "Cannot fill '$Folder': the latest Release of $($latest.PackageId) on AppSourceSymbols is $found, not the pinned $Version."
         }
 
+        # Swap: the old *.app files go to a backup, the closure moves in, and a failure undoes both.
         Ensure-Directory -Path $Folder
-        Get-ChildItem -LiteralPath $Folder -File | Where-Object { $_.Extension -ieq '.app' } | Remove-Item -Force
-        $written = foreach ($stagedApp in $stagedApps) {
-            Move-Item -LiteralPath $stagedApp.FullName -Destination $Folder -Force -PassThru | Select-Object -ExpandProperty FullName
+        $backup = New-TemporaryDirectory
+        $written = [System.Collections.Generic.List[string]]::new()
+        try {
+            Get-ChildItem -LiteralPath $Folder -File | Where-Object { $_.Extension -ieq '.app' } |
+                ForEach-Object { Move-Item -LiteralPath $_.FullName -Destination (Join-Path $backup $_.Name) -ErrorAction Stop }
+            foreach ($stagedApp in $stagedApps) {
+                $destination = Join-Path $Folder $stagedApp.Name
+                Move-Item -LiteralPath $stagedApp.FullName -Destination $destination -ErrorAction Stop
+                $written.Add($destination)
+            }
+        } catch {
+            $failure = $_.Exception.Message
+            try {
+                foreach ($path in $written) { Remove-Item -LiteralPath $path -Force -ErrorAction Stop }
+                Get-ChildItem -LiteralPath $backup -File |
+                    ForEach-Object { Move-Item -LiteralPath $_.FullName -Destination (Join-Path $Folder $_.Name) -Force -ErrorAction Stop }
+            } catch {
+                $kept = $backup
+                $backup = $null
+                return New-ReleaseBaselineResult -ExitCode $exit.GeneralError -Message "Cannot fill '$Folder': $failure Restoring the old *.app files failed too: $($_.Exception.Message) They are kept in '$kept'."
+            }
+            return New-ReleaseBaselineResult -ExitCode $exit.GeneralError -Message "Cannot fill '$Folder': $failure The old *.app files are restored."
         }
-        return New-ReleaseBaselineResult -ExitCode $exit.Success -Message "Filled '$Folder' with $(@($written).Count) symbol package(s): the Release $Version and its dependencies." -Files @($written)
+        return New-ReleaseBaselineResult -ExitCode $exit.Success -Message "Filled '$Folder' with $($written.Count) symbol package(s): the Release $Version and its dependencies." -Files $written.ToArray()
     } finally {
         Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction SilentlyContinue
+        if ($backup) { Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue }
     }
 }
 
