@@ -37,7 +37,7 @@ while :; do
     j=$(gh pr view "$pr" --repo "$repo" --json state,mergeStateStatus,statusCheckRollup 2>"$ef") || { err "gh pr view #$pr: $(head -c 160 "$ef")"; continue; }
     st=$(jq -r '.state+" "+.mergeStateStatus' <<<"$j")
     failed=$(jq -r '[.statusCheckRollup[]? | select((.conclusion // "") | test("FAILURE|CANCELLED|TIMED_OUT|ACTION_REQUIRED|ERROR")) | (.name // .context)] | join(",")' <<<"$j")
-    review=$(jq -r --arg c "$REVIEW_CHECK" '[.statusCheckRollup[]? | select((.name // .context) == $c) | (.conclusion // .status // "pending")] | first // "absent" | ascii_downcase' <<<"$j")
+    review=$(jq -r --arg c "$REVIEW_CHECK" '[.statusCheckRollup[]? | select((.name // .context) == $c) | ((.conclusion | select(. != null and . != "")) // .status // "pending")] | first // "absent" | ascii_downcase' <<<"$j")
     th=$(gh api graphql -f query="query{repository(owner:\"$owner\",name:\"$name\"){pullRequest(number:$pr){reviewThreads(first:100){nodes{isResolved comments(first:1){nodes{body}}}}}}}" \
       --jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved|not)] | "\(length) \([.[] | select(.comments.nodes[0].body|startswith("HOLD (team-lead)"))] | length)"' 2>/dev/null) || th="? ?"
     threads=${th% *}; hold=${th#* }
