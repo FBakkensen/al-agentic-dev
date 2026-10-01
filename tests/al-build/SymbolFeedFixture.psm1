@@ -163,7 +163,34 @@ function New-FixtureFeedPackage {
     return $nupkgPath
 }
 
+function New-FixtureReleaseFeed {
+    <#
+    .SYNOPSIS
+        Writes one app's packages into a flat2 feed root, one per release.
+    .PARAMETER App
+        The app's Id, Name, and Publisher.
+    .PARAMETER Releases
+        NuGet version -> the 4-part version in the manifest of the .app inside that package,
+        for example @{ '26.1.9' = '26.1.9.0' } for a package NuGet trimmed.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$FeedRoot,
+        [Parameter(Mandatory)][string]$PackageId,
+        [Parameter(Mandatory)][hashtable]$App,
+        [Parameter(Mandatory)][hashtable]$Releases
+    )
+
+    foreach ($nuGetVersion in $Releases.Keys) {
+        $release = $App.Clone()
+        $release.Version = $Releases[$nuGetVersion]
+        New-FixtureFeedPackage -FeedRoot $FeedRoot -PackageId $PackageId -NuGetVersion $nuGetVersion -App $release | Out-Null
+    }
+    return $FeedRoot
+}
+
 Export-ModuleMember -Function @(
     'New-FixtureAppFile'
     'New-FixtureFeedPackage'
+    'New-FixtureReleaseFeed'
 )

@@ -10,6 +10,7 @@
     .app extraction. A feed root can also be a local directory laid out as the flat2 paths
     (flat2/<id>/index.json, flat2/<id>/<version>/<id>.<version>.nupkg, package id lower-cased).
     Read-AppManifest reads NavxManifest.xml from a .app file without the AL compiler.
+    Test-ReleasePin checks an AppSourceCop.json version against the latest Release on AppSourceSymbols.
 
 .NOTES
     Import this module alongside common.psm1: the download and extract functions call
@@ -581,6 +582,97 @@ function Read-AppManifest {
 }
 
 # =============================================================================
+# Release pin
+# =============================================================================
+
+function New-ReleasePinResult {
+    param(
+        [Parameter(Mandatory)][int]$ExitCode,
+        [string]$LatestRelease,
+        [Parameter(Mandatory)][string]$Message
+    )
+    return [pscustomobject]@{
+        ExitCode      = $ExitCode
+        LatestRelease = if ($LatestRelease) { $LatestRelease } else { $null }
+        Message       = $Message
+    }
+}
+
+function Test-ReleasePin {
+    <#
+    .SYNOPSIS
+        Checks a committed AppSourceCop.json version against the latest Release on AppSourceSymbols.
+    .DESCRIPTION
+        Looks {Publisher}.{Name without spaces}.symbols.{AppId} up on AppSourceSymbols with no token,
+        takes the latest Release version the feed lists, and reads the 4-part version from the
+        manifest of the .app inside that package. The NuGet version trims a trailing zero, so the
+        pin is compared with the manifest, never with the NuGet version.
+        Returns ExitCode, LatestRelease, and Message: 0 when the pin equals the latest Release, 4
+        when it differs, when the feed lists no Release of the app, or when app.json names no
+        app, and 1 when the feed or the package cannot be read.
+    .PARAMETER AppJson
+        The parsed app.json: id, name, and publisher.
+    .PARAMETER Pin
+        The version AppSourceCop.json pins.
+    #>
+    [CmdletBinding()]
+    param(
+        [AllowNull()]$AppJson,
+        [Parameter(Mandatory)][string]$Pin
+    )
+
+    $exit = Get-ExitCode
+    $app = @{}
+    foreach ($key in 'id', 'name', 'publisher') {
+        $property = if ($AppJson) { $AppJson.PSObject.Properties[$key] } else { $null }
+        $app[$key] = if ($property) { [string]$property.Value } else { '' }
+    }
+    if (-not ($app.id -and $app.name -and $app.publisher)) {
+        return New-ReleasePinResult -ExitCode $exit.Contract -Message "app.json is missing or names no id, name, and publisher; AppSourceCop.json pins $Pin."
+    }
+
+    $packageId = '{0}.{1}.symbols.{2}' -f $app.publisher, ($app.name -replace '\s', ''), $app.id
+    $feed = Get-SymbolFeeds -Feed AppSourceSymbols
+    $lookup = Find-PackageInFeed -PackageId $packageId -Feed $feed
+    if ($lookup.Status -eq 'Unreadable') {
+        return New-ReleasePinResult -ExitCode $exit.GeneralError -Message "AppSourceSymbols feed '$($lookup.Feed)' cannot be read: $($lookup.Message)"
+    }
+
+    # A Release version has no prerelease suffix.
+    $releases = @($lookup.Versions | Where-Object { $_ -match '^\d+(\.\d+){1,3}$' })
+    if ($lookup.Status -ne 'Listed' -or $releases.Count -eq 0) {
+        return New-ReleasePinResult -ExitCode $exit.Contract -Message "AppSourceSymbols lists no Release of $packageId; AppSourceCop.json pins $Pin."
+    }
+    $latestNuGetVersion = Select-PackageVersion -Versions $releases
+
+    $tempDir = New-TemporaryDirectory
+    try {
+        $manifest = $null
+        try {
+            $nupkg = Download-PackageNupkg -Feed $lookup.Feed -PackageId $packageId -Version $latestNuGetVersion -DestinationDirectory $tempDir
+            $archive = [System.IO.Compression.ZipFile]::OpenRead($nupkg)
+            try {
+                $appPath = Extract-SymbolApp -Archive $archive -PackageId $packageId -Version $latestNuGetVersion -OutputDirectory $tempDir
+            } finally {
+                $archive.Dispose()
+            }
+            if (-not $appPath) { throw "the package holds no .app file." }
+            $manifest = Read-AppManifest -Path $appPath
+        } catch {
+            return New-ReleasePinResult -ExitCode $exit.GeneralError -Message "Cannot read the latest Release of $packageId ($latestNuGetVersion) from '$($lookup.Feed)': $($_.Exception.Message)"
+        }
+    } finally {
+        Remove-Item -LiteralPath $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    $latest = $manifest.Version
+    if ($Pin.Trim() -eq $latest) {
+        return New-ReleasePinResult -ExitCode $exit.Success -LatestRelease $latest -Message "AppSourceCop.json pins $latest, the latest Release of $packageId on AppSourceSymbols."
+    }
+    return New-ReleasePinResult -ExitCode $exit.Contract -LatestRelease $latest -Message "AppSourceCop.json pins $Pin, but the latest Release on AppSourceSymbols is $latest. Update version in AppSourceCop.json."
+}
+
+# =============================================================================
 # Module Exports
 # =============================================================================
 
@@ -605,4 +697,7 @@ Export-ModuleMember -Function @(
 
     # .app manifest
     'Read-AppManifest'
+
+    # Release pin
+    'Test-ReleasePin'
 )
