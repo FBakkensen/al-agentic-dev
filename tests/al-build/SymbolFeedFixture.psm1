@@ -37,6 +37,9 @@ function New-FixtureAppFile {
         Writes a real-format .app file: a NAVX header in front of a zip with NavxManifest.xml.
     .PARAMETER Version
         The manifest's version, written exactly as given (for example 26.1.9.0).
+    .PARAMETER LeadingPadBytes
+        Bytes of incompressible data stored in an entry ahead of NavxManifest.xml, so the
+        manifest is no longer the first entry or near the start of the file.
     #>
     [CmdletBinding()]
     param(
@@ -44,7 +47,8 @@ function New-FixtureAppFile {
         [Parameter(Mandatory)][string]$Id,
         [Parameter(Mandatory)][string]$Name,
         [Parameter(Mandatory)][string]$Publisher,
-        [Parameter(Mandatory)][string]$Version
+        [Parameter(Mandatory)][string]$Version,
+        [int]$LeadingPadBytes = 0
     )
 
     $escape = { param([string]$Value) [System.Security.SecurityElement]::Escape($Value) }
@@ -59,6 +63,13 @@ function New-FixtureAppFile {
     $zipStream = [System.IO.MemoryStream]::new()
     $archive = [System.IO.Compression.ZipArchive]::new($zipStream, [System.IO.Compression.ZipArchiveMode]::Create, $true)
     try {
+        if ($LeadingPadBytes -gt 0) {
+            $padBytes = [byte[]]::new($LeadingPadBytes)
+            [System.Random]::new(124).NextBytes($padBytes)
+            $padEntry = $archive.CreateEntry('pad/Leading.bin', [System.IO.Compression.CompressionLevel]::NoCompression)
+            $padStream = $padEntry.Open()
+            try { $padStream.Write($padBytes, 0, $padBytes.Length) } finally { $padStream.Dispose() }
+        }
         Add-ZipTextEntry -Archive $archive -Name 'NavxManifest.xml' -Content $manifest
         Add-ZipTextEntry -Archive $archive -Name 'src/Placeholder.al' -Content 'codeunit 50100 Placeholder { }'
     } finally {

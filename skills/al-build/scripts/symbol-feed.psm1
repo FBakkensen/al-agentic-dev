@@ -521,7 +521,7 @@ function Read-AppManifest {
         A .app file is a NAVX header in front of a zip. The header's second field is its own
         length, so the zip starts there. Returns Id, Name, Publisher, and Version exactly as the
         manifest carries them, so a 4-part version keeps its trailing zero. Throws, naming the
-        file, when it holds no NAVX manifest.
+        file, when it is no .app file or holds no NavxManifest.xml.
     #>
     [CmdletBinding()]
     param(
@@ -532,71 +532,44 @@ function Read-AppManifest {
         throw "App file '$Path' does not exist."
     }
 
-    # The manifest is the first zip entry; the first 1 MiB is enough to hold it.
-    $buffer = [byte[]]::new(1MB)
-    $stream = [System.IO.File]::OpenRead($Path)
-    try {
-        $read = $stream.Read($buffer, 0, $buffer.Length)
-    } finally {
-        $stream.Dispose()
-    }
-
-    $magic = [byte[]](0x4E, 0x41, 0x56, 0x58) # NAVX
-    $isNavx = $read -ge 8
-    for ($i = 0; $isNavx -and $i -lt 4; $i++) {
-        if ($buffer[$i] -ne $magic[$i]) { $isNavx = $false }
-    }
-    if (-not $isNavx) {
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    $headerLength = if ($bytes.Length -ge 8) { [BitConverter]::ToInt32($bytes, 4) } else { 0 }
+    $hasNavxHeader = $bytes.Length -ge 8 -and
+        $bytes[0] -eq 0x4E -and $bytes[1] -eq 0x41 -and $bytes[2] -eq 0x56 -and $bytes[3] -eq 0x58 -and
+        $headerLength -ge 8 -and $headerLength -lt $bytes.Length
+    if (-not $hasNavxHeader) {
         throw "File '$Path' is not a .app file: no NAVX header."
     }
 
-    $xml = $null
-    $headerLength = [BitConverter]::ToInt32($buffer, 4)
-    $offset = if ($headerLength -ge 8 -and $headerLength -lt $read) { $headerLength } else { 8 }
-    $manifestName = [System.Text.Encoding]::ASCII.GetBytes('NavxManifest.xml')
-    while ($null -eq $xml -and $offset -lt $read - 30) {
-        $offset = [Array]::IndexOf($buffer, [byte]0x50, $offset)
-        if ($offset -lt 0 -or $offset -ge $read - 30) { break }
-        if ($buffer[$offset + 1] -ne 0x4B -or $buffer[$offset + 2] -ne 3 -or $buffer[$offset + 3] -ne 4) {
-            $offset++
-            continue
-        }
-
-        $method = [BitConverter]::ToUInt16($buffer, $offset + 8)
-        $nameLength = [BitConverter]::ToUInt16($buffer, $offset + 26)
-        $extraLength = [BitConverter]::ToUInt16($buffer, $offset + 28)
-        $dataStart = $offset + 30 + $nameLength + $extraLength
-        $nameMatches = $nameLength -eq $manifestName.Length -and $dataStart -le $read
-        for ($i = 0; $nameMatches -and $i -lt $nameLength; $i++) {
-            if ($buffer[$offset + 30 + $i] -ne $manifestName[$i]) { $nameMatches = $false }
-        }
-        if (-not $nameMatches) {
-            $offset++
-            continue
-        }
-
-        $compressedSize = [BitConverter]::ToUInt32($buffer, $offset + 18)
-        $dataLength = if ($method -eq 0) { $compressedSize } else { $read - $dataStart }
-        $dataStream = [System.IO.MemoryStream]::new($buffer, $dataStart, [int][Math]::Min([long]$dataLength, [long]($read - $dataStart)))
-        try {
-            $content = if ($method -eq 8) {
-                $inflater = [System.IO.Compression.DeflateStream]::new($dataStream, [System.IO.Compression.CompressionMode]::Decompress)
-                try { [System.IO.StreamReader]::new($inflater, [System.Text.Encoding]::UTF8).ReadToEnd() } finally { $inflater.Dispose() }
-            } elseif ($method -eq 0) {
-                [System.IO.StreamReader]::new($dataStream, [System.Text.Encoding]::UTF8).ReadToEnd()
-            } else {
-                throw "unsupported compression method $method"
-            }
-            $xml = [xml]($content.TrimStart([char]0xFEFF))
+    $zipStream = [System.IO.MemoryStream]::new($bytes, $headerLength, $bytes.Length - $headerLength, $false)
+    try {
+        $archive = try {
+            [System.IO.Compression.ZipArchive]::new($zipStream, [System.IO.Compression.ZipArchiveMode]::Read)
         } catch {
-            throw "File '$Path' has an unreadable NavxManifest.xml: $($_.Exception.Message)"
-        } finally {
-            $dataStream.Dispose()
+            throw "File '$Path' is not a .app file: its zip cannot be read: $($_.Exception.Message)"
         }
-    }
+        try {
+            $entry = $archive.GetEntry('NavxManifest.xml')
+            if (-not $entry) {
+                $entry = $archive.Entries | Where-Object { $_.FullName -ieq 'NavxManifest.xml' } | Select-Object -First 1
+            }
+            if (-not $entry) {
+                throw "File '$Path' has no NavxManifest.xml."
+            }
 
-    if ($null -eq $xml) {
-        throw "File '$Path' is not a .app file: no NavxManifest.xml after the NAVX header."
+            $reader = [System.IO.StreamReader]::new($entry.Open(), [System.Text.Encoding]::UTF8)
+            try {
+                $xml = [xml]$reader.ReadToEnd()
+            } catch {
+                throw "File '$Path' has an unreadable NavxManifest.xml: $($_.Exception.Message)"
+            } finally {
+                $reader.Dispose()
+            }
+        } finally {
+            $archive.Dispose()
+        }
+    } finally {
+        $zipStream.Dispose()
     }
 
     $app = $xml.SelectSingleNode("//*[local-name()='App']")

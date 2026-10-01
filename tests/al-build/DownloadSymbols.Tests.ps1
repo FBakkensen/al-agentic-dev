@@ -250,10 +250,10 @@ Describe 'download-symbols.ps1 against fixture feeds' -Tag 'Process' {
     AfterAll {
         foreach ($name in $script:EnvNames) {
             if ($null -eq $script:SavedEnv[$name]) {
-            Remove-Item -LiteralPath "Env:$name" -ErrorAction SilentlyContinue
-        } else {
-            Set-Item -LiteralPath "Env:$name" -Value $script:SavedEnv[$name]
-        }
+                Remove-Item -LiteralPath "Env:$name" -ErrorAction SilentlyContinue
+            } else {
+                Set-Item -LiteralPath "Env:$name" -Value $script:SavedEnv[$name]
+            }
         }
     }
 

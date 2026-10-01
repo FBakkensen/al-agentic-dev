@@ -164,6 +164,16 @@ Describe 'Read-AppManifest' {
         $manifest.Version | Should -Be '26.1.9.0'
     }
 
+    It 'finds the manifest when it follows more than 1 MiB of other entries' {
+        $appPath = Join-Path $TestDrive 'reader' 'Padded.app'
+        New-FixtureAppFile -Path $appPath -Id $script:LibId -Name 'Padded' -Publisher 'Contoso' -Version '26.1.9.0' -LeadingPadBytes (2MB) | Out-Null
+
+        $manifest = Read-AppManifest -Path $appPath
+
+        $manifest.Name | Should -Be 'Padded'
+        $manifest.Version | Should -Be '26.1.9.0'
+    }
+
     It 'keeps the 4-part version when the package carries the NuGet-trimmed one' {
         $root = Join-Path $TestDrive 'trim-feed'
         $nupkg = New-FixtureFeedPackage -FeedRoot $root -PackageId $script:LibPackageId -NuGetVersion '26.1.9' -App $script:LibApp
