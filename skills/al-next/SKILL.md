@@ -21,7 +21,7 @@ Show the connected-object change map before the delta table. The map explains ho
 
 ## Reconcile the Original User Story
 
-Compare the code with the Original User Story's BPMN, Runtime View, Building Block Level 1, black boxes, and Level 2 when present. Compare the executable-item change map with the landed diff. Report drift and send the correction to /al-implement or /al-refactor. Update the Original User Story when implementation proved a better stable internal shape. A Level 2 change records current structure; the executable-item map records what changed.
+Compare the code with the Original User Story's BPMN, Runtime View, Building Block Level 1, black boxes, and Level 2 when present. Compare the executable-item change map with the landed diff. Report drift and send the correction to /al-implement, `/simplify`, or `/mattpocock-skills:improve-codebase-architecture`. Update the Original User Story when implementation proved a better stable internal shape. A Level 2 change records current structure; the executable-item map records what changed.
 
 ## Reconcile the slices
 

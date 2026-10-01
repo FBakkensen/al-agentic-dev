@@ -10,32 +10,31 @@ Describe 'Skill workflow contracts' {
         $lookup = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-lookup' 'SKILL.md') -Raw
         $review = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-review' 'SKILL.md') -Raw
         $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
-        $refactor = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-refactor' 'SKILL.md') -Raw
+        $improve = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-improve-codebase-architecture' 'SKILL.md') -Raw
 
         $lookup | Should -Match 'name the unresolved question and each source searched'
         $lookup | Should -Match 'unresolved: <question> — searched: <source locations>'
         $lookup | Should -Match 'Hand the corresponding `verified:`, `assumed:`, or `unresolved:` ledger line'
         $implement | Should -Match '`verified:` / `assumed:` / `unresolved:` ledger entries'
-        $refactor | Should -Match '`verified:` / `assumed:` / `unresolved:` entries'
+        $improve | Should -Match '`verified:` / `assumed:` / `unresolved:` entries'
         $review | Should -Match 'receipt''s `verified:` / `assumed:` / `unresolved:` entries'
         $review | Should -Match 'Blocking before Non-Blocking'
         $review | Should -Match 'show the failing case or reproducible path when possible'
     }
 
-    It 'keeps refactor evaluation with al-refactor' {
+    It 'keeps refactor evaluation with al-simplify and its entry skills' {
         $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
-        $refactor = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-refactor' 'SKILL.md') -Raw
+        $simplify = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-simplify' 'SKILL.md') -Raw
 
         $implement | Should -Match 'Name `/simplify` and `/mattpocock-skills:improve-codebase-architecture` as the next move'
-        $implement | Should -Not -Match '/al-refactor'
         $implement | Should -Not -Match 'Tidy:'
-        $refactor | Should -Match '`Tidy: none` or the exact reshapes'
+        $simplify | Should -Match '`Tidy: none` or the exact cleanups'
     }
 
     It 'designs one coherent proof set and preserves existing proof while reshaping it' {
         $tdd = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-tdd' 'SKILL.md') -Raw
         $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
-        $refactor = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-refactor' 'SKILL.md') -Raw
+        $improve = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-improve-codebase-architecture' 'SKILL.md') -Raw
         $simplify = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-simplify' 'SKILL.md') -Raw
 
         $tdd | Should -Match 'search the repository for existing proof'
@@ -48,9 +47,7 @@ Describe 'Skill workflow contracts' {
         $tdd | Should -Match 'A compile error or a failure before the assertion is not a red'
         $implement | Should -Match 'require its current scope green'
         $implement | Should -Match 'run /mattpocock-skills:tdd with al-tdd'
-        $refactor | Should -Match 'Compare the landed tests with the accepted proof map'
-        $refactor | Should -Match 'require its current scope green'
-        $refactor | Should -Match 'Every new or materially reshaped proof born green takes mutation as its red'
+        $improve | Should -Match 'Read the diff, the receipt, and the `Current-to-final proof map`'
         $simplify | Should -Match 'require its current scope green'
         $simplify | Should -Match 'Every new or materially reshaped proof born green takes mutation as its red'
     }
@@ -116,7 +113,7 @@ Describe 'Skill workflow contracts' {
         $pullRequest | Should -Match 'never creates or keeps a draft'
         $pullRequest | Should -Match 'Name /al-pr-shepherd as the next move'
 
-        foreach ($skill in @('al-clone-bcapps', 'al-design', 'al-grill-with-docs', 'al-implement', 'al-lookup', 'al-pr-shepherd', 'al-refactor', 'al-simplify')) {
+        foreach ($skill in @('al-clone-bcapps', 'al-design', 'al-grill-with-docs', 'al-implement', 'al-lookup', 'al-pr-shepherd', 'al-improve-codebase-architecture', 'al-simplify')) {
             $content = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'SKILL.md') -Raw
             $content | Should -Match '/al-commit' -Because "$skill writes repository files"
         }
