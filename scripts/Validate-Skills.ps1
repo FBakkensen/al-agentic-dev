@@ -10,9 +10,7 @@
     quoted whenever it contains a colon. Every skill is model-invocable, so
     disable-model-invocation is not accepted.
     Every relative Markdown link in the folder's .md files resolves to a file inside that
-    same folder, and only skills/al-build may name a .ps1 file or a scripts/ path — save
-    for the per-skill exemptions in $scriptExemptions, each an upstream tool a named skill
-    runs inside a checkout it clones.
+    same folder, and only skills/al-build may name a .ps1 file or a scripts/ path.
     Harness-conditional phrasing is banned: no skill markdown contains the token
     'harness' — tools and delegation targets are named by their Claude Code names.
     Task-state ceremony is retired: no skill body states a legacy lifecycle field
@@ -116,14 +114,6 @@ if (Test-Path -LiteralPath $PluginManifest -PathType Leaf) {
 } else {
     $violations += "plugin manifest not found: $PluginManifest"
 }
-# Per-skill script exemptions, approved one at a time. The key is the skill folder; the
-# value is the exact script paths that skill may name. al-build is exempt wholesale
-# because it owns the substrate; every other entry is an upstream tool the skill runs
-# inside a checkout it clones, matched on the full path so a same-named script in
-# another folder stays a violation.
-$scriptExemptions = @{
-    'al-clone-bcquality' = @('.bcquality/tools/Build-KnowledgeIndex.ps1')
-}
 $skillFolders = @(Get-ChildItem -LiteralPath $root -Directory | ForEach-Object Name)
 
 foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
@@ -201,13 +191,11 @@ foreach ($skill in Get-ChildItem -LiteralPath $root -Directory) {
         }
 
         if ($skill.Name -ne 'al-build') {
-            $allowedScripts = @($scriptExemptions[$skill.Name])
             foreach ($script in [regex]::Matches([string]$text, '[\w.\-/]*[\w\-]\.ps1|(?<![\w-])scripts/', 'IgnoreCase')) {
                 $tokenStart = $script.Index
                 while ($tokenStart -gt 0 -and [string]$text[$tokenStart - 1] -notmatch '\s') { $tokenStart-- }
                 $token = $text.Substring($tokenStart, $script.Index + $script.Length - $tokenStart)
                 if ($token -match 'https?://') { continue }
-                if ($allowedScripts -and ($allowedScripts -ccontains $script.Value)) { continue }
                 $violations += "${relative}: names a script outside al-build: $($script.Value)"
             }
         }
