@@ -340,3 +340,224 @@ Describe 'download-baseline.ps1 Release pin check' -Tag 'Process' {
         Assert-Untouched -Root $root -Before $before
     }
 }
+
+# download-baseline.ps1 fills the compile baseline folder once the pin is current. Each case runs it
+# as a fresh pwsh process in a fixture Consumer repository under TestDrive, a git repository with
+# every fixture file committed, and both symbol feeds pointed at local flat2 directories outside it.
+Describe 'download-baseline.ps1 baseline fill' -Tag 'Process' {
+    BeforeAll {
+        Import-Module (Join-Path $PSScriptRoot 'SymbolFeedFixture.psm1') -Force
+        Import-Module (Resolve-Path (Join-Path $base 'symbol-feed.psm1')) -Force -DisableNameChecking
+
+        $script:DownloadBaselineScript = Join-Path $base 'download-baseline.ps1'
+        $script:Pwsh = Join-Path $PSHOME 'pwsh.exe'
+        $script:FolderName = '.appSourceCopPackages'
+        $script:StaleName = 'Stale.Release.1.0.0.0.app'
+        $script:GhostPackageId = 'Contoso.Ghost.symbols.aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+
+        $script:Release = @{ Id = '3ac22135-0000-4000-8000-000000000001'; Name = 'NAVEKSA ShopFloor365 MES'; Publisher = 'NAVEKSA' }
+        $script:Library = @{ Id = '3ac22135-0000-4000-8000-000000000002'; Name = 'Contoso Lib'; Publisher = 'Contoso' }
+        $script:MsApplication = @{ Id = '3ac22135-0000-4000-8000-000000000003'; Name = 'Application'; Publisher = 'Microsoft' }
+        $script:MsSystem = @{ Id = '3ac22135-0000-4000-8000-000000000004'; Name = 'System'; Publisher = 'Microsoft' }
+        $script:ReleasePackageId = "NAVEKSA.NAVEKSAShopFloor365MES.symbols.$($script:Release.Id)"
+        $script:LibraryPackageId = "Contoso.ContosoLib.symbols.$($script:Library.Id)"
+        $script:ApplicationPackageId = 'Microsoft.Application.symbols'
+        $script:SystemPackageId = 'Microsoft.System.symbols'
+
+        # Release -> Contoso Lib (AppSourceSymbols) -> Application (MSSymbols), plus System (MSSymbols)
+        # directly. Each package sits in exactly one feed, so its .app in the folder names the feed
+        # that served it. With -MissingDependency the Release's direct dependency is on neither feed.
+        function New-FillFeeds {
+            param([Parameter(Mandatory)][string]$Root, [switch]$MissingDependency)
+            $ms = Join-Path $Root 'mssymbols'
+            $appSource = Join-Path $Root 'appsourcesymbols'
+            New-FixtureFeedPackage -FeedRoot $ms -PackageId $script:ApplicationPackageId -NuGetVersion '26.0.0' `
+                -App @{ Id = $script:MsApplication.Id; Name = 'Application'; Publisher = 'Microsoft'; Version = '26.0.0.0' } | Out-Null
+            New-FixtureFeedPackage -FeedRoot $ms -PackageId $script:SystemPackageId -NuGetVersion '26.0.0' `
+                -App @{ Id = $script:MsSystem.Id; Name = 'System'; Publisher = 'Microsoft'; Version = '26.0.0.0' } | Out-Null
+            New-FixtureFeedPackage -FeedRoot $appSource -PackageId $script:LibraryPackageId -NuGetVersion '2.0.0' `
+                -App @{ Id = $script:Library.Id; Name = 'Contoso Lib'; Publisher = 'Contoso'; Version = '2.0.0.0' } `
+                -Dependencies @(@{ Id = $script:ApplicationPackageId; Version = '26.0.0' }) | Out-Null
+            $directId = if ($MissingDependency) { $script:GhostPackageId } else { $script:SystemPackageId }
+            $releaseDependencies = @(
+                @{ Id = $script:LibraryPackageId; Version = '1.0.0' }
+                @{ Id = $directId; Version = '26.0.0' }
+            )
+            foreach ($release in @{ '26.1.4' = '26.1.4.0'; '26.1.9.1' = '26.1.9.1' }.GetEnumerator()) {
+                New-FixtureFeedPackage -FeedRoot $appSource -PackageId $script:ReleasePackageId -NuGetVersion $release.Key `
+                    -App @{ Id = $script:Release.Id; Name = $script:Release.Name; Publisher = $script:Release.Publisher; Version = $release.Value } `
+                    -Dependencies $releaseDependencies | Out-Null
+            }
+            [pscustomobject]@{ Ms = $ms; AppSource = $appSource }
+        }
+
+        # A committed Consumer repository: AppSourceCop.json with its pin, the baseline folder with a
+        # committed README.md and .gitignore (ignoring *.app) and one stale .app.
+        function New-FillFixture {
+            param(
+                [Parameter(Mandatory)][string]$Root,
+                [string]$Pin = '26.1.9.1',
+                [switch]$NoVersion,
+                [switch]$NoCachePath,
+                [switch]$TrackedApp
+            )
+            $appDir = Join-Path $Root 'app'
+            $folder = Join-Path $appDir $script:FolderName
+            New-Item -ItemType Directory -Path $folder -Force | Out-Null
+            [ordered]@{ id = $script:Release.Id; name = $script:Release.Name; publisher = $script:Release.Publisher; version = '1.0.0.0' } |
+                ConvertTo-Json | Set-Content -LiteralPath (Join-Path $appDir 'app.json') -Encoding UTF8
+            [ordered]@{ appDir = 'app'; testApps = @(); breakingChange = [ordered]@{ enabled = $false } } |
+                ConvertTo-Json | Set-Content -LiteralPath (Join-Path $Root 'al-build.json') -Encoding UTF8
+            $cop = [ordered]@{ mandatoryAffixes = @('NALICF') }
+            if (-not $NoVersion) { $cop['version'] = $Pin }
+            if (-not $NoCachePath) { $cop['baselinePackageCachePath'] = "./$($script:FolderName)" }
+            $cop | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $appDir 'AppSourceCop.json') -Encoding UTF8
+            Set-Content -LiteralPath (Join-Path $folder 'README.md') -Value 'Baseline folder.' -Encoding UTF8
+            Set-Content -LiteralPath (Join-Path $folder '.gitignore') -Value '*.app' -Encoding UTF8
+            Set-Content -LiteralPath (Join-Path $folder $script:StaleName) -Value 'stale' -Encoding UTF8
+
+            git -C $Root init -q
+            git -C $Root config user.email 'test@example.invalid'
+            git -C $Root config user.name 'test'
+            git -C $Root config commit.gpgsign false
+            git -C $Root add -A
+            if ($TrackedApp) { git -C $Root add -f -- (Join-Path $folder $script:StaleName) }
+            git -C $Root commit -q -m 'fixture'
+        }
+
+        function Invoke-Fill {
+            param([Parameter(Mandatory)][string]$Root, [Parameter(Mandatory)]$Feeds)
+            $env:FILLTEST_ROOT = $Root
+            $env:FILLTEST_MS = $Feeds.Ms
+            $env:FILLTEST_APPSOURCE = $Feeds.AppSource
+            $env:FILLTEST_SCRIPT = $script:DownloadBaselineScript
+            try {
+                $command = 'Get-ChildItem Env:ALBT_* | Remove-Item; $env:ALBT_MSSYMBOLS_FEED = $env:FILLTEST_MS; ' +
+                    '$env:ALBT_APPSOURCESYMBOLS_FEED = $env:FILLTEST_APPSOURCE; ' +
+                    'Set-Location -LiteralPath $env:FILLTEST_ROOT; & $env:FILLTEST_SCRIPT; exit $LASTEXITCODE'
+                $output = & $script:Pwsh -NoProfile -Command $command 2>&1
+                $exitCode = $LASTEXITCODE
+            } finally {
+                Remove-Item Env:FILLTEST_ROOT, Env:FILLTEST_MS, Env:FILLTEST_APPSOURCE, Env:FILLTEST_SCRIPT -ErrorAction SilentlyContinue
+            }
+            [pscustomobject]@{ ExitCode = $exitCode; Output = (@($output | ForEach-Object { "$_" }) -join "`n") }
+        }
+
+        # Every file in the folder with its content hash, to compare before and after a run.
+        function Get-FolderSnapshot {
+            param([string]$Root)
+            $folder = Join-Path $Root 'app' $script:FolderName
+            @(Get-ChildItem -LiteralPath $folder -File -Force | Sort-Object Name |
+                ForEach-Object { '{0}:{1}' -f $_.Name, (Get-FileHash -LiteralPath $_.FullName).Hash })
+        }
+
+        function Get-FolderApps {
+            param([string]$Root)
+            @(Get-ChildItem -LiteralPath (Join-Path $Root 'app' $script:FolderName) -Filter '*.app' -File)
+        }
+
+        $script:Feeds = New-FillFeeds -Root (Join-Path $TestDrive 'fill-feeds')
+        $script:GhostFeeds = New-FillFeeds -Root (Join-Path $TestDrive 'fill-feeds-ghost') -MissingDependency
+    }
+
+    Context 'with a current pin' {
+        BeforeAll {
+            $script:FilledRoot = Join-Path $TestDrive 'filled'
+            New-FillFixture -Root $script:FilledRoot
+            $script:CopBefore = [System.IO.File]::ReadAllBytes((Join-Path $script:FilledRoot 'app' 'AppSourceCop.json'))
+            $script:ReadmeBefore = (Get-FileHash -LiteralPath (Join-Path $script:FilledRoot 'app' $script:FolderName 'README.md')).Hash
+            $script:FilledResult = Invoke-Fill -Root $script:FilledRoot -Feeds $script:Feeds
+        }
+
+        It 'writes the Release and its dependencies from both feeds, transitively' {
+            $script:FilledResult.ExitCode | Should -Be 0 -Because $script:FilledResult.Output
+
+            $apps = Get-FolderApps -Root $script:FilledRoot
+            $manifests = @($apps | ForEach-Object { Read-AppManifest -Path $_.FullName })
+            $apps.Count | Should -Be 4
+            ($manifests.Id | Sort-Object) | Should -Be (@($script:Release.Id, $script:Library.Id, $script:MsApplication.Id, $script:MsSystem.Id) | Sort-Object)
+            ($manifests | Where-Object Id -eq $script:Release.Id).Version | Should -Be '26.1.9.1'
+        }
+
+        It 'changes no committed file and removes only the stale .app' {
+            git -C $script:FilledRoot status --porcelain | Should -BeNullOrEmpty
+            [System.IO.File]::ReadAllBytes((Join-Path $script:FilledRoot 'app' 'AppSourceCop.json')) | Should -Be $script:CopBefore
+            (Get-FileHash -LiteralPath (Join-Path $script:FilledRoot 'app' $script:FolderName 'README.md')).Hash | Should -Be $script:ReadmeBefore
+            (Join-Path $script:FilledRoot 'app' $script:FolderName $script:StaleName) | Should -Not -Exist
+            (Get-FolderApps -Root $script:FilledRoot).Count | Should -Be 4
+        }
+    }
+
+    It 'stops with exit 4 naming baselinePackageCachePath and writes nothing when the key is missing' {
+        $root = Join-Path $TestDrive 'no-key'
+        New-FillFixture -Root $root -NoCachePath
+        $before = Get-FolderSnapshot -Root $root
+
+        $result = Invoke-Fill -Root $root -Feeds $script:Feeds
+
+        $result.ExitCode | Should -Be 4
+        $result.Output | Should -Match 'baselinePackageCachePath'
+        Get-FolderSnapshot -Root $root | Should -Be $before
+        @(Get-ChildItem -LiteralPath $root -Recurse -File -Filter '*.app').Count | Should -Be 1
+    }
+
+    It 'leaves every file in the folder as it was when the pin is stale' {
+        $root = Join-Path $TestDrive 'stale-pin'
+        New-FillFixture -Root $root -Pin '26.1.4.0'
+        $before = Get-FolderSnapshot -Root $root
+
+        $result = Invoke-Fill -Root $root -Feeds $script:Feeds
+
+        $result.ExitCode | Should -Be 4
+        Get-FolderSnapshot -Root $root | Should -Be $before
+    }
+
+    It 'leaves every file in the folder as it was when AppSourceCop.json has no version' {
+        $root = Join-Path $TestDrive 'no-pin'
+        New-FillFixture -Root $root -NoVersion
+        $before = Get-FolderSnapshot -Root $root
+
+        $result = Invoke-Fill -Root $root -Feeds $script:Feeds
+
+        $result.ExitCode | Should -Be 0
+        Get-FolderSnapshot -Root $root | Should -Be $before
+    }
+
+    It 'stops with exit 1 naming the package, and leaves the folder as it was, when a dependency is on neither feed' {
+        $root = Join-Path $TestDrive 'ghost'
+        New-FillFixture -Root $root
+        $before = Get-FolderSnapshot -Root $root
+
+        $result = Invoke-Fill -Root $root -Feeds $script:GhostFeeds
+
+        $result.ExitCode | Should -Be 1
+        $result.Output | Should -Match ([regex]::Escape($script:GhostPackageId))
+        Get-FolderSnapshot -Root $root | Should -Be $before
+    }
+
+    It 'stops with exit 1 naming the package, and leaves the folder as it was, when a feed fails mid-fill' {
+        $root = Join-Path $TestDrive 'mid-fill'
+        New-FillFixture -Root $root
+        $before = Get-FolderSnapshot -Root $root
+        $feeds = New-FillFeeds -Root (Join-Path $TestDrive 'mid-fill-feeds')
+        Remove-Item -LiteralPath (Join-Path $feeds.Ms 'flat2' $script:ApplicationPackageId.ToLowerInvariant() '26.0.0') -Recurse -Force
+
+        $result = Invoke-Fill -Root $root -Feeds $feeds
+
+        $result.ExitCode | Should -Be 1
+        $result.Output | Should -Match ([regex]::Escape($script:ApplicationPackageId))
+        Get-FolderSnapshot -Root $root | Should -Be $before
+    }
+
+    It 'stops with exit 4 naming a tracked .app and changes nothing' {
+        $root = Join-Path $TestDrive 'tracked-app'
+        New-FillFixture -Root $root -TrackedApp
+        $before = Get-FolderSnapshot -Root $root
+
+        $result = Invoke-Fill -Root $root -Feeds $script:Feeds
+
+        $result.ExitCode | Should -Be 4
+        $result.Output | Should -Match ([regex]::Escape($script:StaleName))
+        Get-FolderSnapshot -Root $root | Should -Be $before
+    }
+}
