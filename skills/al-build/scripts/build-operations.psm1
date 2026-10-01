@@ -287,7 +287,9 @@ function Set-BuildEnvironment {
     $env:ALBT_VALIDATE_CURRENT = $Config.ValidateCurrent
     $env:ALBT_APPLICATION_INSIGHTS_CONNECTION_STRING = $Config.ApplicationInsightsConnectionString
     $env:ALBT_BREAKING_CHANGE_ENABLED = $Config.BreakingChangeEnabled
+    # An optional override: set when the config has a value, removed when it has none, so a value from an earlier config cannot go stale.
     if ($Config.ReleaseAppDir) { $env:ALBT_RELEASE_APP_DIR = $Config.ReleaseAppDir }
+    else { Remove-Item Env:\ALBT_RELEASE_APP_DIR -ErrorAction SilentlyContinue }
 }
 
 # =============================================================================

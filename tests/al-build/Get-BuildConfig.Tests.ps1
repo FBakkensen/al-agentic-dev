@@ -124,14 +124,15 @@ Describe 'Get-BuildConfig config model' {
         $config.ReleaseAppDir | Should -BeNullOrEmpty
     }
 
-    It 'exports ALBT_RELEASE_APP_DIR only when the folder is set' {
+    It 'exports ALBT_RELEASE_APP_DIR when the folder is set and removes a stale one when it is not' {
         Set-Content -LiteralPath $configPath -Value '{"appDir":"app","testApps":[],"breakingChange":{"releaseAppDir":"release"}}'
-        Set-BuildEnvironment -Config (Get-BuildConfig)
+        $config = Get-BuildConfig
+        Set-BuildEnvironment -Config $config
         $env:ALBT_RELEASE_APP_DIR | Should -Be (Join-Path $script:ProbeRoot 'release')
 
-        Remove-Item Env:\ALBT_RELEASE_APP_DIR
-        Set-Content -LiteralPath $configPath -Value '{"appDir":"app","testApps":[]}'
-        Set-BuildEnvironment -Config (Get-BuildConfig)
+        # The variable is still set from the first config; a config with no folder removes it.
+        $config.ReleaseAppDir = $null
+        Set-BuildEnvironment -Config $config
         Test-Path Env:\ALBT_RELEASE_APP_DIR | Should -BeFalse
     }
 

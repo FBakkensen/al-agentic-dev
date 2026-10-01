@@ -344,18 +344,31 @@ Describe 'validate-breaking-changes.ps1 prerequisites' -Tag 'Process' {
             $env:VALTEST_FEED = $Feed
             $env:VALTEST_TOOLCACHE = $toolCache
             $env:VALTEST_SCRIPT = $script:ValidateScript
+            # A fake BcContainerHelper, newest on PSModulePath, writes a marker file when imported.
+            $fakeModules = Join-Path $Root '.fake-modules'
+            $fakeModule = Join-Path $fakeModules 'BcContainerHelper' '999.0.0'
+            New-Item -ItemType Directory -Path $fakeModule -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $fakeModule 'BcContainerHelper.psm1') -Encoding UTF8 `
+                -Value 'Set-Content -LiteralPath $env:VALTEST_BCH_MARKER -Value imported'
+            New-ModuleManifest -Path (Join-Path $fakeModule 'BcContainerHelper.psd1') -RootModule 'BcContainerHelper.psm1' -ModuleVersion '999.0.0'
+            $marker = Join-Path $Root '.bch-imported'
+            Remove-Item -LiteralPath $marker -ErrorAction SilentlyContinue
+            $env:VALTEST_BCH_MARKER = $marker
+            $env:VALTEST_MODULES = $fakeModules
             try {
                 $command = 'Get-ChildItem Env:ALBT_* | Remove-Item; $env:ALBT_APPSOURCESYMBOLS_FEED = $env:VALTEST_FEED; ' +
                     '$env:ALBT_TOOL_CACHE_ROOT = $env:VALTEST_TOOLCACHE; ' +
+                    '$env:PSModulePath = $env:VALTEST_MODULES + [System.IO.Path]::PathSeparator + $env:PSModulePath; ' +
                     'Set-Location -LiteralPath $env:VALTEST_ROOT; & $env:VALTEST_SCRIPT; exit $LASTEXITCODE'
                 $output = & $script:Pwsh -NoProfile -Command $command 2>&1
                 $exitCode = $LASTEXITCODE
             } finally {
-                Remove-Item Env:VALTEST_ROOT, Env:VALTEST_FEED, Env:VALTEST_TOOLCACHE, Env:VALTEST_SCRIPT -ErrorAction SilentlyContinue
+                Remove-Item Env:VALTEST_ROOT, Env:VALTEST_FEED, Env:VALTEST_TOOLCACHE, Env:VALTEST_SCRIPT, Env:VALTEST_BCH_MARKER, Env:VALTEST_MODULES -ErrorAction SilentlyContinue
             }
             [pscustomobject]@{
-                ExitCode = $exitCode
-                Output   = (@($output | ForEach-Object { "$_" }) -join "`n")
+                ExitCode                = $exitCode
+                Output                  = (@($output | ForEach-Object { "$_" }) -join "`n")
+                BcContainerHelperLoaded = (Test-Path -LiteralPath $marker)
             }
         }
 
@@ -363,6 +376,7 @@ Describe 'validate-breaking-changes.ps1 prerequisites' -Tag 'Process' {
         function Assert-StoppedBeforeBuild {
             param($Result)
             $Result.Output | Should -Not -Match 'Building current app|AL Project Compilation|Running Validation|Running AL validation'
+            $Result.BcContainerHelperLoaded | Should -BeFalse -Because 'the fake BcContainerHelper on PSModulePath writes a marker when imported'
         }
 
         # A fixture with a current pin, enabled, and a release folder under the repo root.
