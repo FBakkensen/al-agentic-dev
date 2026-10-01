@@ -1615,9 +1615,8 @@ function Get-AppSourceCopSettings {
     .DESCRIPTION
         Returns $null when the app folder holds no AppSourceCop.json. Otherwise returns Path, Version
         ($null when the key is absent or empty), and BaselinePackageCachePath ($null when the key
-        is absent; a relative value is resolved against the app folder, an absolute one is kept).
-        Never writes the file. Every script that needs the pin or the baseline folder reads it here,
-        so each resolves the same folder.
+        is absent; a relative value is resolved against the app folder with Join-Path, an absolute
+        one is kept). Never writes the file.
     .PARAMETER AppDir
         The app folder, which holds app.json and AppSourceCop.json.
     #>

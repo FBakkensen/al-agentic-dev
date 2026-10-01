@@ -222,13 +222,8 @@ Describe 'Test-ReleasePin' {
 
         function New-ReleaseFeed {
             param([string]$Name, [hashtable]$Releases)
-            $root = Join-Path $TestDrive $Name
-            New-Item -ItemType Directory -Path $root -Force | Out-Null
-            foreach ($nuGetVersion in $Releases.Keys) {
-                $app = @{ Id = $script:PinAppId; Name = 'My Lib'; Publisher = 'Contoso'; Version = $Releases[$nuGetVersion] }
-                New-FixtureFeedPackage -FeedRoot $root -PackageId $script:PinPackageId -NuGetVersion $nuGetVersion -App $app | Out-Null
-            }
-            return $root
+            $app = @{ Id = $script:PinAppId; Name = 'My Lib'; Publisher = 'Contoso' }
+            New-FixtureReleaseFeed -FeedRoot (Join-Path $TestDrive $Name) -PackageId $script:PinPackageId -App $app -Releases $Releases
         }
     }
 

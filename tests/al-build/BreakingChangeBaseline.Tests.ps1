@@ -162,23 +162,28 @@ Describe 'download-baseline.ps1 Release pin check' -Tag 'Process' {
             }
         }
 
-        # One package per NuGetVersion = ManifestVersion pair, all for the fixture app.
         function New-PinFeed {
             param([Parameter(Mandatory)][string]$Root, [Parameter(Mandatory)][hashtable]$Releases)
-            foreach ($nuGetVersion in $Releases.Keys) {
-                $app = $script:AppIdentity.Clone()
-                $app.Version = $Releases[$nuGetVersion]
-                New-FixtureFeedPackage -FeedRoot $Root -PackageId $script:PackageId -NuGetVersion $nuGetVersion -App $app | Out-Null
-            }
+            New-FixtureReleaseFeed -FeedRoot $Root -PackageId $script:PackageId -App $script:AppIdentity -Releases $Releases | Out-Null
         }
 
         function Invoke-DownloadBaseline {
             param([Parameter(Mandatory)][string]$Root, [Parameter(Mandatory)][string]$Feed)
-            # The child inherits this process's ALBT_* variables, which outrank the fixture's al-build.json.
-            $command = "Get-ChildItem Env:ALBT_* | Remove-Item; `$env:ALBT_APPSOURCESYMBOLS_FEED = '$Feed'; Set-Location -LiteralPath '$Root'; & '$script:DownloadBaselineScript'; exit `$LASTEXITCODE"
-            $output = & $script:Pwsh -NoProfile -Command $command 2>&1
+            # Paths travel as environment variables, so no quote in one can break the command. The
+            # child's own ALBT_* variables are cleared first: they outrank the fixture's al-build.json.
+            $env:PINTEST_ROOT = $Root
+            $env:PINTEST_FEED = $Feed
+            $env:PINTEST_SCRIPT = $script:DownloadBaselineScript
+            try {
+                $command = 'Get-ChildItem Env:ALBT_* | Remove-Item; $env:ALBT_APPSOURCESYMBOLS_FEED = $env:PINTEST_FEED; ' +
+                    'Set-Location -LiteralPath $env:PINTEST_ROOT; & $env:PINTEST_SCRIPT; exit $LASTEXITCODE'
+                $output = & $script:Pwsh -NoProfile -Command $command 2>&1
+                $exitCode = $LASTEXITCODE
+            } finally {
+                Remove-Item Env:PINTEST_ROOT, Env:PINTEST_FEED, Env:PINTEST_SCRIPT -ErrorAction SilentlyContinue
+            }
             [pscustomobject]@{
-                ExitCode = $LASTEXITCODE
+                ExitCode = $exitCode
                 Output   = (@($output | ForEach-Object { "$_" }) -join "`n")
             }
         }

@@ -290,11 +290,12 @@ Describe 'provision.ps1 Release pin check' {
     }
 
     It 'exits with download-baseline.ps1''s non-zero exit code, with no refresh-failed throw' {
+        $baselineOffset = $script:BaselineCalls[0].Extent.StartOffset
         $exits = @($script:ProvisionAst.FindAll({
             param($node)
             $node -is [System.Management.Automation.Language.ExitStatementAst] -and
             $node.Pipeline -and $node.Pipeline.Extent.Text -eq '$LASTEXITCODE' -and
-            $node.Extent.StartOffset -gt $script:BaselineCalls[0].Extent.StartOffset
+            $node.Extent.StartOffset -gt $baselineOffset
         }, $true))
         $exits | Should -HaveCount 1
         $guard = $exits[0].Parent

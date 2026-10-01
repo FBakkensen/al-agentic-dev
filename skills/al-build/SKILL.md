@@ -53,7 +53,7 @@ Other artifacts: `.output/TestResults/al-runner.xml` (the al-runner gate's JUnit
 | `clean.ps1` | Deletes compiled `.app` files and clears publish state so the next run republishes. |
 | `report-gate-metrics.ps1` | Gate wall-clock per workspace signature and gate scope, from `build-timing.jsonl`; `-GlobalLog` reads the cross-repo mirror. |
 | `container-test.ps1` | Container tests for `containerTestApps` — see "The gate" above. Compiles before it publishes; `-Force` republishes unchanged apps. |
-| `download-symbols.ps1`, `download-baseline.ps1` | The two steps `provision.ps1` already performs. Run one alone to refresh only the symbols or only the pin check; `download-baseline.ps1` runs only the Release pin check and never writes `AppSourceCop.json`. |
+| `download-symbols.ps1`, `download-baseline.ps1` | `provision.ps1` already runs both: `download-symbols.ps1` fetches the symbol packages, `download-baseline.ps1` runs only the Release pin check and never writes `AppSourceCop.json`. Run one alone to redo just that step. |
 
 The three container scripts are one sequence, run once per BC version: `new-bc-container.ps1`, `commit-bc-container.ps1`, then `new-agent-container.ps1` for each branch off the resulting snapshot.
 
