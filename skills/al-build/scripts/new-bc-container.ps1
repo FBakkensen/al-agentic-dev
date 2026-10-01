@@ -40,7 +40,6 @@ if ($ApplicationInsightsConnectionString) {
 $config = Get-BuildConfig -Overrides $overrides
 Set-BuildEnvironment -Config $config
 $containerName = $config.GoldenContainerName
-$workspaceRoot = (Get-Location).Path
 
 Write-BuildHeader 'New BC Container: Golden Container Setup'
 
@@ -168,30 +167,12 @@ try {
     }
 }
 
-Write-BuildHeader 'Installing AL-Go Dependencies'
-
-Write-BuildMessage -Type Step -Message "Checking for AL-Go dependencies..."
-$depResult = Install-AlGoDependencies -ContainerName $containerName -Credential $credential -WorkspaceRoot $workspaceRoot
-$installedCount = $depResult.Installed
-if ($depResult.Installed -gt 0) {
-    Write-BuildMessage -Type Success -Message "Installed $($depResult.Installed) dependency app(s)"
-}
-if ($depResult.Failed -gt 0) {
-    Write-BuildMessage -Type Error -Message "$($depResult.Failed) of $($depResult.ProbingPaths) AL-Go probing path(s) failed; see warnings above. Container will not be prepared for commit."
-    exit 1
-}
-if ($depResult.ProbingPaths -eq 0) {
-    Write-BuildMessage -Type Detail -Message "No dependencies configured"
-}
-
 Write-BuildHeader 'Summary'
 
 Write-BuildMessage -Type Success -Message "BC container '$containerName' is ready!"
 Write-BuildMessage -Type Detail -Message "Container Name: $containerName"
 Write-BuildMessage -Type Detail -Message "Authentication: $($config.ContainerAuth)"
-Write-BuildMessage -Type Detail -Message "Credentials: $($config.ContainerUsername) / $($config.ContainerPassword)"
 Write-BuildMessage -Type Detail -Message "AL Test Runner Service: Installed"
-Write-BuildMessage -Type Detail -Message "AL-Go Dependencies: $installedCount app(s) installed"
 Write-BuildMessage -Type Detail -Message "Development Settings: symbols enabled, debugging disabled, cache size 11"
 if ($config.ApplicationInsightsConnectionString) {
     Write-BuildMessage -Type Detail -Message "Application Insights: Enabled (telemetry active)"
