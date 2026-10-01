@@ -157,6 +157,16 @@ function Get-BuildConfig {
         return $Default
     }
 
+    # The real Release .app's folder: no default, $null when unset. A relative value is repo-root relative.
+    $releaseAppDir = Resolve-BreakingChangeValue 'releaseAppDir' 'ALBT_RELEASE_APP_DIR' $null
+    $releaseAppDir = if ([string]::IsNullOrWhiteSpace([string]$releaseAppDir)) {
+        $null
+    } elseif ([System.IO.Path]::IsPathRooted([string]$releaseAppDir)) {
+        [string]$releaseAppDir
+    } else {
+        Join-Path $repoRoot ([string]$releaseAppDir)
+    }
+
     $config = [PSCustomObject]@{
         AppDir                              = $appDir
         TestApps                            = $testApps
@@ -183,7 +193,7 @@ function Get-BuildConfig {
             ConvertTo-Boolean (Resolve-CoverageValue 'enabled' 'coverageEnabled' 'ALBT_COVERAGE_ENABLED' $false)
         }
         BreakingChangeEnabled               = ConvertTo-Boolean (Resolve-BreakingChangeValue 'enabled' 'ALBT_BREAKING_CHANGE_ENABLED' $false)
-        BaselinePackageCachePath            = Resolve-BreakingChangeValue 'baselinePackageCachePath' 'ALBT_BASELINE_CACHE_PATH' '.output/baseline-cache'
+        ReleaseAppDir                       = $releaseAppDir
     }
 
     return $config
@@ -277,7 +287,7 @@ function Set-BuildEnvironment {
     $env:ALBT_VALIDATE_CURRENT = $Config.ValidateCurrent
     $env:ALBT_APPLICATION_INSIGHTS_CONNECTION_STRING = $Config.ApplicationInsightsConnectionString
     $env:ALBT_BREAKING_CHANGE_ENABLED = $Config.BreakingChangeEnabled
-    $env:ALBT_BASELINE_CACHE_PATH = $Config.BaselinePackageCachePath
+    if ($Config.ReleaseAppDir) { $env:ALBT_RELEASE_APP_DIR = $Config.ReleaseAppDir }
 }
 
 # =============================================================================
@@ -1650,6 +1660,104 @@ function Get-AppSourceCopSettings {
     }
 }
 
+function Test-BaselineFoldersDistinct {
+    <#
+    .SYNOPSIS
+        Test that the Release .app folder and the compile baseline folder are two folders.
+    .DESCRIPTION
+        Returns $false when the two paths name one folder, $true otherwise. Each path is compared
+        by its full path, without a trailing separator, ignoring case. A relative path resolves
+        against the current location, so callers pass the paths each key resolves to from its own
+        base: breakingChange.releaseAppDir from the repo root, AppSourceCop.json's
+        baselinePackageCachePath from the app folder.
+    .PARAMETER ReleaseAppDir
+        The folder breakingChange.releaseAppDir resolves to.
+    .PARAMETER BaselinePackageCachePath
+        The folder AppSourceCop.json's baselinePackageCachePath resolves to.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$ReleaseAppDir,
+        [Parameter(Mandatory)][string]$BaselinePackageCachePath
+    )
+
+    $normalize = {
+        param([string]$Path)
+        $rooted = if ([System.IO.Path]::IsPathRooted($Path)) { $Path } else { Join-Path $PWD.Path $Path }
+        [System.IO.Path]::TrimEndingDirectorySeparator([System.IO.Path]::GetFullPath($rooted))
+    }
+    return -not ((& $normalize $ReleaseAppDir) -ieq (& $normalize $BaselinePackageCachePath))
+}
+
+function Find-ReleaseApp {
+    <#
+    .SYNOPSIS
+        Find the .app files in a folder whose manifest carries an app id and version.
+    .DESCRIPTION
+        Reads each .app's manifest through Read-AppManifest (symbol-feed.psm1), so the file name
+        plays no part: a feed-style name without spaces and a compiler-style name with spaces match
+        alike. A .app whose manifest cannot be read is skipped with a warning. Returns every match
+        as a FileInfo, an empty array when the folder is missing or nothing matches.
+    .PARAMETER Folder
+        The folder to search; it is not searched recursively.
+    .PARAMETER AppId
+        The app id from app.json.
+    .PARAMETER Version
+        The version AppSourceCop.json pins, compared with the manifest's 4-part version as written.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Folder,
+        [Parameter(Mandatory)][string]$AppId,
+        [Parameter(Mandatory)][string]$Version
+    )
+
+    if (-not (Test-Path -LiteralPath $Folder -PathType Container)) { return @() }
+
+    $found = @()
+    foreach ($file in Get-ChildItem -LiteralPath $Folder -Filter '*.app' -File) {
+        try {
+            $manifest = Read-AppManifest -Path $file.FullName
+        } catch {
+            Write-BuildMessage -Type Warning -Message "Skipping $($file.Name): $($_.Exception.Message)"
+            continue
+        }
+        if ($manifest.Id.Trim('{}') -ieq $AppId.Trim('{}') -and $manifest.Version -eq $Version.Trim()) {
+            $found += $file
+        }
+    }
+    return $found
+}
+
+function Test-SymbolOnlyApp {
+    <#
+    .SYNOPSIS
+        Test whether a .app holds symbols only, through `al IsSymbolOnly`.
+    .DESCRIPTION
+        Runs `al IsSymbolOnly <path>` from the provisioned compiler that Get-LatestCompilerInfo
+        names. AL CLI 30.0 exits 0 for both answers and prints `Extension is symbol-only: True` or
+        `Extension is symbol-only: False`; a missing file exits 1 with a message. Throws when the
+        compiler is not provisioned, when the command exits non-zero, or when its output holds no
+        answer.
+    .PARAMETER Path
+        The .app file.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    $compilerInfo = Get-LatestCompilerInfo
+    $output = @(& $compilerInfo.CommandPath IsSymbolOnly $Path 2>&1 | ForEach-Object { "$_" })
+    $exitCode = $LASTEXITCODE
+    $text = $output -join "`n"
+    if ($exitCode -ne 0) {
+        throw "al IsSymbolOnly failed for '$Path' (exit $exitCode): $text"
+    }
+    if ($text -match 'symbol-only:\s*(True|False)') {
+        return $Matches[1] -ieq 'True'
+    }
+    throw "al IsSymbolOnly gave no answer for '$Path': $text"
+}
+
 function Get-AlValidationVerdict {
     <#
     .SYNOPSIS
@@ -1698,6 +1806,9 @@ Export-ModuleMember -Function @(
 
     # Breaking-change baseline
     'Get-AppSourceCopSettings'
+    'Test-BaselineFoldersDistinct'
+    'Find-ReleaseApp'
+    'Test-SymbolOnlyApp'
     'Get-AlValidationVerdict'
 
     # Compiler

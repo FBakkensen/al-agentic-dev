@@ -289,6 +289,28 @@ Describe 'provision.ps1 Release pin check' {
         }
     }
 
+    It 'runs the same-folder guard after both download-symbols.ps1 calls and before download-baseline.ps1' {
+        $guards = @($script:ProvisionAst.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.CommandAst] -and
+            $node.GetCommandName() -eq 'Test-BaselineFoldersDistinct'
+        }, $true))
+        $guards | Should -HaveCount 1
+
+        $script:SymbolCalls | Should -HaveCount 2
+        $script:BaselineCalls | Should -HaveCount 1
+        foreach ($symbolCall in $script:SymbolCalls) {
+            $guards[0].Extent.StartOffset | Should -BeGreaterThan $symbolCall.Extent.StartOffset
+        }
+        $guards[0].Extent.StartOffset | Should -BeLessThan $script:BaselineCalls[0].Extent.StartOffset
+
+        # A failed guard stops provision with the contract exit code, before the baseline step.
+        $guard = $guards[0].Parent
+        while ($guard -and $guard -isnot [System.Management.Automation.Language.IfStatementAst]) { $guard = $guard.Parent }
+        $guard | Should -Not -BeNullOrEmpty
+        $guard.Clauses[0].Item2.Extent.Text | Should -Match 'exit\s+\(Get-ExitCode\)\.Contract'
+    }
+
     It 'exits with download-baseline.ps1''s non-zero exit code, with no refresh-failed throw' {
         $baselineOffset = $script:BaselineCalls[0].Extent.StartOffset
         $exits = @($script:ProvisionAst.FindAll({

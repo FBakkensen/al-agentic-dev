@@ -15,6 +15,8 @@
     - Downloads symbol packages for each test app
     - Checks the `version` pinned in the committed AppSourceCop.json against the latest Release on
       AppSourceSymbols; a stale pin stops with exit 4 (see download-baseline.ps1)
+    - Stops with exit 4 when breakingChange.releaseAppDir and AppSourceCop.json's
+      baselinePackageCachePath name one folder, before that check
 
 .PARAMETER UpdateCompiler
     Force a clean reinstall of both compiler channels. By default each channel is
@@ -114,8 +116,18 @@ foreach ($testAppDir in $config.TestApps) {
     }
 }
 
-# Step 5: Check the Release pin. Runs after both symbol steps, so symbols.lock.json is written
-# even when the pin is stale; its exit code (4 stale or no Release, 1 feed unreachable) is ours.
+# Step 5: The Release .app folder and the compile baseline folder stay two folders, so a baseline
+# fill never replaces the real Release .app. Runs after both symbol steps (symbols.lock.json is
+# written first) and before the baseline step. A file download-baseline.ps1 rejects as not JSON
+# is its to report.
+$appSourceCop = try { Get-AppSourceCopSettings -AppDir $config.AppDir } catch { $null }
+if ($config.ReleaseAppDir -and $appSourceCop -and $appSourceCop.BaselinePackageCachePath -and
+    -not (Test-BaselineFoldersDistinct -ReleaseAppDir $config.ReleaseAppDir -BaselinePackageCachePath $appSourceCop.BaselinePackageCachePath)) {
+    Write-BuildMessage -Type Error -Message "breakingChange.releaseAppDir and AppSourceCop.json's baselinePackageCachePath name one folder ($($config.ReleaseAppDir)). Use two folders: the compile baseline fill replaces every .app in baselinePackageCachePath."
+    exit (Get-ExitCode).Contract
+}
+
+# Step 6: Check the Release pin. Its exit code (4 stale or no Release, 1 feed unreachable) is ours.
 $downloadBaselineScript = Join-Path $PSScriptRoot 'download-baseline.ps1'
 & $downloadBaselineScript
 if ($LASTEXITCODE -ne 0) {

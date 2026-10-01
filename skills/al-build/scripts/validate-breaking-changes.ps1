@@ -2,16 +2,27 @@
 
 <#
 .SYNOPSIS
-    Validate the AL app against the provisioned baseline for breaking changes.
+    Validate the AL app against the real Release .app for breaking changes.
 
 .DESCRIPTION
     The heavyweight AppSource-style check (per-country, install/upgrade) that the
-    compile-time AppSourceCop pass cannot do. Reads the previous release + its
-    dependencies from the baseline package cache that provision.ps1 populated
-    (download-baseline.ps1) and runs Run-AlValidation against them.
+    compile-time AppSourceCop pass cannot do.
 
-    Does NOT download — the cache is the single source of truth. Empty cache ->
-    fails loud with "run provision.ps1", never a silent pass.
+    A `version` in the committed AppSourceCop.json first repeats the Release pin check
+    (Test-ReleasePin, as download-baseline.ps1 runs it), whatever breakingChange.enabled says, so a
+    Release shipped mid-branch stops the run before any compile. Exit codes follow the check: 4 for a
+    stale pin or a version with no Release, 1 for an unreachable feed. This script never runs
+    download-baseline.ps1.
+
+    breakingChange.enabled then gates only the container install/upgrade test. With it false the
+    script stops after the pin check with exit 0. With it true the script takes the real Release .app
+    from the folder breakingChange.releaseAppDir (ALBT_RELEASE_APP_DIR, repo-root relative) that the
+    developer copied it into, picks it by the id of app.json and the pinned version in its manifest,
+    rejects a symbols-only file (`al IsSymbolOnly`), and hands that one .app to Run-AlValidation as the
+    previous app. Every prerequisite check - AppSourceCop.json with its affixes and countries, the
+    version, the key, the folder guard against AppSourceCop.json's baselinePackageCachePath, the match,
+    the symbols-only check - runs first and stops with exit 4, before the build and before
+    BcContainerHelper loads.
 
     Uses AppSourceCop.json for affixes and supported countries.
 
@@ -29,6 +40,7 @@ $InformationPreference = 'Continue'
 # Import modules
 Import-Module "$PSScriptRoot/common.psm1" -Force -DisableNameChecking
 Import-Module "$PSScriptRoot/build-operations.psm1" -Force -DisableNameChecking
+Import-Module "$PSScriptRoot/symbol-feed.psm1" -Force -DisableNameChecking
 
 # Load configuration
 $config = Get-BuildConfig
@@ -38,10 +50,111 @@ $Exit = Get-ExitCode
 
 Write-BuildHeader 'Breaking Change Validation'
 
+# The committed AppSourceCop.json: a file the developer must fix is a missing prerequisite.
+try {
+    $appSourceCop = Get-AppSourceCopSettings -AppDir $config.AppDir
+} catch {
+    Write-BuildMessage -Type Error -Message $_.Exception.Message
+    exit $Exit.Contract
+}
+$appJson = Get-AppJsonObject $config.AppDir
+
+# The pin check runs whatever breakingChange.enabled says, before any build.
+if ($appSourceCop -and $appSourceCop.Version) {
+    $pin = Test-ReleasePin -AppJson $appJson -Pin $appSourceCop.Version
+    if ($pin.ExitCode -ne 0) {
+        Write-BuildMessage -Type Error -Message $pin.Message
+        exit $pin.ExitCode
+    }
+    Write-BuildMessage -Type Success -Message $pin.Message
+}
+
 if (-not $config.BreakingChangeEnabled) {
-    Write-BuildMessage -Type Info -Message "breakingChange.enabled is false - skipping validation."
+    Write-BuildMessage -Type Info -Message "breakingChange.enabled is false - skipping the container install/upgrade test."
     exit 0
 }
+
+Write-BuildHeader 'AppSourceCop Configuration'
+
+if (-not $appSourceCop) {
+    Write-BuildMessage -Type Error -Message "AppSourceCop.json not found"
+    exit $Exit.Contract
+}
+
+# Optional keys read through PSObject.Properties: a missing one must not throw under strict mode.
+$appSourceCopJson = Get-Content -LiteralPath $appSourceCop.Path -Raw | ConvertFrom-Json
+$readKey = {
+    param([string]$Name)
+    $property = if ($appSourceCopJson) { $appSourceCopJson.PSObject.Properties[$Name] } else { $null }
+    if ($property) { $property.Value } else { $null }
+}
+
+$affixes = & $readKey 'mandatoryAffixes'
+if (-not $affixes -or @($affixes).Count -eq 0) {
+    Write-BuildMessage -Type Error -Message "No mandatoryAffixes found"
+    exit $Exit.Contract
+}
+Write-BuildMessage -Type Detail -Message "Affixes: $(@($affixes) -join ', ')"
+
+$supportedCountries = & $readKey 'supportedCountries'
+if (-not $supportedCountries -or @($supportedCountries).Count -eq 0) {
+    Write-BuildMessage -Type Error -Message "No supportedCountries found"
+    exit $Exit.Contract
+}
+Write-BuildMessage -Type Detail -Message "Countries: $(@($supportedCountries) -join ', ')"
+
+Write-BuildHeader 'Release App'
+
+if (-not $appSourceCop.Version) {
+    Write-BuildMessage -Type Error -Message "AppSourceCop.json pins no version - add version, the Release to validate against ($($appSourceCop.Path))."
+    exit $Exit.Contract
+}
+$appId = if ($appJson -and $appJson.PSObject.Properties['id']) { [string]$appJson.id } else { '' }
+if (-not $appId) {
+    Write-BuildMessage -Type Error -Message "app.json names no id in $($config.AppDir) - nothing to match the Release .app against."
+    exit $Exit.Contract
+}
+if (-not $config.ReleaseAppDir) {
+    Write-BuildMessage -Type Error -Message "breakingChange.releaseAppDir is not set (or ALBT_RELEASE_APP_DIR) - name the folder holding the real Release .app of version $($appSourceCop.Version)."
+    exit $Exit.Contract
+}
+if ($appSourceCop.BaselinePackageCachePath -and
+    -not (Test-BaselineFoldersDistinct -ReleaseAppDir $config.ReleaseAppDir -BaselinePackageCachePath $appSourceCop.BaselinePackageCachePath)) {
+    Write-BuildMessage -Type Error -Message "breakingChange.releaseAppDir and AppSourceCop.json's baselinePackageCachePath name one folder ($($config.ReleaseAppDir)). Use two folders: the compile baseline fill replaces every .app in baselinePackageCachePath."
+    exit $Exit.Contract
+}
+
+$releaseApps = @(Find-ReleaseApp -Folder $config.ReleaseAppDir -AppId $appId -Version $appSourceCop.Version)
+if ($releaseApps.Count -eq 0) {
+    Write-BuildMessage -Type Error -Message "No .app with id $appId and version $($appSourceCop.Version) in breakingChange.releaseAppDir '$($config.ReleaseAppDir)'. Copy the real Release .app there."
+    exit $Exit.Contract
+}
+
+# The folder must hold only the real Release: a symbols-only match is rejected, wherever it sits.
+try {
+    Get-LatestCompilerInfo | Out-Null
+} catch {
+    Write-BuildMessage -Type Error -Message $_.Exception.Message
+    exit $Exit.Contract
+}
+foreach ($releaseApp in $releaseApps) {
+    try {
+        $symbolOnly = Test-SymbolOnlyApp -Path $releaseApp.FullName
+    } catch {
+        Write-BuildMessage -Type Error -Message $_.Exception.Message
+        exit $Exit.GeneralError
+    }
+    if ($symbolOnly) {
+        Write-BuildMessage -Type Error -Message "$($releaseApp.FullName) is a symbols-only .app. breakingChange.releaseAppDir must hold only the real Release .app - remove it."
+        exit $Exit.Contract
+    }
+}
+if ($releaseApps.Count -gt 1) {
+    Write-BuildMessage -Type Error -Message "breakingChange.releaseAppDir '$($config.ReleaseAppDir)' holds $($releaseApps.Count) real .app files of version $($appSourceCop.Version): $(($releaseApps | ForEach-Object { $_.Name }) -join ', '). Keep one."
+    exit $Exit.Contract
+}
+$previousApps = @($releaseApps[0].FullName)
+Write-BuildMessage -Type Success -Message "Release app: $($releaseApps[0].Name)"
 
 # Build the current app
 Write-BuildMessage -Type Step -Message "Building current app..."
@@ -55,30 +168,6 @@ Write-BuildMessage -Type Detail -Message "App Directory: $absoluteAppDir"
 $validateCurrent = ConvertTo-Boolean $config.ValidateCurrent
 Write-BuildMessage -Type Detail -Message "Validate Current: $validateCurrent"
 
-Write-BuildHeader 'AppSourceCop Configuration'
-
-$appSourceCopPath = Join-Path $absoluteAppDir "AppSourceCop.json"
-if (-not (Test-Path $appSourceCopPath)) {
-    Write-BuildMessage -Type Error -Message "AppSourceCop.json not found"
-    exit $Exit.Contract
-}
-
-$appSourceCop = Get-Content $appSourceCopPath | ConvertFrom-Json
-
-$affixes = $appSourceCop.mandatoryAffixes
-if (-not $affixes -or $affixes.Count -eq 0) {
-    Write-BuildMessage -Type Error -Message "No mandatoryAffixes found"
-    exit $Exit.Contract
-}
-Write-BuildMessage -Type Detail -Message "Affixes: $($affixes -join ', ')"
-
-$supportedCountries = $appSourceCop.supportedCountries
-if (-not $supportedCountries -or $supportedCountries.Count -eq 0) {
-    Write-BuildMessage -Type Error -Message "No supportedCountries found"
-    exit $Exit.Contract
-}
-Write-BuildMessage -Type Detail -Message "Countries: $($supportedCountries -join ', ')"
-
 Write-BuildHeader 'Current App'
 
 $currentAppPath = Get-OutputPath $absoluteAppDir
@@ -89,40 +178,6 @@ if (-not $currentAppPath -or -not (Test-Path $currentAppPath)) {
 
 $currentApp = Get-Item $currentAppPath
 Write-BuildMessage -Type Success -Message "Found: $($currentApp.Name)"
-
-Write-BuildHeader 'Baseline Cache'
-
-# Resolve repo root + absolute cache directory (same convention as download-baseline.ps1)
-$repoRoot = Get-GitRepoRoot
-$cacheDir = if ([System.IO.Path]::IsPathRooted($config.BaselinePackageCachePath)) {
-    $config.BaselinePackageCachePath
-} else {
-    Join-Path $repoRoot $config.BaselinePackageCachePath
-}
-
-# provision.ps1 owns the fetch. No cache -> stop loud; never a silent green.
-$cachedApps = @()
-if (Test-Path $cacheDir) {
-    $cachedApps = @(Get-ChildItem -Path $cacheDir -Filter '*.app' -File -ErrorAction SilentlyContinue)
-}
-if ($cachedApps.Count -eq 0) {
-    Write-BuildMessage -Type Error -Message "Baseline cache empty at $cacheDir - run provision.ps1 (breakingChange.enabled) to populate it."
-    exit $Exit.Contract
-}
-
-# Split the flat cache: the previous main app vs its dependencies, by app name.
-$appJson = Get-AppJsonObject $config.AppDir
-$previousApps = @($cachedApps | Where-Object { $_.Name -like "*$($appJson.name)*" } | ForEach-Object { $_.FullName })
-$dependencyApps = @($cachedApps | Where-Object { $_.Name -notlike "*$($appJson.name)*" } | ForEach-Object { $_.FullName })
-
-if ($previousApps.Count -eq 0) {
-    Write-BuildMessage -Type Error -Message "No baseline for '$($appJson.name)' in cache - re-run provision.ps1."
-    exit $Exit.Contract
-}
-Write-BuildMessage -Type Success -Message "Baseline: $([System.IO.Path]::GetFileName($previousApps[0]))"
-if ($dependencyApps.Count -gt 0) {
-    Write-BuildMessage -Type Detail -Message "Dependencies: $($dependencyApps.Count)"
-}
 
 Write-BuildHeader 'Running Validation'
 
@@ -138,7 +193,6 @@ $validationParams = @{
     countries          = $supportedCountries
     apps               = @($currentAppPath)
     previousApps       = $previousApps
-    installApps        = $dependencyApps
     affixes            = $affixes
     supportedCountries = $supportedCountries
     validateCurrent    = $validateCurrent

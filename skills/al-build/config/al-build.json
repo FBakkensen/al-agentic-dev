@@ -30,7 +30,6 @@
   "validateCurrent": true,
 
   "breakingChange": {
-    "enabled": false,
-    "baselinePackageCachePath": ".output/baseline-cache"
+    "enabled": false
   }
 }
