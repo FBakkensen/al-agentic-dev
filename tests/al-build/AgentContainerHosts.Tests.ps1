@@ -359,3 +359,77 @@ Describe 'new-agent-container.ps1' {
         $text | Should -Match "'--hostname',\s*\`$AgentName"
     }
 }
+
+# Ensure-BCAgentContainer runs new-agent-container.ps1 with `&` from inside common.psm1, so
+# the script runs in the module's session state with its own script scope. From there,
+# $script: resolves to the script's scope, not the module's (#139). These cases start a
+# script the same way.
+Describe 'Hosts defaults from a script that common.psm1 starts (#139)' {
+    BeforeAll {
+        $script:CommonModuleInfo = Get-Module common
+        $script:WindowsHostsFile = 'C:\Windows\System32\drivers\etc\hosts'
+
+        function script:Invoke-FromCommonModule {
+            param([string]$ScriptPath)
+            & $script:CommonModuleInfo { & $args[0] } $ScriptPath
+        }
+    }
+
+    It 'resolves the hosts helpers'' -HostsFile default to the Windows hosts file' {
+        Mock Update-HostsFile {} -ModuleName common
+        $child = Join-Path $TestDrive 'hosts-helpers.ps1'
+        Set-Content -LiteralPath $child -Value @(
+            'Set-StrictMode -Version Latest'
+            'Add-HostsEntry -Hostname ''feat-x'' -IPAddress ''172.28.0.5'''
+            'Remove-HostsEntry -Hostname ''feat-x'''
+        )
+
+        Invoke-FromCommonModule -ScriptPath $child
+
+        Should -Invoke Update-HostsFile -ModuleName common -Times 2 -Exactly -ParameterFilter {
+            $HostsFile -eq $script:WindowsHostsFile
+        }
+    }
+
+    It 'runs Remove-OrphanedAgentContainers, as new-agent-container.ps1''s cleanup does' {
+        $originalHome = $env:HOME
+        $originalUserProfile = $env:USERPROFILE
+        try {
+            $env:HOME = Join-Path $TestDrive 'home-139'
+            $env:USERPROFILE = $env:HOME
+            New-Item -ItemType Directory -Path $env:HOME -Force | Out-Null
+            $child = Join-Path $TestDrive 'orphan-cleanup.ps1'
+            Set-Content -LiteralPath $child -Value @(
+                'Set-StrictMode -Version Latest'
+                'Remove-OrphanedAgentContainers -WhatIf'
+            )
+
+            { Invoke-FromCommonModule -ScriptPath $child } | Should -Not -Throw
+        }
+        finally {
+            $env:HOME = $originalHome
+            $env:USERPROFILE = $originalUserProfile
+        }
+    }
+
+    It 'has no common.psm1 function that reads a $script: variable' {
+        $tokens = $null
+        $parseErrors = $null
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile($script:CommonModule, [ref]$tokens, [ref]$parseErrors)
+        $parseErrors | Should -BeNullOrEmpty
+
+        $reads = @($ast.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.VariableExpressionAst] -and
+            $node.VariablePath.IsScript
+        }, $true) | Where-Object {
+            $parent = $_.Parent
+            while ($parent -and $parent -isnot [System.Management.Automation.Language.FunctionDefinitionAst]) {
+                $parent = $parent.Parent
+            }
+            $null -ne $parent
+        } | ForEach-Object { "line $($_.Extent.StartLineNumber): $($_.Extent.Text)" })
+
+        $reads | Should -BeNullOrEmpty
+    }
+}
