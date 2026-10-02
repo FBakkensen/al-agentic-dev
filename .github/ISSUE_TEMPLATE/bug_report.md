@@ -26,7 +26,7 @@ What actually happened.
 ## Environment
 - OS: [e.g., Windows 11]
 - PowerShell Version: [e.g., 7.4]
-- AI Assistant: [e.g., Claude Code, Copilot]
+- Claude Code Version: [output of `claude --version`]
 - Docker Version (if applicable):
 
 ## Additional Context
