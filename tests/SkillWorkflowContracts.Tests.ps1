@@ -103,7 +103,7 @@ Describe 'Skill workflow contracts' {
         $next | Should -Match 'every work-item read and write.*tracker text'
         $next | Should -Match 'leave its state and parent to the user'
         $next | Should -Match '▶ haiku · /al-arc42 the corrected Level 2 white box.*HTML path, SVG and PNG paths, alt text, publishable fragments'
-        $next | Should -Match '▶ haiku · attach the Level 2 PNG and SVG.*as the tracker text says → verified attachment URLs'
+        $next | Should -Match '▶ haiku · attach the Level 2 PNG and SVG.*as the tracker text in docs/agents/issue-tracker\.md says → verified attachment URLs'
         $arc42 | Should -Match '(?m)^In: .*/al-next'
     }
 
@@ -229,7 +229,7 @@ Describe 'Skill workflow contracts' {
 
         $pullRequest | Should -Match 'Use `<area>: <imperative change>` for the title'
         $pullRequest | Should -Match 'mcp__plugin_al-agentic-dev_ado__repo_pull_request_write'
-        $pullRequest | Should -Match 'link every work-item id on the branch as the tracker text'
+        $pullRequest | Should -Match 'link every work-item id on the branch as that section says'
         $pullRequest | Should -Match 'passed explicitly on every .update.'
         $pullRequest | Should -Not -MatchExactly '\bgh\b'
         $pullRequest | Should -Not -MatchExactly '\baz\b'
