@@ -56,6 +56,6 @@ On a green close, for each shape the slice realized that has a precedent in the 
 
 At every exit, including a stop for the user and an unresolved red:
 
-▶ haiku · /al-commit the complete worktree, work items <ids> → commit hashes and subjects, remaining worktree
+▶ haiku · /al-commit the complete worktree → commit hashes and subjects, remaining worktree
 
 Finish outcome first: what changed, what proves it, where the map is attached, which module interface stayed stable, and whether the Original work item's Level 2 changed. Name `/simplify` and `/mattpocock-skills:improve-codebase-architecture` as the next move. A stop names the exact red reason.

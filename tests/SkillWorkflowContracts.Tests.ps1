@@ -155,7 +155,7 @@ Describe 'Skill workflow contracts' {
         $commit | Should -Match 'Treat every file in the worktree as in scope'
         $commit | Should -Match 'Stage all files by default'
         $commit | Should -Match 'maximum number of independently valid commits'
-        $commit | Should -Match 'List only the work-item IDs served by that commit'
+        $commit | Should -Not -Match 'AB#'
         $commit | Should -MatchExactly 'Co-Authored-By: Claude <noreply@anthropic\.com>'
 
         $pullRequest | Should -Match 'Use `<area>: <imperative change>` for the title'

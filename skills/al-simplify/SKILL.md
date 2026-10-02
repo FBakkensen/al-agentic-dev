@@ -41,6 +41,6 @@ Use the verified URLs in the receipt and the Original work item's Level 2 fragme
 
 Update the receipt with `Tidy: none` or the exact cleanups, the gate result, the Level 2 delta, and any new `verified:` / `assumed:` / `unresolved:` entries. At every exit — clean close, a red gate that pauses the run, or a question left with the user:
 
-▶ haiku · /al-commit the complete worktree, work items <ids> → commit hashes and subjects, remaining worktree
+▶ haiku · /al-commit the complete worktree → commit hashes and subjects, remaining worktree
 
 Finish outcome first, back into `/simplify`'s run: the tidied files, the `Tidy:` line, and the green gate. Stop with the exact red reason when the gate does not pass.
