@@ -33,7 +33,7 @@ function Add-Tenant([string]$Url) {
 function Get-Bc([string]$Url) { Invoke-RestMethod (Add-Tenant $Url) -Headers $h -TimeoutSec 120 }
 ```
 
-The first authenticated request to a freshly started container can take about 40 seconds. Give it the long timeout and wait; a cancelled request resent leaves the service busy.
+The first authenticated request to a freshly started container took about 40 seconds on Business Central 29.0. Give it the long timeout and never cancel and resend.
 
 ## Companies (both targets)
 
@@ -70,7 +70,7 @@ Filters: `code eq '<code>'`, `version eq 3`, `status ne '<status>'`, `startswith
 
 ## Automation API — extensions (both targets)
 
-Group `api/microsoft/automation/v2.0`. `GET $grp/companies($companyId)/extensions` lists every installed and published app: `packageId` (the key the actions take), `id` (the app id), `displayName`, `publisher`, `versionMajor` … `versionRevision`, `isInstalled`, `publishedAs`. An app published with `al publishapp` reads `publishedAs` ` Dev`, with a leading space.
+Group `api/microsoft/automation/v2.0`. `GET $grp/companies($companyId)/extensions` lists every installed and published app: `packageId` (the key the actions take), `id` (the app id), `displayName`, `publisher`, `versionMajor` … `versionRevision`, `isInstalled`, `publishedAs`. On Business Central 29.0 an app published with `al publishapp` read `publishedAs` ` Dev`, with a leading space.
 
 Actions on `extensions($packageId)`, POST with no body, answer 204:
 
@@ -79,11 +79,12 @@ Actions on `extensions($packageId)`, POST with no body, answer 204:
 
 ## Developer endpoint — symbols of an installed app (both targets)
 
-For an app whose source is not at hand (a Microsoft test library outside BCApps, a partner app). Base: the SaaS base above; the container's dev endpoint is `http://<agent-container>:7049/<serverInstance>`.
+For an app whose source is not at hand (a Microsoft test library outside BCApps, a partner app). Base: the SaaS base above; the container's dev endpoint is `http://<agent-container>:7049/<serverInstance>`. This endpoint takes `tenant=` on both targets: `default` on a SaaS sandbox, `$tenant` on the container.
 
 ```powershell
 $dev = "<SaaS base, or the container's dev endpoint>"
-Invoke-WebRequest "$dev/dev/packages?publisher=<publisher>&appName=$([uri]::EscapeDataString('<app name>'))&versionText=<version>&tenant=<tenant>" -Headers $h -OutFile pkg.app
+$dt  = if ($tenant) { $tenant } else { 'default' }
+Invoke-WebRequest "$dev/dev/packages?publisher=<publisher>&appName=$([uri]::EscapeDataString('<app name>'))&versionText=<version>&tenant=$dt" -Headers $h -OutFile pkg.app
 $b = [IO.File]::ReadAllBytes('pkg.app'); [IO.File]::WriteAllBytes('pkg.zip', $b[40..($b.Length-1)]); Expand-Archive pkg.zip pkg -Force
 ```
 

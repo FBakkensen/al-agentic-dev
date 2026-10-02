@@ -14,7 +14,7 @@ Recipes per target live in [`ENDPOINTS.md`](ENDPOINTS.md); the debug app and its
 | | SaaS sandbox | Agent container |
 |---|---|---|
 | Credential | `az` token for `https://api.businesscentral.dynamics.com` | basic auth, `container.username` and `container.password` from `al-build.json` |
-| Base URL | `https://api.businesscentral.dynamics.com/v2.0/<tenant>/<environment>` | `http://<agent-container>:7048/BC` with `?tenant=<tenant>` on every request |
+| Base URL | `https://api.businesscentral.dynamics.com/v2.0/<tenant>/<environment>` | `http://<agent-container>:7048/BC` with `?tenant=<tenant>` on every API request (a SaaS URL carries the tenant in its path) |
 | Asked | `AskUserQuestion` for the tenant and environment, each investigation, written to no config or instruction file | nothing: `<agent-container>` is the name /al-build derives from the branch, and the tenant (`default`) comes from `al-build.json` |
 
 ## Steps

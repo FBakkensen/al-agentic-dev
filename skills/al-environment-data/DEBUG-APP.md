@@ -61,13 +61,17 @@ Three inline `al` CLI steps, run in the debug-app folder under `.output/`, typed
 | SaaS sandbox | `--tenant <tenant> --environmenttype Sandbox --environmentname <environment> --authentication AAD` |
 | Agent container | `--environmenttype OnPrem --server http://<agent-container> --serverinstance <serverInstance> --tenant <tenant> --authentication UserPassword` |
 
-For the container, `al` reads the credentials from `BC_SERVER_USERNAME` and `BC_SERVER_PASSWORD`. Set them from `al-build.json` in the same inline step as the `al` command, and remove them after; they are never an argument and never echoed:
+On the container, `al` reads the credentials from `BC_SERVER_USERNAME` and `BC_SERVER_PASSWORD`. Run the three steps in one block that sets them from `al-build.json` and removes them after; they are never an argument and never echoed:
 
 ```powershell
-$cfg = Get-Content al-build.json -Raw | ConvertFrom-Json
+$cfg    = Get-Content (Join-Path (git rev-parse --show-toplevel) 'al-build.json') -Raw | ConvertFrom-Json
+$target = '--environmenttype', 'OnPrem', '--server', 'http://<agent-container>', '--serverinstance', $cfg.serverInstance, '--tenant', $cfg.tenant, '--authentication', 'UserPassword'
 $env:BC_SERVER_USERNAME = $cfg.container.username; $env:BC_SERVER_PASSWORD = $cfg.container.password
-try { al publishapp debug.app --environmenttype OnPrem --server http://<agent-container> --serverinstance $cfg.serverInstance --tenant $cfg.tenant --authentication UserPassword }
-finally { Remove-Item Env:BC_SERVER_USERNAME, Env:BC_SERVER_PASSWORD }
+try {
+    al downloadsymbols --project . @target
+    al compile -project:. -packagecachepath:.alpackages -out:debug.app
+    al publishapp debug.app @target
+} finally { Remove-Item Env:BC_SERVER_USERNAME, Env:BC_SERVER_PASSWORD }
 ```
 
 Then read `<base>/api/<apiPublisher>/debug/v1.0/$metadata` and `<base>/api/<apiPublisher>/debug/v1.0/companies(<id>)/<parents>?$filter=<expr>` through `Get-Bc` ([`ENDPOINTS.md`](ENDPOINTS.md)).
@@ -80,18 +84,21 @@ The querying user needs read permission on the tables: the product's permission 
 
 The `al` CLI has no uninstall or unpublish command, and the Administration Center API uninstalls an app but cannot unpublish it. The automation API's `extensions` entity does both on both targets, with the credentials the skill already reads with: no Web Client, no second Entra app registration. A debug app left behind blocks the product's next publish.
 
-1. **Find it.** `GET $g/extensions`, with `$g = "$base/api/microsoft/automation/v2.0/companies($companyId)"`. Done when exactly one row matches the debug app's own `id` and `publisher`; its `packageId` (not the app id) is the key, and `isInstalled` and `publishedAs` show its state.
+1. **Find it.** `GET $g/extensions`. Done when exactly one row matches the debug app's own `id` and `publisher`; its `packageId` (not the app id) is the key, and `isInstalled` and `publishedAs` show its state.
 2. **Uninstall.** `POST $g/extensions($pkg)/Microsoft.NAV.uninstall`. Never `Microsoft.NAV.uninstallAndDeleteExtensionData`: deleting data also deletes dependents' data, and a wrong `packageId` would hit the product app.
 3. **Unpublish.** `POST $g/extensions($pkg)/Microsoft.NAV.unpublish`, which works only on an uninstalled app and needs Business Central 25.4 or later.
 4. **Check.** `GET $g/extensions` again. Done when no row carries the debug app's `id`.
 
 ```powershell
-$mine = @((Get-Bc "$g/extensions").value | Where-Object { $_.id -eq '<debug app id>' -and $_.publisher -eq '<debug publisher>' })
+$g    = "$base/api/microsoft/automation/v2.0/companies($companyId)"
+$mine = @((Get-Bc "$g/extensions").value | Where-Object { $_.id -eq '<debug app id>' -and $_.publisher.Trim() -eq '<debug publisher>' })
 if ($mine.Count -ne 1) { throw "expected one debug app, found $($mine.Count)" }
 $pkg = $mine[0].packageId
+$mine[0] | Select-Object packageId, isInstalled, @{ n = 'publishedAs'; e = { $_.publishedAs.Trim() } }
 foreach ($action in 'uninstall', 'unpublish') {
-    Invoke-RestMethod -Method Post -Uri (Add-Tenant "$g/extensions($pkg)/Microsoft.NAV.$action") -Headers $h | Out-Null
+    Invoke-RestMethod -Method Post -Uri (Add-Tenant "$g/extensions($pkg)/Microsoft.NAV.$action") -Headers $h -TimeoutSec 120 | Out-Null
 }
+(Get-Bc "$g/extensions").value | Where-Object { $_.id -eq '<debug app id>' }   # no output: the app is gone
 ```
 
-If the environment rejects either action for the debug app, because it runs older than 25.4 or refuses an app published as `Dev`, open the Extension Management page in the Web Client, choose the debug app, and run Uninstall, then Unpublish there (the page offers Unpublish for an app whose Published As is not Global). On a SaaS sandbox the user signs in to the Web Client; on the agent container the sign-in is the `al-build.json` account. Then repeat step 4.
+If the environment rejects either action for the debug app (an app published with `al publishapp` may be Dev scope, and the docs do not say whether the actions accept that scope), use Uninstall, then Unpublish on the Extension Management page of the Web Client, which the user signs in to on a SaaS sandbox. Then repeat step 4.
