@@ -962,7 +962,11 @@ function Get-EnabledAnalyzerPath {
 # Business Central Integration
 # =============================================================================
 
-$script:DefaultHostsFile = 'C:\Windows\System32\drivers\etc\hosts'
+function Get-DefaultHostsFile {
+    # A function, not a $script: variable: Ensure-BCAgentContainer runs new-agent-container.ps1
+    # inside this module, and from that script $script: resolves to the script's own scope (#139).
+    'C:\Windows\System32\drivers\etc\hosts'
+}
 
 function Update-HostsFile {
     # Shared open, retry, and rewrite for the hosts helpers. Drops the lines that
@@ -1060,7 +1064,7 @@ function Add-HostsEntry {
         [Parameter(Mandatory = $true)]
         [string]$IPAddress,
 
-        [string]$HostsFile = $script:DefaultHostsFile
+        [string]$HostsFile = (Get-DefaultHostsFile)
     )
 
     Update-HostsFile -HostsFile $HostsFile -Hostname $Hostname -IPAddress $IPAddress
@@ -1085,7 +1089,7 @@ function Remove-HostsEntry {
         [Parameter(Mandatory = $true)]
         [string]$Hostname,
 
-        [string]$HostsFile = $script:DefaultHostsFile
+        [string]$HostsFile = (Get-DefaultHostsFile)
     )
 
     Update-HostsFile -HostsFile $HostsFile -Hostname $Hostname
@@ -1134,7 +1138,7 @@ function Set-BCAgentContainerHost {
 
         [string]$IPAddress,
 
-        [string]$HostsFile = $script:DefaultHostsFile
+        [string]$HostsFile = (Get-DefaultHostsFile)
     )
 
     $testHost = Get-BCContainerTestHostname -ContainerName $ContainerName
@@ -1190,7 +1194,7 @@ function Sync-BCAgentContainerHost {
         [Parameter(Mandatory = $true)]
         [string]$ContainerName,
 
-        [string]$HostsFile = $script:DefaultHostsFile
+        [string]$HostsFile = (Get-DefaultHostsFile)
     )
 
     $containerIP = Get-BCAgentContainerIP -ContainerName $ContainerName
@@ -1285,7 +1289,7 @@ function Remove-BCAgentContainerHost {
         [Parameter(Mandatory = $true)]
         [string]$ContainerName,
 
-        [string]$HostsFile = $script:DefaultHostsFile
+        [string]$HostsFile = (Get-DefaultHostsFile)
     )
 
     $failures = @()
@@ -1790,7 +1794,7 @@ function Remove-OrphanedAgentContainers {
     param(
         [int]$StaleThresholdDays = 7,
 
-        [string]$HostsFile = $script:DefaultHostsFile
+        [string]$HostsFile = (Get-DefaultHostsFile)
     )
 
     $orphaned = @(Get-OrphanedAgentContainers -StaleThresholdDays $StaleThresholdDays)
