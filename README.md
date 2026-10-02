@@ -110,6 +110,10 @@ Both go in your own settings. No Consumer repository commits either.
 
 Run `/plugin` and confirm `al-agentic-dev`, `mattpocock-skills`, `bcquality`, and `al-language-server-go-windows` are enabled. Then run `/mcp` and confirm `microsoft-learn` and `ado` are connected.
 
+## Set up a repository
+
+In each Consumer repository, run `/mattpocock-skills:setup-matt-pocock-skills` once. It asks where your issues live, which triage labels to use, and where the domain docs sit, and writes them under `docs/agents/`. Its AL addition then adds the work-item structure the AL skills read, so `docs/agents/issue-tracker.md` holds your description of the tracker followed by that structure.
+
 ## Update
 
 Update each plugin you want to refresh:
