@@ -44,7 +44,7 @@ Every PR and every push to `main` runs the same five checks from `.github/workfl
 
 `Validate-Skills.ps1` and the Pester run need the `powershell-yaml` module (`Install-Module powershell-yaml -Scope CurrentUser`); the Pester run also needs Pester 5 or later. For a faster local loop, `./scripts/Invoke-Tests.ps1 -Mode Fast` skips the process-bound and live-fixture tests, but the PR must pass `-Mode Full`.
 
-Every PR also runs the required `claude-review` check, a Claude review of the change. It posts each blocking finding as a review thread and fails while one stands. `main` merges only when every check passes and every review thread is resolved: fix the finding, or reply on the thread with why it is wrong. GitHub withholds repository secrets from fork PRs, so a maintainer may have to run `claude-review` for yours.
+Every PR also runs the required `claude-review` check, a Claude review of the change. It posts each blocking finding as a review thread and fails while one stands. `main` merges only when the required checks (`validate`, `test`, and `claude-review`) pass and every review thread is resolved: fix the finding, or reply on the thread with why it is wrong. GitHub withholds repository secrets from fork PRs, so a maintainer may have to run `claude-review` for yours.
 
 ## Skill development
 
@@ -70,4 +70,4 @@ Run your case before you open the PR, three runs, passing at two of three. Evals
 
 ## PowerShell
 
-Test PowerShell scripts on PowerShell 7.2+. The PowerShell substrate ships only under `skills/al-build/` and `hooks/`; follow [`.claude/rules/powershell.md`](.claude/rules/powershell.md).
+The PowerShell substrate ships only under `skills/al-build/` and `hooks/`; follow [`.claude/rules/powershell.md`](.claude/rules/powershell.md).
