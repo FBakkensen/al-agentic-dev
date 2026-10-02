@@ -433,3 +433,85 @@ Describe 'Hosts defaults from a script that common.psm1 starts (#139)' {
         $reads | Should -BeNullOrEmpty
     }
 }
+
+# BC starts slowly: Docker must report 'starting' through a health start period, and the
+# wait must not count startup failures or wait forever (#141).
+Describe 'new-agent-container.ps1 health wait (#141)' {
+    BeforeAll {
+        $script:WaitAst = Get-ScriptAst
+    }
+
+    It 'starts the container with a health start period' {
+        $runArgs = $script:WaitAst.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+            $node.Left.Extent.Text -eq '$runArgs'
+        }, $true) | Select-Object -First 1
+        $runArgs | Should -Not -BeNullOrEmpty
+
+        $runArgs.Right.Extent.Text | Should -Match "'--health-start-period',\s*\`$healthStartPeriod"
+        $script:WaitAst.Extent.Text | Should -Match "\`$healthStartPeriod = '\d+m'"
+    }
+
+    It 'decides each poll with Get-BCContainerWaitDecision' {
+        $calls = @($script:WaitAst.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.CommandAst] -and
+            $node.GetCommandName() -eq 'Get-BCContainerWaitDecision'
+        }, $true))
+        $calls | Should -HaveCount 1
+    }
+}
+
+Describe 'Get-BCContainerWaitDecision' {
+    BeforeAll {
+        $script:WaitArgs = @{
+            UnhealthyThreshold = 3
+            Elapsed            = [TimeSpan]::FromMinutes(1)
+            Timeout            = [TimeSpan]::FromMinutes(20)
+        }
+    }
+
+    It 'is Ready once Docker reports healthy' {
+        $d = Get-BCContainerWaitDecision -Running 'true' -Health 'healthy' -UnhealthyCount 2 @script:WaitArgs
+        $d.Action | Should -Be 'Ready'
+    }
+
+    It 'is Exited when the container stopped running' {
+        $d = Get-BCContainerWaitDecision -Running 'false' -Health 'starting' -UnhealthyCount 0 @script:WaitArgs
+        $d.Action | Should -Be 'Exited'
+    }
+
+    It 'keeps waiting through any number of starting polls and resets the count' {
+        $count = 0
+        foreach ($poll in 1..200) {
+            $d = Get-BCContainerWaitDecision -Running 'true' -Health 'starting' -UnhealthyCount $count @script:WaitArgs
+            $d.Action | Should -Be 'Wait'
+            $count = $d.UnhealthyCount
+        }
+        $count | Should -Be 0
+    }
+
+    It 'counts consecutive unhealthy polls and is Unhealthy at the threshold' {
+        $first = Get-BCContainerWaitDecision -Running 'true' -Health 'unhealthy' -UnhealthyCount 0 @script:WaitArgs
+        $first.Action | Should -Be 'Wait'
+        $first.UnhealthyCount | Should -Be 1
+
+        $last = Get-BCContainerWaitDecision -Running 'true' -Health 'unhealthy' -UnhealthyCount 2 @script:WaitArgs
+        $last.Action | Should -Be 'Unhealthy'
+        $last.UnhealthyCount | Should -Be 3
+    }
+
+    It 'resets the unhealthy count when a poll is not unhealthy' {
+        $d = Get-BCContainerWaitDecision -Running 'true' -Health 'starting' -UnhealthyCount 2 @script:WaitArgs
+        $d.Action | Should -Be 'Wait'
+        $d.UnhealthyCount | Should -Be 0
+    }
+
+    It 'is TimedOut once the overall wait runs out' {
+        $timedOut = $script:WaitArgs.Clone()
+        $timedOut.Elapsed = [TimeSpan]::FromMinutes(20)
+        $d = Get-BCContainerWaitDecision -Running 'true' -Health 'starting' -UnhealthyCount 0 @timedOut
+        $d.Action | Should -Be 'TimedOut'
+    }
+}

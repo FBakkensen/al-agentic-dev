@@ -1155,6 +1155,58 @@ function Set-BCAgentContainerHost {
     return Update-BCPublicWebBaseUrl -ContainerName $ContainerName -NewHostname $testHost
 }
 
+function Get-BCContainerWaitDecision {
+    <#
+    .SYNOPSIS
+        Decide the next step while waiting for a new agent container to become healthy
+    .DESCRIPTION
+        One poll of new-agent-container.ps1's wait loop. Returns Action and UnhealthyCount:
+        Ready (healthy), Exited (no longer running), TimedOut (the overall wait ran out),
+        Unhealthy (UnhealthyThreshold consecutive 'unhealthy' polls), or Wait. Docker reports
+        'starting' through the container's --health-start-period, so only checks that fail
+        after the start period count toward the threshold (#141).
+    .PARAMETER Running
+        The container's .State.Running value ('true' while it runs)
+    .PARAMETER Health
+        The container's .State.Health.Status value
+    .PARAMETER UnhealthyCount
+        Consecutive 'unhealthy' polls before this one
+    .PARAMETER UnhealthyThreshold
+        Consecutive 'unhealthy' polls that fail the wait
+    .PARAMETER Elapsed
+        Time spent waiting so far
+    .PARAMETER Timeout
+        The overall wait limit
+    #>
+    param(
+        [string]$Running,
+        [string]$Health,
+        [int]$UnhealthyCount,
+        [Parameter(Mandatory = $true)]
+        [int]$UnhealthyThreshold,
+        [Parameter(Mandatory = $true)]
+        [TimeSpan]$Elapsed,
+        [Parameter(Mandatory = $true)]
+        [TimeSpan]$Timeout
+    )
+
+    if ($Running -ne 'true') {
+        return [pscustomobject]@{ Action = 'Exited'; UnhealthyCount = $UnhealthyCount }
+    }
+    if ($Health -eq 'healthy') {
+        return [pscustomobject]@{ Action = 'Ready'; UnhealthyCount = 0 }
+    }
+
+    $count = if ($Health -eq 'unhealthy') { $UnhealthyCount + 1 } else { 0 }
+    if ($count -ge $UnhealthyThreshold) {
+        return [pscustomobject]@{ Action = 'Unhealthy'; UnhealthyCount = $count }
+    }
+    if ($Elapsed -ge $Timeout) {
+        return [pscustomobject]@{ Action = 'TimedOut'; UnhealthyCount = $count }
+    }
+    return [pscustomobject]@{ Action = 'Wait'; UnhealthyCount = $count }
+}
+
 function Get-BCAgentContainerIP {
     <#
     .SYNOPSIS
@@ -2760,6 +2812,7 @@ Export-ModuleMember -Function @(
     'Remove-HostsEntry'
     'Get-BCContainerTestHostname'
     'Set-BCAgentContainerHost'
+    'Get-BCContainerWaitDecision'
     'Get-BCAgentContainerIP'
     'Sync-BCAgentContainerHost'
     'Write-RepublishResult'
