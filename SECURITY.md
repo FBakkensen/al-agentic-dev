@@ -4,11 +4,11 @@
 
 If you discover a security vulnerability in this project, please report it responsibly.
 
-**Do not open a public GitHub issue for security vulnerabilities.**
+**Do not put vulnerability details in a public GitHub issue.**
 
-Instead, please send an email or contact the maintainers directly through GitHub.
+Open a GitHub issue that says only that you have a security report, with no details about the vulnerability. The repository owner, [@FBakkensen](https://github.com/FBakkensen), will reply on the issue and arrange a private exchange on GitHub for the details.
 
-### What to Include
+### What to Share in the Private Exchange
 
 - Description of the vulnerability
 - Steps to reproduce
