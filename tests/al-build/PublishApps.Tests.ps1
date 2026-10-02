@@ -146,7 +146,6 @@ Describe 'publish-apps.ps1 call order' {
         while ($try -and $try -isnot [System.Management.Automation.Language.TryStatementAst]) { $try = $try.Parent }
         $try.Finally.Extent.Text | Should -Match "Stop-Step 'sync-host'"
     }
-
 }
 
 Describe 'Write-RepublishResult' {

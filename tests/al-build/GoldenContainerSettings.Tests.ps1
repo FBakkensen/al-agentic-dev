@@ -119,7 +119,6 @@ Describe 'Golden container without AL-Go settings' {
 
         Get-ScriptCommand -Name 'Import-BcContainerLicense' | Should -HaveCount 0
     }
-
 }
 
 Describe 'Gate publishing contract' {
