@@ -1,11 +1,13 @@
 ---
 name: al-simplify
-description: Use whenever /simplify runs against AL code, or when a cleanup of AL codeunits, tables, pages, or test codeunits must keep the Azure DevOps work item's Gherkin, AAA expected values, and Level 1 interface intact.
+description: Use whenever /simplify runs against AL code, or when working AL code is tidied or reshaped with its behavior, tests, and Level 1 interface kept unchanged.
 ---
 
 # al-simplify - tidy AL with its proof frozen
 
 In: `/simplify` running on AL code in a Consumer repository, the receipt `.output/receipts/<work-item-id>.md`, and the executable Original work item or its child PBI with the reviewed `Test specification`. `/simplify` owns the review and applies its own cleanups. This addition adds the AL freeze, the gate around every edit, and the receipt and work-item updates.
+
+When this addition loads and `/simplify` has not run, run `/simplify` with the Skill tool on the same scope, then follow this addition.
 
 ## Freeze
 
