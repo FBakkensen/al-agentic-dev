@@ -148,6 +148,16 @@ Describe 'Skill workflow contracts' {
         $toSpec.IndexOf('first consult `/mattpocock-skills:codebase-design`') | Should -BeLessThan $toSpec.IndexOf('/al-arc42 the Building Block Level 1 view')
     }
 
+    It 'drives Azure Repos pull requests to completion without GitHub or Copilot' {
+        $shepherd = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pr-shepherd' 'SKILL.md') -Raw
+
+        $shepherd | Should -Not -Match 'gh|GitHub|GraphQL'
+        $shepherd | Should -Not -Match 'Copilot'
+        $shepherd | Should -Match '/al-build gate on the tree about to be pushed'
+        $shepherd | Should -Match '`/code-review` and `/bcquality:al-code-review`'
+        $shepherd | Should -Match 'no Spec axis'
+    }
+
     It 'owns commits and pull requests in dedicated skills' {
         $commit = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-commit' 'SKILL.md') -Raw
         $pullRequest = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pull-request' 'SKILL.md') -Raw
