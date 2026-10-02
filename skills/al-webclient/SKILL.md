@@ -35,7 +35,7 @@ The Web Client is a single-page app inside an iframe. Every recipe is page JavaS
 
 1. **Confirm the frame.** The agent runs Where am I. Done when it returns `ready:true` and the top page's caption is the page expected; on a wrong top page, the agent closes it with its Back arrow or opens the right page.
 2. **Check for a blocker.** The agent runs Dialogs; done when a fresh run shows no unexpected dialog.
-   - A dialog this action triggers (My Settings, a confirmation) is worked inside. An error, a personalization message, or an unsaved-changes prompt blocks, and the agent resolves it first.
+   - The agent works inside a dialog this action triggers (My Settings, a confirmation). An error, a personalization message, or an unsaved-changes prompt blocks, and the agent resolves it first.
    - The agent discards only changes it made by mistake and asks the user about any other unsaved change.
    - A browser-native prompt (beforeunload) is invisible to the frame query: the agent handles it with the driver's dialog handling where the driver has it, and otherwise asks the user.
 3. **Locate by what the user sees.** The agent matches buttons, links, and menu items by trimmed `innerText`, `aria-label`, or `title`, visible and enabled.
@@ -61,4 +61,4 @@ The Web Client is a single-page app inside an iframe. Every recipe is page JavaS
 ## Close
 
 Done when the reply names the page the frame shows now and what changed, in the user's words for the controls: a page reached or an action confirmed by re-read, or at a stop, what blocked and what the user does next.
-Hand that back to the work that invoked the skill; invoked directly, it is the whole run.
+The agent hands that back to the work that invoked the skill; invoked directly, it is the whole run.

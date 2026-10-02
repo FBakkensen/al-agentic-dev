@@ -45,7 +45,7 @@ The agent runs this in the outer document, before the iframe exists. `<username>
 })()
 ```
 
-`stack` lists the open pages bottom to top, and `page` is the live one. The company shows up only in the role centre's caption, so see Company switch.
+`stack` lists the open pages bottom to top, and `page` is the live one. The company shows up only in the role centre's caption, which the agent reads as Company switch describes.
 
 ## Open a page with Tell Me
 
@@ -103,7 +103,7 @@ Call 4: Enter on the input opens the first result, and Enter on a focused row op
     if (!row) return 'row not listed';
     row.focus();
     if (frame.activeElement !== row) return 'row did not take focus';
-  } else if (frame.activeElement?.tagName !== 'INPUT') return 'Tell Me input is not the active element';
+  } else if (frame.activeElement?.tagName !== 'INPUT' || frame.activeElement.getAttribute('role') !== 'combobox') return 'Tell Me input is not the active element';
   for (const type of ['keydown', 'keypress', 'keyup'])
     frame.activeElement.dispatchEvent(new frame.defaultView.KeyboardEvent(type, { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
   return 'enter';
