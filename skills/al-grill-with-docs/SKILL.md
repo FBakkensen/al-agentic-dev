@@ -37,4 +37,4 @@ Every BC object, table, field, procedure, event, or enum name written into `CONT
 
 The pass ends when the Original work item holds the confirmed request first under `Problem Statement`, and the Trigger, both guarantees, and every BPMN path to its named outcome are settled with the user. At every exit:
 
-▶ haiku · /al-commit the complete worktree — CONTEXT.md, ADRs, and the rest — work items <ids> → commit hashes and subjects, remaining worktree
+▶ haiku · /al-commit the complete worktree — CONTEXT.md, ADRs, and the rest → commit hashes and subjects, remaining worktree

@@ -5,7 +5,7 @@ description: Use when repository changes need staging and splitting into the max
 
 # al-commit - commit the worktree
 
-In: the current repository worktree and any applicable Azure DevOps work-item IDs already established in the conversation. Out: every committable change recorded in the maximum number of independently valid commits.
+In: the current repository worktree. Out: every committable change recorded in the maximum number of independently valid commits.
 
 Before the first tool call, write one sentence. Update on an important finding or a changed direction; close with the outcome first, standing on its own.
 
@@ -30,12 +30,10 @@ Use:
 
 <Short reason or constraint, only when it is not obvious from the diff.>
 
-AB#<work-item-id>
-
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
-List only the work-item IDs served by that commit, one `AB#<id>` line each. Omit the body when the subject and diff are enough. Omit work-item lines when none applies; never guess an ID.
+Omit the body when the subject and diff are enough.
 
 ## Close
 
