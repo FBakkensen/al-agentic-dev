@@ -167,11 +167,7 @@ Exit codes of `validate-breaking-changes.ps1` are contract:
 | `4` | Prerequisite missing. |
 | `1` | Environment failure. |
 
-`provision.ps1` exits `4` in these cases:
-
-- a stale pin, naming the latest Release;
-- `releaseAppDir` and `baselinePackageCachePath` naming the same folder (checked first);
-- a `version` with no `baselinePackageCachePath`.
+`provision.ps1` stops with `4` first when `releaseAppDir` and `baselinePackageCachePath` name the same folder. After both symbol downloads it runs `download-baseline.ps1` and exits with its code; a stale pin (naming the latest Release) or a `version` with no `baselinePackageCachePath` stops with `4`.
 
 ### Republish
 
