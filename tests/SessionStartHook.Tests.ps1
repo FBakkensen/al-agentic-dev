@@ -55,6 +55,7 @@ Describe 'SessionStart hook' -Tag 'Process' {
         $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:code-review` | `/al-review` |') + '\r?$')
         $context | Should -Match ('(?m)^' + [regex]::Escape('| `/simplify` | `/al-simplify` |') + '\r?$')
         $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:improve-codebase-architecture` | `/al-improve-codebase-architecture` |') + '\r?$')
+        $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:diagnosing-bugs` | `/al-diagnosing-bugs` |') + '\r?$')
     }
 
     It 'fails when the delegation text is missing' {
