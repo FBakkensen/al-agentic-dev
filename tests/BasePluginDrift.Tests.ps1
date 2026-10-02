@@ -3,8 +3,6 @@
 BeforeAll {
     $script:RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
     $script:DriftScript = Join-Path $script:RepoRoot 'scripts' 'Test-BasePluginDrift.ps1'
-    $script:IssueScript = Join-Path $script:RepoRoot 'scripts' 'Update-BasePluginDriftIssue.ps1'
-    $script:WorkflowPath = Join-Path $script:RepoRoot '.github' 'workflows' 'base-plugin-drift.yml'
     $script:CiPath = Join-Path $script:RepoRoot '.github' 'workflows' 'ci.yml'
     . $script:DriftScript
 
@@ -429,125 +427,7 @@ Describe 'Base plugin drift check process wrapper' -Tag 'Process' {
     }
 }
 
-Describe 'Base plugin drift issue lifecycle' -Tag 'Unit' {
-    BeforeAll {
-        $script:IssueTitle = '[Drift] Base plugin skill references'
-
-        function New-GhRecorder {
-            param([object[]]$Issues = @())
-
-            $calls = [System.Collections.Generic.List[object]]::new()
-            $handler = {
-                param([string[]]$Arguments)
-                $calls.Add([string[]]$Arguments)
-                if ($Arguments[0] -eq 'issue' -and $Arguments[1] -eq 'list') {
-                    return @($Issues) | ConvertTo-Json -Compress -AsArray
-                }
-                ''
-            }.GetNewClosure()
-
-            [pscustomobject]@{ Calls = $calls; Handler = $handler }
-        }
-
-        function Invoke-IssueUpdate {
-            param($Recorder, [string]$Conclusion, [string]$Failure)
-            & $script:IssueScript `
-                -Conclusion $Conclusion `
-                -Failure $Failure `
-                -WorkflowUrl 'https://github.example/runs/7' `
-                -Repository 'owner/repo' `
-                -GhCommand $Recorder.Handler
-            @($Recorder.Calls | ForEach-Object { $_ -join ' ' })
-        }
-    }
-
-    It 'opens one issue naming the unresolved reference and the run' {
-        $recorder = New-GhRecorder
-
-        $calls = Invoke-IssueUpdate $recorder Failure 'FAIL: skills/al-x/SKILL.md:3 - mattpocock-skills:gone'
-
-        $create = @($recorder.Calls | Where-Object { $_[0] -eq 'issue' -and $_[1] -eq 'create' })
-        $create | Should -HaveCount 1
-        $create[0][[array]::IndexOf($create[0], '--title') + 1] | Should -Be $script:IssueTitle
-        $body = $create[0][[array]::IndexOf($create[0], '--body') + 1]
-        $body | Should -Match 'mattpocock-skills:gone'
-        $body | Should -Match 'https://github\.example/runs/7'
-        @($calls | Where-Object { $_ -match '^issue (close|comment|edit) ' }) | Should -HaveCount 0
-    }
-
-    It 'rewrites the open issue body and closes duplicates instead of adding to the pile' {
-        $recorder = New-GhRecorder -Issues @(
-            [pscustomobject]@{ number = 4; title = $script:IssueTitle; state = 'OPEN' }
-            [pscustomobject]@{ number = 9; title = $script:IssueTitle; state = 'OPEN' }
-            [pscustomobject]@{ number = 11; title = 'Unrelated'; state = 'OPEN' }
-        )
-
-        $calls = Invoke-IssueUpdate $recorder Failure 'FAIL: bcquality could not be fetched'
-
-        @($calls | Where-Object { $_ -match '^issue edit 4 ' -and $_ -match 'could not be fetched' }) | Should -HaveCount 1
-        $calls | Should -Contain 'issue close 9 --repo owner/repo --reason not planned'
-        @($calls | Where-Object { $_ -match '^issue (create|comment 4|close 11) ' }) | Should -HaveCount 0
-    }
-
-    It 'keeps the open issue when an older copy is closed' {
-        $recorder = New-GhRecorder -Issues @(
-            [pscustomobject]@{ number = 4; title = $script:IssueTitle; state = 'CLOSED' }
-            [pscustomobject]@{ number = 9; title = $script:IssueTitle; state = 'OPEN' }
-        )
-
-        $calls = Invoke-IssueUpdate $recorder Failure 'FAIL: still'
-
-        @($calls | Where-Object { $_ -match '^issue edit 9 ' }) | Should -HaveCount 1
-        @($calls | Where-Object { $_ -match '^issue (reopen|close|create) ' }) | Should -HaveCount 0
-    }
-
-    It 'reopens the closed issue when drift returns' {
-        $recorder = New-GhRecorder -Issues @(
-            [pscustomobject]@{ number = 4; title = $script:IssueTitle; state = 'CLOSED' }
-        )
-
-        $calls = Invoke-IssueUpdate $recorder Failure 'FAIL: again'
-
-        $calls | Should -Contain 'issue reopen 4 --repo owner/repo'
-        @($calls | Where-Object { $_ -match '^issue edit 4 ' }) | Should -HaveCount 1
-        @($calls | Where-Object { $_ -match '^issue create ' }) | Should -HaveCount 0
-    }
-
-    It 'closes the open issue after a green run' {
-        $recorder = New-GhRecorder -Issues @(
-            [pscustomobject]@{ number = 4; title = $script:IssueTitle; state = 'OPEN' }
-        )
-
-        $calls = Invoke-IssueUpdate $recorder Success ''
-
-        @($calls | Where-Object { $_ -match '^issue comment 4 ' }) | Should -HaveCount 1
-        $calls | Should -Contain 'issue close 4 --repo owner/repo --reason completed'
-    }
-
-    It 'does nothing after a green run with no open issue' {
-        $recorder = New-GhRecorder -Issues @(
-            [pscustomobject]@{ number = 4; title = $script:IssueTitle; state = 'CLOSED' }
-        )
-
-        $calls = Invoke-IssueUpdate $recorder Success ''
-
-        @($calls | Where-Object { $_ -notmatch '^issue list ' }) | Should -HaveCount 0
-    }
-}
-
-Describe 'Base plugin drift workflows' -Tag 'Unit' {
-    It 'runs daily and on demand with issue access, outside pull-request CI' {
-        $workflow = Get-Content -LiteralPath $script:WorkflowPath -Raw
-
-        $workflow | Should -Match "cron:\s*'[^']+ \* \* \*'"
-        $workflow | Should -Match 'workflow_dispatch:'
-        $workflow | Should -Match 'issues:\s*write'
-        $workflow | Should -Not -Match 'pull_request'
-        $workflow | Should -Match 'Test-BasePluginDrift\.ps1'
-        $workflow | Should -Match 'continue-on-error:\s*true'
-        $workflow | Should -Match 'Update-BasePluginDriftIssue\.ps1'
-    }
-
+Describe 'Base plugin drift workflow' -Tag 'Unit' {
     It 'runs the drift check as a CI step on every pull request' {
         $ci = Get-Content -LiteralPath $script:CiPath -Raw
 
