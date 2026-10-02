@@ -181,6 +181,8 @@ Describe 'Skill workflow contracts' {
         $walkthrough | Should -Match ([regex]::Escape('mcp__claude-in-chrome__computer'))
         $walkthrough | Should -Match ([regex]::Escape('screenshot --filename=<path>'))
         $walkthrough | Should -Match 'the comment says every step passed'
+        $walkthrough | Should -Match ([regex]::Escape('enable__mcp__remote-devices__Claude_Browser'))
+        $walkthrough | Should -Match 'takes its screenshot before the next action'
         $walkthrough | Should -Match '/al-azure-devops-attachments'
         $walkthrough | Should -Match 'mcp__plugin_al-agentic-dev_ado__wit_work_item_comment_write'
 

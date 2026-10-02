@@ -12,6 +12,7 @@ The lead changes no AL code and creates no report file; the screenshots under `.
 
 **Driver.** The lead takes the first available of the built-in browser (`mcp__Claude_Browser__*`, or `mcp__remote-devices__Claude_Browser__*` in a cloud session linked to the computer), Claude in Chrome (`mcp__claude-in-chrome__*`), then Playwright CLI.
 - A browser driver is available when its tools are present: loaded, or deferred and loaded with one `ToolSearch` call on its prefix. Playwright CLI is available when `playwright-cli` is on the PATH.
+- When the only tool present for a browser is its `enable__mcp__remote-devices__Claude_Browser` or `enable__mcp__claude-in-chrome` tool, the lead calls it first; the driver's tools appear once it has run.
 - With none available, the lead stops before the republish and tells the user which install is missing (`npm install -g @playwright/cli@latest` for Playwright CLI); the lead walks by no other means.
 - Done when the lead has named one driver, or has stopped.
 
@@ -38,7 +39,7 @@ Before a step relies on a page, action, field, enum value, dialog, or resulting 
 - each step as `▶ <business action>`, `📍 Observed: <exact visible result>`, and `✅ Expected: <matching Gherkin result>`, one per line;
 - each mismatch as `⛔ <scenario and step>`, `📍 Observed: <exact visible result>`, `⚡ Expected: <Gherkin result>`, and `🔧 Reproduce: <shortest path back to the mismatch>`, one per line.
 
-After a mismatch the lead still walks every scenario whose state the failure does not invalidate. Done when every confirmed scenario has a result or is named as invalidated by an earlier mismatch.
+At a mismatch the lead takes its screenshot before the next action, as Evidence describes, then still walks every scenario whose state the failure does not invalidate. Done when every confirmed scenario has a result or is named as invalidated by an earlier mismatch.
 
 ## Evidence
 
