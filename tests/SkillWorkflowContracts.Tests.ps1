@@ -159,7 +159,10 @@ Describe 'Skill workflow contracts' {
         $commit | Should -MatchExactly 'Co-Authored-By: Claude <noreply@anthropic\.com>'
 
         $pullRequest | Should -Match 'Use `<area>: <imperative change>` for the title'
-        $pullRequest | Should -Match 'List every work item represented by the branch'
+        $pullRequest | Should -Match 'mcp__plugin_al-agentic-dev_ado__repo_pull_request_write'
+        $pullRequest | Should -Match 'every work-item id on the branch'
+        $pullRequest | Should -Not -Match 'gh'
+        $pullRequest | Should -Not -Match 'AB#'
         $pullRequest | Should -Match 'this skill runs no tests'
         $pullRequest | Should -Match 'Push unpublished commits'
         $pullRequest | Should -Match 'never creates or keeps a draft'
