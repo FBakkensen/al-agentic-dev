@@ -210,6 +210,13 @@ Describe 'Skill workflow contracts' {
         }
     }
 
+    It 'recovers an agent container with Remove-BcContainer, never docker rm -f' {
+        $albuild = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-build' 'SKILL.md') -Raw
+
+        $albuild | Should -Match 'Remove-BcContainer -containerName <container>'
+        $albuild | Should -Not -Match 'docker\s+rm\s+-f'
+    }
+
     It 'owns commits and pull requests in dedicated skills' {
         $commit = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-commit' 'SKILL.md') -Raw
         $pullRequest = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pull-request' 'SKILL.md') -Raw
