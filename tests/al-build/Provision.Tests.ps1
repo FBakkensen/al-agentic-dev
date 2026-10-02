@@ -178,71 +178,130 @@ Describe 'provision.ps1 AL Runner provisioning' {
     }
 }
 
-Describe 'Install-ALRunner update-once contract' {
-    # -Update can already run a `dotnet tool update` (existing tool, forced
-    # refresh); the version-floor check must not run a second one in the same
-    # invocation. Mocks target the build-operations module scope so the real
-    # al-runner/dotnet on this machine are never invoked.
+Describe 'Install-ALRunner keeps al-runner at the newest release (#145)' {
+    # Mocks target the build-operations module scope, so the real al-runner, dotnet and
+    # NuGet on this machine are never reached. Mock state lives in $global: variables:
+    # a $script: read inside a module-scoped mock resolves to the wrong scope (#139).
     BeforeAll {
-        # Pester's Mock needs a real command to shadow. CI runners have no
-        # al-runner, so a PATH stub stands in; the mock below overrides it.
+        # Pester's Mock needs a real command to shadow; CI runners have no al-runner.
         $script:stubBin = Join-Path $TestDrive 'stub-bin'
         New-Item -ItemType Directory -Path $script:stubBin -Force | Out-Null
-        Set-Content -LiteralPath (Join-Path $script:stubBin 'al-runner.cmd') -Value "@echo off`r`necho al-runner v2.9.0.0"
+        Set-Content -LiteralPath (Join-Path $script:stubBin 'al-runner.cmd') -Value "@echo off`r`necho al-runner v0.0.0"
         $script:savedPath = $env:PATH
         $env:PATH = "$($script:stubBin)$([IO.Path]::PathSeparator)$env:PATH"
     }
     AfterAll {
         $env:PATH = $script:savedPath
+        Remove-Variable -Name AlrBanner, AlrLatest, AlrInstalled -Scope Global -ErrorAction SilentlyContinue
     }
     BeforeEach {
+        $global:AlrInstalled = $true
         Mock -ModuleName 'build-operations' Write-BuildHeader {}
         Mock -ModuleName 'build-operations' Write-BuildMessage {}
-        Mock -ModuleName 'build-operations' al-runner { 'al-runner v2.9.0.0' }
-        Mock -ModuleName 'build-operations' dotnet { $global:LASTEXITCODE = 0 }
+        Mock -ModuleName 'build-operations' Get-ALRunnerLatestRelease { [version]$global:AlrLatest }
+        Mock -ModuleName 'build-operations' al-runner { $global:AlrBanner }
+        Mock -ModuleName 'build-operations' Get-Command { if ($global:AlrInstalled) { [pscustomobject]@{ Source = 'al-runner.exe' } } } -ParameterFilter { $Name -eq 'al-runner' }
+        Mock -ModuleName 'build-operations' Get-Command { [pscustomobject]@{ Source = 'dotnet.exe' } } -ParameterFilter { $Name -eq 'dotnet' }
+        Mock -ModuleName 'build-operations' dotnet {
+            $global:LASTEXITCODE = 0
+            if ($args -contains 'install' -or $args -contains 'update') {
+                $global:AlrInstalled = $true
+                $i = [array]::IndexOf($args, '--version')
+                if ($i -ge 0) { $global:AlrBanner = "al-runner v$($args[$i + 1])" }
+            }
+        }
     }
 
-    It 'throws without a second dotnet tool update when -Update already ran one and the tool is still below floor' {
-        { Install-ALRunner -Update } | Should -Throw '*al-runner 2.9.0.0 found, 2.10 required*'
-        Should -Invoke -ModuleName 'build-operations' dotnet -Times 1 -Exactly
+    It 'with <Installed> installed and <Latest> released, updates: <Updates>' -ForEach @(
+        @{ Installed = '2.11.0'; Latest = '2.12.0'; Updates = $true }
+        @{ Installed = '2.12.1-local.0e50f688'; Latest = '2.12.0'; Updates = $false }
+        @{ Installed = '2.12.1-local.0e50f688'; Latest = '2.13.0'; Updates = $true }
+        @{ Installed = '2.13.0'; Latest = '2.13.0'; Updates = $false }
+    ) {
+        $global:AlrBanner = "al-runner v$Installed"
+        $global:AlrLatest = $Latest
+
+        { Install-ALRunner } | Should -Not -Throw
+
+        $expected = if ($Updates) { 1 } else { 0 }
+        Should -Invoke -ModuleName 'build-operations' dotnet -Times $expected -Exactly -ParameterFilter {
+            $args -contains 'update' -and $args -contains '--version' -and $args -contains $Latest
+        }
+        Should -Invoke -ModuleName 'build-operations' dotnet -Times $expected -Exactly
+    }
+
+    It 'installs the newest release when no al-runner is installed' {
+        $global:AlrInstalled = $false
+        $global:AlrBanner = 'al-runner v0.0.0'
+        $global:AlrLatest = '2.13.0'
+
+        { Install-ALRunner } | Should -Not -Throw
+
+        Should -Invoke -ModuleName 'build-operations' dotnet -Times 1 -Exactly -ParameterFilter {
+            $args -contains 'install' -and $args -contains '--version' -and $args -contains '2.13.0'
+        }
+    }
+
+    It 'keeps the installed tool with a warning when NuGet cannot be read' {
+        $global:AlrBanner = 'al-runner v2.11.0'
+        Mock -ModuleName 'build-operations' Get-ALRunnerLatestRelease { throw 'NuGet unreachable' }
+
+        { Install-ALRunner } | Should -Not -Throw
+
+        Should -Invoke -ModuleName 'build-operations' dotnet -Times 0 -Exactly
+        Should -Invoke -ModuleName 'build-operations' Write-BuildMessage -ParameterFilter {
+            $Type -eq 'Warning' -and $Message -like '*NuGet unreachable*'
+        }
+    }
+
+    It 'fails below the 2.10 floor when NuGet cannot be read' {
+        $global:AlrBanner = 'al-runner v2.9.0-local.abc1234'
+        Mock -ModuleName 'build-operations' Get-ALRunnerLatestRelease { throw 'NuGet unreachable' }
+
+        { Install-ALRunner } | Should -Throw '*al-runner 2.9.0 found, 2.10 required*'
+        Should -Invoke -ModuleName 'build-operations' dotnet -Times 0 -Exactly
+    }
+
+    It 'takes no -Update switch' {
+        (Get-Command Install-ALRunner).Parameters.Keys | Should -Not -Contain 'Update'
     }
 }
 
-Describe 'Install-ALRunner prerelease builds' {
-    # A -local./-beta. suffix marks a developer's own build: the implicit floor
-    # update must never replace it via `dotnet tool update --global`.
-    BeforeAll {
-        $script:stubBin = Join-Path $TestDrive 'stub-bin'
-        New-Item -ItemType Directory -Path $script:stubBin -Force | Out-Null
-        Set-Content -LiteralPath (Join-Path $script:stubBin 'al-runner.cmd') -Value "@echo off`r`necho al-runner v2.10.0-local.9017de3a"
-        $script:savedPath = $env:PATH
-        $env:PATH = "$($script:stubBin)$([IO.Path]::PathSeparator)$env:PATH"
+Describe 'Test-ALRunnerReleaseIsNewer' {
+    It 'is <Expected> for installed <Installed> against release <Release>' -ForEach @(
+        @{ Installed = '2.11.0'; Release = '2.12.0'; Expected = $true }
+        @{ Installed = '2.12.1-local.0e50f688'; Release = '2.12.0'; Expected = $false }
+        @{ Installed = '2.12.1-local.0e50f688'; Release = '2.12.1'; Expected = $true }
+        @{ Installed = '2.12.1-local.0e50f688'; Release = '2.13.0'; Expected = $true }
+        @{ Installed = '2.13.0'; Release = '2.13.0'; Expected = $false }
+        @{ Installed = '2.14.0'; Release = '2.13.0'; Expected = $false }
+    ) {
+        $installedVersion = ConvertTo-ALRunnerVersion -VersionLine "al-runner v$Installed" -Detailed
+        Test-ALRunnerReleaseIsNewer -Installed $installedVersion -Release $Release | Should -Be $Expected
     }
-    AfterAll {
-        $env:PATH = $script:savedPath
-    }
-    BeforeEach {
-        Mock -ModuleName 'build-operations' Write-BuildHeader {}
-        Mock -ModuleName 'build-operations' Write-BuildMessage {}
-        Mock -ModuleName 'build-operations' dotnet { $global:LASTEXITCODE = 0 }
+}
+
+Describe 'Get-ALRunnerLatestRelease' {
+    It 'returns the highest stable version, ignoring prereleases and listing order' {
+        Mock -ModuleName 'build-operations' Invoke-RestMethod { [pscustomobject]@{ versions = @('2.9.0', '2.12.0', '2.13.0-beta.1', '2.10.0', '2.11.0') } }
+        Get-ALRunnerLatestRelease | Should -Be ([version]'2.12.0')
     }
 
-    It 'accepts a local build at the floor without running dotnet' {
-        Mock -ModuleName 'build-operations' al-runner { 'al-runner v2.10.0-local.9017de3a' }
-        { Install-ALRunner } | Should -Not -Throw
-        Should -Invoke -ModuleName 'build-operations' dotnet -Times 0 -Exactly
+    It 'throws when NuGet lists no stable release' {
+        Mock -ModuleName 'build-operations' Invoke-RestMethod { [pscustomobject]@{ versions = @('3.0.0-beta.1') } }
+        { Get-ALRunnerLatestRelease } | Should -Throw '*no stable al-runner release*'
     }
+}
 
-    It 'throws on a local build below the floor instead of updating it' {
-        Mock -ModuleName 'build-operations' al-runner { 'al-runner v2.9.0-local.abc1234' }
-        { Install-ALRunner } | Should -Throw '*al-runner 2.9.0-local.abc1234 found, 2.10 required*'
-        Should -Invoke -ModuleName 'build-operations' dotnet -Times 0 -Exactly
-    }
-
-    It 'still updates a local build when -Update is explicit' {
-        Mock -ModuleName 'build-operations' al-runner { 'al-runner v2.10.0-local.9017de3a' }
-        { Install-ALRunner -Update } | Should -Not -Throw
-        Should -Invoke -ModuleName 'build-operations' dotnet -Times 1 -Exactly
+Describe 'provision.ps1 keeps al-runner current without a switch (#145)' {
+    It 'calls Install-ALRunner with no arguments' {
+        $calls = @($script:ProvisionAst.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.CommandAst] -and
+            $node.GetCommandName() -eq 'Install-ALRunner'
+        }, $true))
+        $calls | Should -HaveCount 1
+        $calls[0].CommandElements | Should -HaveCount 1
     }
 }
 
