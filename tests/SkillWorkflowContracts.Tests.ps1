@@ -151,9 +151,9 @@ Describe 'Skill workflow contracts' {
     It 'drives Azure Repos pull requests to completion without GitHub or Copilot' {
         $shepherd = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pr-shepherd' 'SKILL.md') -Raw
 
-        $shepherd | Should -Not -Match 'gh|GitHub|GraphQL'
+        $shepherd | Should -Not -CMatch '\bgh\b|GitHub|GraphQL'
         $shepherd | Should -Not -Match 'Copilot'
-        $shepherd | Should -Match 'only a green gate pushes'
+        $shepherd | Should -Match 'only a green gate pushes; red goes to class 3'
         $shepherd | Should -Match '/al-build gate on the tree about to be pushed'
         $shepherd | Should -Match 'built-in /code-review over that commit range'
         $shepherd | Should -Match '/bcquality:al-code-review over that commit range'
