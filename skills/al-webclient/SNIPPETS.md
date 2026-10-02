@@ -2,7 +2,7 @@
 
 Each snippet is one self-contained expression whose value is its last expression: an IIFE, async where it awaits, with no top-level `return` and no wrapper, so the same text runs in every driver's evaluate tool.
 - `playwright-cli eval` takes a function expression, so the agent passes `() => <snippet>`; `run-code` runs Playwright code, so there the snippet travels inside `page.evaluate`.
-- Placeholders in angle brackets sit inside string literals; the agent reads each value off the page or the user's request before substituting.
+- Angle-bracket placeholders stand for values the agent reads off the page or the user's request and substitutes before the run.
 - Every snippet but the sign-in opens with the readiness guard, which returns `{ready:false}` instead of throwing, and most then resolve the top page.
 
 ## Sign in to the agent container
@@ -130,7 +130,7 @@ Call 5: the agent runs Where am I after about two seconds. The new page is on to
 })()
 ```
 
-An action under a "More options" or "Actions" menu needs that menu clicked first, in its own call, then a fresh query.
+For an action under a "More options" or "Actions" menu, the agent clicks that menu first, in its own call, then queries again.
 
 ## Close the top page
 
@@ -269,8 +269,8 @@ The agent presses a dialog button with the caption snippet, its `scope` set to `
 
 ## What did that click open?
 
-The agent uses this for a control that opens something (a caret, a menu, a toggle) and left no visible result. It clicks the control again, so an action that changes data never goes through it.
-It returns `tops`, the outermost elements that appeared: a `.spa-lookup`, a context menu, a notification, a FactBox.
+The agent makes the click inside this snippet, in place of a plain click, when a control's result cannot be predicted (a menu, a toggle, an action that shows no dialog). It never replays a click whose outcome is unknown: after one, it only reads.
+The snippet returns `tops`, the outermost elements that appeared: a `.spa-lookup`, a context menu, a notification, a FactBox.
 
 ```js
 (async () => {

@@ -13,7 +13,7 @@ The Web Client is a single-page app inside an iframe. Every recipe is page JavaS
 
 1. **Reuse the open page.** The agent drives the tab the user already has on a Business Central page, in place.
    - On a SaaS sandbox with no Business Central page open, the agent stops and asks the user to open the sandbox and sign in, then continues.
-   - A SaaS sign-in or MFA page and a blank frame are each a stop for the user; the agent never retries a sign-in.
+   - A SaaS sign-in or MFA page and a blank frame are each a stop for the user; the agent never retries a SaaS sign-in.
 2. **Agent container** (the container /al-build names after the branch). The agent opens its `.test` Web Client URL once: the one /al-build prints, else `http://<agent-container>.test/<serverInstance>/?tenant=<tenant>` from `al-build.json`.
    - The agent signs in itself with the sign-in snippet, using `container.username` and `container.password` from `al-build.json`; the password goes into that one call only, never printed, summarized, or repeated in chat or in any later call.
    - `page=` and `company=` URLs are allowed. Done when Where am I returns `ready:true` and a page caption.
@@ -52,7 +52,7 @@ The Web Client is a single-page app inside an iframe. Every recipe is page JavaS
 - Only the selected row renders `input` elements; other rows are static cells, so the agent selects the row first (Rows).
 - A lookup-backed field takes its value from its lookup dropdown, a stack view and never a dialog (Lookup field).
 - Typing sets only the text: Business Central validates on leave, an unknown value raises an error dialog, and the record stays dirty. The agent discards a dirty record from its own typing mistake through the unsaved-changes dialog's Discard, redoes it through the lookup, and never saves around it.
-- A dialog query that finds nothing after a lookup click has not looked: What did that click open? clicks the control again and reads whatever appeared.
+- A caret, menu, or toggle opens a stack view or menu, not a dialog, so a dialog query after it has not looked: the agent reads a lookup with Lookup field call 2, and makes a click it cannot predict through What did that click open?.
 - Setting `.value` changes pixels, not state: inputs are React-controlled, so the agent assigns through the native `HTMLInputElement` value setter and raises `input`, as the snippets do.
 - Lists are virtualised: only the visible rows are in the DOM, so a scrape is never the complete list, and the agent reaches a record out of view through the page's search box, never by scrolling.
 - FactBox tiles do not exist in the DOM until the FactBox is toggled open: the agent toggles it, waits, then reads.
