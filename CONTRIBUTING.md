@@ -66,7 +66,7 @@ skills/skill-name/
 
 A new skill, or a change to a skill's `description` or its triggers, ships with its trigger eval case under `evals/<case>/`: a `prompt.md` and a `graders/` folder. An eval checks only that the skill fires; it never grades the skill's output. `tests/EvalSuite.Tests.ps1` fails when a skill has no case.
 
-Run your case before you open the PR, three runs, passing at two of three. Evals are billed runs, so CI never runs them and you run only the case you touched. [`CLAUDE.md`](CLAUDE.md) under "Trigger evals" has the commands, the Base plugin copies they load, and how to seed a repository for an AL addition. A change that touches no description or trigger needs no eval.
+Run your case before you open the PR, five runs on `sonnet`, passing at five of five. Evals are billed runs, so CI never runs them and you run only the case you touched. [`CLAUDE.md`](CLAUDE.md) under "Trigger evals" has the commands, the Base plugin copies they load, and how to seed a repository for an AL addition. A change that touches no description or trigger needs no eval.
 
 ## PowerShell
 

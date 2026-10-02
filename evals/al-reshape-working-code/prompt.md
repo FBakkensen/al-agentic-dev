@@ -3,6 +3,8 @@ description: Fires al-simplify together with its entry skill /simplify for a beh
 tags: [trigger]
 plugins: ["../..", "../../.base-plugins/mattpocock-skills", "../../.base-plugins/bcquality", "../../.base-plugins/al-language-server-go-windows"]
 allowed_tools: [Read, Glob, Grep, Skill]
+model: sonnet
+runs: 5
 ---
 
 Reshape this working code without changing its behavior.
