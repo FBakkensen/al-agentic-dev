@@ -161,6 +161,7 @@ Describe 'Skill workflow contracts' {
         $pullRequest | Should -Match 'Use `<area>: <imperative change>` for the title'
         $pullRequest | Should -Match 'mcp__plugin_al-agentic-dev_ado__repo_pull_request_write'
         $pullRequest | Should -Match 'every work-item id on the branch'
+        $pullRequest | Should -Match 'passed explicitly on every .update.'
         $pullRequest | Should -Not -Match 'gh'
         $pullRequest | Should -Not -Match 'AB#'
         $pullRequest | Should -Match 'this skill runs no tests'

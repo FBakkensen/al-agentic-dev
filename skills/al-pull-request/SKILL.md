@@ -31,7 +31,7 @@ Write the body in this order:
 - `<command or check>`: <exact result>
 ```
 
-`Changed` describes the combined landed delta without copying the work-item Description or Acceptance Criteria. Include `Proof` only for evidence already produced; this skill runs no tests. Add `Review notes` only for a real risk, migration concern, assumption, or design drift. The body carries no work-item id line; the links below carry it. Azure Repos caps the description at 4000 characters: merge `Changed` bullets, then shorten `Proof` lines, and never cut mid-line; a body that still passes the cap stops for the user.
+`Changed` describes the combined landed delta without copying the work-item Description or Acceptance Criteria. Include `Proof` only for evidence already produced; this skill runs no tests. Add `Review notes` only for a real risk, migration concern, assumption, or design drift. The body carries no work-item id line; the links below carry it. Azure Repos caps the description at 4000 characters: merge `Changed` bullets, then shorten `Proof` lines, and never cut mid-line; a body that still exceeds the cap stops for the user.
 
 ## Publish
 
