@@ -1,41 +1,58 @@
 # al-agentic-dev
 
-A Claude Code plugin for Microsoft Dynamics 365 Business Central development: a scripted compile-publish-test gate with containers, coverage, and breaking-change validation underneath, plus the two platform-knowledge clones and a visual steering surface.
+A Claude Code plugin for Microsoft Dynamics 365 Business Central development. It is an add-on to three Base plugins: [mattpocock-skills](https://github.com/mattpocock/skills) for engineering discipline, `bcquality` for Microsoft's AL quality knowledge, and the AL language server. You type the mattpocock-skills steps you already know; in an AL repository, each step also loads its AL addition, which adds only the AL and Azure DevOps specifics. The plugin also ships a scripted compile-publish-test gate with containers, coverage, and breaking-change validation.
 
-One install brings the Agent Skills, a `SessionStart` hook, and two bundled MCP servers: Microsoft Learn supplies current Microsoft documentation, and the Azure DevOps server reads and writes work items. It also installs three Base plugins it builds on: `mattpocock-skills`, `bcquality`, and the AL language server.
-
-The set is mid-rebuild: the earlier 26-skill pipeline is retired, and each new plugin version ports proven skills back in as real work needs them. Git history is the donor archive.
+One install brings the Agent Skills, a `SessionStart` hook, and two bundled MCP servers: `microsoft-learn` supplies current Microsoft documentation, and `ado` reads and writes Azure DevOps work items.
 
 ## Requirements
 
-- Windows, PowerShell 7.2+
+- Windows and PowerShell 7.2+
 - Claude Code
+- VS Code with the AL extension `ms-dynamics-smb.al` — the AL language server exits without it
 - Docker Desktop, BcContainerHelper, and the .NET SDK — `/al-build`'s scripted toolchain
-- Company Portal-managed Node.js 22+ at `C:\Program Files\nodejs` — `npx` for the al-build gate, the Azure DevOps MCP server, and the al-event-model BPMN renderer
-- Azure CLI, signed in with `az login` — the bundled Azure DevOps MCP server authenticates through it
-- The VS Code AL extension (`ms-dynamics-smb.al`) — the AL language server exits without it
-- In each consumer repo: `al-build.json` at the root for the build gate
+- Node.js — `npx` starts the `ado` MCP server
+- The Azure CLI, signed in with `az login` — the `ado` MCP server authenticates through it
+- Playwright CLI: `npm install -g @playwright/cli@latest` — one of the drivers `/al-walkthrough` uses for the Web Client
+- In each Consumer repository, `al-build.json` at the root, for the build gate
 
-`/al-event-model` installs its locked BPMN renderer on first use.
+A claude.ai login is optional. It is used only for the Artifact fallback.
 
 ## Install
 
-Add this repository as a marketplace, then install the plugin:
+1. Run `claude plugin list`. If it shows `bcquality@bcquality`, run `claude plugin uninstall bcquality@bcquality` first. This plugin brings its own `bcquality`, and two copies shadow each other's skills.
+2. Remove any personal user-level `ado` MCP entry, so skills see only the plugin's `ado` tools.
+3. Add the marketplace, then install the plugin:
 
-```
-/plugin marketplace add fbakkensen/al-agentic-dev
-/plugin install al-agentic-dev@al-agentic-dev
-```
+   ```
+   /plugin marketplace add fbakkensen/al-agentic-dev
+   /plugin install al-agentic-dev@al-agentic-dev
+   ```
 
 The marketplace also lists the `bcquality` and `al-language-server-go-windows` Base plugins, so adding it is the only setup. `mattpocock-skills` installs from `claude-plugins-official`, which Claude Code registers on the first interactive session.
 
-The bundled `ado` MCP server connects to the Azure DevOps org `naveksaas` with your Azure CLI sign-in, so installing the plugin needs no further setup.
+The `ado` MCP server is fixed to the Azure DevOps organization `naveksaas` and connects with your Azure CLI sign-in. No prompt appears.
 
-### Verify
+### Opt-ins
 
-Run `/plugin` and confirm `al-agentic-dev` is installed at version `0.9.0`, then run `/mcp` and confirm `microsoft-learn` and `ado` are connected.
+Both go in your own settings. No Consumer repository commits either.
 
-### Update
+- The `al-agentic-dev:AL` output style — Speak BC vocabulary in every word, and a diagram for questions that turn on structure. In `~/.claude/settings.json`:
+
+  ```json
+  { "outputStyle": "al-agentic-dev:AL" }
+  ```
+
+- Plain-text questions instead of `AskUserQuestion` prompts. In `~/.claude/settings.json` or `.claude/settings.local.json`:
+
+  ```json
+  { "permissions": { "deny": ["AskUserQuestion"] } }
+  ```
+
+## Verify
+
+Run `/plugin` and confirm `al-agentic-dev` is installed at version `0.9.0`. Then run `/mcp` and confirm `microsoft-learn` and `ado` are connected.
+
+## Update
 
 Third-party marketplaces do not auto-update by default, so update the installed plugin yourself: select **Update now** in its `/plugin` Installed details, or run
 
@@ -45,48 +62,55 @@ claude plugin update al-agentic-dev@al-agentic-dev
 
 Restart Claude Code to apply the update. `/plugin marketplace update al-agentic-dev` refreshes only the marketplace listing.
 
-### Azure DevOps
+Fixes to `bcquality` and the AL language server arrive only when their upstream bumps `version`, never through commits alone.
 
-The Original User Story and its direct Vertical-slice children live in Azure DevOps. `Original` names the User Story that carries the request in this workflow; structural parents above it remain unchanged. The plugin bundles the `ado` MCP server and authenticates it through the Azure CLI. Without it, planning skills show the exact work-item fields needed and stop; they do not create a competing file-based design record.
+## Known limits
 
-### Web Client walkthrough
+- The `ado` MCP server is Windows-only.
+- The AL language server installs inert on other systems.
 
-`/al-walkthrough` requires the consumer repository to declare a Business Central workspace MCP for each worktree. The MCP must expose its `bc_*` Web Client tools in the Claude Code session and use the worktree's branch and `al-build.json` configuration.
+## The flow
 
-Keep that MCP declaration in the consumer repository. A user-level MCP starts without one authoritative AL repository, while concurrent worktrees can require different containers and configuration.
+Type the entry skill; in an AL repository, the `SessionStart` hook has Claude Code load its AL addition beside it.
 
-After changing branches or `al-build.json`, restart the workspace MCP or Claude Code session before running `/al-walkthrough`.
+| Entry skill | AL addition |
+|---|---|
+| `/mattpocock-skills:setup-matt-pocock-skills` | `/al-setup-matt-pocock-skills` |
+| `/mattpocock-skills:grill-with-docs` | `/al-grill-with-docs` |
+| `/mattpocock-skills:to-spec` | `/al-to-spec` |
+| `/mattpocock-skills:to-tickets` | `/al-to-tickets` |
+| `/mattpocock-skills:implement` | `/al-implement` |
+| `/mattpocock-skills:tdd` | `/al-tdd` |
+| `/mattpocock-skills:codebase-design` | `/al-codebase-design` |
+| `/mattpocock-skills:code-review` | `/al-review` |
+| `/simplify` | `/al-simplify` |
+| `/mattpocock-skills:improve-codebase-architecture` | `/al-improve-codebase-architecture` |
+| `/mattpocock-skills:diagnosing-bugs` | `/al-diagnosing-bugs` |
 
-Verify from a consumer repo whose branch container is up: `bc_list_companies` answers with the container's companies.
-
-## The skills
+Our own entry skills:
 
 | Skill | What it does |
 |---|---|
-| [`/al-build`](docs/al-build.md) | Compiles, publishes, runs the tests — plus provisioning, breaking-change validation, and the container lifecycle. |
-| `/al-clone-bcapps` | Clones Microsoft's W1 source at the matching BC version into `.bcapps/` for reading and searching platform code. |
-| `/al-clone-bcquality` | Clones Microsoft's BCQuality knowledge base into `.bcquality/` and builds its knowledge index. |
-| `/al-arc42` | Applies the official arc42 v9.0-EN subset to Level 1, Runtime View, and proven Level 2 content, then writes a local architecture review HTML and Azure DevOps artifacts. |
-| `/al-lookup` | Answers one platform question with a source pointer — Microsoft Learn, the BCApps clone, or the BCQuality index — and grows the repo's precedent map. |
-| `/al-azure-devops-attachments` | Uploads local files through Azure CLI credentials, attaches them to an Azure DevOps work item, and guides the user through authentication when needed. |
-| `/al-commit` | Stages the full worktree and creates the maximum number of independently valid commits with scoped Azure DevOps links. |
-| `/al-pull-request` | Pushes the current branch and creates or updates its ready pull request with the landed change and available proof. |
-| `/al-grill-adr` | Anchors one Original Azure DevOps User Story, preserves the original request verbatim, settles domain vocabulary, and records hard-to-reverse business rules. |
-| `/al-event-model` | Adds the process contract and exhaustive BPMN map, renders it through locked bpmn-js tooling into local review HTML, and supplies Runtime scenarios to `/al-arc42`. |
-| `/al-design` | Defines deep-module boundaries and the arc42 Building Block Level 1 with black box contracts; implementation details stay open. |
-| `/al-scope` | Keeps an only slice on the Original User Story; with several, creates one direct child User Story per proven outcome. |
-| `/al-test-design` | Writes the reviewed AAA test specification after any Gherkin behavior in Acceptance Criteria. |
-| `/al-implement` | Implements reviewed AAA cases through the Level 1 interface, runs `/al-build`, writes the receipt, and adds Level 2 only when code proves stable internals. |
-| `/al-refactor` | Tidies green code or performs a named deepening reshape with behavior frozen, updating Level 2 only when internal structure changes. |
-| `/al-review` | Returns a read-only verdict against Gherkin, AAA proof, Level 1 ownership, and the accuracy or justified absence of Level 2. |
-| `/al-walkthrough` | Walks Gherkin scenarios in the running Web Client through the consumer repository's workspace MCP, preserving observed versus expected evidence. |
-| `/al-next` | Reconciles landed code, Original User Story design, direct child slices, receipts, and the next executable item without creating implementation work items. |
-| `/al-pr-shepherd` | Drives one open PR to merge — CI watched, review findings fixed, main merged in with intent-preserving conflict resolution — merging only on your explicit go. |
+| [`/al-build`](docs/al-build.md) | Compiles, publishes, and runs the tests, plus provisioning, breaking-change validation, and the container lifecycle. |
+| `/al-arc42` | Writes settled architecture in the official arc42 v9.0-EN format, with a local architecture review HTML. |
+| `/al-walkthrough` | Walks an implemented work item's Gherkin scenarios in the Business Central Web Client of the branch's agent container. |
+| `/al-next` | Reconciles landed code with the Original work item's design, its child slices, and their receipts, and names the next executable item. |
+| `/al-pr-shepherd` | Drives one open Azure Repos pull request to merge: your comments worked, main merged in, policies read. Completing it is your go. |
+| `/al-lookup` | Answers one platform question with a source pointer and grows the repository's precedent map. |
+| `/al-webclient` | Loads the Web Client driving rules before any browser call that touches Business Central. |
+| `/al-environment-data` | Reads data, GET only, from a SaaS sandbox's API or the branch's agent container. |
+
+The skills above call these; `/al-commit` and `/al-pull-request` also run when you ask for a commit or a pull request:
+
+| Skill | What it does |
+|---|---|
+| `/al-commit` | Stages the full worktree and creates the maximum number of independently valid commits. |
+| `/al-pull-request` | Creates or updates the ready pull request for the current branch. |
+| `/al-clone-bcapps` | Clones Microsoft's BCApps source at the matching BC version for reading platform code. |
+| `/al-azure-devops-attachments` | Uploads local files and attaches them to an Azure DevOps work item. |
 
 Third-party formats and runtime dependencies are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-**Coming from v1:** the Page Scripting recording and replay machinery is gone — `/al-walkthrough` through the consumer repository's workspace MCP replaces the slice-end verification walk.
+## Contributing
 
-## The hook
-
-`hooks/hooks.json` ships one `SessionStart` hook. It runs `hooks/Write-SessionStart.ps1`, which injects the delegation rules from `hooks/session-start.md` in every session: a `▶ <model> · <brief> → <return>` line in a skill is one `Agent` call on `opus`, `sonnet`, or `haiku`, and every child runs in the lead's worktree and branch.
+Read [CONTRIBUTING.md](CONTRIBUTING.md).
