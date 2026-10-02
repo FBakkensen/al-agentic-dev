@@ -17,29 +17,17 @@ BeforeAll {
             [string]$Name,
             [string]$SkillBody = 'Run the gate.',
             [string]$SessionStart = '# Delegation',
-            [string[]]$Dependencies = @('mattpocock-skills@claude-plugins-official', 'bcquality', 'al-language-server-go-windows'),
-            [string]$BcQualityUrl = 'https://github.com/microsoft/BCQuality.git',
-            [string]$BcQualitySha,
-            [string]$LspUrl = 'https://github.com/SShadowS/al-lsp-for-agents.git'
+            [string[]]$Dependencies = @('mattpocock-skills@claude-plugins-official', 'bcquality@bcquality', 'al-language-server-go-windows@al-lsp-for-agents')
         )
 
         $root = Join-Path $TestDrive $Name 'repo'
         Set-FixtureFile (Join-Path $root '.claude-plugin' 'plugin.json') (
             [ordered]@{ name = 'al-agentic-dev'; version = '0.9.0'; dependencies = $Dependencies } | ConvertTo-Json
         )
-        $bcqSource = [ordered]@{ source = 'url'; url = $BcQualityUrl }
-        if ($BcQualitySha) { $bcqSource.sha = $BcQualitySha }
         Set-FixtureFile (Join-Path $root '.claude-plugin' 'marketplace.json') ([ordered]@{
                 name    = 'al-agentic-dev'
                 owner   = @{ name = 'Owner' }
-                plugins = @(
-                    [ordered]@{ name = 'al-agentic-dev'; source = './' }
-                    [ordered]@{ name = 'bcquality'; source = $bcqSource; skills = @('./skills/') }
-                    [ordered]@{
-                        name   = 'al-language-server-go-windows'
-                        source = [ordered]@{ source = 'git-subdir'; url = $LspUrl; path = 'al-language-server-go-windows' }
-                    }
-                )
+                plugins = @([ordered]@{ name = 'al-agentic-dev'; source = './' })
             } | ConvertTo-Json -Depth 5)
         Set-FixtureFile (Join-Path $root 'skills' 'al-build' 'SKILL.md') @"
 ---
@@ -333,8 +321,7 @@ Describe 'Eval copies process wrapper' -Tag 'Process' {
         $LASTEXITCODE | Should -Be 0
         Join-Path $good '.base-plugins' 'bcquality' 'skills' 'al-code-review' 'SKILL.md' | Should -Exist
 
-        $missing = ([uri](Join-Path $TestDrive 'upstream-missing' 'bcquality')).AbsoluteUri
-        $bad = New-ConsumerRepo -Name 'eval-process-bad' -Dependencies @('bcquality') -BcQualityUrl $missing
+        $bad = New-ConsumerRepo -Name 'eval-process-bad' -Dependencies @('bcquality@no-such-marketplace')
         $output = & pwsh -NoProfile -Command "& '$script:EvalScript' -RepoRoot '$bad'; exit `$LASTEXITCODE" 2>&1
         $LASTEXITCODE | Should -Be 1
         ($output -join "`n") | Should -Match "dependency 'bcquality' could not be fetched"
@@ -342,7 +329,7 @@ Describe 'Eval copies process wrapper' -Tag 'Process' {
     }
 }
 
-Describe 'Base plugin fetch from git sources' -Tag 'Process' {
+Describe 'Base plugin fetch through marketplaces' -Tag 'Process' {
     BeforeAll {
         function New-GitRepo {
             param([string]$Path, [hashtable]$Files)
@@ -350,33 +337,33 @@ Describe 'Base plugin fetch from git sources' -Tag 'Process' {
             $null = & git -C $Path init --quiet 2>&1
             $null = & git -C $Path add -A 2>&1
             $null = & git -C $Path -c user.name=fixture -c user.email=fixture@example.com commit --quiet -m fixture 2>&1
-            [pscustomobject]@{
-                Url = ([uri](Resolve-Path -LiteralPath $Path).Path).AbsoluteUri
-                Sha = (& git -C $Path rev-parse HEAD)
-            }
+            ([uri](Resolve-Path -LiteralPath $Path).Path).AbsoluteUri
         }
 
+        # The shapes the real upstream marketplaces use: a plugin at the repository root, and
+        # one in a folder beside its sibling variant.
         $upstream = Join-Path $TestDrive 'upstream'
-        $script:BcQualityRepo = New-GitRepo (Join-Path $upstream 'bcquality') @{
-            'skills/al-code-review/SKILL.md' = "---`nname: al-code-review`n---"
-            'skills/entry.md'                = '# Entry'
+        $script:SavedMarketplaces = $script:KnownMarketplaces.Clone()
+        $script:KnownMarketplaces['bcquality'] = New-GitRepo (Join-Path $upstream 'bcquality') @{
+            '.claude-plugin/marketplace.json' = '{ "name": "bcquality", "plugins": [ { "name": "bcquality", "source": "./", "skills": [ "./skills/" ] } ] }'
+            'skills/al-code-review/SKILL.md'  = "---`nname: al-code-review`n---"
+            'skills/entry.md'                 = '# Entry'
         }
-        $script:LspRepo = New-GitRepo (Join-Path $upstream 'lsp') @{
+        $script:KnownMarketplaces['al-lsp-for-agents'] = New-GitRepo (Join-Path $upstream 'lsp') @{
+            '.claude-plugin/marketplace.json'                          = '{ "name": "al-lsp-for-agents", "plugins": [ { "name": "al-language-server-go-windows", "source": "./al-language-server-go-windows" }, { "name": "al-language-server-go-linux", "source": "./al-language-server-go-linux" } ] }'
             'al-language-server-go-windows/.claude-plugin/plugin.json' = '{ "name": "al-language-server-go-windows" }'
             'al-language-server-go-linux/bin/server'                   = 'linux'
         }
-
-        function New-GitConsumerRepo {
-            param([string]$Name, [string]$SkillBody = 'Run the gate.', [string]$BcQualityUrl = $script:BcQualityRepo.Url)
-            New-ConsumerRepo -Name $Name -SkillBody $SkillBody `
-                -Dependencies @('bcquality', 'al-language-server-go-windows') `
-                -BcQualityUrl $BcQualityUrl -BcQualitySha $script:BcQualityRepo.Sha `
-                -LspUrl $script:LspRepo.Url
-        }
+        $script:BothDependencies = @('bcquality@bcquality', 'al-language-server-go-windows@al-lsp-for-agents')
     }
 
-    It 'fetches a url source at its sha and a git-subdir source into the destination' {
-        $root = New-GitConsumerRepo -Name 'fetch-dest'
+    AfterAll {
+        $script:KnownMarketplaces.Clear()
+        foreach ($key in $script:SavedMarketplaces.Keys) { $script:KnownMarketplaces[$key] = $script:SavedMarketplaces[$key] }
+    }
+
+    It 'fetches a plugin at the marketplace root and one in a marketplace folder into the destination' {
+        $root = New-ConsumerRepo -Name 'fetch-dest' -Dependencies $script:BothDependencies
         $destination = Join-Path $TestDrive 'fetch-dest' 'plugins'
 
         $exitCode = Invoke-BasePluginResolution -RepoRoot $root -Destination $destination 6> $null
@@ -388,8 +375,8 @@ Describe 'Base plugin fetch from git sources' -Tag 'Process' {
     }
 
     It 'resolves references against fetched plugins' {
-        $good = New-GitConsumerRepo -Name 'fetch-good' -SkillBody 'Run /bcquality:al-code-review.'
-        $bad = New-GitConsumerRepo -Name 'fetch-bad' -SkillBody 'Run /bcquality:entry.'
+        $good = New-ConsumerRepo -Name 'fetch-good' -Dependencies $script:BothDependencies -SkillBody 'Run /bcquality:al-code-review.'
+        $bad = New-ConsumerRepo -Name 'fetch-bad' -Dependencies $script:BothDependencies -SkillBody 'Run /bcquality:entry.'
 
         $result = Invoke-DriftCheck -Root $good
         $result.ExitCode | Should -Be 0 -Because $result.Text
@@ -398,14 +385,31 @@ Describe 'Base plugin fetch from git sources' -Tag 'Process' {
         $result.Text | Should -Match 'bcquality:entry'
     }
 
-    It 'fails and names a dependency that cannot be fetched' {
-        $missing = ([uri](Join-Path $TestDrive 'upstream' 'missing')).AbsoluteUri
-        $root = New-GitConsumerRepo -Name 'fetch-missing' -BcQualityUrl $missing
+    It 'fails and names a dependency whose marketplace does not list it' {
+        $root = New-ConsumerRepo -Name 'fetch-unlisted' -Dependencies @('no-such-plugin@bcquality')
 
         $result = Invoke-DriftCheck -Root $root
 
         $result.ExitCode | Should -Be 1
-        $result.Text | Should -Match "dependency 'bcquality' could not be resolved"
+        $result.Text | Should -Match "dependency 'no-such-plugin' could not be resolved.*does not list"
+    }
+
+    It 'fails and names a dependency whose marketplace is unknown' {
+        $root = New-ConsumerRepo -Name 'fetch-unknown' -Dependencies @('bcquality@no-such-marketplace')
+
+        $result = Invoke-DriftCheck -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "dependency 'bcquality' could not be resolved.*no known repository"
+    }
+
+    It 'fails and names a dependency written without a marketplace' {
+        $root = New-ConsumerRepo -Name 'fetch-bare' -Dependencies @('bcquality')
+
+        $result = Invoke-DriftCheck -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match "dependency 'bcquality' could not be resolved.*names no marketplace"
     }
 }
 

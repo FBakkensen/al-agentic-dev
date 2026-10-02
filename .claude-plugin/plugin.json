@@ -20,7 +20,7 @@
   },
   "dependencies": [
     "mattpocock-skills@claude-plugins-official",
-    "bcquality",
-    "al-language-server-go-windows"
+    "bcquality@bcquality",
+    "al-language-server-go-windows@al-lsp-for-agents"
   ]
 }

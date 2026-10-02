@@ -14,8 +14,10 @@
     least one plugins entry; every entry names a plugin and carries a source; a local
     string source resolves to <source>/.claude-plugin/plugin.json with a matching name).
     A re-listed object source is a url or git-subdir source with an https url, and a
-    git-subdir source carries a path; neither is path-checked locally. Both manifests must
-    exist. Returns exit code 1 if anything fails.
+    git-subdir source carries a path; neither is path-checked locally. Every plugin.json
+    dependency written 'name@marketplace' names our own marketplace or one listed in
+    allowCrossMarketplaceDependenciesOn, and a bare dependency names a plugin our marketplace
+    lists; Claude Code does not install any other. Both manifests must exist. Returns exit code 1 if anything fails.
 .EXAMPLE
     pwsh scripts/Validate-Json.ps1
 #>
@@ -136,6 +138,21 @@ if ($marketplace) {
             }
         } catch {
             # The syntax sweep or the plugin.json check reports the parse failure.
+        }
+    }
+}
+
+if ($plugin -and $marketplace) {
+    $allowed = @($marketplace.PSObject.Properties['allowCrossMarketplaceDependenciesOn']?.Value | Where-Object { $_ })
+    $listed = @($marketplace.plugins | Where-Object { $null -ne $_ } | ForEach-Object name)
+    foreach ($dependency in @($plugin.PSObject.Properties['dependencies']?.Value | Where-Object { $_ })) {
+        $name, $dependencyMarketplace = ($dependency -is [string] ? $dependency : [string]$dependency.name) -split '@', 2
+        if (-not $dependencyMarketplace) {
+            if ($name -cnotin $listed) {
+                $script:jsonValidationErrors += "FAIL: .claude-plugin/plugin.json - dependency '$name' names no marketplace and marketplace.json does not list it"
+            }
+        } elseif ($dependencyMarketplace -cne $marketplace.name -and $dependencyMarketplace -cnotin $allowed) {
+            $script:jsonValidationErrors += "FAIL: .claude-plugin/plugin.json - dependency '$name@$dependencyMarketplace' needs '$dependencyMarketplace' in marketplace.json allowCrossMarketplaceDependenciesOn; Claude Code does not install it otherwise"
         }
     }
 }

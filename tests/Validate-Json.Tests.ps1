@@ -233,6 +233,40 @@ Describe 'Validate-Json plugin surface' -Tag 'Unit' {
         $result.ExitCode | Should -Be 0 -Because $result.Text
     }
 
+    It 'fails a dependency whose marketplace Claude Code would not install it from' -TestCases @(
+        @{ Case = 'not-allowed'; Dependencies = '"bcquality@bcquality"'; Allowed = '["claude-plugins-official"]'; Expected = "dependency 'bcquality@bcquality' needs 'bcquality' in marketplace.json allowCrossMarketplaceDependenciesOn" }
+        @{ Case = 'no-allowlist'; Dependencies = '"bcquality@bcquality"'; Allowed = $null; Expected = "dependency 'bcquality@bcquality' needs 'bcquality'" }
+        @{ Case = 'bare-unlisted'; Dependencies = '"bcquality"'; Allowed = '["bcquality"]'; Expected = "dependency 'bcquality' names no marketplace and marketplace.json does not list it" }
+    ) {
+        param($Case, $Dependencies, $Allowed, $Expected)
+
+        $manifest = "{ `"name`": `"al-agentic-dev`", `"version`": `"1.0.0`", `"mcpServers`": { `"svc`": { `"type`": `"stdio`" } }, `"dependencies`": [ $Dependencies ] }"
+        $allowList = if ($Allowed) { "`"allowCrossMarketplaceDependenciesOn`": $Allowed," }
+        $marketplace = "{ `"name`": `"al-agentic-dev`", $allowList `"plugins`": [ { `"name`": `"al-agentic-dev`", `"source`": `"./`" } ] }"
+        $root = New-PluginRepo -Root (Join-Path $TestDrive "dependency-$Case") -Overrides @{
+            '.claude-plugin/plugin.json'      = $manifest
+            '.claude-plugin/marketplace.json' = $marketplace
+        }
+
+        $result = Invoke-JsonValidator -Root $root
+
+        $result.ExitCode | Should -Be 1
+        $result.Text | Should -Match ([regex]::Escape($Expected))
+    }
+
+    It 'passes dependencies from our marketplace, an allowed marketplace, or a plugin it lists' {
+        $manifest = '{ "name": "al-agentic-dev", "version": "1.0.0", "mcpServers": { "svc": { "type": "stdio" } }, "dependencies": [ "mattpocock-skills@claude-plugins-official", "bcquality@bcquality", "helper", "al-agentic-dev@al-agentic-dev" ] }'
+        $marketplace = '{ "name": "al-agentic-dev", "allowCrossMarketplaceDependenciesOn": ["claude-plugins-official", "bcquality"], "plugins": [ { "name": "al-agentic-dev", "source": "./" }, { "name": "helper", "source": { "source": "url", "url": "https://github.com/example/helper.git" } } ] }'
+        $root = New-PluginRepo -Root (Join-Path $TestDrive 'dependency-ok') -Overrides @{
+            '.claude-plugin/plugin.json'      = $manifest
+            '.claude-plugin/marketplace.json' = $marketplace
+        }
+
+        $result = Invoke-JsonValidator -Root $root
+
+        $result.ExitCode | Should -Be 0 -Because $result.Text
+    }
+
     It 'fails malformed JSON anywhere in the tree' {
         $root = New-PluginRepo -Root (Join-Path $TestDrive 'malformed')
         Set-Content -LiteralPath (Join-Path $root 'skills' 'broken.json') -Value '{ "unclosed": ' -Encoding utf8

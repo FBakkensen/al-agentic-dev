@@ -4,14 +4,15 @@
     Fails when a <ns>:<skill> reference names a Base plugin skill that upstream no longer ships.
 .DESCRIPTION
     Reads the dependencies of .claude-plugin/plugin.json. A dependency's namespace is its
-    plugin name, the part before '@'. mattpocock-skills@claude-plugins-official resolves at
-    the commit claude-plugins-official's marketplace lists; a bare dependency resolves at its
-    upstream default branch through its url or git-subdir entry in our marketplace.
+    plugin name, the part before '@'. Each dependency resolves through the marketplace named
+    after the '@': mattpocock-skills@claude-plugins-official at the commit that marketplace
+    lists, bcquality@bcquality and al-language-server-go-windows@al-lsp-for-agents at their
+    marketplace repository's default branch, at the folder the marketplace entry names.
     Every <ns>:<skill> token, with or without a leading '/', outside fenced blocks in
     skills/**/*.md and hooks/session-start.md is resolved when its namespace is a declared
-    dependency in any casing. Upstream skills are found through our marketplace entry's
-    skills paths, else the upstream manifest's skills paths, else skills/*/SKILL.md, taking
-    the first step that yields a skill; only folders holding a SKILL.md count. Every
+    dependency in any casing. Upstream skills are found through the upstream manifest's
+    skills paths, else skills/*/SKILL.md, taking the first step that yields a skill; only
+    folders holding a SKILL.md count. Every
     unresolved reference and every dependency that cannot be fetched is reported; any of
     them exits 1.
     -PluginRoot maps namespaces to local directories ('ns=path') and skips every fetch.
@@ -32,6 +33,8 @@ param(
 
 $script:KnownMarketplaces = @{
     'claude-plugins-official' = 'https://github.com/anthropics/claude-plugins-official.git'
+    'bcquality'               = 'https://github.com/microsoft/BCQuality.git'
+    'al-lsp-for-agents'       = 'https://github.com/SShadowS/al-lsp-for-agents.git'
 }
 
 . (Join-Path $PSScriptRoot 'SkillReference.ps1')
@@ -145,7 +148,12 @@ function Get-MarketplacePluginSource {
         throw "marketplace '$Marketplace' does not list '$Name'."
     }
     $source = $entry['source']
-    if ($source -is [System.Collections.IDictionary]) { [pscustomobject]$source } else { $source }
+    if ($source -is [System.Collections.IDictionary]) {
+        return [pscustomobject]$source
+    }
+    # A path inside the marketplace repository, such as './' or './al-language-server-go-windows'.
+    $path = ([string]$source) -replace '^\s*\.?[/\\]*|[/\\]+\s*$', ''
+    [pscustomobject]@{ source = $(if ($path) { 'git-subdir' } else { 'url' }); url = $url; path = $path }
 }
 
 function Resolve-BasePlugin {
@@ -156,8 +164,7 @@ function Resolve-BasePlugin {
         Without -PluginRoot, fetches every dependency into <Destination>/<name>. With
         -PluginRoot (namespace -> directory), fetches nothing and uses each directory in
         place, or copies it into <Destination>/<name> when -Destination is given. Emits one
-        object per declared dependency: Name, Root, SkillPaths (our marketplace entry's
-        skills paths), and Error when it cannot be resolved.
+        object per declared dependency: Name, Root, and Error when it cannot be resolved.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$RepoRoot,
@@ -166,17 +173,14 @@ function Resolve-BasePlugin {
     )
 
     $manifest = Get-Content -LiteralPath (Join-Path $RepoRoot '.claude-plugin' 'plugin.json') -Raw | ConvertFrom-Json
-    $marketplace = Get-Content -LiteralPath (Join-Path $RepoRoot '.claude-plugin' 'marketplace.json') -Raw | ConvertFrom-Json
 
     foreach ($dependency in @($manifest.PSObject.Properties['dependencies']?.Value)) {
         if (-not $dependency) { continue }
         $name, $dependencyMarketplace = ($dependency -is [string] ? $dependency : [string]$dependency.name) -split '@', 2
-        $entry = @($marketplace.plugins | Where-Object name -EQ $name) | Select-Object -First 1
         $result = [pscustomobject]@{
-            Name       = $name
-            Root       = $null
-            SkillPaths = @(if ($entry) { $entry.PSObject.Properties['skills']?.Value | Where-Object { $_ } })
-            Error      = $null
+            Name  = $name
+            Root  = $null
+            Error = $null
         }
         try {
             $target = if ($Destination) { Join-Path $Destination $name }
@@ -197,13 +201,10 @@ function Resolve-BasePlugin {
                 if (-not $target) {
                     throw 'a destination directory is required to fetch.'
                 }
-                $source = if ($dependencyMarketplace) {
-                    Get-MarketplacePluginSource -Marketplace $dependencyMarketplace -Name $name
-                } elseif ($entry) {
-                    $entry.source
-                } else {
-                    throw 'our marketplace does not list it.'
+                if (-not $dependencyMarketplace) {
+                    throw "the dependency names no marketplace; write it as '$name@<marketplace>'."
                 }
+                $source = Get-MarketplacePluginSource -Marketplace $dependencyMarketplace -Name $name
                 Save-PluginSource -Source $source -Target $target
                 $result.Root = $target
             }
@@ -220,8 +221,7 @@ function Get-BasePluginSkill {
         Names the skills a resolved Base plugin ships.
     #>
     param(
-        [Parameter(Mandatory = $true)][string]$Root,
-        [string[]]$SkillPaths
+        [Parameter(Mandatory = $true)][string]$Root
     )
 
     $manifestPath = Join-Path $Root '.claude-plugin' 'plugin.json'
@@ -229,7 +229,7 @@ function Get-BasePluginSkill {
         (Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json).PSObject.Properties['skills']?.Value
     }
 
-    foreach ($paths in @($SkillPaths), @($manifestPaths), @('./skills/')) {
+    foreach ($paths in @($manifestPaths), @('./skills/')) {
         $skills = @(
             foreach ($relative in @($paths | Where-Object { $_ })) {
                 $folder = Join-Path $Root $relative
@@ -267,7 +267,7 @@ function Invoke-BasePluginDriftCheck {
                 $failures.Add("FAIL: dependency '$($plugin.Name)' could not be resolved: $($plugin.Error)")
                 continue
             }
-            $skills = @(Get-BasePluginSkill -Root $plugin.Root -SkillPaths $plugin.SkillPaths)
+            $skills = @(Get-BasePluginSkill -Root $plugin.Root)
             $skillsByNamespace[$plugin.Name] = [System.Collections.Generic.HashSet[string]]::new([string[]]$skills)
             Write-Host "OK: $($plugin.Name) ships $($skills.Count) skill(s)" -ForegroundColor Green
         }
