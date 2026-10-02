@@ -25,10 +25,10 @@ The rules this repository enforces live in two places. Read them before you chan
 1. Branch from an up-to-date `main` (`git checkout -b feature/my-feature`).
 2. Make your change. Keep it to one purpose per PR.
 3. Run the CI checks below and the evals your change calls for.
-4. Commit with a clear message that says why. Prefix it with its type (`fix:`, `feat:`, `docs:`, `chore:`) and reference the issue number when there is one.
+4. Commit with a clear message that says why. Recent history prefixes the type (`fix:`, `docs:`, `chore:`); follow it, and reference the issue number when there is one.
 5. Open the PR. The template asks which skills it touches and what you tested. Name the issue it closes with `Fixes #<n>`.
 
-The plugin version lives only in `.claude-plugin/plugin.json`. Do not change it in a PR.
+The plugin version lives only in `.claude-plugin/plugin.json`; leave it to the maintainer unless the issue says otherwise.
 
 ## CI checks
 
@@ -44,7 +44,7 @@ Every PR and every push to `main` runs the same five checks from `.github/workfl
 
 `Validate-Skills.ps1` and the Pester run need the `powershell-yaml` module (`Install-Module powershell-yaml -Scope CurrentUser`); the Pester run also needs Pester 5 or later. For a faster local loop, `./scripts/Invoke-Tests.ps1 -Mode Fast` skips the process-bound and live-fixture tests, but the PR must pass `-Mode Full`.
 
-Every PR also runs the required `claude-review` check, a Claude review of the change. It posts each blocking finding as a review thread and fails while one stands. `main` merges only when every check passes and every review thread is resolved: fix the finding, or reply on the thread with why it is wrong.
+Every PR also runs the required `claude-review` check, a Claude review of the change. It posts each blocking finding as a review thread and fails while one stands. `main` merges only when every check passes and every review thread is resolved: fix the finding, or reply on the thread with why it is wrong. GitHub withholds repository secrets from fork PRs, so a maintainer may have to run `claude-review` for yours.
 
 ## Skill development
 
