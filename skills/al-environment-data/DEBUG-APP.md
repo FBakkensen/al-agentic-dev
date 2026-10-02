@@ -103,4 +103,4 @@ foreach ($action in 'uninstall', 'unpublish') {
 (Get-Bc $target "$automation/extensions").value | Where-Object { $_.id -eq '<debug app id>' }   # no output: the app is gone
 ```
 
-If the environment rejects either action for the debug app (an app published with `al publishapp` may be Dev scope, and the docs do not say whether the actions accept that scope), the user opens the environment's Extension Management page in the Web Client, runs Uninstall, then Unpublish on the debug app, and says when done; then repeat step 4. On a SaaS sandbox the user signs in to the Web Client.
+If the environment rejects either action for the debug app (an app published with `al publishapp` may be Dev scope, and the docs do not say whether the actions accept that scope), the user opens the environment's Extension Management page in the Web Client (/al-webclient has the Web Client rules), runs Uninstall, then Unpublish on the debug app, and says when done; then repeat step 4. On a SaaS sandbox the user signs in to the Web Client.
