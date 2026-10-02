@@ -8,7 +8,7 @@ Git history is the donor archive — a retired skill returns from a commit, neve
 
 ```
 .claude-plugin/plugin.json      the plugin manifest: name, description, version (set only here), the bundled MCP servers — microsoft-learn, and ado on the org naveksaas, none with a tools allowlist — the Base plugin dependencies
-.claude-plugin/marketplace.json the marketplace: this plugin at ./ plus the re-listed Base plugins bcquality and al-language-server-go-windows
+.claude-plugin/marketplace.json the marketplace: this plugin at ./ only, and the allowlist of the Base plugins' marketplaces (claude-plugins-official, bcquality, al-lsp-for-agents)
 hooks/hooks.json                the SessionStart hook: runs hooks/Write-SessionStart.ps1
 hooks/session-start.md          the delegation rules and the entry → addition table the hook injects in every session
 output-styles/AL.md             the opt-in al-agentic-dev:AL style: Speak BC and the interview-diagram rule; frontmatter name AL, keep-coding-instructions true, no force-for-plugin
