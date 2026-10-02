@@ -19,7 +19,7 @@ A green gate with per-runner totals, or a red named by its failing tests and the
 | `container-test.ps1` | The container surface for `containerTestApps`: compile the main app and every container test app through the analyzer gate, publish, sync barrier, run. Reached only when a task explicitly requires the container surface; no ordinary gate or verify step calls it. |
 | `test.ps1 -Coverage` | The same AL Runner run with main-app line coverage, through AL Runner's `--coverage`. |
 
-There is no separate inner-loop mode and no gate that publishes to the branch container: `test.ps1` is the one gate, and the container is reached only through `container-test.ps1`.
+`test.ps1` is the one gate; the container is reached only through `container-test.ps1`.
 
 Green is zero errors and zero warnings. `test.ps1` exits 0 on warnings by default; set `WARN_AS_ERROR=true` to bind that bar to the exit code.
 
