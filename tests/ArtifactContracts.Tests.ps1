@@ -80,7 +80,7 @@ Describe 'Architecture artifact contracts' {
 
         foreach ($caller in @('al-to-spec', 'al-implement', 'al-improve-codebase-architecture', 'al-simplify')) {
             $content = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $caller 'SKILL.md') -Raw
-            $content | Should -Match 'attach .* as the tracker text says'
+            $content | Should -Match '▶ haiku · attach .* as the tracker text in docs/agents/issue-tracker\.md says → verified attachment URLs'
             $content | Should -Not -Match 'manual attach'
         }
     }

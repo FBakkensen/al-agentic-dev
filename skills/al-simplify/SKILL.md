@@ -5,7 +5,7 @@ description: Use whenever /simplify runs against AL code, or when working AL cod
 
 # al-simplify - tidy AL with its proof frozen
 
-In: `/simplify` running on AL code in a Consumer repository, the receipt `.output/receipts/<work-item-id>.md`, and the executable Original work item or its child work item with the reviewed `Test specification`. `/simplify` owns the review and applies its own cleanups. This addition adds the AL freeze, the gate around every edit, and the receipt and work-item updates.
+In: `/simplify` running on AL code in a Consumer repository, the receipt `.output/receipts/<work-item-id>.md`, and the executable Original work item or its child work item with the reviewed `Test specification`. Every work-item read, write, and comment follows the tracker text that the `## Agent skills` block's issue tracker line points to. `/simplify` owns the review and applies its own cleanups. This addition adds the AL freeze, the gate around every edit, and the receipt and work-item updates.
 
 When this addition loads and `/simplify` has not run, run `/simplify` with the Skill tool on the same scope, then follow this addition.
 
@@ -31,13 +31,13 @@ Every new or materially reshaped proof born green takes mutation as its red. Inj
 
 ## Map the landed shape
 
-Regenerate the receipt's connected-object change map from the final diff. When stable internal building blocks changed, update or remove the Original work item's arc42 Level 2 so it matches the landed code; routine tidy changes the receipt map only.
+Regenerate the receipt's connected-object change map from the final diff. When stable internal building blocks changed, update or remove the Original work item's arc42 Level 2 in the spec field the tracker text names so it matches the landed code; routine tidy changes the receipt map only.
 
 ▶ haiku · /al-arc42 the refreshed views from the final change map → HTML path, SVG and PNG paths, alt text, publishable fragments
 
-▶ haiku · attach the refreshed PNG and SVG to the executable item as the tracker text says → verified attachment URLs
+▶ haiku · attach the refreshed PNG and SVG to the executable item as the tracker text in docs/agents/issue-tracker.md says → verified attachment URLs
 
-Use the verified URLs in the receipt and the Original work item's Level 2 fragment. Missing MCP attachment support is not a blocker; an authentication stop stays with the tracker text's attach procedure until the sign-in works.
+Use the verified URLs in the receipt and the Original work item's Level 2 fragment.
 
 ## Close
 

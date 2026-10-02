@@ -27,7 +27,7 @@ Read the spec from the spec field the tracker text names, under `/mattpocock-ski
 
 Show the HTML through `show_widget`, falling back to an Artifact, then the local file, and continue after the user's check:
 
-▶ haiku · attach the Level 2 PNG and SVG to the Original work item as the tracker text says → verified attachment URLs
+▶ haiku · attach the Level 2 PNG and SVG to the Original work item as the tracker text in docs/agents/issue-tracker.md says → verified attachment URLs
 
 Place the fragment and each verified PNG under `Implementation Decisions` in the spec field, as the tracker text says. A Level 2 change records current structure; the executable-item map records what changed.
 

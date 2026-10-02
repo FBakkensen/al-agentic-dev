@@ -249,12 +249,12 @@ Describe 'Skill workflow contracts' {
 Describe 'Tracker neutrality' {
     BeforeAll {
         $script:TrackerTokens = [ordered]@{
-            'ado MCP tool'  = 'mcp__plugin_al-agentic-dev_ado__'
-            'az boards'     = 'az boards'
-            'az repos'      = 'az repos'
-            'Azure DevOps'  = 'Azure DevOps'
-            'Azure Repos'   = 'Azure Repos'
-            'Repro Steps'   = 'Repro Steps'
+            'ado MCP tool'  = [regex]::Escape('mcp__plugin_al-agentic-dev_ado__')
+            'az boards'     = [regex]::Escape('az boards')
+            'az repos'      = [regex]::Escape('az repos')
+            'Azure DevOps'  = [regex]::Escape('Azure DevOps')
+            'Azure Repos'   = [regex]::Escape('Azure Repos')
+            'Repro Steps'   = [regex]::Escape('Repro Steps')
             'PBI'           = '\bPBIs?\b'
         }
         $script:TrackerHomes = @(
@@ -294,6 +294,8 @@ Describe 'Tracker neutrality' {
 
         $tracker | Should -Match '/al-azure-devops-attachments'
         $tracker | Should -Match 'verified attachment URLs'
+        $tracker | Should -Match 'Description on a Feature or PBI, and in Repro Steps on a Bug'
+        $tracker | Should -Match 'mcp__plugin_al-agentic-dev_ado__wit_work_item_comment_write'
         $tracker | Should -Match 'Azure Repos pull request links natively'
         $tracker | Should -Match 'link_to_pull_request'
         $tracker | Should -Match 'GitHub pull request carries `AB#<id>`'
@@ -306,7 +308,7 @@ Describe 'Tracker neutrality' {
 
         @($lines).Count | Should -BeGreaterThan 0
         foreach ($line in $lines) {
-            $line.Line | Should -Match 'as the tracker text says → verified attachment URLs$'
+            $line.Line | Should -Match 'as the tracker text in docs/agents/issue-tracker\.md says → verified attachment URLs$'
         }
     }
 }

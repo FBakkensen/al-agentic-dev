@@ -37,7 +37,7 @@ Triage roles are Azure DevOps tags: each role string in `docs/agents/triage-labe
 
 ### Attach files
 
-Local files reach a work item through `/al-azure-devops-attachments`, which returns each verified attachment name and URL. A skill that embeds an image places each verified PNG URL in the field Fields names as a Markdown image carrying its alt text, under the section the skill names. A refreshed file keeps its filename, and its new URL replaces the old reference. A comment names an attached file by its verified URL.
+Local files reach a work item through `/al-azure-devops-attachments`, which returns verified attachment URLs, each with its name. Missing MCP attachment support is not a blocker; Azure CLI authentication trouble stays with that skill until the sign-in works. A skill that embeds an image places each verified PNG URL in the field the Fields section names as a Markdown image carrying its alt text, under the section the skill names. A refreshed file keeps its filename, and its new URL replaces the old reference. A comment names an attached file by its verified URL.
 
 ### How a pull request names a work item
 

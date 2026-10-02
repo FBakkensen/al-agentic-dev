@@ -82,7 +82,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 ## Work-item attachments
 
-35. A skill that publishes local files to a work item delegates the line `▶ haiku · attach <the files> to <the item> as the tracker text says → verified attachment URLs`; the Azure DevOps tracker text sends it to `/al-azure-devops-attachments`. Flag manual-upload fallback and any claim that missing MCP attachment support blocks publication. Azure CLI authentication failure pauses for the exact user-run login command; after authentication, `/al-azure-devops-attachments` resumes upload and verifies every `AttachedFile` relation.
+35. A skill that publishes local files to a work item delegates the line `▶ haiku · attach <the files> to <the item> as the tracker text in docs/agents/issue-tracker.md says → verified attachment URLs`; the Azure DevOps tracker text sends it to `/al-azure-devops-attachments`. A skill whose lead attaches in-line, as `al-walkthrough` does, says so in prose and defers to the tracker text. Flag manual-upload fallback and any claim that missing MCP attachment support blocks publication. Azure CLI authentication failure pauses for the exact user-run login command; after authentication, `/al-azure-devops-attachments` resumes upload and verifies every `AttachedFile` relation.
 
 ## Work items
 

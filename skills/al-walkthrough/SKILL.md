@@ -5,7 +5,7 @@ description: Use when an implemented Original work item or child work item has G
 
 # al-walkthrough - walk the slice
 
-In: an implemented executable Original work item, or a child work item and its Original; the environment is the branch's agent container. This pass observes Gherkin behavior; AAA unit and integration cases remain build evidence.
+In: an implemented executable Original work item, or a child work item and its Original; the environment is the branch's agent container. Every work-item read, write, and comment follows the tracker text that the `## Agent skills` block's issue tracker line points to. This pass observes Gherkin behavior; AAA unit and integration cases remain build evidence.
 The lead changes no AL code and creates no report file; the screenshots under `.output/` are evidence, not a report.
 
 ## Before the walk
@@ -16,7 +16,7 @@ The lead changes no AL code and creates no report file; the screenshots under `.
 - With none available, the lead stops before the republish and tells the user which install is missing (`npm install -g @playwright/cli@latest` for Playwright CLI); the lead walks by no other means.
 - Done when the lead has named one driver, or has stopped.
 
-**Confirm.** The lead reads the `Behavior` Gherkin in the executable work item's Acceptance Criteria and the Original's BPMN outcomes.
+**Confirm.** The lead reads, as the tracker text says, the `Behavior` Gherkin in the executable work item's Acceptance Criteria and the Original's BPMN outcomes.
 The lead then asks the user with `AskUserQuestion` to confirm the scenario order, company, required records, and expected visible results.
 Done when the user has confirmed; the client opens only after.
 

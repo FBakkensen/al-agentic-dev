@@ -25,7 +25,7 @@ At the entry's user check:
 
 Show the HTML through `show_widget`, then an Artifact, then the local file. After the user's check:
 
-▶ haiku · attach the BPMN source and PNG to the Original work item as the tracker text says → verified attachment URLs
+▶ haiku · attach the BPMN source and PNG to the Original work item as the tracker text in docs/agents/issue-tracker.md says → verified attachment URLs
 
 Place the verified PNG with its explanatory text under `Business process`, as the tracker text says.
 
@@ -41,7 +41,7 @@ Level 1 is settled when every important behavior has one module owner and each c
 
 Every local image published to the Original work item, Level 1 and Runtime View included, goes through:
 
-▶ haiku · attach the Level 1 and Runtime View PNG and SVG to the Original work item as the tracker text says → verified attachment URLs
+▶ haiku · attach the Level 1 and Runtime View PNG and SVG to the Original work item as the tracker text in docs/agents/issue-tracker.md says → verified attachment URLs
 
 Place each verified PNG with its explanatory text under its section, as the tracker text says.
 

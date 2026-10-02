@@ -5,7 +5,7 @@ description: Use whenever /mattpocock-skills:improve-codebase-architecture runs 
 
 # al-improve-codebase-architecture - deepen AL behind its interface
 
-In: `/mattpocock-skills:improve-codebase-architecture` running on AL code in a Consumer repository, the receipt `.output/receipts/<work-item-id>.md`, and, once a candidate is picked, the executable Original work item or its child work item with the reviewed `Test specification`. The entry owns the scan, the report, and the grilling, and can run with no work item; until the user picks a candidate this addition supplies only the lookup rule in Freeze. It adds the AL freeze, the gate, and the receipt and work-item updates.
+In: `/mattpocock-skills:improve-codebase-architecture` running on AL code in a Consumer repository, the receipt `.output/receipts/<work-item-id>.md`, and, once a candidate is picked, the executable Original work item or its child work item with the reviewed `Test specification`. Every work-item read, write, and comment follows the tracker text that the `## Agent skills` block's issue tracker line points to. The entry owns the scan, the report, and the grilling, and can run with no work item; until the user picks a candidate this addition supplies only the lookup rule in Freeze. It adds the AL freeze, the gate, and the receipt and work-item updates.
 
 ## Freeze
 
@@ -27,13 +27,13 @@ A move across several AL objects does not compile until its last edit, so run /a
 
 ## Map the landed shape
 
-Regenerate the receipt's connected-object change map from the final diff. When stable internal building blocks changed, update or remove the Original work item's arc42 Level 2 so it matches the landed code.
+Regenerate the receipt's connected-object change map from the final diff. When stable internal building blocks changed, update or remove the Original work item's arc42 Level 2 in the spec field the tracker text names so it matches the landed code.
 
 ▶ haiku · /al-arc42 the refreshed views from the final change map → HTML path, SVG and PNG paths, alt text, publishable fragments
 
-▶ haiku · attach the refreshed PNG and SVG to the executable item as the tracker text says → verified attachment URLs
+▶ haiku · attach the refreshed PNG and SVG to the executable item as the tracker text in docs/agents/issue-tracker.md says → verified attachment URLs
 
-Use the verified URLs in the receipt and the Original work item's Level 2 fragment. Missing MCP attachment support is not a blocker; an authentication stop stays with the tracker text's attach procedure until the sign-in works.
+Use the verified URLs in the receipt and the Original work item's Level 2 fragment.
 
 ## Close
 
