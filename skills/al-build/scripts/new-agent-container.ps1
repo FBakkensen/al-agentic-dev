@@ -147,12 +147,18 @@ if (-not (Test-Path $myPath)) {
     New-Item -ItemType Directory -Path $myPath -Force | Out-Null
 }
 
+# BC's service tier and web client take minutes to start. During the start period Docker
+# reports 'starting' and failed health checks don't count, so the wait below never mistakes
+# a cold start for an unhealthy container (#141).
+$healthStartPeriod = '10m'
+
 # Run container from snapshot
 $runArgs = @(
     'run', '-d',
     '--name', $AgentName,
     '--hostname', $AgentName,
     '--memory', $MemoryLimit,
+    '--health-start-period', $healthStartPeriod,
     '--restart', 'unless-stopped',
     '--network', 'nat',
     '--dns', '8.8.8.8',
@@ -187,7 +193,9 @@ $logJob = Start-Job -ScriptBlock {
 $ready = $false
 $pollDelaySeconds = 2
 $unhealthyCount = 0
-$unhealthyThreshold = 15  # 15 consecutive polls × 2s = 30 second grace period for BC startup retries
+$unhealthyThreshold = 15  # 15 consecutive polls × 2s = 30 seconds of 'unhealthy' after the start period
+$healthTimeout = [TimeSpan]::FromMinutes(20)  # the whole wait, start period included
+$waitClock = [System.Diagnostics.Stopwatch]::StartNew()
 
 try {
     while ($true) {
@@ -201,11 +209,28 @@ try {
         $running = docker inspect $AgentName --format '{{.State.Running}}' 2>$null
         $health = docker inspect $AgentName --format '{{.State.Health.Status}}' 2>$null
 
-        if ($running -ne 'true') {
-            # Container stopped - drain remaining logs before exiting
-            $exitCode = docker inspect $AgentName --format '{{.State.ExitCode}}' 2>$null
-            Write-BuildMessage -Type Error -Message "Container exited before becoming healthy (exit code $exitCode)"
+        $decision = Get-BCContainerWaitDecision -Running $running -Health $health `
+            -UnhealthyCount $unhealthyCount -UnhealthyThreshold $unhealthyThreshold `
+            -Elapsed $waitClock.Elapsed -Timeout $healthTimeout
+        $unhealthyCount = $decision.UnhealthyCount
 
+        if ($decision.Action -eq 'Ready') {
+            $ready = $true
+            break
+        }
+
+        if ($decision.Action -in 'Exited', 'Unhealthy', 'TimedOut') {
+            $message = switch ($decision.Action) {
+                'Exited' {
+                    $exitCode = docker inspect $AgentName --format '{{.State.ExitCode}}' 2>$null
+                    "Container exited before becoming healthy (exit code $exitCode)"
+                }
+                'Unhealthy' { "Container health check reported 'unhealthy' ($unhealthyCount consecutive checks)" }
+                'TimedOut' { "Container did not become healthy within $($healthTimeout.TotalMinutes) minutes (last health status: '$health')" }
+            }
+            Write-BuildMessage -Type Error -Message $message
+
+            # Drain remaining logs before exiting
             Start-Sleep -Milliseconds 500
             Receive-Job $logJob -ErrorAction SilentlyContinue | ForEach-Object {
                 if ($_ -ne $null) {
@@ -215,28 +240,8 @@ try {
             exit $Exit.Integration
         }
 
-        if ($health -eq 'healthy') {
-            $ready = $true
-            break
-        }
-
         if ($health -eq 'unhealthy') {
-            $unhealthyCount++
-            if ($unhealthyCount -ge $unhealthyThreshold) {
-                Write-BuildMessage -Type Error -Message "Container health check reported 'unhealthy' ($unhealthyCount consecutive checks)"
-
-                Start-Sleep -Milliseconds 500
-                Receive-Job $logJob -ErrorAction SilentlyContinue | ForEach-Object {
-                    if ($_ -ne $null) {
-                        Write-BuildMessage -Type Info -Message "  $_"
-                    }
-                }
-                exit $Exit.Integration
-            }
             Write-BuildMessage -Type Warning -Message "Container health check reported 'unhealthy' (attempt $unhealthyCount of $unhealthyThreshold, waiting...)"
-        }
-        else {
-            $unhealthyCount = 0  # Reset on any non-unhealthy status (starting, healthy)
         }
 
         Start-Sleep -Seconds $pollDelaySeconds
