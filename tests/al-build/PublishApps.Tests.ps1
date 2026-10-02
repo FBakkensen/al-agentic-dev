@@ -316,6 +316,11 @@ Describe 'Write-RepublishResult commit line' -Tag 'Process' {
 }
 
 Describe 'Sync-BCAgentContainerHost' {
+    BeforeEach {
+        # The in-container .test mapping has its own Describe; here it must not reach a container.
+        Mock Set-BCContainerInternalHost {} -ModuleName common
+    }
+
     It 'adds both hosts lines with the current IP when the container had none' {
         $hosts = New-HostsFile
         InModuleScope common -Parameters @{ Hosts = $hosts } {

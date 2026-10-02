@@ -1113,6 +1113,38 @@ function Get-BCContainerTestHostname {
     return "$ContainerName.test"
 }
 
+function Set-BCContainerInternalHost {
+    <#
+    .SYNOPSIS
+        Make a host name resolve to the container itself, inside the container
+    .DESCRIPTION
+        Writes "127.0.0.1<tab><Hostname>" into the container's own hosts file, replacing
+        any earlier line for that name. The BC image's health check calls PublicWebBaseUrl
+        from inside the container, so once PublicWebBaseUrl is on <name>.test, the container
+        must resolve that name or it turns unhealthy (#143). The line survives a container
+        restart. Throws when the script in the container fails.
+    .PARAMETER ContainerName
+        The bare container name
+    .PARAMETER Hostname
+        The name to map, for example the container's .test name
+    #>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ContainerName,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Hostname
+    )
+
+    Invoke-ScriptInBcContainer -containerName $ContainerName -argumentList @($Hostname, 'C:\Windows\System32\drivers\etc\hosts') -scriptblock {
+        param([string]$Name, [string]$HostsPath)
+        $pattern = '^\s*\S+\s+' + [regex]::Escape($Name) + '(\s|#|$)'
+        $lines = @(Get-Content -LiteralPath $HostsPath | Where-Object { $_ -notmatch $pattern })
+        $lines += "127.0.0.1`t$Name"
+        Set-Content -LiteralPath $HostsPath -Value $lines -Encoding ascii
+    } | Out-Null
+}
+
 function Set-BCAgentContainerHost {
     <#
     .SYNOPSIS
@@ -1120,7 +1152,8 @@ function Set-BCAgentContainerHost {
     .DESCRIPTION
         The one owner of "put the container on .test", for creation and republish.
         Writes the bare name and the .test name as two hosts lines with the
-        container IP (none when the IP is empty), then sets PublicWebBaseUrl to
+        container IP (none when the IP is empty), maps the .test name to the
+        container inside the container, then sets PublicWebBaseUrl to
         the .test host through Update-BCPublicWebBaseUrl, which makes no set and no
         restart when it is already there. BcContainerHelper keeps addressing the
         container by its bare name. Returns the .test PublicWebBaseUrl. Throws
@@ -1151,6 +1184,10 @@ function Set-BCAgentContainerHost {
     else {
         Write-BuildMessage -Type Warning -Message "No container IP; '$testHost' has no hosts entry, so PublicWebBaseUrl points at a host that will not resolve"
     }
+
+    # The container must resolve the .test name itself before PublicWebBaseUrl moves there,
+    # or the BC image's health check, which calls PublicWebBaseUrl from inside, fails (#143).
+    Set-BCContainerInternalHost -ContainerName $ContainerName -Hostname $testHost
 
     return Update-BCPublicWebBaseUrl -ContainerName $ContainerName -NewHostname $testHost
 }
