@@ -35,7 +35,7 @@ Write the body in this order:
 
 ## Publish
 
-Push unpublished commits and set the upstream when needed. With no pull request, create a ready one with `mcp__plugin_al-agentic-dev_ado__repo_pull_request_write`, action `create`, passing `workItems` with every work-item id on the branch, space-separated, and `isDraft` false. With one, call `update` with the title, description, and `isDraft` false, passed explicitly on every `update` because the tool's default would otherwise publish a draft silently. The MCP's `update` cannot link work items: for each id not yet linked, run `az repos pr work-item add --id <pr> --work-items <id>`, the one step `az` covers. Never merge.
+Push unpublished commits and set the upstream when needed. With no pull request, create a ready one with `mcp__plugin_al-agentic-dev_ado__repo_pull_request_write`, action `create`, passing `workItems` with every work-item id on the branch, space-separated, and `isDraft` false. With one, call `update` with the title, description, and `isDraft` false, passed explicitly on every `update` because the tool's default would otherwise publish a draft silently. `update` cannot link work items: for each id not yet linked, call `mcp__plugin_al-agentic-dev_ado__wit_work_item_link_write`, action `link_to_pull_request`, with the pull request's `projectId` GUID, `repositoryId`, `pullRequestId`, and `workItemId`. Never merge.
 
 ## Close
 
