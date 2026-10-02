@@ -1,27 +1,28 @@
 # Page-JavaScript snippets for the Web Client
 
-Each snippet is one self-contained expression whose value is its last expression: an IIFE, async where it awaits, with no top-level `return` and no wrapper, so the same text runs in every driver's evaluate tool.
-- `playwright-cli eval` takes a function expression, so the agent passes `() => <snippet>`; `run-code` runs Playwright code, so there the snippet travels inside `page.evaluate`.
-- Angle-bracket placeholders stand for values the agent reads off the page or the user's request and substitutes before the run.
-- Every snippet but the sign-in opens with the readiness guard, which returns `{ready:false}` instead of throwing, and most then resolve the top page.
+Each snippet is one self-contained expression whose value is its last expression: an IIFE with no top-level `return` and no wrapper, passed as the script text to every driver's evaluate tool.
+- Angle-bracket placeholders stand for values the agent reads off the page or the user's request and substitutes before the run; the one placeholder that sits in code, not in a string literal, is named in its section.
+- Every snippet but the sign-in opens with the readiness guard, which returns `{ready:false}` instead of throwing, and most then resolve the live page.
 
 ## Sign in to the agent container
 
-The agent runs this in the outer document, before the iframe exists, with the two credentials in the `<username>` and `<password>` placeholders.
+The agent runs this in the outer document, before the iframe exists. `<username>` is `container.username` and `<password>` is `container.password` from `al-build.json`.
 
 ```js
 (() => {
-  const pw = document.querySelector('input[type=password]');
-  if (!pw) return { signInForm: false, outer: document.body.innerText.slice(0, 400) };
-  if (!pw.form) return { signInForm: true, form: false };
-  const user = [...pw.form.querySelectorAll('input')].find(i => i.offsetParent && ['text', 'email'].includes(i.type));
-  if (!user) return { signInForm: true, username: false };
-  const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
-  for (const [i, v] of [[user, '<username>'], [pw, '<password>']]) {
-    i.focus(); set.call(i, v);
-    i.dispatchEvent(new Event('input', { bubbles: true }));
+  const passwordInput = document.querySelector('input[type=password]');
+  if (!passwordInput) return { signInForm: false, outer: document.body.innerText.slice(0, 400) };
+  const form = passwordInput.form;
+  if (!form) return { signInForm: true, form: false };
+  const userInput = [...form.querySelectorAll('input')].find(el => el.offsetParent && ['text', 'email'].includes(el.type));
+  const submit = form.querySelector('button[type=submit], input[type=submit], button:not([type])');
+  if (!userInput || !submit) return { signInForm: true, username: !!userInput, submit: !!submit };
+  const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+  for (const [input, value] of [[userInput, '<username>'], [passwordInput, '<password>']]) {
+    input.focus(); setValue.call(input, value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
   }
-  pw.form.querySelector('[type=submit], button')?.click();
+  submit.click();
   return 'submitted';
 })()
 ```
@@ -30,21 +31,21 @@ The agent runs this in the outer document, before the iframe exists, with the tw
 
 ```js
 (() => {
-  const f = document.querySelector('iframe')?.contentDocument;
-  if (!f?.body) return { ready: false, outer: document.body.innerText.slice(0, 400) };
-  const top = f.querySelector('.spa-view:not(.spa-not-top-most)') ?? f.body;
-  const cap = v => v.querySelector('form.ms-nav-root-form h1, form.ms-nav-root-form h2, form.ms-nav-root-form [role=heading]')?.innerText.trim();
+  const frame = document.querySelector('iframe')?.contentDocument;
+  if (!frame?.body) return { ready: false, outer: document.body.innerText.slice(0, 400) };
+  const livePage = frame.querySelector('.spa-view:not(.spa-not-top-most)') ?? frame.body;
+  const heading = view => view.querySelector('form.ms-nav-root-form h1, form.ms-nav-root-form h2, form.ms-nav-root-form [role=heading]')?.innerText.trim();
   return {
     ready: true,
-    stack: [...f.querySelectorAll('.spa-view')].map(cap),
-    page: cap(top),
-    dialog: [...top.querySelectorAll('[role=dialog]')].map(d => d.innerText.trim().slice(0, 300)),
-    text: top.innerText.slice(0, 1500)
+    stack: [...frame.querySelectorAll('.spa-view')].map(view => heading(view)),
+    page: heading(livePage),
+    dialog: [...livePage.querySelectorAll('[role=dialog]')].map(dialog => dialog.innerText.trim().slice(0, 300)),
+    text: livePage.innerText.slice(0, 1500)
   };
 })()
 ```
 
-`stack` lists the open pages bottom to top, and `page` is the top one. The company shows up only in the role centre's caption, so see Company switch.
+`stack` lists the open pages bottom to top, and `page` is the live one. The company shows up only in the role centre's caption, so see Company switch.
 
 ## Open a page with Tell Me
 
@@ -52,26 +53,27 @@ Call 1: the agent opens Tell Me. The header's search button does nothing from sc
 
 ```js
 (() => {
-  const f = document.querySelector('iframe')?.contentDocument;
-  if (!f?.body) return { ready: false };
-  for (const t of ['keydown', 'keyup'])
-    f.dispatchEvent(new KeyboardEvent(t, { key: 'q', code: 'KeyQ', keyCode: 81, altKey: true, bubbles: true }));
+  const frame = document.querySelector('iframe')?.contentDocument;
+  if (!frame?.body) return { ready: false };
+  for (const type of ['keydown', 'keyup'])
+    frame.dispatchEvent(new frame.defaultView.KeyboardEvent(type, { key: 'q', code: 'KeyQ', keyCode: 81, altKey: true, bubbles: true }));
   return 'sent';
 })()
 ```
 
-Call 2: the agent types into Tell Me's input, the focused combobox. The input's label is localised; the return shows it.
+Call 2: the agent types into Tell Me's input, which must be the active combobox; otherwise this throws, so it never types into a data field, and the agent runs call 1 first. The input's label is localised; the return shows it.
 
 ```js
 (() => {
-  const f = document.querySelector('iframe')?.contentDocument;
-  if (!f?.body) return { ready: false };
-  const i = f.activeElement;
-  if (i?.tagName !== 'INPUT' || i.getAttribute('role') !== 'combobox') return 'tell me not open';
-  const set = Object.getOwnPropertyDescriptor(f.defaultView.HTMLInputElement.prototype, 'value').set;
-  i.focus(); set.call(i, '<page name>');
-  i.dispatchEvent(new f.defaultView.Event('input', { bubbles: true }));
-  return { label: i.getAttribute('aria-label'), typed: i.value };
+  const frame = document.querySelector('iframe')?.contentDocument;
+  if (!frame?.body) return { ready: false };
+  const input = frame.activeElement;
+  if (input?.tagName !== 'INPUT' || input.getAttribute('role') !== 'combobox') throw new Error('Tell Me input is not the active element');
+  const frameWin = frame.defaultView;
+  const setValue = Object.getOwnPropertyDescriptor(frameWin.HTMLInputElement.prototype, 'value').set;
+  setValue.call(input, '<page name>');
+  input.dispatchEvent(new frameWin.Event('input', { bubbles: true }));
+  return { label: input.getAttribute('aria-label'), typed: input.value };
 })()
 ```
 
@@ -79,81 +81,81 @@ Call 3: the agent reads the results. They mix pages, actions of the current page
 
 ```js
 (() => {
-  const f = document.querySelector('iframe')?.contentDocument;
-  if (!f?.body) return { ready: false };
-  const top = f.querySelector('.spa-view:not(.spa-not-top-most)') ?? f.body;
-  return [...top.querySelectorAll('.ms-DetailsRow')].filter(r => r.offsetParent)
-    .map(r => r.innerText.trim().replace(/\s+/g, ' ').slice(0, 80));
+  const frame = document.querySelector('iframe')?.contentDocument;
+  if (!frame?.body) return { ready: false };
+  const livePage = frame.querySelector('.spa-view:not(.spa-not-top-most)') ?? frame.body;
+  return [...livePage.querySelectorAll('.ms-DetailsRow')].filter(row => row.offsetParent)
+    .map(row => row.innerText.trim().replace(/\s+/g, ' ').slice(0, 80));
 })()
 ```
 
-Call 4: Enter on the input opens the first result, and Enter on a focused row opens that row; with `<row text>` empty this presses Enter on the input, otherwise on the row that starts with that text. Escape does not close Tell Me; opening a page does.
+Call 4: Enter on the input opens the first result, and Enter on a focused row opens that row. With `<row text>` empty this presses Enter on the Tell Me input; otherwise on the row that starts with that text, and only when that row took focus. Escape does not close Tell Me; opening a page does.
 
 ```js
 (() => {
-  const f = document.querySelector('iframe')?.contentDocument;
-  if (!f?.body) return { ready: false };
-  const top = f.querySelector('.spa-view:not(.spa-not-top-most)') ?? f.body;
+  const frame = document.querySelector('iframe')?.contentDocument;
+  if (!frame?.body) return { ready: false };
+  const livePage = frame.querySelector('.spa-view:not(.spa-not-top-most)') ?? frame.body;
   const want = '<row text>';
   if (want) {
-    const row = [...top.querySelectorAll('.ms-DetailsRow')].filter(r => r.offsetParent)
-      .find(r => r.innerText.trim().replace(/\s+/g, ' ').startsWith(want));
+    const row = [...livePage.querySelectorAll('.ms-DetailsRow')].filter(el => el.offsetParent)
+      .find(el => el.innerText.trim().replace(/\s+/g, ' ').startsWith(want));
     if (!row) return 'row not listed';
     row.focus();
-    if (!row.contains(f.activeElement)) return 'row did not take focus';
-  }
-  for (const t of ['keydown', 'keypress', 'keyup'])
-    f.activeElement.dispatchEvent(new KeyboardEvent(t, { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+    if (frame.activeElement !== row) return 'row did not take focus';
+  } else if (frame.activeElement?.tagName !== 'INPUT') return 'Tell Me input is not the active element';
+  for (const type of ['keydown', 'keypress', 'keyup'])
+    frame.activeElement.dispatchEvent(new frame.defaultView.KeyboardEvent(type, { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
   return 'enter';
 })()
 ```
 
-Call 5: the agent runs Where am I after about two seconds. The new page is on top of the stack, with the page you came from underneath.
+Call 5: the agent runs Where am I after about two seconds. The new page is live on top of the stack, with the page it came from underneath.
 
 ## Click a page action by its caption
 
 ```js
 (() => {
-  const f = document.querySelector('iframe')?.contentDocument;
-  if (!f?.body) return { ready: false };
-  const top = f.querySelector('.spa-view:not(.spa-not-top-most)') ?? f.body;
-  const scope = top;
+  const frame = document.querySelector('iframe')?.contentDocument;
+  if (!frame?.body) return { ready: false };
+  const livePage = frame.querySelector('.spa-view:not(.spa-not-top-most)') ?? frame.body;
+  const scope = livePage;
   const want = '<caption>';
-  const visible = [...scope.querySelectorAll('button,[role=button],a,[role=menuitem]')].filter(e => e.offsetParent);
-  const hits = visible.filter(e => [e.innerText, e.getAttribute('aria-label'), e.title].some(s => (s || '').trim() === want));
-  if (hits.length !== 1) return { matches: hits.length, visible: visible.map(e => e.innerText.trim() || e.title).filter(Boolean) };
-  const h = hits[0];
-  if (h.disabled || h.getAttribute('aria-disabled') === 'true' || /itemDisabled|is-disabled/.test(h.className))
-    return { disabled: true, hint: h.title };
-  h.click();
+  const visible = [...scope.querySelectorAll('button,[role=button],a,[role=menuitem]')].filter(el => el.offsetParent);
+  const hits = visible.filter(el => [el.innerText, el.getAttribute('aria-label'), el.title].some(text => (text || '').trim() === want));
+  if (hits.length !== 1) return { matches: hits.length, visible: visible.map(el => el.innerText.trim() || el.title).filter(Boolean) };
+  const target = hits[0];
+  if (target.disabled || target.getAttribute('aria-disabled') === 'true' || /itemDisabled|is-disabled/.test(target.className))
+    return { disabled: true, hint: target.title };
+  target.click();
   return 'clicked';
 })()
 ```
 
-For an action under a "More options" or "Actions" menu, the agent clicks that menu first, in its own call, then queries again.
+For an action under a menu, the agent first clicks the menu's own button, `<menu caption>` from the `visible` list this snippet returns, in its own call, then queries again.
 
 ## Close the top page
 
-The agent runs the caption snippet with `want` set to the title of the page's Back arrow. Done when Where am I shows `stack` one shorter and the expected `page` on top.
+The agent runs Click a page action by its caption with `want` set to the title of the page's Back arrow. Done when Where am I shows `stack` one shorter and the expected `page` live.
 
 ## Rows
 
-Every list page has a search box, `input[type=search]` with `aria-label="Search <caption>"`. The agent fills it and presses Enter:
+When the page shows a search box (`input[type=search]`), the agent fills it and presses Enter:
 
 ```js
 (() => {
-  const f = document.querySelector('iframe')?.contentDocument;
-  if (!f?.body) return { ready: false };
-  const w = f.defaultView;
-  const top = f.querySelector('.spa-view:not(.spa-not-top-most)') ?? f.body;
-  const i = top.querySelector('input[type=search]');
-  if (!i) return 'no search box on this page';
-  const set = Object.getOwnPropertyDescriptor(w.HTMLInputElement.prototype, 'value').set;
-  i.focus(); set.call(i, '<search text>');
-  i.dispatchEvent(new w.Event('input', { bubbles: true }));
-  for (const t of ['keydown', 'keypress', 'keyup'])
-    i.dispatchEvent(new w.KeyboardEvent(t, { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
-  return i.value;
+  const frame = document.querySelector('iframe')?.contentDocument;
+  if (!frame?.body) return { ready: false };
+  const frameWin = frame.defaultView;
+  const livePage = frame.querySelector('.spa-view:not(.spa-not-top-most)') ?? frame.body;
+  const input = livePage.querySelector('input[type=search]');
+  if (!input) return 'no search box on this page';
+  const setValue = Object.getOwnPropertyDescriptor(frameWin.HTMLInputElement.prototype, 'value').set;
+  input.focus(); setValue.call(input, '<search text>');
+  input.dispatchEvent(new frameWin.Event('input', { bubbles: true }));
+  for (const type of ['keydown', 'keypress', 'keyup'])
+    input.dispatchEvent(new frameWin.KeyboardEvent(type, { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+  return input.value;
 })()
 ```
 
@@ -161,12 +163,12 @@ Done when a re-read of the rows shows only matches. The agent reads the rows of 
 
 ```js
 (() => {
-  const f = document.querySelector('iframe')?.contentDocument;
-  if (!f?.body) return { ready: false };
-  const top = f.querySelector('.spa-view:not(.spa-not-top-most)') ?? f.body;
-  return [...top.querySelectorAll('[role=row]')].map(r => ({
-    selected: r.getAttribute('aria-selected'),
-    text: r.innerText.trim().replace(/\s+/g, ' ').slice(0, 200)
+  const frame = document.querySelector('iframe')?.contentDocument;
+  if (!frame?.body) return { ready: false };
+  const livePage = frame.querySelector('.spa-view:not(.spa-not-top-most)') ?? frame.body;
+  return [...livePage.querySelectorAll('[role=row]')].map(row => ({
+    selected: row.getAttribute('aria-selected'),
+    text: row.innerText.trim().replace(/\s+/g, ' ').slice(0, 200)
   })).slice(0, 40);
 })()
 ```
@@ -175,10 +177,10 @@ The agent selects a row by clicking a cell of the row that holds `<row text>`:
 
 ```js
 (() => {
-  const f = document.querySelector('iframe')?.contentDocument;
-  if (!f?.body) return { ready: false };
-  const top = f.querySelector('.spa-view:not(.spa-not-top-most)') ?? f.body;
-  const hits = [...top.querySelectorAll('[role=row]')].filter(r => r.innerText.includes('<row text>'));
+  const frame = document.querySelector('iframe')?.contentDocument;
+  if (!frame?.body) return { ready: false };
+  const livePage = frame.querySelector('.spa-view:not(.spa-not-top-most)') ?? frame.body;
+  const hits = [...livePage.querySelectorAll('[role=row]')].filter(row => row.innerText.includes('<row text>'));
   if (hits.length !== 1) return { matches: hits.length };
   const cell = hits[0].querySelector('[role=gridcell]');
   if (!cell) return 'row has no gridcell';
@@ -197,16 +199,16 @@ Call 1: the agent finds the field's input by its observed `aria-label` (grid inp
 
 ```js
 (() => {
-  const f = document.querySelector('iframe')?.contentDocument;
-  if (!f?.body) return { ready: false };
-  const top = f.querySelector('.spa-view:not(.spa-not-top-most)') ?? f.body;
+  const frame = document.querySelector('iframe')?.contentDocument;
+  if (!frame?.body) return { ready: false };
+  const livePage = frame.querySelector('.spa-view:not(.spa-not-top-most)') ?? frame.body;
   const click = true;
   const field = '<aria-label or current value>';
-  const i = [...top.querySelectorAll('input')].find(e => e.getAttribute('aria-label') === field || e.value === field);
-  if (!i) return 'field not found';
-  const buttons = [...(i.closest('[role=gridcell]') ?? i.parentElement).querySelectorAll('button')];
-  if (!click) return { value: i.value };
-  if (buttons.length !== 1) return { buttons: buttons.map(b => b.title || b.innerText.trim()) };
+  const input = [...livePage.querySelectorAll('input')].find(el => el.getAttribute('aria-label') === field || el.value === field);
+  if (!input) return 'field not found';
+  const buttons = [...(input.closest('[role=gridcell]') ?? input.parentElement).querySelectorAll('button')];
+  if (!click) return { value: input.value };
+  if (buttons.length !== 1) return { buttons: buttons.map(button => button.title || button.innerText.trim()) };
   buttons[0].click();
   return 'opened';
 })()
@@ -216,13 +218,13 @@ Call 2: the agent reads the lookup view.
 
 ```js
 (() => {
-  const f = document.querySelector('iframe')?.contentDocument;
-  if (!f?.body) return { ready: false };
-  const lk = [...f.querySelectorAll('.spa-view.spa-lookup')].find(e => e.offsetParent);
-  if (!lk) return 'lookup closed';
+  const frame = document.querySelector('iframe')?.contentDocument;
+  if (!frame?.body) return { ready: false };
+  const lookupView = [...frame.querySelectorAll('.spa-view.spa-lookup')].find(view => view.offsetParent);
+  if (!lookupView) return 'lookup closed';
   return {
-    rows: [...lk.querySelectorAll('[role=row]')].map(r => ({ sel: r.getAttribute('aria-selected'), t: r.innerText.trim().replace(/\s+/g, ' ').slice(0, 80) })),
-    links: [...lk.querySelectorAll('a,button')].filter(b => b.offsetParent).map(b => b.innerText.trim()).filter(Boolean)
+    rows: [...lookupView.querySelectorAll('[role=row]')].map(row => ({ selected: row.getAttribute('aria-selected'), text: row.innerText.trim().replace(/\s+/g, ' ').slice(0, 80) })),
+    links: [...lookupView.querySelectorAll('a,button')].filter(el => el.offsetParent).map(el => el.innerText.trim()).filter(Boolean)
   };
 })()
 ```
@@ -231,12 +233,12 @@ Call 3: the agent clicks a gridcell of the row whose key equals `<key>` exactly;
 
 ```js
 (() => {
-  const f = document.querySelector('iframe')?.contentDocument;
-  if (!f?.body) return { ready: false };
-  const lk = [...f.querySelectorAll('.spa-view.spa-lookup')].find(e => e.offsetParent);
-  if (!lk) return 'lookup closed';
+  const frame = document.querySelector('iframe')?.contentDocument;
+  if (!frame?.body) return { ready: false };
+  const lookupView = [...frame.querySelectorAll('.spa-view.spa-lookup')].find(view => view.offsetParent);
+  if (!lookupView) return 'lookup closed';
   const key = '<key>';
-  const hits = [...lk.querySelectorAll('[role=row]')].filter(r => [...r.querySelectorAll('[role=gridcell]')].some(c => c.innerText.trim() === key));
+  const hits = [...lookupView.querySelectorAll('[role=row]')].filter(row => [...row.querySelectorAll('[role=gridcell]')].some(cell => cell.innerText.trim() === key));
   if (hits.length !== 1) return { matches: hits.length };
   const cell = hits[0].querySelector('[role=gridcell]');
   if (!cell) return 'row has no gridcell';
@@ -251,50 +253,49 @@ Call 4: the agent runs call 1 with `click` set to `false`, passing `field` as th
 
 ```js
 (() => {
-  const f = document.querySelector('iframe')?.contentDocument;
-  if (!f?.body) return { ready: false };
-  const top = f.querySelector('.spa-view:not(.spa-not-top-most)') ?? f.body;
-  const ds = [...top.querySelectorAll('[role=dialog]')];
-  if (!ds.length) return 'none';
-  return ds.map((d, index) => ({
+  const frame = document.querySelector('iframe')?.contentDocument;
+  if (!frame?.body) return { ready: false };
+  const livePage = frame.querySelector('.spa-view:not(.spa-not-top-most)') ?? frame.body;
+  const dialogs = [...livePage.querySelectorAll('[role=dialog]')];
+  if (!dialogs.length) return 'none';
+  return dialogs.map((dialog, index) => ({
     index,
-    text: d.innerText.trim().slice(0, 500),
-    buttons: [...d.querySelectorAll('button, a[role=button]')].filter(b => b.offsetParent).map(b => b.innerText.trim() || b.title),
-    rows: [...d.querySelectorAll('[role=row]')].map(r => r.innerText.trim().replace(/\s+/g, ' ').slice(0, 150))
+    text: dialog.innerText.trim().slice(0, 500),
+    buttons: [...dialog.querySelectorAll('button, a[role=button]')].filter(el => el.offsetParent).map(el => el.innerText.trim() || el.title),
+    rows: [...dialog.querySelectorAll('[role=row]')].map(row => row.innerText.trim().replace(/\s+/g, ' ').slice(0, 150))
   }));
 })()
 ```
 
-The agent presses a dialog button with the caption snippet, its `scope` set to `top.querySelectorAll('[role=dialog]')[<index>]`. Done when the Dialogs snippet returns `'none'`.
+The agent presses a dialog button with Click a page action by its caption, its `scope` set to `livePage.querySelectorAll('[role=dialog]')[<index>]`; `<index>` is the placeholder that sits in code. Done when the Dialogs snippet returns `'none'`.
 
 ## What did that click open?
 
-The agent makes the click inside this snippet, in place of a plain click, when a control's result cannot be predicted (a menu, a toggle, an action that shows no dialog). It never replays a click whose outcome is unknown: after one, it only reads.
-The snippet returns `tops`, the outermost elements that appeared: a `.spa-lookup`, a context menu, a notification, a FactBox.
+Read-only: this clicks nothing. After the agent's own click, it reports the stack, the live page's caption, the dialogs, the lookup rows, and the visible menu items, so the agent reads what the click opened instead of guessing or clicking again.
 
 ```js
-(async () => {
-  const f = document.querySelector('iframe')?.contentDocument;
-  if (!f?.body) return { ready: false };
-  const top = f.querySelector('.spa-view:not(.spa-not-top-most)') ?? f.body;
-  const want = '<caption>';
-  const visible = [...top.querySelectorAll('button,[role=button],a,[role=menuitem]')].filter(e => e.offsetParent);
-  const hits = visible.filter(e => [e.innerText, e.getAttribute('aria-label'), e.title].some(s => (s || '').trim() === want));
-  if (hits.length !== 1) return { matches: hits.length };
-  const before = new Set([...f.querySelectorAll('*')].filter(e => e.offsetParent));
-  hits[0].click();
-  await new Promise(r => setTimeout(r, 1200));
-  const appeared = [...f.querySelectorAll('*')].filter(e => e.offsetParent && !before.has(e));
-  const tops = appeared.filter(e => !appeared.includes(e.parentElement));
-  return tops.slice(0, 10).map(e => ({ tag: e.tagName, role: e.getAttribute('role'), cls: e.className.toString().slice(0, 80), text: e.innerText?.trim().replace(/\s+/g, ' ').slice(0, 200) }));
+(() => {
+  const frame = document.querySelector('iframe')?.contentDocument;
+  if (!frame?.body) return { ready: false };
+  const livePage = frame.querySelector('.spa-view:not(.spa-not-top-most)') ?? frame.body;
+  const heading = view => view.querySelector('form.ms-nav-root-form h1, form.ms-nav-root-form h2, form.ms-nav-root-form [role=heading]')?.innerText.trim();
+  const flat = el => el.innerText.trim().replace(/\s+/g, ' ');
+  const lookupView = [...frame.querySelectorAll('.spa-view.spa-lookup')].find(view => view.offsetParent);
+  return {
+    stack: [...frame.querySelectorAll('.spa-view')].map(view => heading(view)),
+    page: heading(livePage),
+    dialogs: [...livePage.querySelectorAll('[role=dialog]')].map(dialog => flat(dialog).slice(0, 300)),
+    lookupRows: lookupView ? [...lookupView.querySelectorAll('[role=row]')].map(row => flat(row).slice(0, 80)) : null,
+    menuItems: [...frame.querySelectorAll('[role=menuitem]')].filter(el => el.offsetParent).map(el => flat(el).slice(0, 80))
+  };
 })()
 ```
 
 ## Company switch
 
-1. The agent opens My Settings with Tell Me, then reads it with Dialogs.
-2. The agent clicks the Company value, an `a[role=button]` whose displayed text is the company name, with the caption snippet. The company list opens as a second dialog.
-3. The agent clicks the target row's gridcell, confirms `aria-selected="true"` on it, then presses the dialog's confirm button with the caption snippet. My Settings shows the new name.
+1. The agent opens My Settings with Open a page with Tell Me, then reads it with Dialogs.
+2. The agent clicks the Company value, an `a[role=button]` whose displayed text is the company name, with Click a page action by its caption. The company list opens as a second dialog.
+3. The agent clicks the target row's gridcell and confirms the selection as in Rows, then presses the dialog's confirm button with Click a page action by its caption. My Settings shows the new name.
 4. The agent presses My Settings' confirm button: the client reloads into that company and the stack collapses to its role centre. Done when Where am I shows the role centre captioned with the target company.
 
 Data and setup are per company: clean-up in one company says nothing about the others.
