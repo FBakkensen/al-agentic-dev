@@ -7,7 +7,6 @@ Thank you for your interest in contributing to this Claude Code plugin of Agent 
 - Use GitHub Issues to report bugs or suggest features, with the bug report or feature request template.
 - Search existing issues before creating a new one.
 - Give clear steps to reproduce a bug, and your environment (OS, PowerShell version, Claude Code version).
-- Ask general questions in a GitHub Discussion.
 
 ## The rulebook
 
