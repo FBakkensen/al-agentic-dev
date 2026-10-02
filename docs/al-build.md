@@ -16,7 +16,7 @@ A green gate with per-runner totals, or a red named by its failing tests and the
 | Command | Scope |
 |---|---|
 | `test.ps1` | The gate, on AL Runner. Compiles every app (main, `testApps`, `containerTestApps`) through the analyzer gate, then runs AL Runner once over the main app and every `testApps` bundle, in one fresh `al-runner` CLI process per gate. Its progress is echoed live and kept in `.output/logs/al-runner.log`. It never touches a container. |
-| `container-test.ps1` | The container surface for `containerTestApps`: compile the main app and every container test app through the analyzer gate, publish, sync barrier, run. Reached only when a task explicitly requires the container surface; no ordinary gate or verify step calls it. |
+| `container-test.ps1` | The container surface for `containerTestApps`: compile the main app and every container test app through the analyzer gate, publish, sync barrier, run. Reached only when a task explicitly requires the container surface; no ordinary gate or verify step calls it. It compiles before it publishes; `-Force` republishes unchanged apps. |
 | `test.ps1 -Coverage` | The same AL Runner run with main-app line coverage, through AL Runner's `--coverage`. |
 
 `test.ps1` is the one gate; the container is reached only through `container-test.ps1`.
@@ -136,16 +136,16 @@ The `coverage` block takes one of three shapes:
 
 | Script | What it does |
 |---|---|
-| `provision.ps1` | Per-feature setup. Installs the stable and prerelease AL compiler channels side by side under the tool cache; keeps the `msdyn365bc.al.runner` dotnet tool at the newest NuGet release (a newer local build stays); downloads symbol packages for every app into a cache keyed by checkout path; ensures the ALCops DLL suite is complete and version-consistent without replacing a valid installation. After both symbol downloads it runs `download-baseline.ps1` (the pin check, then the fill) and exits with its code. `-UpdateCompiler` forces a clean reinstall. |
-| `validate-breaking-changes.ps1` | The heavyweight AppSource-style check the compile-time cop cannot do. A `version` in `AppSourceCop.json` repeats the Release pin check first, whatever `breakingChange.enabled` says. Under `breakingChange.enabled` it runs the container install and upgrade test, per country, against the real Release `.app` in `breakingChange.releaseAppDir`, matched by manifest id and version; a symbols-only file is rejected. Slice-end or pre-release, never the inner loop. |
+| `provision.ps1` | Per-feature setup. Installs the stable and prerelease AL compiler channels side by side under the tool cache; keeps the `msdyn365bc.al.runner` dotnet tool at the newest NuGet release (a newer local build stays); downloads symbol packages for every app into a cache keyed by checkout path; ensures the ALCops DLL suite is complete and version-consistent without replacing a valid installation. After both symbol downloads it runs `download-baseline.ps1` and exits with its code (see "Breaking-change baseline"). `-UpdateCompiler` forces a clean reinstall. |
+| `validate-breaking-changes.ps1` | The heavyweight AppSource-style check the compile-time cop cannot do. It repeats the Release pin check first (see "Breaking-change baseline"). Under `breakingChange.enabled` it runs the container install and upgrade test, per country, against the real Release `.app` in `breakingChange.releaseAppDir`, matched by manifest id and version; a symbols-only file is rejected. Slice-end or pre-release, never the inner loop. |
 | `publish-apps.ps1` | Clean republish with no build and no tests: unpublishes every app dependency-reversed, then force-publishes in dependency order. Needs compiled `.app` artifacts already present. Loads a fresh container before a human walk. |
-| `container-test.ps1` | Container tests for `containerTestApps`; see "What it produces". Compiles before it publishes; `-Force` republishes unchanged apps. |
-| `new-bc-container.ps1`, `commit-bc-container.ps1`, `new-agent-container.ps1` | The container lifecycle: one sequence, once per BC version. |
 | `prune.ps1` | Removes agent containers whose branch is gone or that sat unused past seven days, with both hosts entries (bare and `.test`), also for a container that is already gone. `-Preview` for a dry run. |
 | `init.ps1` | One-time per repo: writes `al-build.json` into the repo root with detected app and test directories, copied from the skill's `config/al-build.json` template. Set `testApps` afterwards. |
 | `clean.ps1` | Deletes compiled `.app` files and clears publish state so the next run republishes. |
 | `report-gate-metrics.ps1` | Gate wall-clock per workspace signature and gate scope, from `build-timing.jsonl`; `-GlobalLog` reads the cross-repo mirror. |
 | `download-symbols.ps1`, `download-baseline.ps1` | The two fetches `provision.ps1` already performs, run alone to redo just one step. |
+
+`container-test.ps1` is described under "What it produces", and the container lifecycle scripts under "Container lifecycle" below.
 
 ### Breaking-change baseline
 
@@ -220,7 +220,7 @@ Diagnostic prefixes: `AA` CodeCop, `AW` UICop, `AS` AppSourceCop, `PTE` PerTenan
 For ordinary container failures, recovery escalates from outside the container:
 
 1. `docker restart <container>` and re-run the gate.
-2. `docker rm -f <container>` and re-run, which recreates it.
+2. `Remove-BcContainer` on the container and re-run, which recreates it.
 3. Re-run `provision.ps1` and the gate.
 
 Nothing inside the container is patched by hand: `docker exec` or installing apps by hand leaves state the scripts cannot reproduce.
