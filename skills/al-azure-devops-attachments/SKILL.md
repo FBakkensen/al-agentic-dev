@@ -13,11 +13,11 @@ Before the first tool call, write one sentence. Update on an important finding o
 
 Use the existing Azure CLI token cache. Read the organization and project from the work-item URL or `az devops configure --list`; never change those defaults. Request the Azure DevOps token for the target tenant:
 
-`az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --tenant 3c2c919b-877a-4cd6-be64-b25bbdaee76f --query accessToken -o tsv --only-show-errors`
+`az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --tenant 7f33d80b-fe48-47f4-a90d-4cae5c190f47 --query accessToken -o tsv --only-show-errors`
 
 Keep the Azure CLI identity and defaults unchanged. Never run `az login` for the user, `az logout`, `az account set`, or `az devops configure -d`. When the token request reports an authentication failure, give the user this exact command:
 
-`az login --tenant 3c2c919b-877a-4cd6-be64-b25bbdaee76f --scope "499b84ac-1321-427f-aa17-267ca6975798/.default" --allow-no-subscriptions`
+`az login --tenant 7f33d80b-fe48-47f4-a90d-4cae5c190f47 --scope "499b84ac-1321-427f-aa17-267ca6975798/.default" --allow-no-subscriptions`
 
 Explain that Azure DevOps needs no Azure subscription. Stop until the user confirms authentication, then retry the token request. Authentication failure never becomes a manual-upload handoff.
 

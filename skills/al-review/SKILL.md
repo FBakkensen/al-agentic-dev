@@ -9,7 +9,7 @@ In: `/mattpocock-skills:code-review` over an AL slice. The entry owns the proces
 
 ## The work item
 
-Find the executable work item's id: an `AB#<id>` in the entry's commit list, the id in the branch name or the request, or a receipt under `.output/receipts/`. It is a child PBI, or the Original work item itself when the request has one slice. Read it, then its parent Original work item, by id with `mcp__plugin_al-agentic-dev_ado__wit_work_item` (`get`, expand `Relations`). The receipt is `.output/receipts/<executable id>.md`.
+Find the executable work item's id: the id in the branch name or the request, or a receipt under `.output/receipts/`. It is a child PBI, or the Original work item itself when the request has one slice. Read it, then its parent Original work item, by id with `mcp__plugin_al-agentic-dev_ado__wit_work_item` (`get`, expand `Relations`). The receipt is `.output/receipts/<executable id>.md`.
 
 With no Azure DevOps work item in play, hand the whole review to `/bcquality:al-code-review` in place of the entry's axes, and return its findings report unchanged; the rest of this addition does not apply.
 

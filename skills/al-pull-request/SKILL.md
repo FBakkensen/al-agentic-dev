@@ -11,7 +11,9 @@ Before the first tool call, write one sentence. Update on an important finding o
 
 ## Read the branch
 
-Use `gh` for every GitHub operation. Read the current branch, base branch, commits, diff, existing pull request, and work-item references. A dirty worktree returns /al-commit as the next move. Never guess a work-item ID.
+Read the current branch, base branch, commits, and diff with git. A dirty worktree returns /al-commit as the next move. Read the branch's existing pull request and its linked work items with `mcp__plugin_al-agentic-dev_ado__repo_pull_request`: `list` filtered by `sourceRefName`, then `get` with `includeWorkItemRefs`.
+
+Work-item ids come from the request, the branch name, the receipts under `.output/receipts/`, and the existing pull request's linked work items. Never guess an id.
 
 ## Write the pull request
 
@@ -20,8 +22,6 @@ Use `<area>: <imperative change>` for the title. Choose the narrowest area that 
 Write the body in this order:
 
 ```markdown
-AB#<work-item-id>
-
 ## Changed
 
 - <landed behavior or repository change>
@@ -31,12 +31,12 @@ AB#<work-item-id>
 - `<command or check>`: <exact result>
 ```
 
-List every work item represented by the branch, one `AB#<id>` line each. `Changed` describes the combined landed delta without copying the work-item Description or Acceptance Criteria. Include `Proof` only for evidence already produced; this skill runs no tests. Add `Review notes` only for a real risk, migration concern, assumption, or design drift.
+`Changed` describes the combined landed delta without copying the work-item Description or Acceptance Criteria. Include `Proof` only for evidence already produced; this skill runs no tests. Add `Review notes` only for a real risk, migration concern, assumption, or design drift. The body carries no work-item id line; the links below carry it. Azure Repos caps the description at 4000 characters: merge `Changed` bullets, then shorten `Proof` lines, and never cut mid-line; a body that still exceeds the cap stops for the user.
 
 ## Publish
 
-Push unpublished commits and set the upstream when needed. Create a ready pull request when none exists; otherwise update the current branch's pull request and mark it ready if necessary. Never merge.
+Push unpublished commits and set the upstream when needed. With no pull request, create a ready one with `mcp__plugin_al-agentic-dev_ado__repo_pull_request_write`, action `create`, passing `workItems` with every work-item id on the branch, space-separated, and `isDraft` false. With one, call `update` with the title, description, and `isDraft` false, passed explicitly on every `update` because the tool's default would otherwise publish a draft silently. `update` cannot link work items: for each id not yet linked, call `mcp__plugin_al-agentic-dev_ado__wit_work_item_link_write`, action `link_to_pull_request`, with the pull request's `projectId` GUID, `repositoryId`, `pullRequestId`, and `workItemId`. Never merge.
 
 ## Close
 
-Show the PR title, URL, work-item references, and recorded proof. Name /al-pr-shepherd as the next move.
+Show the PR title, URL, linked work items, and recorded proof. Name /al-pr-shepherd as the next move.

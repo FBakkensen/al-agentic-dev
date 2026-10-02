@@ -53,4 +53,4 @@ Every Business Central object, field, action, event, enum value, or dialog text 
 
 The pass ends when the Process contract, every BPMN path, and the Building Block View agree with the confirmed request, and, when the Base App has a comparable flow, its sourced step table is in hand. No `docs/` copy of the spec is created. At every exit:
 
-▶ haiku · /al-commit the complete worktree, work items <ids> → commit hashes and subjects, remaining worktree
+▶ haiku · /al-commit the complete worktree → commit hashes and subjects, remaining worktree
