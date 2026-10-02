@@ -552,30 +552,72 @@ function ConvertTo-ALRunnerVersion {
     throw "Unable to parse al-runner version from banner: '$VersionLine'"
 }
 
-function Install-ALRunner {
+function Get-ALRunnerLatestRelease {
     <#
     .SYNOPSIS
-        Ensure the AL Runner tool is available at the required version floor
+        The newest stable MSDyn365BC.AL.Runner release on NuGet.
     .DESCRIPTION
-        Installs BusinessCentral.AL.Runner as a global dotnet tool for containerless
-        unit testing. Mirrors the Install-ALCompiler pattern. After presence is
-        ensured, verifies the installed version meets the 2.10 floor, updating
-        once if it does not.
-
-        Prerelease decision: a banner with a SemVer prerelease suffix
-        (al-runner v2.10.0-local.9017de3a) is a developer's local or preview
-        build. The implicit floor update never runs against it — `dotnet tool
-        update --global` would replace the local build with the feed's release.
-        A prerelease at or above the floor passes untouched; one below the floor
-        throws and names the suffix. The explicit -Update switch still updates,
-        because the user asked for it.
-    .PARAMETER Update
-        Force update of an existing global tool.
+        Reads the package's version list from NuGet's flat container and returns
+        the highest version without a prerelease suffix, as a [version]. Throws
+        when NuGet cannot be read or lists no stable release.
+    .PARAMETER IndexUrl
+        The flat container index; defaults to nuget.org's.
     #>
     [CmdletBinding()]
     param(
-        [switch]$Update
+        [string]$IndexUrl = 'https://api.nuget.org/v3-flatcontainer/msdyn365bc.al.runner/index.json'
     )
+
+    $index = Invoke-RestMethod -Uri $IndexUrl -TimeoutSec 30 -ErrorAction Stop
+    $stable = @($index.versions | Where-Object { $_ -match '^\d+(\.\d+){1,3}$' } | ForEach-Object { [version]$_ })
+    if ($stable.Count -eq 0) {
+        throw "NuGet lists no stable al-runner release at $IndexUrl"
+    }
+    return ($stable | Sort-Object -Descending | Select-Object -First 1)
+}
+
+function Test-ALRunnerReleaseIsNewer {
+    <#
+    .SYNOPSIS
+        Whether a release outranks the installed al-runner by SemVer precedence.
+    .DESCRIPTION
+        A higher numeric version wins. At the same numeric version, the release
+        outranks an installed prerelease (2.12.1 > 2.12.1-local.x), and never
+        an installed release.
+    .PARAMETER Installed
+        The installed version, as ConvertTo-ALRunnerVersion -Detailed returns it.
+    .PARAMETER Release
+        The newest stable release.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [pscustomobject]$Installed,
+
+        [Parameter(Mandatory)]
+        [version]$Release
+    )
+
+    if ($Release -gt $Installed.Version) { return $true }
+    if ($Release -eq $Installed.Version -and $Installed.IsPrerelease) { return $true }
+    return $false
+}
+
+function Install-ALRunner {
+    <#
+    .SYNOPSIS
+        Keep the AL Runner tool at the newest NuGet release
+    .DESCRIPTION
+        Installs BusinessCentral.AL.Runner as a global dotnet tool for containerless
+        unit testing, and on every run updates it to the newest stable release when
+        that release outranks the installed version (#145). A local or preview build
+        stays while it is newer than every release, and is replaced once a higher
+        release ships. The update targets that exact release, so it never moves down.
+        When NuGet cannot be read, the installed tool is kept with a warning. The
+        2.10 floor still applies: below it, provisioning fails.
+    #>
+    [CmdletBinding()]
+    param()
 
     Write-BuildHeader 'AL Runner Provisioning'
 
@@ -584,22 +626,18 @@ function Install-ALRunner {
     }
 
     $packageId = 'MSDyn365BC.AL.Runner'
-    $existing = Get-Command al-runner -ErrorAction SilentlyContinue
-    $updated = $false
+    $latest = $null
+    try {
+        $latest = Get-ALRunnerLatestRelease
+    } catch {
+        Write-BuildMessage -Type Warning -Message "Could not read the newest al-runner release from NuGet: $($_.Exception.Message)"
+    }
 
-    if ($existing -and -not $Update) {
-        Write-BuildMessage -Type Success -Message "AL Runner already installed: $($existing.Source)"
-    } elseif ($existing -and $Update) {
-        Write-BuildMessage -Type Step -Message "Updating AL Runner..."
-        $updateOutput = & dotnet tool update --global $packageId 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            throw "dotnet tool update failed for $packageId with exit code $LASTEXITCODE. Output: $($updateOutput -join [Environment]::NewLine)"
-        }
-        $updated = $true
-        Write-BuildMessage -Type Success -Message "AL Runner updated"
-    } else {
-        Write-BuildMessage -Type Step -Message "Installing AL Runner..."
-        $installOutput = & dotnet tool install --global $packageId 2>&1
+    $existing = Get-Command al-runner -ErrorAction SilentlyContinue
+    if (-not $existing) {
+        $versionArgs = if ($latest) { @('--version', "$latest") } else { @() }
+        Write-BuildMessage -Type Step -Message "Installing AL Runner $(if ($latest) { $latest } else { '(newest)' })..."
+        $installOutput = & dotnet tool install --global $packageId @versionArgs 2>&1
         if ($LASTEXITCODE -ne 0) {
             throw "dotnet tool install failed for $packageId with exit code $LASTEXITCODE. Output: $($installOutput -join [Environment]::NewLine)"
         }
@@ -622,37 +660,31 @@ function Install-ALRunner {
 
     Write-BuildMessage -Type Detail -Message "Path: $($postInstall.Source)"
 
-    # Enforce the version floor: containerless test execution depends on 2.10+.
-    # At most one update runs per invocation — if -Update already ran the
-    # dotnet tool update above, a still-below-floor version throws directly
-    # instead of updating a second time.
-    $requiredVersion = [version]'2.10'
     $versionLine = @(& al-runner --version 2>&1)[0]
     $found = ConvertTo-ALRunnerVersion -VersionLine $versionLine -Detailed
-    $foundVersion = $found.Version
+    $foundText = if ($found.IsPrerelease) { "$($found.Version)-$($found.Prerelease)" } else { "$($found.Version)" }
 
-    if ($foundVersion -lt $requiredVersion) {
-        if ($updated) {
-            throw "al-runner $foundVersion found, 2.10 required"
+    if ($existing -and $latest) {
+        if (Test-ALRunnerReleaseIsNewer -Installed $found -Release $latest) {
+            Write-BuildMessage -Type Step -Message "Updating AL Runner $foundText to $latest..."
+            $updateOutput = & dotnet tool update --global $packageId --version "$latest" 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                throw "dotnet tool update failed for $packageId with exit code $LASTEXITCODE. Output: $($updateOutput -join [Environment]::NewLine)"
+            }
+            $versionLine = @(& al-runner --version 2>&1)[0]
+            $found = ConvertTo-ALRunnerVersion -VersionLine $versionLine -Detailed
+            Write-BuildMessage -Type Success -Message "AL Runner updated to $($found.Version)"
+        } else {
+            Write-BuildMessage -Type Success -Message "AL Runner $foundText is current (newest release: $latest)"
         }
-        if ($found.IsPrerelease) {
-            throw "al-runner $foundVersion-$($found.Prerelease) found, 2.10 required; prerelease/local build left untouched — update it yourself or run with -Update"
-        }
+    } elseif ($existing) {
+        Write-BuildMessage -Type Warning -Message "Keeping AL Runner $foundText; the newest release could not be checked"
+    }
 
-        Write-BuildMessage -Type Step -Message "AL Runner $foundVersion found, updating to meet the $requiredVersion floor..."
-        $floorUpdateOutput = & dotnet tool update --global $packageId 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            throw "dotnet tool update failed for $packageId with exit code $LASTEXITCODE. Output: $($floorUpdateOutput -join [Environment]::NewLine)"
-        }
-        $updated = $true
-
-        $versionLine = @(& al-runner --version 2>&1)[0]
-        $foundVersion = ConvertTo-ALRunnerVersion -VersionLine $versionLine
-        if ($foundVersion -lt $requiredVersion) {
-            throw "al-runner $foundVersion found, 2.10 required"
-        }
-    } elseif ($found.IsPrerelease) {
-        Write-BuildMessage -Type Detail -Message "AL Runner $foundVersion-$($found.Prerelease) is a prerelease/local build; left untouched"
+    # Containerless test execution depends on 2.10+.
+    $requiredVersion = [version]'2.10'
+    if ($found.Version -lt $requiredVersion) {
+        throw "al-runner $($found.Version) found, $requiredVersion required"
     }
 
     Write-BuildMessage -Type Success -Message "AL Runner provisioning complete"
@@ -1829,6 +1861,8 @@ Export-ModuleMember -Function @(
     # AL Runner
     'Install-ALRunner'
     'ConvertTo-ALRunnerVersion'
+    'Get-ALRunnerLatestRelease'
+    'Test-ALRunnerReleaseIsNewer'
 
     # Local Symbols
     'Copy-ALSymbolToCache'

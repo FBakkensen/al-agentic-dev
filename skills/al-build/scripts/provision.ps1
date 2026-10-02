@@ -92,7 +92,7 @@ Install-LatestBcContainerHelper
 Install-ALCompiler -Update:$UpdateCompiler
 
 # Step 2b: Ensure AL Runner (containerless test execution always uses it)
-Install-ALRunner -Update:$UpdateCompiler
+Install-ALRunner
 
 # Step 3: Download symbols for main app
 $downloadSymbolsScript = Join-Path $PSScriptRoot 'download-symbols.ps1'
