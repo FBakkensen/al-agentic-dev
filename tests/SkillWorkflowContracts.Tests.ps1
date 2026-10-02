@@ -153,8 +153,10 @@ Describe 'Skill workflow contracts' {
 
         $shepherd | Should -Not -Match 'gh|GitHub|GraphQL'
         $shepherd | Should -Not -Match 'Copilot'
+        $shepherd | Should -Match 'only a green gate pushes'
         $shepherd | Should -Match '/al-build gate on the tree about to be pushed'
-        $shepherd | Should -Match '`/code-review` and `/bcquality:al-code-review`'
+        $shepherd | Should -Match 'built-in /code-review over that commit range'
+        $shepherd | Should -Match '/bcquality:al-code-review over that commit range'
         $shepherd | Should -Match 'no Spec axis'
     }
 
