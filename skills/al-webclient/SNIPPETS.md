@@ -41,7 +41,7 @@ Runs in the outer document, before the iframe exists. `<username>` and `<passwor
 })()
 ```
 
-`stack` lists the open pages bottom to top; `page` is the only one that accepts clicks. The company is not in it; see Company switch.
+`stack` lists the open pages bottom to top, and `page` is the top one. The company shows up only in the role centre's caption, so see Company switch.
 
 ## Open a page with Tell Me
 
