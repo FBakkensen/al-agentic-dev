@@ -67,7 +67,7 @@ Analyzer selection is `al.codeAnalyzers` in `.vscode/settings.json`, in the AL e
 
 ## Container recovery
 
-For ordinary container failures, recovery escalates from outside it: `docker restart <container>` and re-run the gate; then `Remove-BcContainer -containerName <container>` and re-run, which recreates it; then re-run `provision.ps1` and the gate. BcContainerHelper's `Remove-BcContainer` is the only way a BC container is removed. Nothing inside the container is patched by hand — `docker exec` or installing apps by hand leaves state the scripts cannot reproduce.
+For ordinary container failures, recovery escalates from outside it: `docker restart <container>` and re-run the gate; then `Remove-BcContainer -containerName <container>` and re-run, which recreates it; then re-run `provision.ps1` and the gate. Remove a BC container with Remove-BcContainer, which cleans up the files BcContainerHelper keeps for it. Nothing inside the container is patched by hand — `docker exec` or installing apps by hand leaves state the scripts cannot reproduce.
 
 ## Close
 
