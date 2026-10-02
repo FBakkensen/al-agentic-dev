@@ -110,7 +110,7 @@ Call 4: Enter on the input opens the first result, and Enter on a focused row op
 })()
 ```
 
-Call 5: the agent runs Where am I after about two seconds. The new page is live on top of the stack, with the page it came from underneath.
+Call 5: the agent runs Where am I, re-reading until `page` is the page asked for. The new page is live on top of the stack, with the page it came from underneath.
 
 ## Click a page action by its caption
 
@@ -180,7 +180,8 @@ The agent selects a row by clicking a cell of the row that holds `<row text>`:
   const frame = document.querySelector('iframe')?.contentDocument;
   if (!frame?.body) return { ready: false };
   const livePage = frame.querySelector('.spa-view:not(.spa-not-top-most)') ?? frame.body;
-  const hits = [...livePage.querySelectorAll('[role=row]')].filter(row => row.innerText.includes('<row text>'));
+  const flat = text => text.trim().replace(/\s+/g, ' ');
+  const hits = [...livePage.querySelectorAll('[role=row]')].filter(row => flat(row.innerText).includes(flat('<row text>')));
   if (hits.length !== 1) return { matches: hits.length };
   const cell = hits[0].querySelector('[role=gridcell]');
   if (!cell) return 'row has no gridcell';
