@@ -20,7 +20,7 @@ Spawn a child only for a sizeable, independent track of work whose result comes 
 
 ## Entry skills and their AL additions
 
-In an AL repository, when an entry skill below runs, load its AL addition beside it with the `Skill` tool. The addition adds only what is AL- or Azure DevOps-specific; the entry skill owns the process.
+In an AL repository, when an entry skill below runs, load its AL addition beside it with the `Skill` tool. The addition adds only what is AL-specific; the entry skill owns the process.
 
 | Entry skill | AL addition |
 |---|---|

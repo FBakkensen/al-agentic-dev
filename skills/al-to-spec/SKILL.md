@@ -1,6 +1,6 @@
 ---
 name: al-to-spec
-description: Use whenever /mattpocock-skills:to-spec runs in an AL repository, or when an Azure DevOps Original work item's settled request needs its process contract, BPMN process map, or Building Block View Level 1 written into its Description.
+description: Use whenever /mattpocock-skills:to-spec runs in an AL repository, or when an Original work item's settled request needs its process contract, BPMN process map, or Building Block View Level 1 written into its spec.
 ---
 
 # al-to-spec - the spec in the Original work item
@@ -9,7 +9,7 @@ In: `/mattpocock-skills:to-spec` running on an Original work item whose request 
 
 ## Where the spec lands
 
-Fill the existing Original work item, never a new one. The spec goes in Description on a Feature or PBI, and in Repro Steps on a Bug, under the entry's headings unchanged: Problem Statement, Solution, User Stories, Implementation Decisions, Testing Decisions, Out of Scope, Further Notes. The confirmed request under Problem Statement stays untouched.
+Fill the existing Original work item, never a new one. The spec goes in the spec field the tracker text names, under the entry's headings unchanged: Problem Statement, Solution, User Stories, Implementation Decisions, Testing Decisions, Out of Scope, Further Notes. The confirmed request under Problem Statement stays untouched.
 
 ## Under Solution
 
@@ -25,9 +25,9 @@ At the entry's user check:
 
 Show the HTML through `show_widget`, then an Artifact, then the local file. After the user's check:
 
-▶ haiku · /al-azure-devops-attachments the BPMN source and PNG to the Original work item → verified attachment URLs
+▶ haiku · attach the BPMN source and PNG to the Original work item as the tracker text says → verified attachment URLs
 
-Embed the verified PNG URL with its explanatory text under `Business process`.
+Place the verified PNG with its explanatory text under `Business process`, as the tracker text says.
 
 ## Under Implementation Decisions
 
@@ -41,9 +41,9 @@ Level 1 is settled when every important behavior has one module owner and each c
 
 Every local image published to the Original work item, Level 1 and Runtime View included, goes through:
 
-▶ haiku · /al-azure-devops-attachments the Level 1 and Runtime View PNG and SVG to the Original work item → verified attachment URLs
+▶ haiku · attach the Level 1 and Runtime View PNG and SVG to the Original work item as the tracker text says → verified attachment URLs
 
-Embed each verified PNG URL with its explanatory text under its section.
+Place each verified PNG with its explanatory text under its section, as the tracker text says.
 
 ## Grounding
 

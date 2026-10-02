@@ -1,15 +1,15 @@
 ---
 name: al-grill-with-docs
-description: Use whenever /mattpocock-skills:grill-with-docs runs on an AL/Business Central request, when such a request needs its Azure DevOps Original work item anchored with the request confirmed verbatim, or when its Trigger, Success and Minimal guarantees, and BPMN outcomes are still unsettled.
+description: Use whenever /mattpocock-skills:grill-with-docs runs on an AL/Business Central request, when such a request needs its Original work item anchored with the request confirmed verbatim, or when its Trigger, Success and Minimal guarantees, and BPMN outcomes are still unsettled.
 ---
 
 # al-grill-with-docs - anchor the request in its Original work item
 
-In: `/mattpocock-skills:grill-with-docs` running on an AL request. `/mattpocock-skills:grilling` owns the interview; `/mattpocock-skills:domain-modeling` owns `CONTEXT.md`, ADRs, and when to offer one. This addition adds the Azure DevOps anchor, the process questions, and the BC deltas to the glossary. Every work-item read and write follows the tracker text that the `## Agent skills` block's issue tracker line points to.
+In: `/mattpocock-skills:grill-with-docs` running on an AL request. `/mattpocock-skills:grilling` owns the interview; `/mattpocock-skills:domain-modeling` owns `CONTEXT.md`, ADRs, and when to offer one. This addition adds the work-item anchor, the process questions, and the BC deltas to the glossary. Every work-item read and write follows the tracker text that the `## Agent skills` block's issue tracker line points to.
 
 ## The anchor
 
-Before the first round, anchor the Original work item. A request that arrives on a Feature, Bug, or PBI names its id; read that item. A request that arrives on none gets a new Original work item in the backlog project the `## Agent skills` block's issue tracker line names; tell the user so, and create it with the request block's write.
+Before the first round, anchor the Original work item. A request that arrives on a work item names its id; read that item. A request that arrives on none gets a new Original work item where the tracker text says new ones go; tell the user so, and create it with the request block's write.
 
 ## The request block
 

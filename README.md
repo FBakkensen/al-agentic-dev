@@ -1,6 +1,6 @@
 # al-agentic-dev
 
-A Claude Code plugin for Microsoft Dynamics 365 Business Central development. It adds the AL and Azure DevOps specifics to the engineering skills you already use, and ships a scripted compile-publish-test gate.
+A Claude Code plugin for Microsoft Dynamics 365 Business Central development. It adds the AL specifics to the engineering skills you already use, and ships a scripted compile-publish-test gate.
 
 ## What gets installed
 
@@ -17,7 +17,7 @@ One install brings these.
 
 ## How it works
 
-`mattpocock-skills` owns the process; this plugin adds only what is specific to AL and Azure DevOps. You type the step you know, such as `/mattpocock-skills:to-spec`. In an AL repository, the `SessionStart` hook has Claude Code load that step's AL addition, `/al-to-spec`, beside it.
+`mattpocock-skills` owns the process; this plugin adds only what is specific to AL. You type the step you know, such as `/mattpocock-skills:to-spec`. In an AL repository, the `SessionStart` hook has Claude Code load that step's AL addition, `/al-to-spec`, beside it.
 
 The Base plugins (`mattpocock-skills`, `bcquality`, and the AL language server) are never copied into this plugin and are not pinned, so each updates on its own.
 

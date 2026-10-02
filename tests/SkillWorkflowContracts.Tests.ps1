@@ -61,7 +61,7 @@ Describe 'Skill workflow contracts' {
         $improve | Should -Match 'Restore the last green shape when a step goes unintentionally red'
         $improve | Should -Match 'At every exit'
         $improve | Should -Match '▶ haiku · /al-commit the complete worktree'
-        $improve | Should -Match 'writing the returned fragment into its Description'
+        $improve | Should -Match 'writing the returned fragment into the spec field the tracker text names'
         $improve | Should -Match 'This intended red is not a reason to restore'
         $improve | Should -Match 'the developer types `/mattpocock-skills:code-review` next, where al-review reads the receipt'
     }
@@ -103,7 +103,7 @@ Describe 'Skill workflow contracts' {
         $next | Should -Match 'every work-item read and write.*tracker text'
         $next | Should -Match 'leave its state and parent to the user'
         $next | Should -Match '▶ haiku · /al-arc42 the corrected Level 2 white box.*HTML path, SVG and PNG paths, alt text, publishable fragments'
-        $next | Should -Match '▶ haiku · /al-azure-devops-attachments the Level 2 PNG and SVG.*verified attachment URLs'
+        $next | Should -Match '▶ haiku · attach the Level 2 PNG and SVG.*as the tracker text says → verified attachment URLs'
         $arc42 | Should -Match '(?m)^In: .*/al-next'
     }
 
@@ -114,18 +114,18 @@ Describe 'Skill workflow contracts' {
         $toSpec | Should -Match ([regex]::Escape($headings -join ', '))
         $toSpec | Should -Match '`Process contract` \(Trigger, Success guarantee, Minimal guarantee\), then `Business process`, nest under Solution'
         $toSpec | Should -Match '`Building Block View` Level 1 nests here, and a `Runtime View` after it'
-        $toSpec | Should -Match 'Description on a Feature or PBI, and in Repro Steps on a Bug'
+        $toSpec | Should -Match 'The spec goes in the spec field the tracker text names, under the entry''s headings unchanged'
         $toSpec | Should -Not -Match 'User Story'
     }
 
-    It 'slices the Original work item into child PBIs and orders Acceptance Criteria for people before agents' {
+    It 'slices the Original work item into child work items and orders Acceptance Criteria for people before agents' {
         $toTickets = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-to-tickets' 'SKILL.md') -Raw
         $tdd = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-tdd' 'SKILL.md') -Raw
 
-        $toTickets | Should -Match '`Original` names a role in this workflow, not the top of the Azure DevOps hierarchy'
+        $toTickets | Should -Match '`Original` names a role in this workflow, not the top of the hierarchy'
         $toTickets | Should -Match 'Every existing item stays where it is, including the Original''s own structural parent'
         $toTickets | Should -Match 'One slice creates no child'
-        $toTickets | Should -Match 'Several slices each get one direct child PBI under the Original work item'
+        $toTickets | Should -Match 'Several slices each get one direct child work item under the Original work item'
         $toTickets | Should -Match '`Behavior` precedes `Test specification` when both are present'
         $toTickets | Should -Match 'Either section may be omitted'
         $toTickets | Should -Match 'valid fenced Gherkin'
@@ -184,8 +184,8 @@ Describe 'Skill workflow contracts' {
         $walkthrough | Should -Match 'the comment says every step passed'
         $walkthrough | Should -Match ([regex]::Escape('enable__mcp__remote-devices__Claude_Browser'))
         $walkthrough | Should -Match 'takes its screenshot before the next action'
-        $walkthrough | Should -Match '/al-azure-devops-attachments'
-        $walkthrough | Should -Match 'mcp__plugin_al-agentic-dev_ado__wit_work_item_comment_write'
+        $walkthrough | Should -Match 'attaches the screenshots to the executable work item as the tracker text says'
+        $walkthrough | Should -Match 'posts one comment on the executable work item as the tracker text says'
 
         $walkthrough.IndexOf('mcp__Claude_Browser__') | Should -BeLessThan $walkthrough.IndexOf('mcp__claude-in-chrome__')
         $walkthrough.IndexOf('mcp__claude-in-chrome__') | Should -BeLessThan $walkthrough.IndexOf('Playwright CLI')
@@ -229,9 +229,8 @@ Describe 'Skill workflow contracts' {
 
         $pullRequest | Should -Match 'Use `<area>: <imperative change>` for the title'
         $pullRequest | Should -Match 'mcp__plugin_al-agentic-dev_ado__repo_pull_request_write'
-        $pullRequest | Should -Match 'every work-item id on the branch'
+        $pullRequest | Should -Match 'link every work-item id on the branch as the tracker text'
         $pullRequest | Should -Match 'passed explicitly on every .update.'
-        $pullRequest | Should -Match 'wit_work_item_link_write`, action `link_to_pull_request'
         $pullRequest | Should -Not -MatchExactly '\bgh\b'
         $pullRequest | Should -Not -MatchExactly '\baz\b'
         $pullRequest | Should -Not -Match 'AB#'
@@ -243,6 +242,71 @@ Describe 'Skill workflow contracts' {
         foreach ($skill in @('al-clone-bcapps', 'al-grill-with-docs', 'al-implement', 'al-lookup', 'al-pr-shepherd', 'al-improve-codebase-architecture', 'al-simplify')) {
             $content = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'SKILL.md') -Raw
             $content | Should -Match '/al-commit' -Because "$skill writes repository files"
+        }
+    }
+}
+
+Describe 'Tracker neutrality' {
+    BeforeAll {
+        $script:TrackerTokens = [ordered]@{
+            'ado MCP tool'  = 'mcp__plugin_al-agentic-dev_ado__'
+            'az boards'     = 'az boards'
+            'az repos'      = 'az repos'
+            'Azure DevOps'  = 'Azure DevOps'
+            'Azure Repos'   = 'Azure Repos'
+            'Repro Steps'   = 'Repro Steps'
+            'PBI'           = '\bPBIs?\b'
+        }
+        $script:TrackerHomes = @(
+            'al-setup-matt-pocock-skills/AZURE-DEVOPS.md'
+            'al-azure-devops-attachments/'
+            'al-pull-request/'
+            'al-pr-shepherd/'
+        )
+    }
+
+    It 'names no Tracker-specific tool or field outside the tracker text, the attachment skill, and the pull-request skills' {
+        $offenders = foreach ($file in Get-ChildItem -LiteralPath $script:SkillsRoot -Filter '*.md' -Recurse) {
+            $relative = $file.FullName.Substring($script:SkillsRoot.Length + 1).Replace('\', '/')
+            if ($relative -match 'node_modules') { continue }
+            if ($script:TrackerHomes | Where-Object { $relative.StartsWith($_) }) { continue }
+            $text = Get-Content -LiteralPath $file.FullName -Raw
+            foreach ($name in $script:TrackerTokens.Keys) {
+                if ($text -cmatch $script:TrackerTokens[$name]) { "$relative names $name" }
+            }
+        }
+
+        $offenders | Should -BeNullOrEmpty
+    }
+
+    It 'keeps the Azure DevOps tracker text where the setup reads it, under the heading set-up repositories already carry' {
+        $tracker = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' 'AZURE-DEVOPS.md') -Raw
+        $setup = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' 'SKILL.md') -Raw
+
+        $tracker | Should -MatchExactly '(?m)^## Work item structure$'
+        $tracker | Should -Match '(?m)^### Attach files$'
+        $tracker | Should -Match '(?m)^### How a pull request names a work item$'
+        $setup | Should -Match ([regex]::Escape('[AZURE-DEVOPS.md](AZURE-DEVOPS.md)'))
+    }
+
+    It 'has the Azure DevOps tracker text own attachment upload and the native pull-request link' {
+        $tracker = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' 'AZURE-DEVOPS.md') -Raw
+
+        $tracker | Should -Match '/al-azure-devops-attachments'
+        $tracker | Should -Match 'verified attachment URLs'
+        $tracker | Should -Match 'Azure Repos pull request links natively'
+        $tracker | Should -Match 'link_to_pull_request'
+        $tracker | Should -Match 'GitHub pull request carries `AB#<id>`'
+    }
+
+    It 'has every attach line defer to the tracker text and return verified attachment URLs' {
+        $lines = Get-ChildItem -LiteralPath $script:SkillsRoot -Filter 'SKILL.md' -Recurse |
+            Where-Object { $_.FullName -notmatch 'node_modules' } |
+            Select-String -Pattern '^\s*▶ haiku · attach '
+
+        @($lines).Count | Should -BeGreaterThan 0
+        foreach ($line in $lines) {
+            $line.Line | Should -Match 'as the tracker text says → verified attachment URLs$'
         }
     }
 }

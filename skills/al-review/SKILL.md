@@ -1,23 +1,23 @@
 ---
 name: al-review
-description: Use whenever /mattpocock-skills:code-review runs on AL code for a slice with an Azure DevOps work item, a child PBI or the Original work item itself, or when a landed AL slice is judged against its work item's Gherkin and proof. A plain AL code review with no work item belongs to /bcquality:al-code-review.
+description: Use whenever /mattpocock-skills:code-review runs on AL code for a slice with a work item, a child work item or the Original work item itself, or when a landed AL slice is judged against its work item's Gherkin and proof. A plain AL code review with no work item belongs to /bcquality:al-code-review.
 ---
 
 # al-review - the AL layer of mattpocock-skills:code-review
 
-In: `/mattpocock-skills:code-review` over an AL slice. The entry owns the process: the fixed point, its Spec and Standards sub-agents, and the per-axis summary. This addition feeds both axes the Azure DevOps and AL inputs, adds a Correctness axis, and sets the findings grammar. Read-only: report evidence, and edit no code, work item, or design. It runs no gate; missing proof is a finding.
+In: `/mattpocock-skills:code-review` over an AL slice. The entry owns the process: the fixed point, its Spec and Standards sub-agents, and the per-axis summary. This addition feeds both axes the work-item and AL inputs, adds a Correctness axis, and sets the findings grammar. Read-only: report evidence, and edit no code, work item, or design. It runs no gate; missing proof is a finding.
 
 ## The work item
 
-Find the executable work item's id: the id in the branch name or the request, or a receipt under `.output/receipts/`. It is a child PBI, or the Original work item itself when the request has one slice. Read it, then its parent Original work item, by id with `mcp__plugin_al-agentic-dev_ado__wit_work_item` (`get`, expand `Relations`). The receipt is `.output/receipts/<executable id>.md`.
+Find the executable work item's id: the id in the branch name or the request, or a receipt under `.output/receipts/`. It is a child work item, or the Original work item itself when the request has one slice. Read it, then its parent Original work item, as the tracker text says. The receipt is `.output/receipts/<executable id>.md`.
 
-With no Azure DevOps work item in play, hand the whole review to `/bcquality:al-code-review` in place of the entry's axes, and return its findings report unchanged; the rest of this addition does not apply.
+With no work item in play, hand the whole review to `/bcquality:al-code-review` in place of the entry's axes, and return its findings report unchanged; the rest of this addition does not apply.
 
 When this addition loads first with a work item in play, invoke `/mattpocock-skills:code-review` with the `Skill` tool and run beside it.
 
 ## Spec axis
 
-▶ opus · the entry's Spec sub-agent itself, not a second one: its brief plus the executable work item's Acceptance Criteria (`Behavior` Gherkin and `Test specification`), the Original work item's Description (Repro Steps on a Bug), the receipt, and the checks below → Spec findings in the grammar below
+▶ opus · the entry's Spec sub-agent itself, not a second one: its brief plus the executable work item's Acceptance Criteria (`Behavior` Gherkin and `Test specification`), the Original work item's spec field, the receipt, and the checks below → Spec findings in the grammar below
 
 The sub-agent reads the receipt's `verified:` / `assumed:` / `unresolved:` entries first and spot-checks every `verified:` pointer, the gate pointer included. An undeclared platform assumption that behavior depends on is Blocking; a declared assumption or unanswered question is classified by its consequence. It judges:
 

@@ -80,14 +80,14 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 
 33. Artifact prose shows the thing — the page, the field, the command, the number — one sentence per fact; run narration in an artifact is a defect, its home the commit message. Chat surfaces glyph their fixed slots, shape-distinct rather than color-coded: findings as `⛔` Blocking / `⚖️` Non-Blocking headlines over one-line `⚡ Breaks:` / `📍 Proof:` / `🔧 Fix:` slots in `al-review`'s three axes — Spec, Standards, Correctness — reported unmerged, the set-wide findings grammar, with no closing verdict that merges the axes — and the run-narration ledes — `▸` finding / `➜` move mid-run, `✅` / `⛔` at the close. These carried lines are deliberate, not rule-16/17 findings — live sessions ignored the shape while it was unwritten. Flag a carrier missing its line, and flag an emoji outside a defined slot — that one is decoration. The delegation line `▶ <model> · <brief> → <return>` of rule 38 is a defined slot; `al-walkthrough`'s `▶ <business action>` report line stays — it sits in a code span and names no model.
 
-## Azure DevOps attachments
+## Work-item attachments
 
-35. A skill that publishes local files to an Azure DevOps work item calls `/al-azure-devops-attachments`. Flag manual-upload fallback and any claim that missing MCP attachment support blocks publication. Azure CLI authentication failure pauses for the exact user-run login command; after authentication, the skill resumes upload and verifies every `AttachedFile` relation.
+35. A skill that publishes local files to a work item delegates the line `▶ haiku · attach <the files> to <the item> as the tracker text says → verified attachment URLs`; the Azure DevOps tracker text sends it to `/al-azure-devops-attachments`. Flag manual-upload fallback and any claim that missing MCP attachment support blocks publication. Azure CLI authentication failure pauses for the exact user-run login command; after authentication, `/al-azure-devops-attachments` resumes upload and verifies every `AttachedFile` relation.
 
-## Azure DevOps work items
+## Work items
 
-36. One request has one Original work item: the Feature, Bug, or PBI it arrives on. `Original` names its role in this workflow, not the top of the Azure DevOps hierarchy; structural parents remain unchanged and out of scope. One Vertical slice creates no child; the Original work item is executable. Several slices make it the container, and each slice gets one direct child PBI. Flag an Epic introduced by this workflow, a grandchild below the Original work item, and a child of any type other than PBI.
-37. The spec keeps `/mattpocock-skills:to-spec`'s headings in order: `Problem Statement`, `Solution`, `User Stories`, `Implementation Decisions`, `Testing Decisions`, `Out of Scope`, `Further Notes`. `Process contract` and `Business process` nest under `Solution`; `Building Block View` and `Runtime View` nest under `Implementation Decisions`. The spec lives in Description on a Feature or PBI, and in Repro Steps on a Bug. Diagrams stay with their explanatory text. In Acceptance Criteria, `Behavior` is valid fenced Gherkin and precedes `Test specification` when both exist; either section may be absent without prescribed meaning.
+36. One request has one Original work item, the item it arrives on. `Original` names its role in this workflow, not the top of the hierarchy; structural parents remain unchanged and out of scope. One Vertical slice creates no child; the Original work item is executable. Several slices make it the container, and each slice gets one direct child work item. Flag an Epic introduced by this workflow, a grandchild below the Original work item, and a child of any type the tracker text does not name for slices.
+37. The spec keeps `/mattpocock-skills:to-spec`'s headings in order: `Problem Statement`, `Solution`, `User Stories`, `Implementation Decisions`, `Testing Decisions`, `Out of Scope`, `Further Notes`. `Process contract` and `Business process` nest under `Solution`; `Building Block View` and `Runtime View` nest under `Implementation Decisions`. The spec lives in the spec field the tracker text names. Diagrams stay with their explanatory text. In Acceptance Criteria, `Behavior` is valid fenced Gherkin and precedes `Test specification` when both exist; either section may be absent without prescribed meaning.
 
 ## Delegation contract
 
@@ -96,3 +96,7 @@ Every folder under `skills/` is an Agent Skill — a `SKILL.md` plus optional si
 ## Base plugin references
 
 39. Call a Base plugin skill by its namespaced name — `/mattpocock-skills:<skill>`, `/bcquality:<skill>` — only once upstream has shipped it in a version bump. The drift check resolves references against upstream heads, which run ahead of what developers have installed, so a skill it accepts may not exist on a developer's machine yet.
+
+## Tracker neutrality
+
+40. A skill reads, writes, comments on, links, and attaches to a work item only as the tracker text says. Flag an `ado` MCP tool, `az boards`, `az repos`, Azure DevOps, Azure Repos, Repro Steps, or PBI in a skill outside the Azure DevOps tracker text, `al-azure-devops-attachments`, `al-pull-request`, and `al-pr-shepherd`; `tests/SkillWorkflowContracts.Tests.ps1` fails the same tokens.

@@ -1,11 +1,11 @@
 ---
 name: al-walkthrough
-description: Use when an implemented Original work item or child PBI has Gherkin scenarios that need walking in the Business Central Web Client of the branch's agent container.
+description: Use when an implemented Original work item or child work item has Gherkin scenarios that need walking in the Business Central Web Client of the branch's agent container.
 ---
 
 # al-walkthrough - walk the slice
 
-In: an implemented executable Original work item, or a child PBI and its Original; the environment is the branch's agent container. This pass observes Gherkin behavior; AAA unit and integration cases remain build evidence.
+In: an implemented executable Original work item, or a child work item and its Original; the environment is the branch's agent container. This pass observes Gherkin behavior; AAA unit and integration cases remain build evidence.
 The lead changes no AL code and creates no report file; the screenshots under `.output/` are evidence, not a report.
 
 ## Before the walk
@@ -49,8 +49,8 @@ For each ⛔ step the lead takes one screenshot and saves it as `.output/walkthr
 - Built-in browser: the lead calls `mcp__Claude_Browser__computer` (`mcp__remote-devices__Claude_Browser__computer` in a cloud session) with the `screenshot` action and saves the file to `<path>` where the tool can write one.
 - When a driver returns only the image and no file, the lead says so in the comment and attaches nothing for that step.
 
-The lead attaches the screenshots to the executable work item by calling /al-azure-devops-attachments in-line; the republish stays the only delegated `▶` line.
-The lead then posts one comment on the executable work item with `mcp__plugin_al-agentic-dev_ado__wit_work_item_comment_write`, action `add`: the commit and app version, each scenario's result, and the attachment URL beside each ⛔ step.
+The lead attaches the screenshots to the executable work item as the tracker text says, in-line; the republish stays the only delegated `▶` line.
+The lead then posts one comment on the executable work item as the tracker text says: the commit and app version, each scenario's result, and the attachment URL beside each ⛔ step.
 With no ⛔ step nothing is attached, and the comment says every step passed.
 Done when every screenshot is a verified attachment and the comment is posted.
 

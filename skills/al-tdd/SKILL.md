@@ -5,7 +5,7 @@ description: Use whenever /mattpocock-skills:tdd runs against AL code.
 
 # al-tdd - AL proof for the red-green loop
 
-In: `/mattpocock-skills:tdd` running against AL code. The entry skill owns the loop; this addition supplies its agreed seams, the AL proof set, and what red and green mean in AL. Read the executable work item, the Original work item or its child PBI, for its `Behavior`, and the Original work item for its Trigger, Success guarantee, Minimal guarantee, and Building Block Level 1.
+In: `/mattpocock-skills:tdd` running against AL code. The entry skill owns the loop; this addition supplies its agreed seams, the AL proof set, and what red and green mean in AL. Read the executable work item, the Original work item or its child work item, for its `Behavior`, and the Original work item for its Trigger, Success guarantee, Minimal guarantee, and Building Block Level 1.
 
 ## The agreed seams
 
