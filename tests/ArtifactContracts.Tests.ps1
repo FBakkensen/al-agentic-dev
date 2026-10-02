@@ -65,8 +65,8 @@ Describe 'Architecture artifact contracts' {
         $attachmentSkill = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-azure-devops-attachments' 'SKILL.md') -Raw
 
         $attachmentSkill | Should -Match 'az account get-access-token'
-        $attachmentSkill | Should -Match '--tenant 3c2c919b-877a-4cd6-be64-b25bbdaee76f'
-        $attachmentSkill | Should -Match 'az login --tenant 3c2c919b-877a-4cd6-be64-b25bbdaee76f'
+        $attachmentSkill | Should -Match '--tenant 7f33d80b-fe48-47f4-a90d-4cae5c190f47'
+        $attachmentSkill | Should -Match 'az login --tenant 7f33d80b-fe48-47f4-a90d-4cae5c190f47'
         $attachmentSkill | Should -Match '--allow-no-subscriptions'
         $attachmentSkill | Should -Match 'application/octet-stream'
         $attachmentSkill | Should -Match "relation-type 'Attached File'"
