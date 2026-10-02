@@ -10,7 +10,7 @@ One install brings the Agent Skills, a `SessionStart` hook, and two bundled MCP 
 - Claude Code
 - VS Code with the AL extension `ms-dynamics-smb.al` — the AL language server exits without it
 - Docker Desktop, BcContainerHelper, and the .NET SDK — `/al-build`'s scripted toolchain
-- Node.js — `npx` starts the `ado` MCP server
+- Node.js 22+ with `npx` on PATH — `npx` starts the `ado` MCP server
 - The Azure CLI, signed in with `az login` — the `ado` MCP server authenticates through it
 - Playwright CLI: `npm install -g @playwright/cli@latest` — one of the drivers `/al-walkthrough` uses for the Web Client
 - In each Consumer repository, `al-build.json` at the root, for the build gate
@@ -54,13 +54,11 @@ Run `/plugin` and confirm `al-agentic-dev` is installed at version `0.9.0`. Then
 
 ## Update
 
-Third-party marketplaces do not auto-update by default, so update the installed plugin yourself: select **Update now** in its `/plugin` Installed details, or run
+Run
 
 ```
 claude plugin update al-agentic-dev@al-agentic-dev
 ```
-
-Restart Claude Code to apply the update. `/plugin marketplace update al-agentic-dev` refreshes only the marketplace listing.
 
 Fixes to `bcquality` and the AL language server arrive only when their upstream bumps `version`, never through commits alone.
 
@@ -100,14 +98,15 @@ Our own entry skills:
 | `/al-webclient` | Loads the Web Client driving rules before any browser call that touches Business Central. |
 | `/al-environment-data` | Reads data, GET only, from a SaaS sandbox's API or the branch's agent container. |
 
-The skills above call these; `/al-commit` and `/al-pull-request` also run when you ask for a commit or a pull request:
+Other skills call these:
 
 | Skill | What it does |
 |---|---|
 | `/al-commit` | Stages the full worktree and creates the maximum number of independently valid commits. |
-| `/al-pull-request` | Creates or updates the ready pull request for the current branch. |
 | `/al-clone-bcapps` | Clones Microsoft's BCApps source at the matching BC version for reading platform code. |
 | `/al-azure-devops-attachments` | Uploads local files and attaches them to an Azure DevOps work item. |
+
+`/al-pull-request` runs when you ask for a pull request from the current branch: it creates or updates the ready pull request, with the landed change and available proof.
 
 Third-party formats and runtime dependencies are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
