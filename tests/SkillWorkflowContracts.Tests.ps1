@@ -160,6 +160,34 @@ Describe 'Skill workflow contracts' {
         $shepherd | Should -Match 'no Spec axis'
     }
 
+    It 'walks the Gherkin scenarios in the agent container through a browser driver' {
+        $walkthrough = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-walkthrough' 'SKILL.md') -Raw
+        $republish = '▶ haiku · /al-build clean republish into the branch''s agent container → deployed commit, app version, Web Client URL, username'
+        $confirm = 'asks the user with `AskUserQuestion`'
+        $webclient = 'Before the first browser call, the lead invokes /al-webclient'
+
+        $walkthrough | Should -Not -Match 'User Story|Copilot|workspace MCP|bc_'
+        $walkthrough | Should -Match ([regex]::Escape($republish))
+        [regex]::Matches($walkthrough, '(?m)^\s*▶ ').Count | Should -Be 1
+        $walkthrough | Should -Match 'mcp__remote-devices__Claude_Browser__'
+        $walkthrough | Should -Match 'one `ToolSearch` call on its prefix'
+        $walkthrough | Should -Match ([regex]::Escape('npm install -g @playwright/cli@latest'))
+        $walkthrough | Should -Match ([regex]::Escape('playwright-cli -s=<agent-container> open <url> --headed'))
+        $walkthrough | Should -Match ([regex]::Escape('navOk: false'))
+        $walkthrough | Should -Match ([regex]::Escape($confirm))
+        $walkthrough | Should -Match ([regex]::Escape($webclient))
+        $walkthrough | Should -Match 'never repeated in chat'
+        $walkthrough | Should -Match ([regex]::Escape('.output/walkthrough/'))
+        $walkthrough | Should -Match '/al-azure-devops-attachments'
+        $walkthrough | Should -Match 'mcp__plugin_al-agentic-dev_ado__wit_work_item_comment_write'
+
+        $walkthrough.IndexOf('mcp__Claude_Browser__') | Should -BeLessThan $walkthrough.IndexOf('mcp__claude-in-chrome__')
+        $walkthrough.IndexOf('mcp__claude-in-chrome__') | Should -BeLessThan $walkthrough.IndexOf('Playwright CLI')
+        $walkthrough.IndexOf('Playwright CLI') | Should -BeLessThan $walkthrough.IndexOf($republish)
+        $walkthrough.IndexOf($confirm) | Should -BeLessThan $walkthrough.IndexOf($republish)
+        $walkthrough.IndexOf($republish) | Should -BeLessThan $walkthrough.IndexOf($webclient)
+    }
+
     It 'owns commits and pull requests in dedicated skills' {
         $commit = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-commit' 'SKILL.md') -Raw
         $pullRequest = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pull-request' 'SKILL.md') -Raw
