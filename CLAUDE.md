@@ -19,7 +19,7 @@ skills/al-build/scripts/*.ps1   the build substrate
 skills/al-build/config/         al-build.json
 ```
 
-Twenty skills ship today.
+Twenty-one skills ship today.
 
 - `al-build` — the compile-publish-test gate, provisioning, breaking-change validation, and the container lifecycle; the contract model everything else copies.
 - `al-clone-bcapps` — the BCApps lookup-source clone.
@@ -41,6 +41,7 @@ Twenty skills ship today.
 - `al-walkthrough` — the Gherkin walk in the running Web Client through the Consumer repository's workspace MCP.
 - `al-setup-matt-pocock-skills` — the Azure DevOps issue-tracker option and tracker text for `/mattpocock-skills:setup-matt-pocock-skills`.
 - `al-simplify` — the AL freeze, per-edit gate, mutation red, and receipt refresh beside `/simplify`.
+- `al-environment-data` — GET-only reads of a SaaS sandbox or the agent container, and the read-only debug app with its checked teardown.
 
 The folder name equals the frontmatter `name`. A skill reaches outside its folder only by naming another skill — `/al-build` — never by path.
 
