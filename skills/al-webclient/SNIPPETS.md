@@ -223,7 +223,7 @@ Tile views (Extension Management, role-centre parts) render each record as an `l
 
 ## Lookup field
 
-Call 1: the agent finds the field's input by its observed `aria-label` (card and grid inputs often carry none: it matches on the current value) and clicks the one caret beside it, a `button` in a grid or an `a[role=button]` titled `Choose a value for <caption>` on a card. With `click` set to `false` it reads the field's value alone.
+Call 1: the agent finds the field's input by its observed `aria-label` (card and grid inputs often carry none: it matches on the current value) and clicks the one caret beside it, an `a[role=button]` titled `Choose a value for <caption>` in a grid cell or on a card (a `button` is accepted too). With `click` set to `false` it reads the field's value alone.
 
 ```js
 (() => {

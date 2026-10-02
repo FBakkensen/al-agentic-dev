@@ -32,7 +32,7 @@ Done when the user has confirmed; the client opens only after.
 Before the first browser call, the lead invokes /al-webclient.
 The lead opens the Web Client URL on its `.test` host in the chosen driver and signs in automatically as /al-webclient directs: the republish's username, the `al-build.json` container password read at sign-in and never repeated in chat, no password typed by the user.
 - Built-in browser: the user may be asked to approve the `.test` host, and a denied navigation comes back as `navOk: false`. The lead waits for the answer and moves to the next available driver when the site is refused; with none left, the lead stops and tells the user.
-- Playwright CLI: the lead opens it with `playwright-cli -s=<agent-container> open <url> --headed`, so parallel branches don't share a browser.
+- Playwright CLI: the lead writes `.output/playwright.json` as `{"outputDir": ".output/playwright"}`, then runs `playwright-cli -s=<agent-container> open <url> --headed --config .output/playwright.json` from the repo root, so parallel branches don't share a browser and snapshots stay in `.output/`.
 - Done when /al-webclient's frame check passes on the signed-in client.
 
 Before a step relies on a page, action, field, enum value, dialog, or resulting record, the lead confirms it through the current client or /al-lookup in this session, never from recall. The lead reports:

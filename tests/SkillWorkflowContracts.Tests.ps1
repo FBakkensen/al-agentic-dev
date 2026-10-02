@@ -173,6 +173,7 @@ Describe 'Skill workflow contracts' {
         $walkthrough | Should -Match 'one `ToolSearch` call on its prefix'
         $walkthrough | Should -Match ([regex]::Escape('npm install -g @playwright/cli@latest'))
         $walkthrough | Should -Match ([regex]::Escape('playwright-cli -s=<agent-container> open <url> --headed'))
+        $walkthrough | Should -Match ([regex]::Escape('--config .output/playwright.json'))
         $walkthrough | Should -Match ([regex]::Escape('navOk: false'))
         $walkthrough | Should -Match ([regex]::Escape($confirmAsk))
         $walkthrough | Should -Match ([regex]::Escape($webclientFirst))
