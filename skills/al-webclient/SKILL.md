@@ -1,6 +1,6 @@
 ---
 name: al-webclient
-description: "Drives the Business Central Web Client in a browser through page JavaScript, on a SaaS sandbox or the branch's agent container. Use before the first browser call of any task that touches the Web Client in a browser."
+description: "Use before the first browser call of any task that touches the Business Central Web Client in the built-in browser, Claude in Chrome, or Playwright CLI, on a SaaS sandbox or on the branch's agent container."
 ---
 
 # al-webclient
