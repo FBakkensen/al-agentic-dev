@@ -20,7 +20,7 @@ An environment's API reads its data deterministically. The two targets, their cr
 ## Boundaries
 
 - Data requests are `GET`. The only mutations are publishing and removing this skill's own debug app, on a SaaS sandbox or the agent container, never on a customer tenant; every change to business data goes through the product or its UI.
-- Credentials sit in the request header and nowhere else: not printed, logged, saved, or passed as a command-line value.
+- A SaaS token sits in the request header and nowhere else: not printed, logged, saved, or passed as a command-line value. The agent container's login is not a secret (/al-build).
 - Every table, field, and object a debug query names or shows is confirmed through the symbols or /al-lookup in this session, never recalled; the query and every line shown use Business Central vocabulary.
 
 ## Close

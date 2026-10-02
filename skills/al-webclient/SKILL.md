@@ -15,9 +15,7 @@ The Web Client is a single-page app inside an iframe. Every recipe is page JavaS
    - On a SaaS sandbox with no Business Central page open, the agent stops and asks the user to open the sandbox and sign in, then continues.
    - A SaaS sign-in or MFA page and a blank frame are each a stop for the user; the agent never retries a SaaS sign-in.
 2. **Agent container** (the container /al-build names after the branch). The agent opens its `.test` Web Client URL once: the one /al-build prints, else `http://<agent-container>.test/<serverInstance>/?tenant=<tenant>` from `al-build.json`.
-   - The agent signs in itself with the sign-in snippet, with the container credentials from `al-build.json`.
-   - The password appears only in that one sign-in call, read from `al-build.json` at that moment; never in prose, never in a later call, never saved.
-   - With `playwright-cli`, the agent builds that call's text in the shell from the config, so it never types the value. A script argument is a command-line value for that one process, and page JavaScript has no route to an environment variable.
+   - The agent signs in itself with the sign-in snippet, with the container login from `al-build.json`; that password is not a secret (/al-build).
    - `page=` and `company=` URLs are allowed. Done when step 1's check passes.
 3. **SaaS sandbox.** The user signs in, with MFA. The agent opens no URL: every URL move costs the user a fresh sign-in and MFA.
    - Forbidden, with no exception for "same origin" or "just to test whether it prompts": a navigation with a URL, `page=`, `company=`, `bookmark=`, any `location` change on the top window or the iframe.

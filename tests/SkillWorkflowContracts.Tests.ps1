@@ -177,7 +177,7 @@ Describe 'Skill workflow contracts' {
         $walkthrough | Should -Match ([regex]::Escape('navOk: false'))
         $walkthrough | Should -Match ([regex]::Escape($confirmAsk))
         $walkthrough | Should -Match ([regex]::Escape($webclientFirst))
-        $walkthrough | Should -Match 'never repeated in chat'
+        $walkthrough | Should -Match 'container password, which is not a secret'
         $walkthrough | Should -Match ([regex]::Escape('.output/walkthrough/'))
         $walkthrough | Should -Match ([regex]::Escape('mcp__claude-in-chrome__computer'))
         $walkthrough | Should -Match ([regex]::Escape('screenshot --filename=<path>'))
@@ -192,6 +192,22 @@ Describe 'Skill workflow contracts' {
         $walkthrough.IndexOf('Playwright CLI') | Should -BeLessThan $walkthrough.IndexOf($republish)
         $walkthrough.IndexOf($confirmAsk) | Should -BeLessThan $walkthrough.IndexOf($republish)
         $walkthrough.IndexOf($republish) | Should -BeLessThan $walkthrough.IndexOf($webclientFirst)
+    }
+
+    It 'states in /al-build that the container login is not a secret and points to it from the skills that use it' {
+        $albuild = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-build' 'SKILL.md') -Raw
+        $albuild | Should -Match ([regex]::Escape('the throwaway login of a local test container, and they are not secrets'))
+        $albuild | Should -Match ([regex]::Escape('`P@ssw0rd`'))
+
+        $pointers = [ordered]@{
+            'al-webclient'        = 'that password is not a secret (/al-build)'
+            'al-walkthrough'      = 'which is not a secret (/al-build)'
+            'al-environment-data' = 'login is not a secret (/al-build)'
+        }
+        foreach ($skill in $pointers.Keys) {
+            $text = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'SKILL.md') -Raw
+            $text | Should -Match ([regex]::Escape($pointers[$skill]))
+        }
     }
 
     It 'owns commits and pull requests in dedicated skills' {

@@ -24,7 +24,7 @@
     lines at the container's current IP and PublicWebBaseUrl on the .test host.
     A failed re-assert exits non-zero before anything is unpublished. The script
     ends with the commit, the main app's version, the .test Web Client URL, and
-    the container username; the password is never printed.
+    the container username.
 
 .EXAMPLE
     pwsh -File publish-apps.ps1

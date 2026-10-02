@@ -87,7 +87,7 @@ Describe 'publish-apps.ps1 surface' {
     }
 }
 
-Describe 'publish-apps.ps1 call order and password' {
+Describe 'publish-apps.ps1 call order' {
     BeforeAll {
         $script:Ast = Get-ScriptAst
         $script:Commands = @($script:Ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] }, $true))
@@ -96,10 +96,6 @@ Describe 'publish-apps.ps1 call order and password' {
             param([string]$Name)
             @($script:Commands | Where-Object { $_.GetCommandName() -eq $Name })
         }
-    }
-
-    It 'never references ContainerPassword' {
-        $script:Content | Should -Not -Match 'ContainerPassword'
     }
 
     It 're-asserts the host once, after Ensure-BCAgentContainer and before the first unpublish' {
@@ -151,20 +147,12 @@ Describe 'publish-apps.ps1 call order and password' {
         $try.Finally.Extent.Text | Should -Match "Stop-Step 'sync-host'"
     }
 
-    It 'keeps the password out of Write-RepublishResult in common.psm1' {
-        $commonPath = Join-Path $PSScriptRoot '..' '..' 'skills' 'al-build' 'scripts' 'common.psm1'
-        $tokens = $null; $errors = $null
-        $ast = [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $commonPath), [ref]$tokens, [ref]$errors)
-        $fn = @($ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Write-RepublishResult' }, $true))
-        $fn | Should -HaveCount 1
-        $fn[0].Extent.Text | Should -Not -Match 'ContainerPassword'
-    }
 }
 
 Describe 'Write-RepublishResult' {
     BeforeAll {
-        # The real inputs: a config that carries a password, and a main app.json read from disk.
-        $script:Config = [pscustomobject]@{ ContainerName = 'feat-x'; ContainerUsername = 'walker'; ContainerPassword = 'S3cret!' }
+        # The real inputs: a config and a main app.json read from disk.
+        $script:Config = [pscustomobject]@{ ContainerName = 'feat-x'; ContainerUsername = 'walker' }
         $appDir = Join-Path $TestDrive 'main-app'
         New-Item -ItemType Directory -Path $appDir | Out-Null
         Set-Content -LiteralPath (Join-Path $appDir 'app.json') -Value '{ "name": "Main", "version": "27.3.1.0" }'
@@ -195,17 +183,6 @@ Describe 'Write-RepublishResult' {
             }
             $verbose = @(& { Write-RepublishResult -Config $Config -AppJson $AppJson -WebClientUrl $Url } 6>$null 4>&1)
             $verbose | Should -HaveCount 0
-        }
-    }
-
-    It 'never carries the password on any stream' {
-        InModuleScope common -Parameters @{ Config = $script:Config; AppJson = $script:AppJson; Url = $script:Url } {
-            param($Config, $AppJson, $Url)
-            $Config.ContainerPassword | Should -Be 'S3cret!'
-            Mock Get-DeployedCommit { 'abc1234' }
-            $all = (& { Write-RepublishResult -Config $Config -AppJson $AppJson -WebClientUrl $Url } *>&1 | ForEach-Object { "$_" }) -join "`n"
-            $all | Should -Not -BeNullOrEmpty
-            $all | Should -Not -Match ([regex]::Escape('S3cret!'))
         }
     }
 

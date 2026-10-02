@@ -120,13 +120,6 @@ Describe 'Golden container without AL-Go settings' {
         Get-ScriptCommand -Name 'Import-BcContainerLicense' | Should -HaveCount 0
     }
 
-    It 'never prints the container password' {
-        $messageWriters = Get-ScriptCommand -Name 'Write-BuildMessage', 'Write-BuildHeader', 'Write-Host', 'Write-Information', 'Write-Output', 'Write-Warning', 'Write-Error', 'Write-Verbose'
-        $messageWriters | Should -Not -BeNullOrEmpty
-
-        @($messageWriters | Where-Object { $_.Extent.Text -match 'ContainerPassword|\.Password\b' }) |
-            Should -HaveCount 0
-    }
 }
 
 Describe 'Gate publishing contract' {

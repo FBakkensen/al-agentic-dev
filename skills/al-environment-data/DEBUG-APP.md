@@ -63,17 +63,15 @@ Three inline `al` CLI steps, run in the debug-app folder under `.output/`, typed
 | SaaS sandbox | `--tenant <tenant> --environmenttype Sandbox --environmentname <environment> --authentication AAD` |
 | Agent container | `--environmenttype OnPrem --server http://<agent-container> --serverinstance <serverInstance> --tenant <tenant> --authentication UserPassword` |
 
-On the container, `al` reads the credentials from `BC_SERVER_USERNAME` and `BC_SERVER_PASSWORD`. Run the three steps in one block that sets them from `al-build.json` and removes them after; they are never an argument and never echoed:
+On the container, `al` reads the login from `BC_SERVER_USERNAME` and `BC_SERVER_PASSWORD`. Run the three steps in one block that sets them from `al-build.json`:
 
 ```powershell
 $cfg    = Get-Content (Join-Path (git rev-parse --show-toplevel) 'al-build.json') -Raw | ConvertFrom-Json
 $flags  = '--environmenttype', 'OnPrem', '--server', 'http://<agent-container>', '--serverinstance', $cfg.serverInstance, '--tenant', $cfg.tenant, '--authentication', 'UserPassword'
 $env:BC_SERVER_USERNAME = $cfg.container.username; $env:BC_SERVER_PASSWORD = $cfg.container.password
-try {
-    al downloadsymbols --project . @flags
-    al compile -project:. -packagecachepath:.alpackages -out:debug.app
-    al publishapp debug.app @flags
-} finally { Remove-Item Env:BC_SERVER_USERNAME, Env:BC_SERVER_PASSWORD }
+al downloadsymbols --project . @flags
+al compile -project:. -packagecachepath:.alpackages -out:debug.app
+al publishapp debug.app @flags
 ```
 
 Then read `<base>/api/<apiPublisher>/debug/v1.0/$metadata` and `<base>/api/<apiPublisher>/debug/v1.0/companies(<id>)/<parents>?$filter=<expr>` through `Get-Bc` ([`ENDPOINTS.md`](ENDPOINTS.md)).
