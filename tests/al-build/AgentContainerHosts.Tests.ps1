@@ -18,6 +18,12 @@ BeforeAll {
         }
     }
 
+    # The stub declares every parameter a ParameterFilter reads, or the filter never matches on CI.
+    if (-not (Get-Command Invoke-ScriptInBcContainer -ErrorAction SilentlyContinue)) {
+        $script:StubbedCommands += 'Invoke-ScriptInBcContainer'
+        Set-Item -Path 'function:global:Invoke-ScriptInBcContainer' -Value { param([string]$containerName, [scriptblock]$scriptblock, [object[]]$argumentList) }
+    }
+
     function script:New-HostsFile {
         param([string]$Name = 'hosts')
         $path = Join-Path $TestDrive $Name
@@ -167,6 +173,11 @@ Describe 'Update-BCPublicWebBaseUrl when already on the host' {
 }
 
 Describe 'Set-BCAgentContainerHost' {
+    BeforeEach {
+        # The in-container .test mapping has its own Describe; here it must not reach a container.
+        Mock Set-BCContainerInternalHost {} -ModuleName common
+    }
+
     It 'writes both hosts lines with the container IP and moves PublicWebBaseUrl to the .test host' {
         $hosts = New-HostsFile
         InModuleScope common -Parameters @{ Hosts = $hosts } {
@@ -515,3 +526,54 @@ Describe 'Get-BCContainerWaitDecision' {
         $d.Action | Should -Be 'TimedOut'
     }
 }
+
+# The BC image's health check calls PublicWebBaseUrl from inside the container, so the
+# container must resolve its own .test name once PublicWebBaseUrl is there (#143).
+Describe 'Set-BCContainerInternalHost (#143)' {
+    It 'runs its script in the bare-named container with the .test name and the container hosts path' {
+        InModuleScope common {
+            Mock Invoke-ScriptInBcContainer {}
+
+            Set-BCContainerInternalHost -ContainerName 'feat-x' -Hostname 'feat-x.test'
+
+            Should -Invoke Invoke-ScriptInBcContainer -Times 1 -Exactly -ParameterFilter {
+                $containerName -eq 'feat-x' -and
+                $argumentList[0] -eq 'feat-x.test' -and
+                $argumentList[1] -eq 'C:\Windows\System32\drivers\etc\hosts'
+            }
+        }
+    }
+
+    It 'maps the name to 127.0.0.1, replaces an earlier line for it, and keeps every other line' {
+        $hosts = New-HostsFile
+        Add-Content -LiteralPath $hosts -Value "10.1.2.3`tfeat-x.test" -Encoding ascii
+        InModuleScope common -Parameters @{ Hosts = $hosts } {
+            param($Hosts)
+            Mock Invoke-ScriptInBcContainer { & $scriptblock $argumentList[0] $Hosts }
+
+            Set-BCContainerInternalHost -ContainerName 'feat-x' -Hostname 'feat-x.test'
+            Set-BCContainerInternalHost -ContainerName 'feat-x' -Hostname 'feat-x.test'
+        }
+
+        $lines = @(Get-HostLines -Path $hosts -Hostname 'feat-x.test')
+        $lines | Should -HaveCount 1
+        $lines[0] | Should -Match '^127\.0\.0\.1\s+feat-x\.test$'
+        Get-Content -LiteralPath $hosts | Should -Contain '10.0.0.9        unrelated-host'
+        Get-Content -LiteralPath $hosts | Should -Contain '# my comment line'
+    }
+
+    It 'is called by Set-BCAgentContainerHost before PublicWebBaseUrl moves to the .test host' {
+        $hosts = New-HostsFile
+        InModuleScope common -Parameters @{ Hosts = $hosts } {
+            param($Hosts)
+            $script:Order = [System.Collections.Generic.List[string]]::new()
+            Mock Set-BCContainerInternalHost { $script:Order.Add("internal:${ContainerName}:${Hostname}") }
+            Mock Update-BCPublicWebBaseUrl { $script:Order.Add("url:$NewHostname"); 'http://feat-x.test/BC/' }
+
+            Set-BCAgentContainerHost -ContainerName 'feat-x' -IPAddress '172.28.0.5' -HostsFile $Hosts | Out-Null
+
+            $script:Order | Should -Be @('internal:feat-x:feat-x.test', 'url:feat-x.test')
+        }
+    }
+}
+
