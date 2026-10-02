@@ -41,7 +41,9 @@ an individual is officially representing the community in public spaces.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement.
+reported to the repository owner, [@FBakkensen](https://github.com/FBakkensen),
+through GitHub. Open a GitHub issue that says only that you have a conduct
+report, without details, and the owner will arrange a private exchange on GitHub.
 All complaints will be reviewed and investigated promptly and fairly.
 
 ## Attribution
