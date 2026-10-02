@@ -1,24 +1,27 @@
 # Page-JavaScript snippets for the Web Client
 
-Each snippet is one self-contained expression whose value is its last expression: an IIFE, async where it awaits, with no top-level `return` and no wrapper, so the same text runs in every driver's evaluate tool. `playwright-cli eval` takes it as its function argument; `run-code` runs Playwright code, so there the snippet travels inside `page.evaluate`. Placeholders in angle brackets sit inside string literals; read each value off the page or the user's request before substituting. Every snippet but the sign-in opens with the readiness guard, which returns `{ready:false}` instead of throwing, and most then resolve the top page.
+Each snippet is one self-contained expression whose value is its last expression: an IIFE, async where it awaits, with no top-level `return` and no wrapper, so the same text runs in every driver's evaluate tool.
+- `playwright-cli eval` takes a function expression, so the agent passes `() => <snippet>`; `run-code` runs Playwright code, so there the snippet travels inside `page.evaluate`.
+- Placeholders in angle brackets sit inside string literals; the agent reads each value off the page or the user's request before substituting.
+- Every snippet but the sign-in opens with the readiness guard, which returns `{ready:false}` instead of throwing, and most then resolve the top page.
 
 ## Sign in to the agent container
 
-Runs in the outer document, before the iframe exists. `<username>` and `<password>` are `container.username` and `container.password` from `al-build.json`.
+The agent runs this in the outer document, before the iframe exists, with the two credentials in the `<username>` and `<password>` placeholders.
 
 ```js
 (() => {
   const pw = document.querySelector('input[type=password]');
   if (!pw) return { signInForm: false, outer: document.body.innerText.slice(0, 400) };
-  const form = pw.form ?? document;
-  const user = [...form.querySelectorAll('input')].find(i => i.offsetParent && ['text', 'email'].includes(i.type));
+  if (!pw.form) return { signInForm: true, form: false };
+  const user = [...pw.form.querySelectorAll('input')].find(i => i.offsetParent && ['text', 'email'].includes(i.type));
   if (!user) return { signInForm: true, username: false };
   const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
   for (const [i, v] of [[user, '<username>'], [pw, '<password>']]) {
     i.focus(); set.call(i, v);
     i.dispatchEvent(new Event('input', { bubbles: true }));
   }
-  form.querySelector('[type=submit], button')?.click();
+  pw.form.querySelector('[type=submit], button')?.click();
   return 'submitted';
 })()
 ```
@@ -45,7 +48,7 @@ Runs in the outer document, before the iframe exists. `<username>` and `<passwor
 
 ## Open a page with Tell Me
 
-Call 1 opens Tell Me. The header's search button does nothing from script.
+Call 1: the agent opens Tell Me. The header's search button does nothing from script.
 
 ```js
 (() => {
@@ -57,16 +60,14 @@ Call 1 opens Tell Me. The header's search button does nothing from script.
 })()
 ```
 
-Call 2 finds the search input and types into it. The input's label is localised; the return shows it.
+Call 2: the agent types into Tell Me's input, the focused combobox. The input's label is localised; the return shows it.
 
 ```js
 (() => {
   const f = document.querySelector('iframe')?.contentDocument;
   if (!f?.body) return { ready: false };
-  const top = f.querySelector('.spa-view:not(.spa-not-top-most)') ?? f.body;
-  const i = f.activeElement?.tagName === 'INPUT' ? f.activeElement
-          : [...top.querySelectorAll('input')].find(e => e.offsetParent && e.getAttribute('role') === 'combobox');
-  if (!i) return 'tell me not open';
+  const i = f.activeElement;
+  if (i?.tagName !== 'INPUT' || i.getAttribute('role') !== 'combobox') return 'tell me not open';
   const set = Object.getOwnPropertyDescriptor(f.defaultView.HTMLInputElement.prototype, 'value').set;
   i.focus(); set.call(i, '<page name>');
   i.dispatchEvent(new f.defaultView.Event('input', { bubbles: true }));
@@ -74,7 +75,7 @@ Call 2 finds the search input and types into it. The input's label is localised;
 })()
 ```
 
-Call 3 reads the results. They mix pages, actions of the current page, and searches; Tell Me exposes no active-row state, and its own view is a stack page.
+Call 3: the agent reads the results. They mix pages, actions of the current page, and searches; Tell Me exposes no active-row state, and its own view is a stack page.
 
 ```js
 (() => {
@@ -86,24 +87,28 @@ Call 3 reads the results. They mix pages, actions of the current page, and searc
 })()
 ```
 
-Call 4 opens a result other than the first: it focuses that row and presses Enter on it. Escape does not close Tell Me; opening a page does.
+Call 4: Enter on the input opens the first result, and Enter on a focused row opens that row; with `<row text>` empty this presses Enter on the input, otherwise on the row that starts with that text. Escape does not close Tell Me; opening a page does.
 
 ```js
 (() => {
   const f = document.querySelector('iframe')?.contentDocument;
   if (!f?.body) return { ready: false };
   const top = f.querySelector('.spa-view:not(.spa-not-top-most)') ?? f.body;
-  const row = [...top.querySelectorAll('.ms-DetailsRow')].filter(r => r.offsetParent)
-    .find(r => r.innerText.trim().replace(/\s+/g, ' ').startsWith('<row text>'));
-  if (!row) return 'row not listed';
-  row.focus();
+  const want = '<row text>';
+  if (want) {
+    const row = [...top.querySelectorAll('.ms-DetailsRow')].filter(r => r.offsetParent)
+      .find(r => r.innerText.trim().replace(/\s+/g, ' ').startsWith(want));
+    if (!row) return 'row not listed';
+    row.focus();
+    if (!row.contains(f.activeElement)) return 'row did not take focus';
+  }
   for (const t of ['keydown', 'keypress', 'keyup'])
     f.activeElement.dispatchEvent(new KeyboardEvent(t, { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
   return 'enter';
 })()
 ```
 
-Call 5 is Where am I after about two seconds. The new page is on top of the stack, with the page you came from underneath.
+Call 5: the agent runs Where am I after about two seconds. The new page is on top of the stack, with the page you came from underneath.
 
 ## Click a page action by its caption
 
@@ -112,7 +117,7 @@ Call 5 is Where am I after about two seconds. The new page is on top of the stac
   const f = document.querySelector('iframe')?.contentDocument;
   if (!f?.body) return { ready: false };
   const top = f.querySelector('.spa-view:not(.spa-not-top-most)') ?? f.body;
-  const scope = top;   // a dialog button: the dialog element, from the Dialogs listing
+  const scope = top;
   const want = '<caption>';
   const visible = [...scope.querySelectorAll('button,[role=button],a,[role=menuitem]')].filter(e => e.offsetParent);
   const hits = visible.filter(e => [e.innerText, e.getAttribute('aria-label'), e.title].some(s => (s || '').trim() === want));
@@ -129,11 +134,11 @@ An action under a "More options" or "Actions" menu needs that menu clicked first
 
 ## Close the top page
 
-Run the caption snippet with `want` set to the title of the page's Back arrow. Done when Where am I shows `stack` one shorter and the expected `page` on top.
+The agent runs the caption snippet with `want` set to the title of the page's Back arrow. Done when Where am I shows `stack` one shorter and the expected `page` on top.
 
 ## Rows
 
-Every list page has a search box, `input[type=search]` with `aria-label="Search <caption>"`. This fills it and presses Enter:
+Every list page has a search box, `input[type=search]` with `aria-label="Search <caption>"`. The agent fills it and presses Enter:
 
 ```js
 (() => {
@@ -152,7 +157,7 @@ Every list page has a search box, `input[type=search]` with `aria-label="Search 
 })()
 ```
 
-Done when a re-read of the rows shows only matches. Rows in a grid:
+Done when a re-read of the rows shows only matches. The agent reads the rows of a grid with:
 
 ```js
 (() => {
@@ -166,7 +171,7 @@ Done when a re-read of the rows shows only matches. Rows in a grid:
 })()
 ```
 
-Select a row by clicking a cell of the row that holds `<row text>`:
+The agent selects a row by clicking a cell of the row that holds `<row text>`:
 
 ```js
 (() => {
@@ -175,18 +180,20 @@ Select a row by clicking a cell of the row that holds `<row text>`:
   const top = f.querySelector('.spa-view:not(.spa-not-top-most)') ?? f.body;
   const hits = [...top.querySelectorAll('[role=row]')].filter(r => r.innerText.includes('<row text>'));
   if (hits.length !== 1) return { matches: hits.length };
-  hits[0].querySelector('[role=gridcell]').click();
+  const cell = hits[0].querySelector('[role=gridcell]');
+  if (!cell) return 'row has no gridcell';
+  cell.click();
   return 'clicked';
 })()
 ```
 
 Done when a re-read shows that row with `aria-selected="true"`.
 
-Tile views, such as role-centre parts, render each record as an `li.brick-entity` with a caption button (`title="<label>: <value>"`) and a per-tile button whose menu (`[role=menuitem]`) belongs to that record.
+Tile views (Extension Management, role-centre parts) render each record as an `li.brick-entity` with a caption button (`title="Name: <value>"`) and a per-tile "Show more options" button that opens the record's context menu (`[role=menuitem]`).
 
 ## Lookup field
 
-Call 1 finds the field's input by its observed `aria-label` (grid inputs often carry none: match on the current value) and clicks the one button in the same gridcell, the caret. Set `click` to `false` to read the field's value alone.
+Call 1: the agent finds the field's input by its observed `aria-label` (grid inputs often carry none: it matches on the current value) and clicks the one button in the same gridcell, the caret. With `click` set to `false` it reads the field's value alone.
 
 ```js
 (() => {
@@ -205,7 +212,7 @@ Call 1 finds the field's input by its observed `aria-label` (grid inputs often c
 })()
 ```
 
-Call 2 reads the lookup view:
+Call 2: the agent reads the lookup view.
 
 ```js
 (() => {
@@ -220,7 +227,7 @@ Call 2 reads the lookup view:
 })()
 ```
 
-Call 3 clicks a gridcell of the row whose key equals `<key>` exactly; the dropdown commits on click. A key that is not listed means the link to the full list, which opens it as a page, and Rows on that page.
+Call 3: the agent clicks a gridcell of the row whose key equals `<key>` exactly; the dropdown commits on click. When the key is not listed, the agent opens the full list from the link call 2 shows, which opens it as a page, and uses Rows there.
 
 ```js
 (() => {
@@ -231,12 +238,14 @@ Call 3 clicks a gridcell of the row whose key equals `<key>` exactly; the dropdo
   const key = '<key>';
   const hits = [...lk.querySelectorAll('[role=row]')].filter(r => [...r.querySelectorAll('[role=gridcell]')].some(c => c.innerText.trim() === key));
   if (hits.length !== 1) return { matches: hits.length };
-  hits[0].querySelector('[role=gridcell]').click();
+  const cell = hits[0].querySelector('[role=gridcell]');
+  if (!cell) return 'row has no gridcell';
+  cell.click();
   return 'picked';
 })()
 ```
 
-Call 4 is call 1 with `click` set to `false`, and, for an input that carries no `aria-label`, `field` set to `<key>`, so it finds the input only when it now shows that key. Done when its `value` equals `<key>` and call 2 returns `'lookup closed'`.
+Call 4: the agent runs call 1 with `click` set to `false`, passing `field` as the aria-label or, for an input without one, as the input's current value, which is now `<key>`. Done when it finds the input with `value` equal to `<key>` and call 2 returns `'lookup closed'`.
 
 ## Dialogs
 
@@ -256,11 +265,12 @@ Call 4 is call 1 with `click` set to `false`, and, for an input that carries no 
 })()
 ```
 
-Press a dialog button with the caption snippet, its `scope` set to `top.querySelectorAll('[role=dialog]')[<index>]`. Done when the Dialogs snippet returns `'none'`.
+The agent presses a dialog button with the caption snippet, its `scope` set to `top.querySelectorAll('[role=dialog]')[<index>]`. Done when the Dialogs snippet returns `'none'`.
 
 ## What did that click open?
 
-When an action or caret produced no dialog and no new stack page, this clicks the control and returns `tops`, the outermost elements that appeared: a `.spa-lookup`, a context menu, a notification, a FactBox.
+The agent uses this for a control that opens something (a caret, a menu, a toggle) and left no visible result. It clicks the control again, so an action that changes data never goes through it.
+It returns `tops`, the outermost elements that appeared: a `.spa-lookup`, a context menu, a notification, a FactBox.
 
 ```js
 (async () => {
@@ -282,9 +292,9 @@ When an action or caret produced no dialog and no new stack page, this clicks th
 
 ## Company switch
 
-1. Open My Settings with Tell Me, then read it with Dialogs.
-2. Click the Company value, an `a[role=button]` whose `title` the Dialogs listing shows, with the caption snippet. The company list opens as a second dialog.
-3. Click the target row's gridcell, confirm `aria-selected="true"` on it, then press the dialog's confirm button with the caption snippet. My Settings shows the new name.
-4. Press My Settings' confirm button: the client reloads into that company and the stack collapses to its role centre. Done when Where am I shows the role centre captioned with the target company.
+1. The agent opens My Settings with Tell Me, then reads it with Dialogs.
+2. The agent clicks the Company value, an `a[role=button]` whose displayed text is the company name, with the caption snippet. The company list opens as a second dialog.
+3. The agent clicks the target row's gridcell, confirms `aria-selected="true"` on it, then presses the dialog's confirm button with the caption snippet. My Settings shows the new name.
+4. The agent presses My Settings' confirm button: the client reloads into that company and the stack collapses to its role centre. Done when Where am I shows the role centre captioned with the target company.
 
 Data and setup are per company: clean-up in one company says nothing about the others.
