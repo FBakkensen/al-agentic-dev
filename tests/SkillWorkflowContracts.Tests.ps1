@@ -163,8 +163,8 @@ Describe 'Skill workflow contracts' {
     It 'walks the Gherkin scenarios in the agent container through a browser driver' {
         $walkthrough = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-walkthrough' 'SKILL.md') -Raw
         $republish = '▶ haiku · /al-build clean republish into the branch''s agent container → deployed commit, app version, Web Client URL, username'
-        $confirm = 'asks the user with `AskUserQuestion`'
-        $webclient = 'Before the first browser call, the lead invokes /al-webclient'
+        $confirmAsk = 'asks the user with `AskUserQuestion`'
+        $webclientFirst = 'Before the first browser call, the lead invokes /al-webclient'
 
         $walkthrough | Should -Not -Match 'User Story|Copilot|workspace MCP|bc_'
         $walkthrough | Should -Match ([regex]::Escape($republish))
@@ -174,18 +174,21 @@ Describe 'Skill workflow contracts' {
         $walkthrough | Should -Match ([regex]::Escape('npm install -g @playwright/cli@latest'))
         $walkthrough | Should -Match ([regex]::Escape('playwright-cli -s=<agent-container> open <url> --headed'))
         $walkthrough | Should -Match ([regex]::Escape('navOk: false'))
-        $walkthrough | Should -Match ([regex]::Escape($confirm))
-        $walkthrough | Should -Match ([regex]::Escape($webclient))
+        $walkthrough | Should -Match ([regex]::Escape($confirmAsk))
+        $walkthrough | Should -Match ([regex]::Escape($webclientFirst))
         $walkthrough | Should -Match 'never repeated in chat'
         $walkthrough | Should -Match ([regex]::Escape('.output/walkthrough/'))
+        $walkthrough | Should -Match ([regex]::Escape('mcp__claude-in-chrome__computer'))
+        $walkthrough | Should -Match ([regex]::Escape('screenshot --filename=<path>'))
+        $walkthrough | Should -Match 'the comment says every step passed'
         $walkthrough | Should -Match '/al-azure-devops-attachments'
         $walkthrough | Should -Match 'mcp__plugin_al-agentic-dev_ado__wit_work_item_comment_write'
 
         $walkthrough.IndexOf('mcp__Claude_Browser__') | Should -BeLessThan $walkthrough.IndexOf('mcp__claude-in-chrome__')
         $walkthrough.IndexOf('mcp__claude-in-chrome__') | Should -BeLessThan $walkthrough.IndexOf('Playwright CLI')
         $walkthrough.IndexOf('Playwright CLI') | Should -BeLessThan $walkthrough.IndexOf($republish)
-        $walkthrough.IndexOf($confirm) | Should -BeLessThan $walkthrough.IndexOf($republish)
-        $walkthrough.IndexOf($republish) | Should -BeLessThan $walkthrough.IndexOf($webclient)
+        $walkthrough.IndexOf($confirmAsk) | Should -BeLessThan $walkthrough.IndexOf($republish)
+        $walkthrough.IndexOf($republish) | Should -BeLessThan $walkthrough.IndexOf($webclientFirst)
     }
 
     It 'owns commits and pull requests in dedicated skills' {

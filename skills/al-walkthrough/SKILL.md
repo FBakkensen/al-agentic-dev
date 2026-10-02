@@ -5,7 +5,8 @@ description: Use when an implemented Original work item or child PBI has Gherkin
 
 # al-walkthrough - walk the slice
 
-In: an implemented executable Original work item, or a child PBI and its Original; the environment is the branch's agent container. This pass observes Gherkin behavior; AAA unit and integration cases remain build evidence. The lead changes no AL code and creates no report file.
+In: an implemented executable Original work item, or a child PBI and its Original; the environment is the branch's agent container. This pass observes Gherkin behavior; AAA unit and integration cases remain build evidence.
+The lead changes no AL code and creates no report file; the screenshots under `.output/` are evidence, not a report.
 
 ## Before the walk
 
@@ -25,12 +26,12 @@ Done when the user has confirmed; the client opens only after.
 - The republish is the walk's only delegated step; the lead drives the client in-line.
 - The lead states the commit and app version before the first scenario.
 - The Web Client URL and username come from the same result; `<agent-container>` is the URL's host label before `.test`.
-- Done when all four are in hand; a failed republish ends the walk with its output named.
+- Done when the lead holds all four; a failed republish ends the walk with its output named.
 
 Before the first browser call, the lead invokes /al-webclient.
-The lead opens the Web Client URL in the chosen driver and signs in as /al-webclient directs for the agent container: the republish's username, the `al-build.json` container password read at sign-in and never repeated in chat, no password typed by the user.
+The lead opens the Web Client URL on its `.test` host in the chosen driver and signs in automatically as /al-webclient directs: the republish's username, the `al-build.json` container password read at sign-in and never repeated in chat, no password typed by the user.
 - Built-in browser: the user may be asked to approve the `.test` host, and a denied navigation comes back as `navOk: false`. The lead waits for the answer and moves to the next available driver when the site is refused; with none left, the lead stops and tells the user.
-- Playwright CLI: `playwright-cli -s=<agent-container> open <url> --headed`, so parallel branches don't share a browser.
+- Playwright CLI: the lead opens it with `playwright-cli -s=<agent-container> open <url> --headed`, so parallel branches don't share a browser.
 - Done when /al-webclient's frame check passes on the signed-in client.
 
 Before a step relies on a page, action, field, enum value, dialog, or resulting record, the lead confirms it through the current client or /al-lookup in this session, never from recall. The lead reports:
@@ -42,14 +43,17 @@ After a mismatch the lead still walks every scenario whose state the failure doe
 ## Evidence
 
 For each ⛔ step the lead takes one screenshot and saves it as `.output/walkthrough/<work item id>/<scenario number>-<step number>.png`; passing steps stay text.
-- Playwright CLI: `playwright-cli -s=<agent-container> screenshot --filename=<path>`.
-- Built-in browser and Claude in Chrome: the `computer` tool's `screenshot` action with `save_to_disk`, the saved file then copied to the path.
+- Playwright CLI: the lead runs `playwright-cli -s=<agent-container> screenshot --filename=<path>`.
+- Claude in Chrome: the lead calls `mcp__claude-in-chrome__computer` with `action` = `screenshot` and `save_to_disk`, then copies the file at the path in the tool result to `<path>`.
+- Built-in browser: the lead calls `mcp__Claude_Browser__computer` (`mcp__remote-devices__Claude_Browser__computer` in a cloud session) with the `screenshot` action and saves the file to `<path>` where the tool can write one.
+- When a driver returns only the image and no file, the lead says so in the comment and attaches nothing for that step.
 
-The lead attaches the screenshots by running /al-azure-devops-attachments in-line, with no `▶` line.
+The lead attaches the screenshots to the executable work item by calling /al-azure-devops-attachments in-line; the republish stays the only delegated `▶` line.
 The lead then posts one comment on the executable work item with `mcp__plugin_al-agentic-dev_ado__wit_work_item_comment_write`, action `add`: the commit and app version, each scenario's result, and the attachment URL beside each ⛔ step.
+With no ⛔ step nothing is attached, and the comment says every step passed.
 Done when every screenshot is a verified attachment and the comment is posted.
 
 ## Close
 
-Done when the reply names, outcome first, the scenarios passed, each mismatch with its screenshot link, the resulting record identifiers, and a hand-reproduction recipe; at a stop, it names what blocked and what the user does next.
+Done when the lead's reply names, outcome first, the scenarios passed, each mismatch with its screenshot link, the resulting record identifiers, and a hand-reproduction recipe; at a stop, it names what blocked and what the user does next.
 The lead hands that back to the work that invoked the skill; invoked directly, it is the whole run.
