@@ -236,7 +236,7 @@ Call 3 clicks a gridcell of the row whose key equals `<key>` exactly; the dropdo
 })()
 ```
 
-Call 4 is call 1 with `click` set to `false`. Done when its `value` equals `<key>` and call 2 returns `'lookup closed'`.
+Call 4 is call 1 with `click` set to `false`, and, for an input that carries no `aria-label`, `field` set to `<key>`, so it finds the input only when it now shows that key. Done when its `value` equals `<key>` and call 2 returns `'lookup closed'`.
 
 ## Dialogs
 
