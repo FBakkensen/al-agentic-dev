@@ -3,6 +3,8 @@ description: Fires no al-agentic-dev skill. Ported from routing scenario S3.
 tags: [trigger, negative]
 plugins: ["../..", "../../.base-plugins/mattpocock-skills", "../../.base-plugins/bcquality", "../../.base-plugins/al-language-server-go-windows"]
 allowed_tools: [Read, Glob, Grep, Skill]
+model: sonnet
+runs: 5
 ---
 
 Draw what we just landed as a picture the PM can steer from, on the side panel.

@@ -41,7 +41,7 @@ Read `{{IMPLEMENT}}` now. Follow it as your procedure for #{{N}}, exactly as if 
   - Write a case and its grader before running anything, and freeze them. Use least-context, real phrasing.
   - An AL addition runs in a seeded Consumer repository, per CLAUDE.md's eval step 4.
   - A miss is a finding. Never edit the grader or the prompt, and never widen a description, to make a case pass. Find the cause with `--runs 1 --keep-temp` and its `trace.jsonl`, and report a real miss to team-lead.
-  - Pass at 2 of 3. If one invocation would exceed the 10-minute Bash limit, run three `--runs 1` invocations instead.
+  - Pass at 5 of 5 on `sonnet`, as the case pins. If one invocation would exceed the 10-minute Bash limit, run it in the background or as five `--runs 1` invocations.
 - If a step is blocked by a missing install or machine configuration, or by something the ticket and spec don't settle, stop. SendMessage team-lead the blocker and the ticket line it concerns. Don't work around it.
 
 ## 3. The PR

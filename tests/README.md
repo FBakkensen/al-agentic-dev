@@ -20,7 +20,7 @@ The 1024-character description cap comes from the Agent Skills specification; Cl
 
 The drift check fetches over anonymous https: mattpocock-skills at the commit `claude-plugins-official` lists, bcquality and the AL language server at their default branches. `-Destination <dir>` only resolves, writing each Base plugin into `<dir>/<name>`. `tests/BasePluginDrift.Tests.ps1` drives it through `-PluginRoot`, which maps each namespace to a TestDrive fixture and fetches nothing, and through local `file://` git repositories in TestDrive for the fetch path.
 
-`scripts/Update-EvalBasePlugins.ps1` reuses that resolution to write every Base plugin into `.base-plugins/` for the trigger evals, and `tests/BasePluginDrift.Tests.ps1` also covers its refresh and failure paths. `tests/EvalSuite.Tests.ps1` fails when a skill has no trigger case or a case drops a Base plugin copy or pins a model.
+`scripts/Update-EvalBasePlugins.ps1` reuses that resolution to write every Base plugin into `.base-plugins/` for the trigger evals, and `tests/BasePluginDrift.Tests.ps1` also covers its refresh and failure paths. `tests/EvalSuite.Tests.ps1` fails when a skill has no trigger case or a case drops a Base plugin copy or does not pin `model: sonnet` and `runs: 5`.
 
 `tests/SessionStartHook.Tests.ps1` runs exactly the command in `hooks/hooks.json` as a process, with `${CLAUDE_PLUGIN_ROOT}` pointed at the checkout, parses stdout as JSON, and asserts the `SessionStart` event name, the `▶ <model> · <brief> → <return>` line, the delegation-cost text, and the `## Entry skills and their AL additions` heading with each entry → addition row.
 
