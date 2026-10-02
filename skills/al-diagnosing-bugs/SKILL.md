@@ -9,8 +9,8 @@ In: `/mattpocock-skills:diagnosing-bugs` running against AL code. The entry skil
 
 ## The loops
 
-1. **A failing AL test through /al-build.** The agent runs the failing test through /al-build, which owns how the test runs. Done when the gate's output names that test failing on the user's exact symptom.
-2. **A data read through /al-environment-data.** It reads what an environment holds, which a test cannot arrange: a record, a setup value, a Ledger Entry. The agent reads the rows the symptom concerns. Done when the rows show the wrong value or the missing record the user describes.
+1. **A failing AL test through /al-build.** The agent writes the failing test and runs it through /al-build, which owns how the test runs. Done when the gate's output names the failing test and the failure it reports.
+2. **A data read through /al-environment-data.** It reads what an environment holds and a test cannot arrange: a record, a setup value, a Ledger Entry. The agent reads the rows the symptom concerns after a fresh run of the failing scenario. Done when those rows show the wrong value or the missing record the user describes; after the fix, the same run and read show the corrected rows.
 3. **The Web Client through /al-webclient.** It shows what a page shows or does: an action, a validation on a field, a dialog. The agent drives the page to the symptom. Done when the page's re-read shows the symptom in the page's own words.
 
 ## Grounding
@@ -19,4 +19,4 @@ The agent confirms every BC object, table, field, procedure, event, enum value, 
 
 ## Close
 
-Done when one loop has gone red on the symptom and the reply names it and, for each faster loop, why it could not reproduce the bug. The agent hands that loop back to the `/mattpocock-skills:diagnosing-bugs` run as its Phase 1 loop. When none of the three reproduces the bug, the agent hands the three reasons back to that run, whose remaining ways to build a loop follow.
+Done when one loop has gone red and the reply names it and, for each faster loop, why it could not reproduce the bug. The agent hands that loop back to the `/mattpocock-skills:diagnosing-bugs` run as its Phase 1 loop; when none of the three reproduces the bug, that run's remaining ways to build a loop follow. The agent runs /al-commit at every exit.
