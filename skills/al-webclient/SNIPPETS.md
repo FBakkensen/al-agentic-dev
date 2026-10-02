@@ -37,6 +37,7 @@ The agent runs this in the outer document, before the iframe exists. `<username>
   const heading = view => view.querySelector('form.ms-nav-root-form h1, form.ms-nav-root-form h2, form.ms-nav-root-form [role=heading]')?.innerText.trim();
   return {
     ready: true,
+    title: document.title,
     stack: [...frame.querySelectorAll('.spa-view')].map(view => heading(view)),
     page: heading(livePage),
     dialog: [...livePage.querySelectorAll('[role=dialog]')].map(dialog => dialog.innerText.trim().slice(0, 300)),
@@ -45,7 +46,7 @@ The agent runs this in the outer document, before the iframe exists. `<username>
 })()
 ```
 
-`stack` lists the open pages bottom to top, and `page` is the live one. The company shows up only in the role centre's caption, which the agent reads as Company switch describes.
+`stack` lists the open pages bottom to top, and `page` is the live one. On a root page `page` can be the company name, so the agent reads the root page's caption, and its record, from `title`. The company shows up only in the role centre's caption, which the agent reads as Company switch describes.
 
 ## Open a page with Tell Me
 
@@ -61,14 +62,16 @@ Call 1: the agent opens Tell Me. The header's search button does nothing from sc
 })()
 ```
 
-Call 2: the agent types into Tell Me's input, which must be the active combobox; otherwise this throws, so it never types into a data field, and the agent runs call 1 first. The input's label is localised; the return shows it.
+Call 2: the agent types into Tell Me's input. That input is the active element whose label, without its closing period, is the live page's own heading; otherwise this throws, so it never types into a data field, and the agent runs call 1 first. The label is localised; the return shows it.
 
 ```js
 (() => {
   const frame = document.querySelector('iframe')?.contentDocument;
   if (!frame?.body) return { ready: false };
+  const livePage = frame.querySelector('.spa-view:not(.spa-not-top-most)') ?? frame.body;
+  const heading = livePage.querySelector('form.ms-nav-root-form h1, form.ms-nav-root-form h2, form.ms-nav-root-form [role=heading]')?.innerText.trim();
   const input = frame.activeElement;
-  if (input?.tagName !== 'INPUT' || input.getAttribute('role') !== 'combobox') throw new Error('Tell Me input is not the active element');
+  if (input?.tagName !== 'INPUT' || !heading || input.getAttribute('aria-label')?.replace(/\.$/, '') !== heading) throw new Error('Tell Me input is not the active element');
   const frameWin = frame.defaultView;
   const setValue = Object.getOwnPropertyDescriptor(frameWin.HTMLInputElement.prototype, 'value').set;
   setValue.call(input, '<page name>');
@@ -89,7 +92,7 @@ Call 3: the agent reads the results. They mix pages, actions of the current page
 })()
 ```
 
-Call 4: Enter on the input opens the first result, and Enter on a focused row opens that row. With `<row text>` empty this presses Enter on the Tell Me input; otherwise on the row that starts with that text, and only when that row took focus. Escape does not close Tell Me; opening a page does.
+Call 4: Enter on the input opens the first result, and a click on a result's row opens that result (a row is not focusable, so it cannot take Enter). With `<row text>` empty this presses Enter on the Tell Me input, under call 2's guard; otherwise it clicks the row that starts with that text. Escape does not close Tell Me; opening a page does.
 
 ```js
 (() => {
@@ -101,11 +104,14 @@ Call 4: Enter on the input opens the first result, and Enter on a focused row op
     const row = [...livePage.querySelectorAll('.ms-DetailsRow')].filter(el => el.offsetParent)
       .find(el => el.innerText.trim().replace(/\s+/g, ' ').startsWith(want));
     if (!row) return 'row not listed';
-    row.focus();
-    if (frame.activeElement !== row) return 'row did not take focus';
-  } else if (frame.activeElement?.tagName !== 'INPUT' || frame.activeElement.getAttribute('role') !== 'combobox') return 'Tell Me input is not the active element';
+    row.click();
+    return 'clicked';
+  }
+  const heading = livePage.querySelector('form.ms-nav-root-form h1, form.ms-nav-root-form h2, form.ms-nav-root-form [role=heading]')?.innerText.trim();
+  const input = frame.activeElement;
+  if (input?.tagName !== 'INPUT' || !heading || input.getAttribute('aria-label')?.replace(/\.$/, '') !== heading) return 'Tell Me input is not the active element';
   for (const type of ['keydown', 'keypress', 'keyup'])
-    frame.activeElement.dispatchEvent(new frame.defaultView.KeyboardEvent(type, { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+    input.dispatchEvent(new frame.defaultView.KeyboardEvent(type, { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
   return 'enter';
 })()
 ```
@@ -123,7 +129,7 @@ Call 5: the agent runs Where am I, re-reading until `page` is the page asked for
   const want = '<caption>';
   const visible = [...scope.querySelectorAll('button,[role=button],a,[role=menuitem]')].filter(el => el.offsetParent);
   const hits = visible.filter(el => [el.innerText, el.getAttribute('aria-label'), el.title].some(text => (text || '').trim() === want));
-  if (hits.length !== 1) return { matches: hits.length, visible: visible.map(el => el.innerText.trim() || el.title).filter(Boolean) };
+  if (hits.length !== 1) return { matches: hits.length, visible: visible.map(el => [el.innerText.trim(), el.getAttribute('aria-label'), el.title].find(text => text && /[\p{L}\p{N}]/u.test(text))).filter(Boolean) };
   const target = hits[0];
   if (target.disabled || target.getAttribute('aria-disabled') === 'true' || /itemDisabled|is-disabled/.test(target.className))
     return { disabled: true, hint: target.title };
@@ -295,8 +301,8 @@ Read-only: this clicks nothing. After the agent's own click, it reports the stac
 ## Company switch
 
 1. The agent opens My Settings with Open a page with Tell Me, then reads it with Dialogs.
-2. The agent clicks the Company value, an `a[role=button]` whose displayed text is the company name, with Click a page action by its caption. The company list opens as a second dialog.
+2. The agent clicks the Company value with Click a page action by its caption. The control has no inner text, so the Dialogs listing shows it by its title, `Review or update the value for Company`. The company list opens as a third stacked view on top of My Settings.
 3. The agent clicks the target row's gridcell and confirms the selection as in Rows, then presses the dialog's confirm button with Click a page action by its caption. My Settings shows the new name.
-4. The agent presses My Settings' confirm button: the client reloads into that company and the stack collapses to its role centre. Done when Where am I shows the role centre captioned with the target company.
+4. The agent presses My Settings' confirm button: the client reloads into that company and the stack collapses to the page in the URL, the role centre when the URL names no page. Done when Where am I shows that page and, on the role centre, the target company as its caption.
 
 Data and setup are per company: clean-up in one company says nothing about the others.

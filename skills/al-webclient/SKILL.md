@@ -33,7 +33,7 @@ The Web Client is a single-page app inside an iframe. Every recipe is page JavaS
 
 ## Steps for one action
 
-1. **Confirm the frame.** The agent runs Where am I. Done when it returns `ready:true` and the top page's caption is the page expected; on a wrong top page, the agent closes it with its Back arrow or opens the right page.
+1. **Confirm the frame.** The agent runs Where am I. Done when it returns `ready:true` and the top page's caption (`title` for a root page, `page` for a stacked one) is the page expected; on a wrong top page, the agent closes it with its Back arrow or opens the right page.
 2. **Check for a blocker.** The agent runs Dialogs; done when a fresh run shows no unexpected dialog.
    - The agent works inside a dialog this action triggers (My Settings, a confirmation). An error, a personalization message, or an unsaved-changes prompt blocks, and the agent resolves it first.
    - The agent discards only changes it made by mistake and asks the user about any other unsaved change.
@@ -43,7 +43,7 @@ The Web Client is a single-page app inside an iframe. Every recipe is page JavaS
    - A record shown as a tile keeps its actions in the tile's own menu (Rows).
    - Done when exactly one visible, enabled element matches; zero or several means the agent re-reads the page and never guesses.
 4. **Name the expected result, then fire.** The agent decides what the frame must show next (a heading, a closed dialog, a new row), then fires.
-   - `.click()` works for page actions. A Tell Me result opens with keyboard Enter (Open a page with Tell Me), because synthesised mouse events raise a personalization error and navigate nowhere.
+   - `.click()` works for page actions and for Tell Me results; Enter on the Tell Me input opens its first result (Open a page with Tell Me).
    - `'clicked'` proves the call, not the effect. Done when the expected result is written down and the call has returned.
 5. **Verify by re-reading.** Done when the result named in step 4 is visible (the heading, the selected row, the dialog gone); the value shown after Business Central validated it is the truth, not the input written.
    - A result missing on the first read is pending: the agent re-reads read-only. An explicit error is a failure; if two re-reads still show no change, the outcome is unknown as in rule 5, and the agent stops, says what it fired and what the frame shows, asks the user, and never replays.
