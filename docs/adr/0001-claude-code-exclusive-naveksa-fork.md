@@ -7,3 +7,4 @@ This plugin was built Copilot-first for 9Altitudes, whose AL repositories lived 
 - Copilot manifest and hook formats, `~/.copilot` paths, Copilot tool names, and non-Claude model tiers leave the plugin; the "Copilot-first" rules in the dev-time instructions and gates are rewritten, not extended.
 - Pull-request skills move from `gh` to Azure Repos; GitHub stays only as this plugin repository's own host.
 - The MIT `LICENSE` names Flemming Bakkensen as the sole copyright holder; neither 9Altitudes nor Naveksa holds a line, and the marketplace `owner` is Flemming Bakkensen.
+- ADR 0004 replaces the Azure Repos and Azure DevOps rule for Consumer repositories: each one has its own Code host and Tracker, GitHub included.
