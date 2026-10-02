@@ -15,7 +15,7 @@ When the description names no project for new Original work items, ask one quest
 
 ## What the entry writes
 
-- `docs/agents/issue-tracker.md` is the user's description, then the text of [WORK-ITEM-STRUCTURE.md](WORK-ITEM-STRUCTURE.md) unchanged, in the same draft the user reviews. A doc that already holds that heading takes the current text in its place.
+- `docs/agents/issue-tracker.md` is the user's description, then the text of [AZURE-DEVOPS.md](AZURE-DEVOPS.md) unchanged, in the same draft the user reviews. A doc that already holds that heading takes the current text in its place.
 - The `## Agent skills` block's issue tracker line is the entry's own, and it names the project that takes new Original work items. Every skill reads the backlog project from that line.
 - Section B runs as the entry has it; the structure text says how a triage role is applied.
 
