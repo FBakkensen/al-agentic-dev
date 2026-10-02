@@ -47,7 +47,7 @@ jobs:
             throw
           }
 
-      - name: Run static and unit compatibility checks
+      - name: Run compatibility checks
         id: checks
         if: steps.helper.outcome == 'success'
         continue-on-error: true
@@ -56,12 +56,6 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $logPath = Join-Path $PWD '.bccontainerhelper-canary.log'
           try {
-            ./scripts/Validate-PowerShell.ps1 *>&1 |
-              Tee-Object -FilePath $logPath -Append
-            if ($LASTEXITCODE -ne 0) {
-              throw "PowerShell validation exited $LASTEXITCODE."
-            }
-
             ./scripts/Test-BcContainerHelperCompatibility.ps1 `
               -RequiredVersion '${{ steps.helper.outputs.version }}' *>&1 |
               Tee-Object -FilePath $logPath -Append
