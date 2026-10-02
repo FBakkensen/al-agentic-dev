@@ -10,7 +10,7 @@ One install brings the Agent Skills, a `SessionStart` hook, and two bundled MCP 
 - Claude Code
 - VS Code with the AL extension `ms-dynamics-smb.al` — the AL language server exits without it
 - Docker Desktop, BcContainerHelper, and the .NET SDK — `/al-build`'s scripted toolchain
-- Node.js 22+ with `npx` on PATH — `npx` starts the `ado` MCP server, and the BPMN renderer in `/al-to-spec` runs on it
+- Node.js 22+ with `npx` on PATH (npm comes with it) — `npx` starts the `ado` MCP server, the `/al-build` gate runs on it, and the `/al-to-spec` BPMN renderer runs `npm ci` and exports its review images through an installed Edge, Chrome, or Chromium
 - The Azure CLI, signed in with `az login` — the `ado` MCP server authenticates through it
 - Playwright CLI: `npm install -g @playwright/cli@latest` — one of the drivers `/al-walkthrough` uses for the Web Client
 - In each Consumer repository, `al-build.json` at the root, for the build gate
@@ -42,7 +42,7 @@ Both go in your own settings. No Consumer repository commits either.
   { "outputStyle": "al-agentic-dev:AL" }
   ```
 
-- Plain-text questions instead of `AskUserQuestion` prompts. In `~/.claude/settings.json` or `.claude/settings.local.json`:
+- Plain-text questions: the deny rule turns off the `AskUserQuestion` choice dialog, so skills ask in the chat as plain text. In `~/.claude/settings.json` or `.claude/settings.local.json`:
 
   ```json
   { "permissions": { "deny": ["AskUserQuestion"] } }
