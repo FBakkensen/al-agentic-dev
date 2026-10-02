@@ -131,7 +131,7 @@ Call 5: the agent runs Where am I, re-reading until `page` is the page asked for
   const hits = visible.filter(el => [el.innerText, el.getAttribute('aria-label'), el.title].some(text => (text || '').trim() === want));
   if (hits.length !== 1) return { matches: hits.length, visible: visible.map(el => [el.innerText.trim(), el.getAttribute('aria-label'), el.title].find(text => text && /[\p{L}\p{N}]/u.test(text))).filter(Boolean) };
   const target = hits[0];
-  if (target.disabled || target.getAttribute('aria-disabled') === 'true' || /itemDisabled|is-disabled/.test(target.className))
+  if (target.disabled || target.getAttribute('aria-disabled') === 'true' || ['is-disabled', 'itemDisabled'].some(name => target.classList.contains(name)))
     return { disabled: true, hint: target.title };
   target.click();
   return 'clicked';
@@ -143,6 +143,27 @@ For an action under a menu, the agent first clicks the menu's own button, `<menu
 ## Close the top page
 
 The agent runs Click a page action by its caption with `want` set to the title of the page's Back arrow. Done when Where am I shows `stack` one shorter and the expected `page` live.
+
+## Page mode
+
+A card or document page is in view mode, where its fields are text and it has no inputs, or in edit mode. The header's `button.header-action-edit_view` is the toggle in every language: its `aria-pressed` is `true` in edit mode, and its title names what a click does. From a list, Manage → Edit or Manage → View opens the selected record in that mode. The agent reads the mode, and with `<mode>` set to `edit` or `view` switches it, before it types into a field or looks for an input.
+
+```js
+(() => {
+  const frame = document.querySelector('iframe')?.contentDocument;
+  if (!frame?.body) return { ready: false };
+  const livePage = frame.querySelector('.spa-view:not(.spa-not-top-most)') ?? frame.body;
+  const toggle = livePage.querySelector('button.header-action-edit_view');
+  const inputs = [...livePage.querySelectorAll('input')].filter(el => el.offsetParent).length;
+  if (!toggle) return { toggle: false, inputs };
+  const editing = toggle.getAttribute('aria-pressed') === 'true';
+  const want = '<mode>';
+  if ((want === 'edit' || want === 'view') && (want === 'edit') !== editing) { toggle.click(); return { switched: want }; }
+  return { editing, title: toggle.title, inputs };
+})()
+```
+
+Done when a re-read returns `editing` as wanted and, in edit mode, `inputs` above zero. A page with no toggle (a list, a dialog) returns `toggle:false`.
 
 ## Rows
 
@@ -202,7 +223,7 @@ Tile views (Extension Management, role-centre parts) render each record as an `l
 
 ## Lookup field
 
-Call 1: the agent finds the field's input by its observed `aria-label` (grid inputs often carry none: it matches on the current value) and clicks the one button in the same gridcell, the caret. With `click` set to `false` it reads the field's value alone.
+Call 1: the agent finds the field's input by its observed `aria-label` (card and grid inputs often carry none: it matches on the current value) and clicks the one caret beside it, a `button` in a grid or an `a[role=button]` titled `Choose a value for <caption>` on a card. With `click` set to `false` it reads the field's value alone.
 
 ```js
 (() => {
@@ -213,7 +234,7 @@ Call 1: the agent finds the field's input by its observed `aria-label` (grid inp
   const field = '<aria-label or current value>';
   const input = [...livePage.querySelectorAll('input')].find(el => el.getAttribute('aria-label') === field || el.value === field);
   if (!input) return 'field not found';
-  const buttons = [...(input.closest('[role=gridcell]') ?? input.parentElement).querySelectorAll('button')];
+  const buttons = [...(input.closest('[role=gridcell]') ?? input.parentElement).querySelectorAll('button, a[role=button]')];
   if (!click) return { value: input.value };
   if (buttons.length !== 1) return { buttons: buttons.map(button => button.title || button.innerText.trim()) };
   buttons[0].click();
@@ -236,7 +257,7 @@ Call 2: the agent reads the lookup view.
 })()
 ```
 
-Call 3: the agent clicks a gridcell of the row whose key equals `<key>` exactly; the dropdown commits on click. When the key is not listed, the agent opens the full list from the link call 2 shows, which opens it as a page, and uses Rows there.
+Call 3: the agent clicks the key's link in the row whose key equals `<key>` exactly. The first click only selects the row, so the call returns `selected`; the agent runs it again, and a click on the selected row's `a[role=button]` commits the pick and returns `picked`. A key with no link falls back to the cell. When the key is not listed, the agent opens the full list from the link call 2 shows, which opens it as a page, and uses Rows there.
 
 ```js
 (() => {
@@ -247,14 +268,14 @@ Call 3: the agent clicks a gridcell of the row whose key equals `<key>` exactly;
   const key = '<key>';
   const hits = [...lookupView.querySelectorAll('[role=row]')].filter(row => [...row.querySelectorAll('[role=gridcell]')].some(cell => cell.innerText.trim() === key));
   if (hits.length !== 1) return { matches: hits.length };
-  const cell = hits[0].querySelector('[role=gridcell]');
-  if (!cell) return 'row has no gridcell';
-  cell.click();
-  return 'picked';
+  const cell = [...hits[0].querySelectorAll('[role=gridcell]')].find(item => item.innerText.trim() === key);
+  const selected = hits[0].getAttribute('aria-selected') === 'true';
+  (cell.querySelector('a[role=button]') ?? cell).click();
+  return selected ? 'picked' : 'selected';
 })()
 ```
 
-Call 4: the agent runs call 1 with `click` set to `false`, passing `field` as the aria-label or, for an input without one, as the input's current value, which is now `<key>`. Done when it finds the input with `value` equal to `<key>` and call 2 returns `'lookup closed'`.
+Call 4: the agent runs call 1 with `click` set to `false`, passing `field` as the aria-label or, for an input without one, as the input's current value, which is now `<key>`. Done when call 3 has returned `picked`, it finds the input with `value` equal to `<key>`, and call 2 returns `'lookup closed'`.
 
 ## Dialogs
 

@@ -51,7 +51,7 @@ The Web Client is a single-page app inside an iframe. Every recipe is page JavaS
 
 ## Grids and fields
 
-- Only the selected row renders `input` elements, so the agent selects the row first (Rows). A lookup-backed field takes its value from its lookup dropdown, a stack view (Lookup field).
+- Only the selected row renders `input` elements, so the agent selects the row first (Rows). A card in view mode shows its fields as text, so the agent switches it to edit first (Page mode). A lookup field takes its value from its lookup dropdown (Lookup field).
 - Typing sets only the text: Business Central validates on leave, an unknown value raises an error dialog, and the record stays dirty. The agent discards a dirty record from its own typing mistake through the unsaved-changes dialog's Discard, redoes it through the lookup, and never saves around it.
 - A caret, menu, or toggle opens a stack view or menu, not a dialog, so a dialog query after the agent's click has not looked: the agent reads a lookup with Lookup field call 2, and anything else with What did that click open?.
 - Setting `.value` changes pixels, not state: inputs are React-controlled, so the agent assigns through the native `HTMLInputElement` value setter and raises `input`, as the snippets do.
