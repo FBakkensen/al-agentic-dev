@@ -10,7 +10,7 @@ One install brings the Agent Skills, a `SessionStart` hook, and two bundled MCP 
 - Claude Code
 - VS Code with the AL extension `ms-dynamics-smb.al` — the AL language server exits without it
 - Docker Desktop, BcContainerHelper, and the .NET SDK — `/al-build`'s scripted toolchain
-- Node.js 22+ with `npx` on PATH — `npx` starts the `ado` MCP server
+- Node.js 22+ with `npx` on PATH — `npx` starts the `ado` MCP server, and the BPMN renderer in `/al-to-spec` runs on it
 - The Azure CLI, signed in with `az login` — the `ado` MCP server authenticates through it
 - Playwright CLI: `npm install -g @playwright/cli@latest` — one of the drivers `/al-walkthrough` uses for the Web Client
 - In each Consumer repository, `al-build.json` at the root, for the build gate
@@ -60,7 +60,7 @@ Run
 claude plugin update al-agentic-dev@al-agentic-dev
 ```
 
-Fixes to `bcquality` and the AL language server arrive only when their upstream bumps `version`, never through commits alone.
+Fixes to `bcquality` and the AL language server arrive only when the Base plugin's maintainers bump `version`, never through commits alone.
 
 ## Known limits
 
@@ -85,11 +85,11 @@ Type the entry skill; in an AL repository, the `SessionStart` hook has Claude Co
 | `/mattpocock-skills:improve-codebase-architecture` | `/al-improve-codebase-architecture` |
 | `/mattpocock-skills:diagnosing-bugs` | `/al-diagnosing-bugs` |
 
-Our own entry skills:
+Skills you type directly:
 
 | Skill | What it does |
 |---|---|
-| [`/al-build`](docs/al-build.md) | Compiles, publishes, and runs the tests, plus provisioning, breaking-change validation, and the container lifecycle. |
+| [`/al-build`](docs/al-build.md) | The scripted gate: compiles every app through the analyzer gate and runs the tests through AL Runner (`test.ps1`), runs container tests for `containerTestApps` (`container-test.ps1`), and handles provisioning, breaking-change validation against the Release, and the container lifecycle. |
 | `/al-arc42` | Writes settled architecture in the official arc42 v9.0-EN format, with a local architecture review HTML. |
 | `/al-walkthrough` | Walks an implemented work item's Gherkin scenarios in the Business Central Web Client of the branch's agent container. |
 | `/al-next` | Reconciles landed code with the Original work item's design, its child slices, and their receipts, and names the next executable item. |
