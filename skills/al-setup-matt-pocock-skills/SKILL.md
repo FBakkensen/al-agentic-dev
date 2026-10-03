@@ -28,7 +28,7 @@ Beyond the entry's own reads, read what the verbs need from the Tracker itself:
 - The work item types a new Original work item, a defect, and a slice can be.
 - The field that holds the spec on each type, and where the acceptance criteria go.
 
-Azure DevOps: the backlog levels (`wit_backlog`, action `list`), each candidate type's fields (`wit_work_item`, action `get_type`), and one or two recent items read by id. GitHub: the owner's issue types (`gh api orgs/<owner>/issue-types`, where a 404 means none) and one or two recent issues read by number. Any other Tracker: what the user's description names, and the five values that the seed templates' placeholders name, proposed from it.
+Azure DevOps: the backlog levels (`wit_backlog`, action `list`), each candidate type's fields (`wit_work_item`, action `get_type`), and one or two recent items read by id. GitHub: the owner's issue types (`gh api orgs/<owner>/issue-types`, where a 404 means none) and one or two recent issues read by number. Any other Tracker: what the user's description names, and the values that the seed templates' placeholders name, proposed from the description and those reads.
 
 ## What the entry writes
 
@@ -36,7 +36,7 @@ The AL sections of the Tracker doc follow the Tracker the user picked, in the sa
 
 - GitHub: the entry's own GitHub template, then the text of [GITHUB.md](GITHUB.md). The template's `## When a skill says "publish to the issue tracker"` and `## When a skill says "fetch the relevant ticket"` sections drop, because GITHUB.md carries each; every other template section stays.
 - Azure DevOps: the user's description, then the text of [AZURE-DEVOPS.md](AZURE-DEVOPS.md).
-- Any other Tracker: the user's description, then a `## Work item structure` section and the ten verb sections, each answered from the description and the reads, and the user confirms or corrects every answer in the draft.
+- Any other Tracker: the user's description, then a `## Work item structure` section and the verb sections, each answered from the description and the reads, and the user confirms or corrects every answer in the draft.
 - A seed template carries the placeholders `<new Original work item type>`, `<defect type>`, `<slice type>`, `<spec field for each type>`, and `<acceptance criteria location>`. The draft fills each with the value the reads proposed, and the user confirms or corrects it there. A GitHub repository whose owner defines no issue types has no `--type` in its sections.
 - The `## Agent skills` block's issue tracker line is the entry's own, and it names the repository or project from Section A. Every skill reads it from that line.
 - Section B runs as the entry has it; the Tracker doc says how a triage role is applied.

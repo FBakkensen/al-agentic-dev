@@ -547,7 +547,7 @@ Describe 'Tracker neutrality' {
         foreach ($verb in $script:Verbs) {
             $setup.Contains("`"$verb`"") | Should -BeTrue -Because "the setup lists the verb $verb"
         }
-        $setup | Should -Match 'Any other Tracker: the user''s description, then a `## Work item structure` section and the ten verb sections'
+        $setup | Should -Match 'Any other Tracker: the user''s description, then a `## Work item structure` section and the verb sections'
         $setup | Should -Not -Match 'serves GitHub and Azure DevOps'
         $setup | Should -Match '`origin`'
     }
