@@ -2,7 +2,7 @@
 
 Issues and specs for this repo live on `https://github.com/fbakkensen/al-agentic-dev`. Use the `gh` CLI for all operations.
 
-This tracker covers changes to al-agentic-dev itself. Consumer projects track work in Azure DevOps under their own conventions.
+This tracker covers changes to al-agentic-dev itself. Consumer repositories track work in their own Tracker, Azure DevOps or GitHub, as their setup records it.
 
 ## Host
 
@@ -14,8 +14,18 @@ This tracker covers changes to al-agentic-dev itself. Consumer projects track wo
 - **Read an issue**: `gh issue view <number> --comments`, filtering comments by `jq` and also fetching labels.
 - **List issues**: `gh issue list --state open --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'` with appropriate `--label` and `--state` filters.
 - **Comment on an issue**: `gh issue comment <number> --body "..."`
-- **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
+- **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`. `--add-label` fails for a label the repo lacks; create it first with `gh label create "..."`.
 - **Close**: `gh issue close <number> --comment "..."`
+
+### Relationships and media
+
+`gh` 2.99.0 or later sets these natively; no `gh api` call and no database id are needed.
+
+- **Sub-issue**: `gh issue create --parent <n>` creates one. `gh issue edit <child> --parent <n>` or `gh issue edit <n> --add-sub-issue <child>[,<child>]` links an existing one; `--remove-parent` and `--remove-sub-issue` undo it.
+- **Blocking**: `gh issue create --blocked-by <n>[,<n>]` (and `--blocking`) sets edges at creation. `gh issue edit <n> --add-blocked-by <blocker>` / `--remove-blocked-by <blocker>` (and `--add-blocking` / `--remove-blocking`) change them later. An edge that already exists fails with "Target issue has already been taken".
+- **Read relationships**: `gh issue view <n> --json parent,subIssues,blockedBy,blocking`. `--json` and `--comments` don't combine; ask for `comments` in the `--json` list instead.
+- **Images and video**: `--attach '<file>#<alt text>'` on `gh issue create|edit|comment` and `gh pr create|edit|comment` uploads PNG, JPEG, GIF, WebP, SVG, MP4, MOV, or WebM. A body reference `![<alt>](./<file>)` is rewritten to the uploaded asset, and an unreferenced file is appended. Other file types can't be attached. On a private repo the asset loads only for signed-in members.
+- **Issue types**: this repo belongs to a personal account, so it has none and `--type` fails here. `--type` works in an organization repository that defines types.
 
 ## Pull requests as a triage surface
 
@@ -41,9 +51,8 @@ Run `gh issue view <number> --comments`.
 
 Used by `/wayfinder`. The map is one issue labelled `wayfinder:map`; its tickets are native sub-issues. Sub-issues and issue dependencies are both enabled on this host.
 
-- **Database id**: `gh api repos/fbakkensen/al-agentic-dev/issues/<n> --jq .id`. This is not the `#number` and not the `node_id`.
-- **Child ticket**: create the issue, then run `gh api --method POST repos/fbakkensen/al-agentic-dev/issues/<map>/sub_issues -F sub_issue_id=<child-db-id>`. Label it `wayfinder:<type>`; the labels `wayfinder:map`, `wayfinder:grilling`, `wayfinder:task`, `wayfinder:research`, and `wayfinder:prototype` exist.
-- **Blocking**: `gh api --method POST repos/fbakkensen/al-agentic-dev/issues/<child>/dependencies/blocked_by -F issue_id=<blocker-db-id>`. `issue_dependencies_summary.blocked_by` counts open blockers only.
+- **Child ticket**: `gh issue create --parent <map> --label wayfinder:<type> --title "..." --body-file <file>`, adding `--blocked-by <n>[,<n>]` when it has blockers. The labels `wayfinder:map`, `wayfinder:grilling`, `wayfinder:task`, `wayfinder:research`, and `wayfinder:prototype` exist.
+- **Blocking**: on an existing ticket, `gh issue edit <child> --add-blocked-by <blocker>`. `gh issue view <child> --json blockedBy` lists its blockers with their state.
 - **Frontier query**: one GraphQL call returns the children in map order along with claims and blockers:
 
   ```
