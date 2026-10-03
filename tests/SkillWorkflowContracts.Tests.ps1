@@ -100,10 +100,9 @@ Describe 'Skill workflow contracts' {
         $wayfinder = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-wayfinder' 'SKILL.md') -Raw
 
         $wayfinder | Should -Match 'description: .*/mattpocock-skills:wayfinder.*AL repository'
-        $wayfinder | Should -Match 'A question one `/al-lookup` call answers is never a ticket'
-        $wayfinder | Should -Match 'run `/al-lookup` inline'
-        $wayfinder | Should -Match 'research ticket.*several lookups'
-        $wayfinder | Should -Match 'prototype ticket.*how logic should behave or how a page should look'
+        $wayfinder | Should -Match 'A question one `/al-lookup` call answers \| Never a ticket: run `/al-lookup` inline'
+        $wayfinder | Should -Match 'several lookups across the AL sources \| A research ticket'
+        $wayfinder | Should -Match 'how logic should behave or how a page should look \| A prototype ticket'
         $wayfinder | Should -Not -Match '/al-commit'
     }
 

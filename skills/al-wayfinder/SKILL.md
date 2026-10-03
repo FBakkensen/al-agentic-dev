@@ -11,12 +11,12 @@ In: `/mattpocock-skills:wayfinder` charting an effort in an AL repository. The e
 
 | Question | Ticket |
 |---|---|
-| A question one `/al-lookup` call answers | None. |
+| A question one `/al-lookup` call answers | Never a ticket: run `/al-lookup` inline and carry its sourced answer into the map. |
 | An investigation that needs several lookups across the AL sources | A research ticket. |
 | A question about how logic should behave or how a page should look | A prototype ticket. |
 
-A question one `/al-lookup` call answers is never a ticket: run `/al-lookup` inline and carry its sourced answer into the map. Every other question takes the entry skill's own ticket types.
+Every other question takes the entry skill's own ticket types.
 
 ## Close
 
-Done when each question the charting raised is answered inline with its `/al-lookup` source, or placed as a research or a prototype ticket, or left to the entry skill's own ticket types. The agent hands that placement back to the `/mattpocock-skills:wayfinder` run.
+Done when every question the charting raised is answered inline with its `/al-lookup` source or placed as a ticket by the table. The placement goes back to the `/mattpocock-skills:wayfinder` run.
