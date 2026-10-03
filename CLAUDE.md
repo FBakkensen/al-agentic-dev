@@ -1,6 +1,6 @@
 # Working on this repo
 
-This repo ships the Claude Code plugin `al-agentic-dev`: Agent Skills for AL/Business Central development plus a `SessionStart` hook, bundled MCP servers, and the marketplace that installs it with its Base plugins. The plugin is Claude Code–exclusive (ADR 0001) — skills name Claude Code tools, bundled MCP servers, and Base plugin skills explicitly.
+This repo ships the Claude Code plugin `al-agentic-dev`: Agent Skills for AL/Business Central development plus the `SessionStart` and `SubagentStart` hooks, bundled MCP servers, and the marketplace that installs it with its Base plugins. The plugin is Claude Code–exclusive (ADR 0001) — skills name Claude Code tools, bundled MCP servers, and Base plugin skills explicitly.
 
 Git history is the donor archive — a retired skill returns from a commit, never from a copy.
 
@@ -9,8 +9,8 @@ Git history is the donor archive — a retired skill returns from a commit, neve
 ```
 .claude-plugin/plugin.json      the plugin manifest: name, description, version (set only here), the bundled MCP servers — microsoft-learn, and ado on the org naveksaas, none with a tools allowlist — the Base plugin dependencies
 .claude-plugin/marketplace.json the marketplace: this plugin at ./ only, and the allowlist of the Base plugins' marketplaces (claude-plugins-official, bcquality, al-lsp-for-agents)
-hooks/hooks.json                the SessionStart hook: runs hooks/Write-SessionStart.ps1
-hooks/session-start.md          the delegation rules and the entry → addition table the hook injects in every session
+hooks/hooks.json                the SessionStart and SubagentStart hooks: both run hooks/Write-SessionStart.ps1
+hooks/session-start.md          the delegation rules and the entry → addition table: SessionStart injects both in every session, SubagentStart injects the table in every subagent
 output-styles/AL.md             the opt-in al-agentic-dev:AL style: Speak BC and the interview-diagram rule; frontmatter name AL, keep-coding-instructions true, no force-for-plugin
 skills/<name>/SKILL.md          frontmatter: name, description
 skills/<name>/<SIBLING>.md      optional format files, inside the same folder only
@@ -62,7 +62,7 @@ Every skill is model-invocable. Skill frontmatter omits `disable-model-invocatio
 - A link that leaves the skill folder: `](../`, `](/`, any absolute path.
 - An MCP server with a `tools` allowlist — Claude Code silently drops the server; the JSON gate fails it.
 - A `.mcp.json` at the repo root — Claude Code also loads it as this repo's project MCP servers, so every dev session here would start the plugin's servers; they live in `plugin.json`'s `mcpServers`, and the JSON gate fails a root `.mcp.json`.
-- Slash-command files — out of scope until a proven defect asks for them. One hook ships: `SessionStart` injects the delegation rules and the entry → addition table in every session (ADR 0003). A new hook needs its own proven defect.
+- Slash-command files — out of scope until a proven defect asks for them. Two hooks ship: `SessionStart` injects the delegation rules and the entry → addition table in every session, and `SubagentStart` injects the table in every subagent, where `SessionStart` text never reaches (ADR 0003). A new hook needs its own proven defect.
 
 Say so when a change reintroduces one of these.
 

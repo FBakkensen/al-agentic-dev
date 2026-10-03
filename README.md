@@ -8,7 +8,7 @@ One install brings these.
 
 | Component | Comes from | What it gives you |
 |---|---|---|
-| `al-agentic-dev` | this marketplace | The AL skills below, a `SessionStart` hook that loads each AL addition beside its entry skill, and the opt-in `al-agentic-dev:AL` output style |
+| `al-agentic-dev` | this marketplace | The AL skills below, `SessionStart` and `SubagentStart` hooks that load each AL addition beside its entry skill, and the opt-in `al-agentic-dev:AL` output style |
 | `mattpocock-skills` | `claude-plugins-official` | The engineering skills you type: grilling, spec, tickets, implement, TDD, code review |
 | `bcquality` | `microsoft/BCQuality` | Microsoft's AL quality knowledge and review skills |
 | `al-language-server-go-windows` | `SShadowS/al-lsp-for-agents` | Symbols and compiler diagnostics for `.al` files |
@@ -17,7 +17,7 @@ One install brings these.
 
 ## How it works
 
-`mattpocock-skills` owns the process; this plugin adds only what is specific to AL. You type the step you know, such as `/mattpocock-skills:to-spec`. In an AL repository, the `SessionStart` hook has Claude Code load that step's AL addition, `/al-to-spec`, beside it.
+`mattpocock-skills` owns the process; this plugin adds only what is specific to AL. You type the step you know, such as `/mattpocock-skills:to-spec`. In an AL repository, the `SessionStart` hook, and in a subagent the `SubagentStart` hook, has Claude Code load that step's AL addition, `/al-to-spec`, beside it.
 
 The Base plugins (`mattpocock-skills`, `bcquality`, and the AL language server) are never copied into this plugin and are not pinned, so each updates on its own.
 

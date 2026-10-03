@@ -4,10 +4,13 @@ BeforeAll {
     $script:RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 
     function Invoke-SessionStartHook {
-        param([Parameter(Mandatory = $true)][string]$PluginRoot)
+        param(
+            [Parameter(Mandatory = $true)][string]$PluginRoot,
+            [ValidateSet('SessionStart', 'SubagentStart')][string]$Event = 'SessionStart'
+        )
 
         $hooks = Get-Content -LiteralPath (Join-Path $PluginRoot 'hooks' 'hooks.json') -Raw | ConvertFrom-Json
-        $handler = @($hooks.hooks.SessionStart)[0].hooks[0]
+        $handler = @($hooks.hooks.$Event)[0].hooks[0]
         $arguments = @($handler.args | ForEach-Object { $_.Replace('${CLAUDE_PLUGIN_ROOT}', $PluginRoot) })
 
         $previousEncoding = [Console]::OutputEncoding
@@ -59,6 +62,20 @@ Describe 'SessionStart hook' -Tag 'Process' {
         $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:wayfinder` | `/al-wayfinder` |') + '\r?$')
         $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:prototype` | `/al-prototype` |') + '\r?$')
         $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:research` | `/al-research` |') + '\r?$')
+    }
+
+    It 'gives a subagent the entry → addition table and none of the delegation rules' {
+        $result = Invoke-SessionStartHook -PluginRoot $script:RepoRoot -Event SubagentStart
+
+        $result.ExitCode | Should -Be 0 -Because $result.Text
+        $payload = $result.Text | ConvertFrom-Json
+        $payload.hookSpecificOutput.hookEventName | Should -BeExactly 'SubagentStart'
+        $context = $payload.hookSpecificOutput.additionalContext
+        $context | Should -Match '(?m)^## Entry skills and their AL additions?$'
+        $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:research` | `/al-research` |') + '?$')
+        $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:to-spec` | `/al-to-spec` |') + '?$')
+        $context | Should -Not -Match ([regex]::Escape('▶ <model> · <brief> → <return>'))
+        $context | Should -Not -Match '(?m)^## Delegation'
     }
 
     It 'fails when the delegation text is missing' {
