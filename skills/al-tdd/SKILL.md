@@ -25,7 +25,7 @@ Standard BC test libraries and fixtures come before new helpers:
 
 ## Test specification
 
-Write `## Test specification` into the executable work item's Acceptance Criteria, after `## Behavior` when both are present. Start with a `Current-to-final proof map`: for each existing or final test, the existing test procedure or `none`, the business behavior it proves, its final AAA case or cases, and `keep`, `reshape`, `combine`, `split`, `replace`, or `add`. Each case has:
+Write `## Test specification` into the executable work item's acceptance criteria, placed as the Tracker doc's "write the acceptance criteria" says, after `## Behavior` when both are present. Start with a `Current-to-final proof map`: for each existing or final test, the existing test procedure or `none`, the business behavior it proves, its final AAA case or cases, and `keep`, `reshape`, `combine`, `split`, `replace`, or `add`. Each case has:
 
 - **Arrange:** business data, setup, permissions, and starting state.
 - **Act:** one verified caller-visible action.

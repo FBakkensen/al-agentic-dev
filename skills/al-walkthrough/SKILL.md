@@ -16,7 +16,7 @@ The lead changes no AL code and creates no report file; the screenshots under `.
 - With none available, the lead stops before the republish and tells the user which install is missing (`npm install -g @playwright/cli@latest` for Playwright CLI); the lead walks by no other means.
 - Done when the lead has named one driver, or has stopped.
 
-**Confirm.** The lead reads, as the Tracker doc says, the `Behavior` Gherkin in the executable work item's Acceptance Criteria and the Original's BPMN outcomes.
+**Confirm.** The lead reads, as the Tracker doc says, the `Behavior` Gherkin in the executable work item's acceptance criteria and the Original's BPMN outcomes.
 The lead then asks the user with `AskUserQuestion` to confirm the scenario order, company, required records, and expected visible results.
 Done when the user has confirmed; the client opens only after.
 
