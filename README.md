@@ -36,8 +36,7 @@ The Base plugins (`mattpocock-skills`, `bcquality`, and the AL language server) 
 | `/simplify` | `/al-simplify` |
 | `/mattpocock-skills:improve-codebase-architecture` | `/al-improve-codebase-architecture` |
 | `/mattpocock-skills:diagnosing-bugs` | `/al-diagnosing-bugs` |
-
-For an effort too large for one session, `/mattpocock-skills:wayfinder` plans it as a map of decision tickets before `to-spec`. It has no AL addition.
+| `/mattpocock-skills:wayfinder` | `/al-wayfinder` |
 
 Skills you type directly:
 
