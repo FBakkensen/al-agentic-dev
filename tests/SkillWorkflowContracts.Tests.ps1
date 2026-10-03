@@ -171,7 +171,7 @@ Describe 'Skill workflow contracts' {
             $procedure = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'AZURE-REPOS.md') -Raw
 
             $body | Should -Match ([regex]::Escape($selection)) -Because "$skill words the host selection as its sibling does"
-            $body | Should -Not -CMatch 'gh|GitHub|GraphQL|Azure Repos|az|ado' -Because "$skill names a Code host only through its procedure"
+            $body | Should -Not -CMatch '\bgh\b|GitHub|GraphQL|Azure Repos|\baz\b|\bado\b' -Because "$skill names a Code host only through its procedure"
             $procedure | Should -MatchExactly $hosts -Because "$skill's procedure lists its hosts"
         }
     }
