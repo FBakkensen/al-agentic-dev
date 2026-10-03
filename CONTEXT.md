@@ -47,3 +47,7 @@ _Avoid_: upstream, parent, original (taken by Original work item)
 **Release**:
 A version of a Naveksa app published to AppSource; the latest one is the baseline that breaking changes are measured against. A build delivered outside AppSource is not a Release.
 _Avoid_: release branch, promoted version, latest build
+
+**Prototype**:
+A throwaway AL app that answers one question, kept on its own branch and never merged, with its verdict as the evidence.
+_Avoid_: spike, POC
