@@ -114,7 +114,7 @@ Run `/plugin` and confirm `al-agentic-dev`, `mattpocock-skills`, `bcquality`, an
 
 ## Set up a repository
 
-In each Consumer repository, run `/mattpocock-skills:setup-matt-pocock-skills` once. It asks where your issues live, which triage labels to use, and where the domain docs sit, and writes them under `docs/agents/`. Its AL addition then proposes the work item types and fields of that Tracker for the AL skills' verbs, and you confirm or correct them in the draft, so `docs/agents/issue-tracker.md` answers each verb for your Tracker.
+In each Consumer repository, run `/mattpocock-skills:setup-matt-pocock-skills` once. It asks where your issues live, which triage labels to use, and where the domain docs sit, and writes them under `docs/agents/`. Its AL addition then proposes the work item types and fields of that Tracker for the AL skills' verbs, and you confirm or correct them in the draft, so `docs/agents/issue-tracker.md` answers each verb for your Tracker. Any Tracker works: for one other than GitHub or Azure DevOps, the setup answers the verbs from your own description.
 
 ## Update
 

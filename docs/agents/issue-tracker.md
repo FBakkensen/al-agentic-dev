@@ -2,7 +2,7 @@
 
 Issues and specs for this repo live on `https://github.com/fbakkensen/al-agentic-dev`. Use the `gh` CLI for all operations.
 
-This tracker covers changes to al-agentic-dev itself. Consumer repositories track work in their own Tracker, Azure DevOps or GitHub, as their setup records it.
+This tracker covers changes to al-agentic-dev itself. Consumer repositories track work in their own Tracker, as their setup records it.
 
 ## Host
 

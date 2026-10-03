@@ -539,7 +539,7 @@ Describe 'Tracker neutrality' {
         $tracker | Should -Match 'Pass it to every `gh` call as `--repo <owner>/<repo>`'
     }
 
-    It 'has setup pick the seed template by Tracker and give any other Tracker none' {
+    It 'has setup pick the seed template by Tracker and accept any other Tracker' {
         $setup = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' 'SKILL.md') -Raw
 
         $setup | Should -Match '(?m)^- GitHub:.*\[GITHUB\.md\]\(GITHUB\.md\)'
@@ -547,7 +547,8 @@ Describe 'Tracker neutrality' {
         foreach ($verb in $script:Verbs) {
             $setup.Contains("`"$verb`"") | Should -BeTrue -Because "the setup lists the verb $verb"
         }
-        $setup | Should -Match 'any other Tracker'
+        $setup | Should -Match 'Any other Tracker: the user''s description, then a `## Work item structure` section and the verb sections'
+        $setup | Should -Not -Match 'serves GitHub and Azure DevOps'
         $setup | Should -Match '`origin`'
     }
 
