@@ -17,7 +17,7 @@ The dependencies are unpinned by choice: mattpocock-skills tracks whatever commi
 ## Consequences
 
 - The plugin carries no copy of a Base plugin's skill, so it has no pinned-fork rule, no donor-comparison script, and no fork exemptions in the gates.
-- mattpocock-skills' `grilling` asks the whole frontier in rounds, and the plugin ships no grilling skill of its own. The reply-shape rules live in the opt-in `al-agentic-dev:AL` output style: Speak BC vocabulary, and the interview-diagram rule for questions that turn on structure.
+- mattpocock-skills' `grilling` asks the whole frontier in rounds, and the plugin ships no standalone grilling skill. The reply-shape rules live in the opt-in `al-agentic-dev:AL` output style: Speak BC vocabulary, and the interview-diagram rule for questions that turn on structure.
 - A developer who already has `bcquality@bcquality` or the language server from its own marketplace keeps it; the install reuses that copy and there is nothing to uninstall.
 - Installing before the two marketplaces are added fails visibly, not silently, but a developer still has to read the message.
 - The drift check and `Update-EvalBasePlugins.ps1` resolve `<name>@<marketplace>` through a table of marketplace repositories in `Test-BasePluginDrift.ps1`; a new Base plugin from another marketplace adds a row there.
