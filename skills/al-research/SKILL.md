@@ -30,9 +30,7 @@ assumed: <claim> — not verified
 unresolved: <question> — searched: <source locations>
 ```
 
-The file lives on a throwaway `research/<name>` branch, written from a second git worktree outside the repository folder, so the lead's checkout and branch never move. The agent adds that worktree on the new branch at the lead's `HEAD`, writes the file where the entry skill says, commits it, pushes the branch, and removes the worktree folder; the branch stays.
-
-▶ haiku · /al-commit the complete worktree at <the second worktree's path> → commit hashes and subjects, remaining worktree
+The file lives on a throwaway `research/<name>` branch, written from a second git worktree outside the repository folder, so the lead's checkout and branch never move. The agent adds that worktree on the new branch at the lead's `HEAD`, writes the file where the entry skill says, asks /al-commit to commit the complete worktree from that folder, pushes the branch, and removes the worktree folder; the branch stays.
 
 Each `verified:` claim also enters the precedent map: hand its question to /al-lookup, which appends the row and commits it on the lead's branch. /al-lookup owns every map change; this skill edits no map.
 

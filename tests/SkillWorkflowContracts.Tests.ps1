@@ -104,8 +104,8 @@ Describe 'Skill workflow contracts' {
         $research | Should -Match '`symbols\.lock\.json` is missing, the blocker is a /al-build provisioning run'
         $research | Should -Match '(?s)verified: <claim>.*assumed: <claim>.*unresolved: <question>'
         $research | Should -Match 'second git worktree outside the repository folder, so the lead''s checkout and branch never move'
-        $research | Should -Match 'pushes the branch'
-        $research | Should -Match '▶ haiku · /al-commit the complete worktree at <the second worktree''s path>'
+        $research | Should -Match 'asks /al-commit to commit the complete worktree from that folder, pushes the branch, and removes the worktree folder'
+        $research | Should -Not -Match '▶'
         $research | Should -Match 'hand its question to /al-lookup'
         $research | Should -Match '/al-lookup owns every map change; this skill edits no map'
     }
