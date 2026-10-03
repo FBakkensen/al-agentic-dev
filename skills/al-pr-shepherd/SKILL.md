@@ -58,4 +58,4 @@ Merge-ready asks for the user's go; on it, the procedure's completion command ru
 
 ## Close
 
-The receipt — completed with the commit it produced, or blocked with the reason and its evidence, plus the review nits — goes to the work items the tracker text in docs/agents/issue-tracker.md names for the PR and to `.output/receipts/<pr>.md`. Uncommitted fixes at any exit hand off to /al-commit.
+The receipt — completed with the commit it produced, or blocked with the reason and its evidence, plus the review nits — goes to the work items the Tracker doc in docs/agents/issue-tracker.md names for the PR and to `.output/receipts/<pr>.md`. Uncommitted fixes at any exit hand off to /al-commit.

@@ -5,17 +5,17 @@ description: Use whenever /mattpocock-skills:grill-with-docs runs on an AL/Busin
 
 # al-grill-with-docs - anchor the request in its Original work item
 
-In: `/mattpocock-skills:grill-with-docs` running on an AL request. `/mattpocock-skills:grilling` owns the interview; `/mattpocock-skills:domain-modeling` owns `CONTEXT.md`, ADRs, and when to offer one. This addition adds the work-item anchor, the process questions, and the BC deltas to the glossary. Every work-item read and write follows the tracker text that the `## Agent skills` block's issue tracker line points to.
+In: `/mattpocock-skills:grill-with-docs` running on an AL request. `/mattpocock-skills:grilling` owns the interview; `/mattpocock-skills:domain-modeling` owns `CONTEXT.md`, ADRs, and when to offer one. This addition adds the work-item anchor, the process questions, and the BC deltas to the glossary. Every work-item read and write follows the Tracker doc that the `## Agent skills` block's issue tracker line points to.
 
 ## The anchor
 
-Before the first round, anchor the Original work item. A request that arrives on a work item names its id; read that item. A request that arrives on none gets a new Original work item where the tracker text says new ones go; tell the user so, and create it with the request block's write.
+Before the first round, anchor the Original work item. A request that arrives on a work item names its id; read that item. A request that arrives on none gets a new Original work item where the Tracker doc says new ones go; tell the user so, and create it with the request block's write.
 
 ## The request block
 
 Before the first write to the Original work item, show the exact request block and ask the user to confirm it. Keep every non-sensitive word verbatim; replace credentials, tokens, private keys, secret paths, and third-party personal data with `[REDACTED: <reason>]`. The title may become a concise business outcome.
 
-Write the confirmed block first, under `Problem Statement`, in the spec field the tracker text names. Every later write, `/mattpocock-skills:to-spec`'s included, goes around that block and leaves it untouched.
+Write the confirmed block first, under `Problem Statement`, in the spec field the Tracker doc names. Every later write, `/mattpocock-skills:to-spec`'s included, goes around that block and leaves it untouched.
 
 ## The process questions
 

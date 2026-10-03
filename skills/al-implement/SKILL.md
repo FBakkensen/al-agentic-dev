@@ -5,7 +5,7 @@ description: Use whenever /mattpocock-skills:implement runs against AL work in a
 
 # al-implement - AL workers, reviews, and receipt for the slice
 
-In: `/mattpocock-skills:implement` on the executable Original work item or its child work item. Every work-item read, write, and comment follows the tracker text that the `## Agent skills` block's issue tracker line points to. Read its reviewed `Test specification`, including the `Current-to-final proof map`, and the Original work item's process and Building Block Level 1. The entry skill owns the process; this addition supplies the workers, the reviews, the change map, and the receipt. An unresolved AAA seam, existing-proof disposition, or expected value returns to `/mattpocock-skills:tdd` before code changes.
+In: `/mattpocock-skills:implement` on the executable Original work item or its child work item. Every work-item read, write, and comment follows the Tracker doc that the `## Agent skills` block's issue tracker line points to. Read its reviewed `Test specification`, including the `Current-to-final proof map`, and the Original work item's process and Building Block Level 1. The entry skill owns the process; this addition supplies the workers, the reviews, the change map, and the receipt. An unresolved AAA seam, existing-proof disposition, or expected value returns to `/mattpocock-skills:tdd` before code changes.
 
 Trace the narrow path through the workspace first: existing module, event, interface, test, fixture, pattern. Confirm every BC object, table, field, procedure, event, enum value, and dialog text through lookup in this session, never recalled. Write BC vocabulary (Insert, Post, Validate, codeunit) and reach for the platform before new code.
 
@@ -37,9 +37,9 @@ One affected Level 1 module takes a Building Block Level 2 white box. Several ta
 
 Show the HTML through `show_widget`, falling back to an Artifact, then the local file. Add or update the Original work item's Level 2 only when the map reveals stable internal building blocks or interfaces worth preserving, published without change markers; a simple module may need the implementation map but no Original work item Level 2.
 
-▶ haiku · attach the PNG and SVG to the executable item as the tracker text in docs/agents/issue-tracker.md says → verified attachment URLs
+▶ haiku · attach the PNG and SVG to the executable item as the Tracker doc in docs/agents/issue-tracker.md says → verified attachment URLs
 
-Write `.output/receipts/<work-item-id>.md`: work-item ID, map paths and alt text, tests, objects changed, Level 2 decision, gate result, evidence, and `verified:` / `assumed:` / `unresolved:` ledger entries. Put the PNG and the same evidence in the executable item's comment, as the tracker text says.
+Write `.output/receipts/<work-item-id>.md`: work-item ID, map paths and alt text, tests, objects changed, Level 2 decision, gate result, evidence, and `verified:` / `assumed:` / `unresolved:` ledger entries. Put the PNG and the same evidence in the executable item's comment, as the Tracker doc says.
 
 ## Review
 

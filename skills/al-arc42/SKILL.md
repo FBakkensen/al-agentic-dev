@@ -31,7 +31,7 @@ Show the HTML through `show_widget`, falling back to an Artifact, then to the lo
 
 ## Return publishable artifacts
 
-Save each diagram as SVG and a PNG a work item renders. Capture the PNG with an installed `msedge`, `chrome`, or `chromium` and `--headless --screenshot`. Return the local HTML path, SVG and PNG paths, alt text, the executable-item comment fragment for a change overlay, and the Original work item fragment for stable architecture, placed under `Implementation Decisions` in the spec field the tracker text names.
+Save each diagram as SVG and a PNG a work item renders. Capture the PNG with an installed `msedge`, `chrome`, or `chromium` and `--headless --screenshot`. Return the local HTML path, SVG and PNG paths, alt text, the executable-item comment fragment for a change overlay, and the Original work item fragment for stable architecture, placed under `Implementation Decisions` in the spec field the Tracker doc names.
 
 ## Close
 
