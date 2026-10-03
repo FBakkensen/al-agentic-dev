@@ -33,7 +33,15 @@ Triage roles are labels: each role string in `docs/agents/triage-labels.md` is a
 
 ### Attach files
 
-`gh` attaches PNG, JPEG, GIF, WebP, SVG, MP4, MOV, and WebM only. Write the body with `![<alt>](./<file>)` where the image belongs, then pass the body and the files in one call: `gh issue edit <n> --body-file <body> --attach ./<file>#<alt>`, or `gh issue comment <n> --body-file <body> --attach ./<file>#<alt>` for a comment. Attached is verified when a fresh read of the body or comment shows an uploaded-asset URL where each `./<file>` reference was.
+`gh` attaches PNG, JPEG, GIF, WebP, SVG, MP4, MOV, and WebM only. Write the body with the reference where the image belongs, then pass the body and the files in one call, `gh issue edit` for a body or `gh issue comment` for a comment:
+
+```
+![<alt>](./<file>)
+gh issue edit <n> --body-file <body> --attach ./<file>#<alt>
+gh issue comment <n> --body-file <body> --attach ./<file>#<alt>
+```
+
+Attached is verified when a fresh read of the body or comment shows an uploaded-asset URL where each `./<file>` reference was.
 
 The BPMN source, which `--attach` refuses, goes in one comment on the Original work item that opens with `BPMN source`, then a `<details>` block holding an `xml` fence. A refresh edits that comment by its id, the number after `#issuecomment-` in its URL, with `gh api --method PATCH repos/<owner>/<repo>/issues/comments/<id> -F body=@<file>`; it never posts a second one.
 
