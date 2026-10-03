@@ -4,7 +4,7 @@ Hosts: `github.com`.
 
 ## Read the existing pull request
 
-`<owner>/<name>` comes from the `origin` URL, passed to every `gh` call as `--repo`. List the branch's open pull request: `gh pr list --repo <owner>/<name> --head <branch> --state open --json number,url,isDraft,closingIssuesReferences,body`. Its linked work items are the ones the Tracker doc's "How a pull request names a work item" says a GitHub pull request names, read from `body`. `closingIssuesReferences` lists closing issues only for a pull request into the default branch, so for any other base `body` alone carries them.
+`<owner>/<name>` comes from the `origin` URL, passed to every `gh` call as `--repo`. List the branch's open pull request: `gh pr list --repo <owner>/<name> --head <branch> --state open --json number,url,isDraft,closingIssuesReferences,body`. Its linked work items are the ones the Tracker doc's "name the work item in a pull request" says a GitHub pull request names, read from `body`. `closingIssuesReferences` lists closing issues only for a pull request into the default branch, so for any other base `body` alone carries them.
 
 ## Description cap
 
