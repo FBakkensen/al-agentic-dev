@@ -1,6 +1,6 @@
 ---
 name: al-pr-shepherd
-description: Use when a pull request is open and should be driven to merge. Use when its threads hold the user's comments to work or a reviewer's feedback to surface. Use when the branch is behind main or its blocking policies are unmet.
+description: Use when a pull request is open and should be driven to merge. Use when its threads hold the user's comments to work or a reviewer's feedback to surface. Use when its threads hold a CI review's findings to work. Use when the branch is behind main or its blocking policies are unmet.
 ---
 
 # al-pr-shepherd — one PR to completed
@@ -25,9 +25,10 @@ Then act, one class at a time:
    ▶ sonnet · the comment, the PR's promise, the files it names, and the grounding rule → the fix diff, the green gate line from /al-build, the /al-commit hashes
 
    Answer it as the procedure says, naming the fixing commit; that answer, posted under the user's identity, is how the next read tells instruction from answer. A question gets an answer, or goes to the user. A comment that widens what the PR promises is a bullet: propose it for /mattpocock-skills:to-tickets or /al-next to place, and wait.
-2. **Anyone else's feedback** — a comment, or a blocking review vote — goes to the user and stops the automation: no reply, no resolve, no code change for it.
-3. **A red /al-build gate**, or a failing check the procedure's merge-rule read reports → diagnose and fix the root cause. An infrastructure, access, or flaky red stops with the blocker named.
-4. **Behind main** — after a fetch, `git merge-base --is-ancestor origin/main HEAD` fails — or a conflict the procedure reports → merge origin/main INTO the PR branch as a merge commit; a rebase rewrites what reviewers saw. Conflicts resolve by preserving both intents, each side traced to its primary sources: commits, PRs, work items. The same object or field number claimed by both sides with no overlapping logic is the one collision a worker resolves:
+2. **A CI review's finding** is a thread posted by a review check that runs on the pull request, such as the Claude review or the bcquality review, as the procedure recognizes it. A blocking finding goes to class 1's worker, is answered naming the fixing commit, and its thread is resolved. A finding the shepherd judges wrong is answered with the reason, and the procedure reruns its check. A finding it cannot settle goes to the user. The check's own summary comment is read only when the check is red, for blocking findings; its nits are listed in the close and never acted on.
+3. **Anyone else's feedback** — a person's comment, or a blocking review vote — goes to the user and stops the automation: no reply, no resolve, no code change for it.
+4. **A red /al-build gate**, or a failing check the procedure's merge-rule read reports → diagnose and fix the root cause. An infrastructure, access, or flaky red stops with the blocker named.
+5. **Behind main** — after a fetch, `git merge-base --is-ancestor origin/main HEAD` fails — or a conflict the procedure reports → merge origin/main INTO the PR branch as a merge commit; a rebase rewrites what reviewers saw. Conflicts resolve by preserving both intents, each side traced to its primary sources: commits, PRs, work items. The same object or field number claimed by both sides with no overlapping logic is the one collision a worker resolves:
 
    ▶ sonnet · the AL number collision: origin/main's declaration, the branch-new declaration, and the idRanges bucket → both declarations kept, the branch-new number renumbered inside its bucket and verified by a workspace scan
 
@@ -35,7 +36,7 @@ Then act, one class at a time:
 
 ## Before every push
 
-The gate runs on the tree about to be pushed, and only a green gate pushes; red goes to class 3:
+The gate runs on the tree about to be pushed, and only a green gate pushes; red goes to class 4:
 
 ▶ haiku · /al-build gate on the tree about to be pushed → summary.json verdict, per-runner totals, exact red cause
 
@@ -54,4 +55,4 @@ Merge-ready asks for the user's go; on it, the procedure's completion command ru
 
 ## Close
 
-The receipt — completed with the commit it produced, or blocked with the reason and its evidence — goes to the work items the tracker text in docs/agents/issue-tracker.md names for the PR and to `.output/receipts/<pr>.md`. Uncommitted fixes at any exit hand off to /al-commit.
+The receipt — completed with the commit it produced, or blocked with the reason and its evidence, plus the review nits — goes to the work items the tracker text in docs/agents/issue-tracker.md names for the PR and to `.output/receipts/<pr>.md`. Uncommitted fixes at any exit hand off to /al-commit.

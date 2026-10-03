@@ -154,7 +154,7 @@ Describe 'Skill workflow contracts' {
 
         $shepherd | Should -Not -Match 'Copilot'
         $procedure | Should -Not -Match 'Copilot'
-        $shepherd | Should -Match 'only a green gate pushes; red goes to class 3'
+        $shepherd | Should -Match 'only a green gate pushes; red goes to class 4'
         $shepherd | Should -Match '/al-build gate on the tree about to be pushed'
         $shepherd | Should -Match 'built-in /code-review over that commit range'
         $shepherd | Should -Match '/bcquality:al-code-review over that commit range'
@@ -226,6 +226,34 @@ Describe 'Skill workflow contracts' {
         $procedure | Should -Not -Match 'AB#'
         $procedure | Should -Match 'gh pr merge <n> --repo <owner>/<name> --squash'
         $procedure | Should -Not -Match '--auto'
+    }
+
+    It 'has the shepherd work a CI review''s findings as class 2 on both Code hosts' {
+        $shepherd = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pr-shepherd' 'SKILL.md') -Raw
+        $classes = @([regex]::Matches($shepherd, '(?m)^(\d)\. \*\*(.+?)\*\*') | ForEach-Object { $_.Groups[1].Value + ':' + $_.Groups[2].Value })
+
+        $classes.Count | Should -Be 5
+        $classes[1] | Should -Be '2:A CI review''s finding'
+        $classes[2] | Should -Match '^3:Anyone else'
+        $classes[3] | Should -Match '^4:A red /al-build gate'
+        $classes[4] | Should -Match '^5:Behind main'
+        $shepherd | Should -Match 'a thread posted by a review check that runs on the pull request, such as the Claude review or the bcquality review'
+        $shepherd | Should -Match 'blocking finding goes to class 1''s worker, is answered naming the fixing commit, and its thread is resolved'
+        $shepherd | Should -Match 'finding the shepherd judges wrong is answered with the reason, and the procedure reruns its check'
+        $shepherd | Should -Match 'finding it cannot settle goes to the user'
+        $shepherd | Should -Match 'summary comment is read only when the check is red'
+        $shepherd | Should -Match 'nits are listed in the close and never acted on'
+        $shepherd | Should -Match 'a person''s comment, or a blocking review vote — goes to the user and stops the automation'
+
+        $github = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pr-shepherd' 'GITHUB.md') -Raw
+        $github | Should -Match 'first comment is authored by a login ending `\[bot\]` or `github-actions`, and a check on the head with `review` in its name has run'
+        $github | Should -Match 'Dependabot'
+        $github | Should -Match 'gh run rerun <run-id> --failed'
+        $github | Should -Match 'run id comes from that check''s `detailsUrl` in `statusCheckRollup`'
+
+        $azure = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pr-shepherd' 'AZURE-REPOS.md') -Raw
+        $azure | Should -Match 'author is a build service identity, and a build policy on the pull request carries the review'
+        $azure | Should -Match 'az repos pr policy queue --id <n> --evaluation-id <id>'
     }
 
     It 'walks the Gherkin scenarios in the agent container through a browser driver' {

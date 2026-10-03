@@ -13,10 +13,15 @@ The organization is the one the `ado` server is started on in `plugin.json`.
 - Branch policies: `az repos pr policy list --id <n>`.
 - The driving user: the `az account show` login. A comment is theirs when its author's unique name matches.
 - A blocking vote: a reviewer vote of `Waiting for author` or `Rejected`.
+- A CI review's finding: a thread whose author is a build service identity, and a build policy on the pull request carries the review. Any other author is a person.
 
 ## Answer
 
 `mcp__plugin_al-agentic-dev_ado__repo_pull_request_thread_write`: `reply` naming the fixing commit, then `update_status` to `Fixed`. A comment is answered when its thread is `Fixed`.
+
+## Rerun
+
+`az repos pr policy queue --id <n> --evaluation-id <id>`; the evaluation id comes from the build policy's entry in `az repos pr policy list --id <n>`.
 
 ## Complete
 

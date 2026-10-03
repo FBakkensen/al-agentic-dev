@@ -12,7 +12,8 @@ Every `gh` call passes `--repo <owner>/<name>`, read from `origin`. `gh` is 2.99
 - The threads: `gh api graphql` with `repository(owner:"<owner>",name:"<name>"){pullRequest(number:<n>){reviewThreads(first:100,after:<cursor>){pageInfo{hasNextPage endCursor} nodes{id isResolved path comments(first:50){pageInfo{hasNextPage endCursor} nodes{author{login} body}}}}}}`. Fetch the next page with `after:` until `hasNextPage` is false; a thread's further comments come from `node(id:"<thread id>")` on `PullRequestReviewThread` the same way. A resolved thread is handled.
 - The driving user: `gh api user --jq .login`. A comment is theirs when its author's login matches.
 - A blocking vote: a reviewer's latest review in `reviews` whose state is `CHANGES_REQUESTED`.
-- Anyone else's comment: a top-level comment or an unresolved thread's comment by another login. A bot's comment, `github-actions` included, counts as anyone else's.
+- A CI review's finding: an unresolved thread whose first comment is authored by a login ending `[bot]` or `github-actions`, and a check on the head with `review` in its name has run. The check's summary comment is the top-level comment its bot posted.
+- Anyone else's comment: a top-level comment or an unresolved thread's comment by another login. Every other bot, Dependabot for instance, counts as anyone else's.
 - The conflict: a `mergeStateStatus` of `DIRTY`.
 - Merge rules: `mergeStateStatus` is `CLEAN` or `HAS_HOOKS` when the repository's own rules are met. `UNKNOWN` is read again. `UNSTABLE` is a failing check that is not required. `BLOCKED` is reported with what blocks it, read from `statusCheckRollup`, `reviewDecision`, and the unresolved threads. Any other value is reported as it is.
 
@@ -22,6 +23,10 @@ An answer starts `Fixed in <short hash>`; a comment of the user's that starts so
 
 - A review-thread comment is answered by `gh api graphql` with `addPullRequestReviewThreadReply` (`pullRequestReviewThreadId`, `body`), then `resolveReviewThread` (`threadId`).
 - A top-level comment is answered by `gh pr comment <n> --repo <owner>/<name> --body "Fixed in <short hash> — answers <comment url>"`. A user comment is answered when a later user comment carries `answers <its url>`.
+
+## Rerun
+
+`gh run rerun <run-id> --failed`; the run id comes from that check's `detailsUrl` in `statusCheckRollup`.
 
 ## Complete
 
