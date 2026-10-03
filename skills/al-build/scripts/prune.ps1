@@ -50,6 +50,7 @@ Import-Module "$PSScriptRoot/build-operations.psm1" -DisableNameChecking
 if ($ContainerName) {
     Write-BuildHeader "Prune: Remove Agent Container '$ContainerName'"
     $config = Get-BuildConfig
+    Set-BuildEnvironment -Config $config
     Remove-NamedAgentContainer -ContainerName $ContainerName -GoldenContainerName $config.GoldenContainerName -WhatIf:$Preview
 } else {
     Write-BuildHeader 'Prune: Orphaned Container Cleanup'
