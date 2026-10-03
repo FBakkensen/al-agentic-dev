@@ -165,21 +165,42 @@ Describe 'Skill workflow contracts' {
     }
 
     It 'picks the Code-host procedure from the origin remote and stops on an unlisted host' {
-        $selection = 'Read `git remote get-url origin`: the procedure is the sibling file whose `Hosts` line lists that host, [AZURE-REPOS.md](AZURE-REPOS.md) today. A `*.` entry matches any subdomain of that domain. A host no procedure lists stops the skill, naming the host.'
+        $selection = 'Read `git remote get-url origin`: the procedure is the sibling file whose `Hosts` line lists that host. A `*.` entry matches any subdomain of that domain. A host no procedure lists stops the skill, naming the host.'
         $hosts = '(?m)^Hosts: `dev\.azure\.com`, `ssh\.dev\.azure\.com`, `\*\.visualstudio\.com`\.\r?$'
-        foreach ($skill in @('al-pull-request')) {
+        foreach ($skill in @('al-pull-request', 'al-pr-shepherd')) {
             $body = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'SKILL.md') -Raw
             $procedure = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'AZURE-REPOS.md') -Raw
 
             $body | Should -Match ([regex]::Escape($selection)) -Because "$skill words the host selection as its sibling does"
             $body | Should -Not -CMatch '\bgh\b|GitHub|GraphQL|Azure Repos|\baz\b|\bado\b' -Because "$skill names a Code host only through its procedure"
             $procedure | Should -MatchExactly $hosts -Because "$skill's procedure lists its hosts"
+
+            $line = [regex]::Match($body, '(?m)^Procedures: (.+)\.\r?$').Groups[1].Value
+            $listed = @([regex]::Matches($line, '\[([^\]]+\.md)\]\(\1\)') | ForEach-Object { $_.Groups[1].Value } | Sort-Object)
+            $present = @(Get-ChildItem -LiteralPath (Join-Path $script:SkillsRoot $skill) -Filter '*.md' | Where-Object Name -ne 'SKILL.md' | ForEach-Object Name | Sort-Object)
+            $listed | Should -Be $present -Because "$skill's Procedures line lists exactly the procedure files in its folder"
         }
+    }
+
+    It 'lists github.com in the GitHub procedure of al-pull-request' {
+        $procedure = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pull-request' 'GITHUB.md') -Raw
+
+        $procedure | Should -MatchExactly '(?m)^Hosts: `github\.com`\.\r?$'
+    }
+
+    It 'gives al-pull-request the same procedure headings for Azure Repos and GitHub' {
+        $headings = foreach ($file in 'AZURE-REPOS.md', 'GITHUB.md') {
+            $text = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pull-request' $file) -Raw
+            ,@([regex]::Matches($text, '(?m)^## (.+?)\r?$') | ForEach-Object { $_.Groups[1].Value })
+        }
+
+        $headings[0].Count | Should -BeGreaterThan 0
+        $headings[1] | Should -Be $headings[0]
     }
 
     It 'has the shepherd pick its procedure from the origin remote across both Code hosts and stop on an unlisted one' {
         $selection = 'Read `git remote get-url origin`: the procedure is the sibling file whose `Hosts` line lists that host. A `*.` entry matches any subdomain of that domain. A host no procedure lists stops the skill, naming the host.'
-        $procedures = '(?m)^- Procedures: \[AZURE-REPOS\.md\]\(AZURE-REPOS\.md\), \[GITHUB\.md\]\(GITHUB\.md\)\.\r?$'
+        $procedures = '(?m)^Procedures: \[AZURE-REPOS\.md\]\(AZURE-REPOS\.md\), \[GITHUB\.md\]\(GITHUB\.md\)\.\r?$'
         $hosts = @{
             'AZURE-REPOS.md' = '(?m)^Hosts: `dev\.azure\.com`, `ssh\.dev\.azure\.com`, `\*\.visualstudio\.com`\.\r?$'
             'GITHUB.md'      = '(?m)^Hosts: `github\.com`\.\r?$'
@@ -203,6 +224,21 @@ Describe 'Skill workflow contracts' {
 
         $headings[0].Count | Should -BeGreaterThan 0
         $headings[1] | Should -Be $headings[0]
+    }
+
+    It 'opens the GitHub pull request ready through gh, with the 65,536-character cap and the Tracker link lines' {
+        $procedure = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pull-request' 'GITHUB.md') -Raw
+
+        $procedure | Should -Match ([regex]::Escape('gh pr list --repo <owner>/<name> --head <branch> --state open --json number,url,isDraft,closingIssuesReferences,body'))
+        $procedure | Should -Match ([regex]::Escape('gh pr create --repo <owner>/<name> --base <base> --head <branch> --title <title> --body-file <file>'))
+        $procedure | Should -Match ([regex]::Escape('gh pr edit <n> --repo <owner>/<name> --title <title> --body-file <file>'))
+        $procedure | Should -Match ([regex]::Escape('gh pr ready <n> --repo <owner>/<name>'))
+        $procedure | Should -Not -Match '--draft\b' -Because 'a pull request is never created as a draft'
+        $procedure | Should -Match 'GitHub caps the body at 65,536 characters'
+        $procedure | Should -Not -Match '4000-character'
+        $procedure | Should -Match 'closingIssuesReferences'
+        $procedure | Should -Match 'How a pull request names a work item'
+        $procedure | Should -Not -Match 'AB#|Fixes' -Because 'a Code-host procedure parses no tracker link syntax'
     }
 
     It 'has the GitHub shepherd procedure read through gh and GraphQL, answer in threads, and squash on the go' {
