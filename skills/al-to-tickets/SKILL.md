@@ -5,7 +5,7 @@ description: Use whenever /mattpocock-skills:to-tickets runs, or when an Origina
 
 # al-to-tickets - slices that end at BPMN outcomes
 
-In: `/mattpocock-skills:to-tickets` running on an Original work item, with its Trigger, Success guarantee, Minimal guarantee, BPMN outcomes, Runtime View when present, and Building Block View Level 1. `Original` names a role in this workflow, not the top of the hierarchy. The entry skill owns the quiz and the publishing, and the tracker text in `docs/agents/issue-tracker.md` turns its edges into native parent and blocking links. This addition adds where an AL slice ends and what each work item carries.
+In: `/mattpocock-skills:to-tickets` running on an Original work item, with its Trigger, Success guarantee, Minimal guarantee, BPMN outcomes, Runtime View when present, and Building Block View Level 1. `Original` names a role in this workflow, not the top of the hierarchy. The entry skill owns the quiz and the publishing, and the Tracker doc in `docs/agents/issue-tracker.md` turns its edges into native parent and blocking links. This addition adds where an AL slice ends and what each work item carries.
 
 ## Cut at BPMN outcomes
 

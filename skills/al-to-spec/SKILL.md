@@ -5,11 +5,11 @@ description: Use whenever /mattpocock-skills:to-spec runs in an AL repository, o
 
 # al-to-spec - the spec in the Original work item
 
-In: `/mattpocock-skills:to-spec` running on an Original work item whose request `/al-grill-with-docs` confirmed. The entry skill owns the spec's steps and headings; this addition adds where the spec lands and which AL sections it carries. Every work-item read and write follows the tracker text the `## Agent skills` block's issue tracker line points to. Model what the business observes; AL publishers, subscribers, and private procedures are design evidence, not the business process.
+In: `/mattpocock-skills:to-spec` running on an Original work item whose request `/al-grill-with-docs` confirmed. The entry skill owns the spec's steps and headings; this addition adds where the spec lands and which AL sections it carries. Every work-item read and write follows the Tracker doc the `## Agent skills` block's issue tracker line points to. Model what the business observes; AL publishers, subscribers, and private procedures are design evidence, not the business process.
 
 ## Where the spec lands
 
-Fill the existing Original work item, never a new one. The spec goes in the spec field the tracker text names, under the entry's headings unchanged: Problem Statement, Solution, User Stories, Implementation Decisions, Testing Decisions, Out of Scope, Further Notes. The confirmed request under Problem Statement stays untouched.
+Fill the existing Original work item, never a new one. The spec goes in the spec field the Tracker doc names, under the entry's headings unchanged: Problem Statement, Solution, User Stories, Implementation Decisions, Testing Decisions, Out of Scope, Further Notes. The confirmed request under Problem Statement stays untouched.
 
 ## Under Solution
 
@@ -25,9 +25,9 @@ At the entry's user check:
 
 Show the HTML through `show_widget`, then an Artifact, then the local file. After the user's check:
 
-▶ haiku · attach the BPMN source and PNG to the Original work item as the tracker text in docs/agents/issue-tracker.md says → verified attachment URLs
+▶ haiku · attach the BPMN source and PNG to the Original work item as the Tracker doc in docs/agents/issue-tracker.md says → verified attachment URLs
 
-Place the verified PNG with its explanatory text under `Business process`, as the tracker text says.
+Place the verified PNG with its explanatory text under `Business process`, as the Tracker doc says.
 
 ## Under Implementation Decisions
 
@@ -41,9 +41,9 @@ Level 1 is settled when every important behavior has one module owner and each c
 
 Every local image published to the Original work item, Level 1 and Runtime View included, goes through:
 
-▶ haiku · attach the Level 1 and Runtime View PNG and SVG to the Original work item as the tracker text in docs/agents/issue-tracker.md says → verified attachment URLs
+▶ haiku · attach the Level 1 and Runtime View PNG and SVG to the Original work item as the Tracker doc in docs/agents/issue-tracker.md says → verified attachment URLs
 
-Place each verified PNG with its explanatory text under its section, as the tracker text says.
+Place each verified PNG with its explanatory text under its section, as the Tracker doc says.
 
 ## Grounding
 

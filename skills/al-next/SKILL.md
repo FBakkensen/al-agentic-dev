@@ -5,7 +5,7 @@ description: Use when an Original work item or one of its child work items has l
 
 # al-next - reconcile the request
 
-In: the Original work item, its direct child work items when present, the work-item comments, the receipts, and the landed diff. The Original work item is the design record, and every work-item read and write, Acceptance Criteria updates included, follows the Consumer repository's tracker text; `.output/receipts/` mirrors execution evidence. If the tracker text's tools are unavailable, show the exact reconciliation update and stop without creating a substitute record.
+In: the Original work item, its direct child work items when present, the work-item comments, the receipts, and the landed diff. The Original work item is the design record, and every work-item read and write, Acceptance Criteria updates included, follows the Consumer repository's Tracker doc; `.output/receipts/` mirrors execution evidence. If the Tracker doc's tools are unavailable, show the exact reconciliation update and stop without creating a substitute record.
 
 Ask one substantive question per message. Connect it to the Original work item, the landed behavior, and verified code facts.
 
@@ -21,15 +21,15 @@ Show the connected-object change map before the delta table. The map explains ho
 
 ## Reconcile the Original work item
 
-Read the spec from the spec field the tracker text names, under `/mattpocock-skills:to-spec`'s headings. Compare the landed code with the process contract and Business process under `Solution`, and with the Building Block View Level 1, the Runtime View, black boxes, and Level 2 when present under `Implementation Decisions`. Compare the landed code with the executable item's `Behavior` Gherkin and `Test specification` in Acceptance Criteria, and the executable-item change map with the landed diff. Report drift and send the correction to the entry skill the developer types: `/mattpocock-skills:implement` for behavior drift, `/simplify` or `/mattpocock-skills:improve-codebase-architecture` for shape drift. `/al-implement` publishes Level 2 after green. Update it here only when it drifts from the landed code, so the two never publish in parallel:
+Read the spec from the spec field the Tracker doc names, under `/mattpocock-skills:to-spec`'s headings. Compare the landed code with the process contract and Business process under `Solution`, and with the Building Block View Level 1, the Runtime View, black boxes, and Level 2 when present under `Implementation Decisions`. Compare the landed code with the executable item's `Behavior` Gherkin and `Test specification` in Acceptance Criteria, and the executable-item change map with the landed diff. Report drift and send the correction to the entry skill the developer types: `/mattpocock-skills:implement` for behavior drift, `/simplify` or `/mattpocock-skills:improve-codebase-architecture` for shape drift. `/al-implement` publishes Level 2 after green. Update it here only when it drifts from the landed code, so the two never publish in parallel:
 
 ▶ haiku · /al-arc42 the corrected Level 2 white box from the landed diff → HTML path, SVG and PNG paths, alt text, publishable fragments
 
 Show the HTML through `show_widget`, falling back to an Artifact, then the local file, and continue after the user's check:
 
-▶ haiku · attach the Level 2 PNG and SVG to the Original work item as the tracker text in docs/agents/issue-tracker.md says → verified attachment URLs
+▶ haiku · attach the Level 2 PNG and SVG to the Original work item as the Tracker doc in docs/agents/issue-tracker.md says → verified attachment URLs
 
-Place the fragment and each verified PNG under `Implementation Decisions` in the spec field, as the tracker text says. A Level 2 change records current structure; the executable-item map records what changed.
+Place the fragment and each verified PNG under `Implementation Decisions` in the spec field, as the Tracker doc says. A Level 2 change records current structure; the executable-item map records what changed.
 
 ## Reconcile the slices
 

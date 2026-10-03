@@ -73,7 +73,7 @@ Repeat only for architecturally relevant use cases, critical external interfaces
 
 ## Application in this plugin
 
-- The Building Block View and any Runtime View nest under the Original work item's existing `## Implementation Decisions` heading in the spec: in the spec field the tracker text names.
+- The Building Block View and any Runtime View nest under the Original work item's existing `## Implementation Decisions` heading in the spec: in the spec field the Tracker doc names.
 - Level 1 is written before implementation and records intended module contracts.
 - Runtime View is written only when interaction order, ownership, or a transaction boundary needs explanation.
 - Level 2 is written after implementation and only for relevant, stable internal structure.
