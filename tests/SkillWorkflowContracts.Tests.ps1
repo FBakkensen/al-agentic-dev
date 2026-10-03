@@ -208,7 +208,8 @@ Describe 'Skill workflow contracts' {
         $procedure | Should -Match 'GitHub caps the body at 65,536 characters'
         $procedure | Should -Not -Match '4000-character'
         $procedure | Should -Match 'closingIssuesReferences'
-        $procedure | Should -Match 'AB#<id>'
+        $procedure | Should -Match 'Fixes #<n>'
+        $procedure | Should -Not -Match 'AB#' -Because 'a Code-host procedure parses no tracker link syntax beyond the GitHub Tracker line'
     }
 
     It 'walks the Gherkin scenarios in the agent container through a browser driver' {
