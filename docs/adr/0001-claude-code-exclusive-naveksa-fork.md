@@ -1,10 +1,8 @@
-# Claude Code exclusive, github.com home, Azure Repos consumers
+# Claude Code exclusive, github.com home
 
-This plugin was built Copilot-first for 9Altitudes, whose AL repositories lived on 9altitudes.ghe.com. It is now a permanent fork for Naveksa: it targets Claude Code only, the plugin repository lives and is distributed on github.com, and consumer repositories are Naveksa AL repositories in Azure Repos alongside their Azure DevOps work items. Dual Copilot/Claude support was rejected because it is what made the hooks and gates heavy, and tracking the 9Altitudes predecessor was rejected because nearly every file diverges once the tool and the host both change.
+This plugin is a permanent fork for Naveksa of a Copilot-first plugin built for 9Altitudes, whose AL repositories lived on 9altitudes.ghe.com. It targets Claude Code only, and the Plugin repository lives and is distributed on github.com. Dual Copilot/Claude support is rejected because it is what made the hooks and gates heavy, and tracking the 9Altitudes predecessor is rejected because nearly every file diverges once the tool and the host both change.
 
 ## Consequences
 
-- Copilot manifest and hook formats, `~/.copilot` paths, Copilot tool names, and non-Claude model tiers leave the plugin; the "Copilot-first" rules in the dev-time instructions and gates are rewritten, not extended.
-- Pull-request skills move from `gh` to Azure Repos; GitHub stays only as this plugin repository's own host.
+- The plugin carries no Copilot manifest or hook formats, no `~/.copilot` paths, no Copilot tool names, and no non-Claude model tiers; the dev-time instructions and gates are written for Claude Code only.
 - The MIT `LICENSE` names Flemming Bakkensen as the sole copyright holder; neither 9Altitudes nor Naveksa holds a line, and the marketplace `owner` is Flemming Bakkensen.
-- ADR 0004 replaces the Azure Repos and Azure DevOps rule for Consumer repositories: each one has its own Code host and Tracker, GitHub included.
