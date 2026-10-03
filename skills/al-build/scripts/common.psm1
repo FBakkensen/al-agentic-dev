@@ -1865,6 +1865,87 @@ function Get-OrphanedAgentContainers {
     return $orphaned
 }
 
+function Remove-AgentContainerResources {
+    <#
+    .SYNOPSIS
+        Remove one agent container and everything kept for it
+    .DESCRIPTION
+        Removes the docker container through Remove-BcContainer when docker lists
+        it, then both hosts entries (bare and .test), the publish-state files, and
+        the registry entry. Remove-BcContainer failing throws before anything else is
+        touched, so the registry entry stays and a later run retries.
+    .PARAMETER ContainerName
+        The bare container name
+    .PARAMETER HostsFile
+        Hosts file the bare and .test entries are removed from; defaults to the Windows hosts file.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$ContainerName,
+
+        [string]$HostsFile = (Get-DefaultHostsFile)
+    )
+
+    $existingContainer = docker ps -a --filter "name=^$ContainerName$" --format "{{.Names}}" 2>$null
+    if ($existingContainer) {
+        Remove-BcContainer -containerName $ContainerName -ErrorAction Stop | Out-Null
+        Write-BuildMessage -Type Success -Message "Container removed"
+    } else {
+        Write-BuildMessage -Type Detail -Message "Container not running (already removed)"
+    }
+
+    # Remove the bare and .test hosts entries, also for a container docker no longer lists
+    try {
+        Remove-BCAgentContainerHost -ContainerName $ContainerName -HostsFile $HostsFile
+    } catch {
+        Write-BuildMessage -Type Warning -Message "Could not remove hosts entries: $($_.Exception.Message)"
+    }
+
+    # Remove publish-state files for this container
+    $cacheRoot = Get-SymbolCacheRoot
+    if (Test-Path -LiteralPath $cacheRoot) {
+        $stateFiles = Get-ChildItem -Path $cacheRoot -Recurse -Filter "publish-state.$ContainerName.json" -ErrorAction SilentlyContinue
+        foreach ($stateFile in $stateFiles) {
+            Remove-Item -LiteralPath $stateFile.FullName -Force
+            Write-BuildMessage -Type Detail -Message "Removed publish state: $($stateFile.Name)"
+        }
+    }
+
+    Unregister-AgentContainer -ContainerName $ContainerName
+}
+
+function Remove-NamedAgentContainer {
+    <#
+    .SYNOPSIS
+        Remove one named agent container, whether or not its branch still exists
+    .DESCRIPTION
+        Only a registered agent container qualifies, so the golden container and
+        the snapshot image are refused. A container docker no longer lists still
+        has its hosts entries and registry entry cleared.
+    .PARAMETER ContainerName
+        The bare agent container name
+    .PARAMETER HostsFile
+        Hosts file the bare and .test entries are removed from; defaults to the Windows hosts file.
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory)]
+        [string]$ContainerName,
+
+        [string]$HostsFile = (Get-DefaultHostsFile)
+    )
+
+    if (-not (Get-RegisteredAgentContainers).ContainsKey($ContainerName)) {
+        throw "'$ContainerName' is not a registered agent container; only agent containers are removed, never the golden container or the snapshot image"
+    }
+
+    if ($PSCmdlet.ShouldProcess($ContainerName, 'Removing agent container')) {
+        Write-BuildMessage -Type Step -Message "Removing agent container '$ContainerName'"
+        Remove-AgentContainerResources -ContainerName $ContainerName -HostsFile $HostsFile
+    }
+}
+
 function Remove-OrphanedAgentContainers {
     <#
     .SYNOPSIS
@@ -1872,6 +1953,7 @@ function Remove-OrphanedAgentContainers {
     .DESCRIPTION
         Removes containers that are orphaned (branch deleted) or stale (unused > 7 days).
         Also removes associated hosts entries (bare and .test), publish-state files, and registry entries.
+        A container Remove-BcContainer cannot remove stays registered, so the next prune retries it.
     .PARAMETER WhatIf
         Preview what would be removed without making changes
     .PARAMETER StaleThresholdDays
@@ -1906,40 +1988,11 @@ function Remove-OrphanedAgentContainers {
         if ($PSCmdlet.ShouldProcess("$($container.ContainerName) ($detail)", $action)) {
             Write-BuildMessage -Type Step -Message "$action container '$($container.ContainerName)'"
             Write-BuildMessage -Type Detail -Message $detail
-
-            # Remove docker container
-            $existingContainer = docker ps -a --filter "name=^$($container.ContainerName)$" --format "{{.Names}}" 2>$null
-            if ($existingContainer) {
-                try {
-                    Remove-BcContainer -containerName $container.ContainerName -ErrorAction Stop | Out-Null
-                    Write-BuildMessage -Type Success -Message "Container removed"
-                } catch {
-                    Write-BuildMessage -Type Warning -Message "Remove-BcContainer failed; using docker rm -f"
-                    docker rm -f $container.ContainerName 2>$null | Out-Null
-                }
-            } else {
-                Write-BuildMessage -Type Detail -Message "Container not running (already removed)"
-            }
-
-            # Remove the bare and .test hosts entries, also for a container docker no longer lists
             try {
-                Remove-BCAgentContainerHost -ContainerName $container.ContainerName -HostsFile $HostsFile
+                Remove-AgentContainerResources -ContainerName $container.ContainerName -HostsFile $HostsFile
             } catch {
-                Write-BuildMessage -Type Warning -Message "Could not remove hosts entries: $($_.Exception.Message)"
+                Write-BuildMessage -Type Warning -Message "Remove-BcContainer failed for '$($container.ContainerName)': $($_.Exception.Message)"
             }
-
-            # Remove publish-state files for this container
-            $cacheRoot = Get-SymbolCacheRoot
-            if (Test-Path -LiteralPath $cacheRoot) {
-                $stateFiles = Get-ChildItem -Path $cacheRoot -Recurse -Filter "publish-state.$($container.ContainerName).json" -ErrorAction SilentlyContinue
-                foreach ($stateFile in $stateFiles) {
-                    Remove-Item -LiteralPath $stateFile.FullName -Force
-                    Write-BuildMessage -Type Detail -Message "Removed publish state: $($stateFile.Name)"
-                }
-            }
-
-            # Unregister from registry
-            Unregister-AgentContainer -ContainerName $container.ContainerName
         }
     }
 }
@@ -2872,6 +2925,7 @@ Export-ModuleMember -Function @(
     'Unregister-AgentContainer'
     'Get-OrphanedAgentContainers'
     'Remove-OrphanedAgentContainers'
+    'Remove-NamedAgentContainer'
 
     # Git Utilities
     'Get-GitRepoRoot'
