@@ -16,7 +16,7 @@ In: one open pull request — the current branch's, or the one named in the invo
 
 ## Each read, from live state
 
-Read the PR's status and mergeability, its reviews and their votes, its threads, its merge rules, and its linked work items as the procedure says. A comment is the driving user's when the procedure's identity read matches its author, and when none matches, every comment is anyone else's feedback.
+Read the PR's status and mergeability, its reviews and their votes, its threads, and its merge rules as the procedure says. A comment is the driving user's when the procedure's identity read matches its author, and when none matches, every comment is anyone else's feedback.
 
 Then act, one class at a time:
 
@@ -24,10 +24,10 @@ Then act, one class at a time:
 
    ▶ sonnet · the comment, the PR's promise, the files it names, and the grounding rule → the fix diff, the green gate line from /al-build, the /al-commit hashes
 
-   Answer through the procedure's thread write, naming the fixing commit and marking it fixed where the procedure gives a status; that reply, posted under the user's identity, is how the next read tells instruction from answer. A question gets an answer and a fixed thread, or goes to the user. A comment that widens what the PR promises is a bullet: propose it for /mattpocock-skills:to-tickets or /al-next to place, and wait.
+   Answer it as the procedure says, naming the fixing commit; that answer, posted under the user's identity, is how the next read tells instruction from answer. A question gets an answer, or goes to the user. A comment that widens what the PR promises is a bullet: propose it for /mattpocock-skills:to-tickets or /al-next to place, and wait.
 2. **Anyone else's feedback** — a comment, or a blocking review vote — goes to the user and stops the automation: no reply, no resolve, no code change for it.
-3. **A red /al-build gate** → diagnose and fix the root cause. An infrastructure, access, or flaky red stops with the blocker named.
-4. **Behind main** → merge origin/main INTO the PR branch as a merge commit; a rebase rewrites what reviewers saw. Conflicts resolve by preserving both intents, each side traced to its primary sources: commits, PRs, work items. The same object or field number claimed by both sides with no overlapping logic is the one collision a worker resolves:
+3. **A red /al-build gate**, or a failing check the procedure's merge-rule read reports → diagnose and fix the root cause. An infrastructure, access, or flaky red stops with the blocker named.
+4. **Behind main** — after a fetch, `git merge-base --is-ancestor origin/main HEAD` fails — or a conflict the procedure reports → merge origin/main INTO the PR branch as a merge commit; a rebase rewrites what reviewers saw. Conflicts resolve by preserving both intents, each side traced to its primary sources: commits, PRs, work items. The same object or field number claimed by both sides with no overlapping logic is the one collision a worker resolves:
 
    ▶ sonnet · the AL number collision: origin/main's declaration, the branch-new declaration, and the idRanges bucket → both declarations kept, the branch-new number renumbered inside its bucket and verified by a workspace scan
 
@@ -54,4 +54,4 @@ Merge-ready asks for the user's go; on it, the procedure's completion command ru
 
 ## Close
 
-The receipt — completed with the commit it produced, or blocked with the reason and its evidence — goes, as the tracker text in docs/agents/issue-tracker.md says, to the PR's linked work items and to `.output/receipts/<pr>.md`. Uncommitted fixes at any exit hand off to /al-commit.
+The receipt — completed with the commit it produced, or blocked with the reason and its evidence — goes to the work items the tracker text in docs/agents/issue-tracker.md names for the PR and to `.output/receipts/<pr>.md`. Uncommitted fixes at any exit hand off to /al-commit.

@@ -159,6 +159,7 @@ Describe 'Skill workflow contracts' {
         $shepherd | Should -Match 'built-in /code-review over that commit range'
         $shepherd | Should -Match '/bcquality:al-code-review over that commit range'
         $shepherd | Should -Match 'no Spec axis'
+        $shepherd | Should -Match 'git merge-base --is-ancestor origin/main HEAD'
         $procedure | Should -Match 'az repos pr update --id <n> --status completed --merge-strategy squash'
         $procedure | Should -Match 'az repos pr policy list --id <n>'
     }
@@ -211,14 +212,18 @@ Describe 'Skill workflow contracts' {
         $procedure | Should -Match 'gh auth login'
         $procedure | Should -Match 'every `gh` call passes `--repo <owner>/<name>`'
         $procedure | Should -Match 'gh pr view <n> --repo <owner>/<name> --json state,mergeStateStatus,reviewDecision,statusCheckRollup,reviews,headRefOid,closingIssuesReferences,comments'
-        $procedure | Should -Match 'reviewThreads\(first:100\)'
+        $procedure | Should -Match 'reviewThreads\(first:100,after:<cursor>\)'
         $procedure | Should -Match 'gh api user --jq \.login'
         $procedure | Should -Match 'addPullRequestReviewThreadReply'
         $procedure | Should -Match 'resolveReviewThread'
         $procedure | Should -Match 'gh pr comment <n> --repo <owner>/<name>'
         $procedure | Should -Match 'CHANGES_REQUESTED'
-        $procedure | Should -Match '`BEHIND` or `DIRTY`'
-        $procedure | Should -Match '`CLEAN`'
+        $procedure | Should -Match 'hasNextPage'
+        $procedure | Should -Match 'a `mergeStateStatus` of `DIRTY`'
+        $procedure | Should -Match '`CLEAN` or `HAS_HOOKS`'
+        $procedure | Should -Match '`UNSTABLE`'
+        $procedure | Should -Match 'answers <comment url>'
+        $procedure | Should -Not -Match 'AB#'
         $procedure | Should -Match 'gh pr merge <n> --repo <owner>/<name> --squash'
         $procedure | Should -Not -Match '--auto'
     }
@@ -326,6 +331,10 @@ Describe 'Tracker neutrality' {
             'sub-issue'     = '\bsub-issues?\b'
             'gh pr'         = '\bgh pr\b'
             'GraphQL'       = '\bGraphQL\b'
+            'AB#'           = 'AB#'
+        }
+        $script:TokenHomes = @{
+            'AB#' = @('al-setup-matt-pocock-skills/AZURE-DEVOPS.md', 'al-setup-matt-pocock-skills/GITHUB.md')
         }
         $script:TrackerHomes = @(
             'al-setup-matt-pocock-skills/AZURE-DEVOPS.md'
@@ -343,9 +352,10 @@ Describe 'Tracker neutrality' {
         $offenders = foreach ($file in Get-ChildItem -LiteralPath $script:SkillsRoot -Filter '*.md' -Recurse) {
             $relative = $file.FullName.Substring($script:SkillsRoot.Length + 1).Replace('\', '/')
             if ($relative -match 'node_modules') { continue }
-            if ($script:TrackerHomes | Where-Object { $relative.StartsWith($_) }) { continue }
             $text = Get-Content -LiteralPath $file.FullName -Raw
             foreach ($name in $script:TrackerTokens.Keys) {
+                $homes = if ($script:TokenHomes.ContainsKey($name)) { $script:TokenHomes[$name] } else { $script:TrackerHomes }
+                if ($homes | Where-Object { $relative.StartsWith($_) }) { continue }
                 if ($text -cmatch $script:TrackerTokens[$name]) { "$relative names $name" }
             }
         }
