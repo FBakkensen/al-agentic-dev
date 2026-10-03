@@ -4,7 +4,7 @@ Hosts: `github.com`.
 
 ## Read the existing pull request
 
-`<owner>/<name>` comes from the `origin` URL, passed to every `gh` call as `--repo`. List the branch's open pull request: `gh pr list --repo <owner>/<name> --head <branch> --state open --json number,url,isDraft,closingIssuesReferences,body`. Its linked work items are the issues in `closingIssuesReferences` on a GitHub Tracker, and the `AB#<id>` lines of `body` on an Azure DevOps Tracker.
+`<owner>/<name>` comes from the `origin` URL, passed to every `gh` call as `--repo`. List the branch's open pull request: `gh pr list --repo <owner>/<name> --head <branch> --state open --json number,url,isDraft,closingIssuesReferences,body`. Its linked work items on a GitHub Tracker are the issues in `closingIssuesReferences`, which lists them only for a pull request into the default branch; for any other base, they are the `Fixes #<n>` lines of `body`. On an Azure DevOps Tracker they are the `AB#<id>` lines of `body`.
 
 ## Description cap
 

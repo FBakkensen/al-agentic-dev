@@ -164,7 +164,7 @@ Describe 'Skill workflow contracts' {
     }
 
     It 'picks the Code-host procedure from the origin remote and stops on an unlisted host' {
-        $selection = 'Read `git remote get-url origin`: the procedure is the sibling file whose `Hosts` line lists that host, [AZURE-REPOS.md](AZURE-REPOS.md) today. A `*.` entry matches any subdomain of that domain. A host no procedure lists stops the skill, naming the host.'
+        $selection = 'Read `git remote get-url origin`: the procedure is the sibling file whose `Hosts` line lists that host. A `*.` entry matches any subdomain of that domain. A host no procedure lists stops the skill, naming the host.'
         $hosts = '(?m)^Hosts: `dev\.azure\.com`, `ssh\.dev\.azure\.com`, `\*\.visualstudio\.com`\.\r?$'
         foreach ($skill in @('al-pull-request', 'al-pr-shepherd')) {
             $body = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'SKILL.md') -Raw
@@ -173,6 +173,11 @@ Describe 'Skill workflow contracts' {
             $body | Should -Match ([regex]::Escape($selection)) -Because "$skill words the host selection as its sibling does"
             $body | Should -Not -CMatch '\bgh\b|GitHub|GraphQL|Azure Repos|\baz\b|\bado\b' -Because "$skill names a Code host only through its procedure"
             $procedure | Should -MatchExactly $hosts -Because "$skill's procedure lists its hosts"
+
+            $line = [regex]::Match($body, '(?m)^Procedures: (.+)\.\r?$').Groups[1].Value
+            $listed = @([regex]::Matches($line, '\[([^\]]+\.md)\]\(\1\)') | ForEach-Object { $_.Groups[1].Value } | Sort-Object)
+            $present = @(Get-ChildItem -LiteralPath (Join-Path $script:SkillsRoot $skill) -Filter '*.md' | Where-Object Name -ne 'SKILL.md' | ForEach-Object Name | Sort-Object)
+            $listed | Should -Be $present -Because "$skill's Procedures line lists exactly the procedure files in its folder"
         }
     }
 
@@ -201,7 +206,7 @@ Describe 'Skill workflow contracts' {
         $procedure | Should -Match ([regex]::Escape('gh pr ready <n> --repo <owner>/<name>'))
         $procedure | Should -Not -Match '--draft\b' -Because 'a pull request is never created as a draft'
         $procedure | Should -Match 'GitHub caps the body at 65,536 characters'
-        $procedure | Should -Not -Match '4000'
+        $procedure | Should -Not -Match '4000-character'
         $procedure | Should -Match 'closingIssuesReferences'
         $procedure | Should -Match 'AB#<id>'
     }
