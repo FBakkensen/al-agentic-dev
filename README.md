@@ -37,6 +37,7 @@ The Base plugins (`mattpocock-skills`, `bcquality`, and the AL language server) 
 | `/mattpocock-skills:improve-codebase-architecture` | `/al-improve-codebase-architecture` |
 | `/mattpocock-skills:diagnosing-bugs` | `/al-diagnosing-bugs` |
 | `/mattpocock-skills:wayfinder` | `/al-wayfinder` |
+| `/mattpocock-skills:prototype` | `/al-prototype` |
 
 For an effort too large for one session, `/mattpocock-skills:wayfinder` plans it as a map of decision tickets before `to-spec`.
 

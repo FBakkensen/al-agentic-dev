@@ -19,7 +19,7 @@ skills/al-build/scripts/*.ps1   the build substrate
 skills/al-build/config/         al-build.json
 ```
 
-Twenty-four skills ship today.
+Twenty-five skills ship today.
 
 - `al-build` — the compile-publish-test gate, provisioning, breaking-change validation, and the container lifecycle; the contract model everything else copies.
 - `al-clone-bcapps` — the BCApps lookup-source clone.
@@ -45,6 +45,7 @@ Twenty-four skills ship today.
 - `al-webclient` — driver-neutral Web Client rules and page-JavaScript snippets for the agent container and a SaaS sandbox.
 - `al-diagnosing-bugs` — the AL order of the feedback loops for `/mattpocock-skills:diagnosing-bugs`: a failing AL test through `/al-build`, a data read through `/al-environment-data`, then the Web Client through `/al-webclient`.
 - `al-wayfinder` — the AL rules for `/mattpocock-skills:wayfinder`: which question becomes which ticket, with a question one `/al-lookup` call answers never a ticket.
+- `al-prototype` — the AL forms for `/mattpocock-skills:prototype`: a throwaway app on its own `prototype/<name>` branch with its own container, logic through AL Runner or container tests, UI through the Web Client, and a verdict with screenshots as the evidence.
 
 The folder name equals the frontmatter `name`. A skill reaches outside its folder only by naming another skill — `/al-build` — never by path.
 
