@@ -6,7 +6,7 @@
     Reads the static delegation rules and entry -> addition table from
     session-start.md beside this script. SessionStart writes the whole text to
     stdout as additionalContext; SubagentStart writes only the entry -> addition
-    section, so a subagent loads an addition beside its entry skill. Exits 1 when
+    section, up to the next level-2 heading, so a subagent loads an addition beside its entry skill. Exits 1 when
     the text file is missing or empty, or lacks that section.
 .EXAMPLE
     pwsh -NoProfile -File hooks/Write-SessionStart.ps1
@@ -38,6 +38,10 @@ if ($Event -eq 'SubagentStart') {
         exit 1
     }
     $text = $text.Substring($start)
+    $next = [regex]::Match($text.Substring(1), '(?m)^## ')
+    if ($next.Success) {
+        $text = $text.Substring(0, $next.Index + 1).TrimEnd() + "`n"
+    }
 }
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

@@ -17,7 +17,7 @@ One install brings these.
 
 ## How it works
 
-`mattpocock-skills` owns the process; this plugin adds only what is specific to AL. You type the step you know, such as `/mattpocock-skills:to-spec`. In an AL repository, the `SessionStart` hook, and in a subagent the `SubagentStart` hook, has Claude Code load that step's AL addition, `/al-to-spec`, beside it.
+`mattpocock-skills` owns the process; this plugin adds only what is specific to AL. You type the step you know, such as `/mattpocock-skills:to-spec`. In an AL repository, Claude Code loads that step's AL addition, `/al-to-spec`, beside it: the `SessionStart` hook tells the main session, and the `SubagentStart` hook tells each subagent.
 
 The Base plugins (`mattpocock-skills`, `bcquality`, and the AL language server) are never copied into this plugin and are not pinned, so each updates on its own.
 

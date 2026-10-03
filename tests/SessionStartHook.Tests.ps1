@@ -84,6 +84,23 @@ Describe 'SessionStart hook' -Tag 'Process' {
         $context | Should -Not -Match '(?m)^## Delegation'
     }
 
+    It 'ends the subagent section at the next level-2 heading' {
+        $plugin = Join-Path $TestDrive 'section-plugin'
+        New-Item -ItemType Directory -Path (Join-Path $plugin 'hooks') -Force | Out-Null
+        foreach ($name in 'hooks.json', 'Write-SessionStart.ps1') {
+            Copy-Item -LiteralPath (Join-Path $script:RepoRoot 'hooks' $name) -Destination (Join-Path $plugin 'hooks')
+        }
+        $text = Get-Content -LiteralPath (Join-Path $script:RepoRoot 'hooks' 'session-start.md') -Raw
+        Set-Content -LiteralPath (Join-Path $plugin 'hooks' 'session-start.md') -Value ($text.TrimEnd() + "`n`n## Later section`n`nLater text.`n") -NoNewline
+
+        $result = Invoke-SessionStartHook -PluginRoot $plugin -Event SubagentStart
+
+        $result.ExitCode | Should -Be 0 -Because $result.Text
+        $context = ($result.Text | ConvertFrom-Json).hookSpecificOutput.additionalContext
+        $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:research` | `/al-research` |') + '\r?$')
+        $context | Should -Not -Match 'Later'
+    }
+
     It 'fails a subagent start when the text is missing' {
         $plugin = Join-Path $TestDrive 'subagent-plugin'
         New-Item -ItemType Directory -Path (Join-Path $plugin 'hooks') -Force | Out-Null
