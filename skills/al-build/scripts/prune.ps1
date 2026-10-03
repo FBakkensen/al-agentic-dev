@@ -10,9 +10,9 @@
     - Stale: unused for more than 7 days
 
     With -ContainerName it removes that one agent container instead, whether or not
-    its branch exists, with both hosts entries (bare and .test). A name that is not a
-    registered agent container, such as the golden container, is refused with a
-    non-zero exit.
+    its branch exists, with both hosts entries (bare and .test). The golden container
+    and a container that is not a registered agent container are refused with a
+    non-zero exit, and so is a failed removal.
 
 .PARAMETER ContainerName
     The one agent container to remove.
@@ -45,10 +45,12 @@ $InformationPreference = 'Continue'
 
 # Import modules
 Import-Module "$PSScriptRoot/common.psm1" -Force -DisableNameChecking
+Import-Module "$PSScriptRoot/build-operations.psm1" -DisableNameChecking
 
 if ($ContainerName) {
     Write-BuildHeader "Prune: Remove Agent Container '$ContainerName'"
-    Remove-NamedAgentContainer -ContainerName $ContainerName -WhatIf:$Preview
+    $config = Get-BuildConfig
+    Remove-NamedAgentContainer -ContainerName $ContainerName -GoldenContainerName $config.GoldenContainerName -WhatIf:$Preview
 } else {
     Write-BuildHeader 'Prune: Orphaned Container Cleanup'
     Remove-OrphanedAgentContainers -WhatIf:$Preview
