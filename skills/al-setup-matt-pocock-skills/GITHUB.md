@@ -33,10 +33,15 @@ Triage roles are labels: each role string in `docs/agents/triage-labels.md` is a
 
 ### Attach files
 
-`gh` attaches PNG, JPEG, GIF, WebP, SVG, MP4, MOV, and WebM only. Write the body with the reference where the image belongs, then pass the body and the files in one call, `gh issue edit` for a body or `gh issue comment` for a comment:
+`gh` attaches PNG, JPEG, GIF, WebP, SVG, MP4, MOV, and WebM only. Write the body with the reference where the image belongs:
 
-```
+```markdown
 ![<alt>](./<file>)
+```
+
+Then pass the body and the files in one call, `gh issue edit` for a body or `gh issue comment` for a comment:
+
+```bash
 gh issue edit <n> --body-file <body> --attach ./<file>#<alt>
 gh issue comment <n> --body-file <body> --attach ./<file>#<alt>
 ```
