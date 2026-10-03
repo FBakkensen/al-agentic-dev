@@ -11,7 +11,7 @@ Naveksa is moving its AL repositories from Azure DevOps to GitHub, under the `na
 
 ## Consequences
 
-- Tracker specifics live only in the tracker text `al-setup-matt-pocock-skills` writes into the Consumer repository, one version per Tracker; skill bodies and descriptions name no Tracker.
+- Tracker specifics live only in the Tracker doc `al-setup-matt-pocock-skills` writes into the Consumer repository, from a seed template or the user's description, with the types and fields the user confirms; skill bodies and descriptions name no Tracker, type, or field.
 - Code-host specifics live in one sibling file per Code host inside `al-pull-request` and `al-pr-shepherd`, chosen from the remote.
 - A GitHub pull request names an Azure DevOps work item as `AB#<id>`, which links only once the Azure Boards app is connected to `naveksadk`.
 - On a GitHub Tracker, images attach through `gh --attach`, so `gh` 2.99.0 or later is a developer requirement; `--attach` takes media only.

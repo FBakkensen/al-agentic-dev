@@ -17,7 +17,7 @@ When this addition loads first with a work item in play, invoke `/mattpocock-ski
 
 ## Spec axis
 
-▶ opus · the entry's Spec sub-agent itself, not a second one: its brief plus the executable work item's Acceptance Criteria (`Behavior` Gherkin and `Test specification`), the Original work item's spec field, the receipt, and the checks below → Spec findings in the grammar below
+▶ opus · the entry's Spec sub-agent itself, not a second one: its brief plus the executable work item's acceptance criteria (`Behavior` Gherkin and `Test specification`), the Original work item's spec field, the receipt, and the checks below → Spec findings in the grammar below
 
 The sub-agent reads the receipt's `verified:` / `assumed:` / `unresolved:` entries first and spot-checks every `verified:` pointer, the gate pointer included. An undeclared platform assumption that behavior depends on is Blocking; a declared assumption or unanswered question is classified by its consequence. It judges:
 

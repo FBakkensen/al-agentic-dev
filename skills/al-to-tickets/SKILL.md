@@ -5,7 +5,7 @@ description: Use whenever /mattpocock-skills:to-tickets runs, or when an Origina
 
 # al-to-tickets - slices that end at BPMN outcomes
 
-In: `/mattpocock-skills:to-tickets` running on an Original work item, with its Trigger, Success guarantee, Minimal guarantee, BPMN outcomes, Runtime View when present, and Building Block View Level 1. `Original` names a role in this workflow, not the top of the hierarchy. The entry skill owns the quiz and the publishing, and the Tracker doc in `docs/agents/issue-tracker.md` turns its edges into native parent and blocking links. This addition adds where an AL slice ends and what each work item carries.
+In: `/mattpocock-skills:to-tickets` running on an Original work item, with its Trigger, Success guarantee, Minimal guarantee, BPMN outcomes, Runtime View when present, and Building Block View Level 1. `Original` names a role in this workflow, not the top of the hierarchy. The entry skill owns the quiz and the publishing, and the Tracker doc in `docs/agents/issue-tracker.md` says how each verb is carried out. Parent and blocking links are native where the Tracker has them, and otherwise as the Tracker doc says. This addition adds where an AL slice ends and what each work item carries.
 
 ## Cut at BPMN outcomes
 
@@ -17,7 +17,7 @@ At the entry's quiz, each proposed ticket also shows the BPMN outcome it ends at
 
 ## Place the slices
 
-One slice creates no child. The Original work item stays the executable item, and its Acceptance Criteria carries the slice's `Behavior`. That write is the one change the publishing makes to the Original: `/mattpocock-skills:to-tickets` otherwise leaves the parent it slices untouched.
+One slice creates no child. The Original work item stays the executable item, and its acceptance criteria carries the slice's `Behavior`, written as the Tracker doc's "write the acceptance criteria" says. That write is the one change the publishing makes to the Original: `/mattpocock-skills:to-tickets` otherwise leaves the parent it slices untouched.
 
 Several slices each get one direct child work item under the Original work item, whatever type the Original is.
 
@@ -25,9 +25,9 @@ Only those direct child work items are created. Every existing item stays where 
 
 The Original work item owns the shared design. A child's spec field names its one process path, carries only what is specific to that slice, and points to the Original work item for the shared design instead of copying it.
 
-## Write the Acceptance Criteria
+## Write the acceptance criteria
 
-Each slice carries its `Behavior` as valid fenced Gherkin in Acceptance Criteria: `Scenario`, `Given`, `When`, and `Then`, with `Background`, `And`, `But`, and `Scenario Outline` when useful. Gherkin speaks the business process; AL object structure and test implementation stay out of it.
+Each slice carries its `Behavior` as valid fenced Gherkin in the acceptance criteria: `Scenario`, `Given`, `When`, and `Then`, with `Background`, `And`, `But`, and `Scenario Outline` when useful. Gherkin speaks the business process; AL object structure and test implementation stay out of it.
 
 `Behavior` precedes `Test specification` when both are present. Either section may be omitted, and its absence has no prescribed meaning. That omission never lifts a slice's `Behavior`: it covers a container Original, which holds the shared design, and a `Test specification` that `/mattpocock-skills:tdd` writes later.
 

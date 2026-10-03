@@ -37,7 +37,7 @@ Write the body in this order:
 - `<command or check>`: <exact result>
 ```
 
-`Changed` describes the combined landed delta without copying the work item's spec or Acceptance Criteria. Include `Proof` only for evidence already produced; this skill runs no tests. Add `Review notes` only for a real risk, migration concern, assumption, or design drift. The body ends with the link lines the Tracker doc's "How a pull request names a work item" section gives for this Code host. The procedure's description cap binds: merge `Changed` bullets, then shorten `Proof` lines, and never cut mid-line; a body that still exceeds the cap stops for the user.
+`Changed` describes the combined landed delta without copying the work item's spec or acceptance criteria. Include `Proof` only for evidence already produced; this skill runs no tests. Add `Review notes` only for a real risk, migration concern, assumption, or design drift. The body ends with the link lines the Tracker doc's "How a pull request names a work item" section gives for this Code host. The procedure's description cap binds: merge `Changed` bullets, then shorten `Proof` lines, and never cut mid-line; a body that still exceeds the cap stops for the user.
 
 ## Publish
 

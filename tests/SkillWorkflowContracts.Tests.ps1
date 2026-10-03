@@ -130,7 +130,7 @@ Describe 'Skill workflow contracts' {
         $toTickets | Should -Match 'Either section may be omitted'
         $toTickets | Should -Match 'valid fenced Gherkin'
         $toTickets | Should -Not -Match 'User Story'
-        $tdd | Should -Match 'Acceptance Criteria, after `## Behavior` when both are present'
+        $tdd | Should -Match 'acceptance criteria, placed as the Tracker doc''s "write the acceptance criteria" says, after `## Behavior` when both are present'
     }
 
     It 'keeps al-codebase-design read-only and records the first pattern example where the code lands' {
@@ -396,14 +396,43 @@ Describe 'Tracker neutrality' {
             'az repos'      = [regex]::Escape('az repos')
             'Azure DevOps'  = [regex]::Escape('Azure DevOps')
             'Azure Repos'   = [regex]::Escape('Azure Repos')
-            'Repro Steps'   = [regex]::Escape('Repro Steps')
-            'PBI'           = '\bPBIs?\b'
             'gh issue'      = '\bgh issue\b'
             'sub-issue'     = '\bsub-issues?\b'
             'gh pr'         = '\bgh pr\b'
             'GraphQL'       = '\bGraphQL\b'
             'AB#'           = 'AB#'
         }
+        $script:TypeAndFieldTokens = [ordered]@{
+            'PBI'                      = '\bPBIs?\b'
+            'Product Backlog Item'     = [regex]::Escape('Product Backlog Item')
+            'Epic'                     = '\bEpic\b'
+            'Repro Steps'              = [regex]::Escape('Repro Steps')
+            'Expected Release Version' = [regex]::Escape('Expected Release Version')
+            'Implementation notes'     = [regex]::Escape('Implementation notes')
+            'Release notes'            = [regex]::Escape('Release notes')
+            'Product field'            = [regex]::Escape('`Product`')
+            '--type with a type name'  = '--type\s+[A-Z]'
+        }
+        $script:SeedTemplates = 'AZURE-DEVOPS.md', 'GITHUB.md'
+        $script:Verbs = @(
+            'publish to the issue tracker'
+            'fetch the relevant ticket'
+            'create the Original work item'
+            'write the spec'
+            'write the acceptance criteria'
+            'create a slice'
+            'link a blocker'
+            'comment'
+            'attach a file'
+            'name the work item in a pull request'
+        )
+        $script:Placeholders = @(
+            '<new Original work item type>'
+            '<defect type>'
+            '<slice type>'
+            '<spec field for each type>'
+            '<acceptance criteria location>'
+        )
         $script:TokenHomes = @{
             'AB#' = @('al-setup-matt-pocock-skills/AZURE-DEVOPS.md', 'al-setup-matt-pocock-skills/GITHUB.md')
         }
@@ -434,14 +463,27 @@ Describe 'Tracker neutrality' {
         $offenders | Should -BeNullOrEmpty
     }
 
-    It 'keeps the Azure DevOps seed template where the setup reads it, under the heading set-up repositories already carry' {
-        $tracker = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' 'AZURE-DEVOPS.md') -Raw
+    It 'names no work item type or field anywhere in the shipped skills, the seed templates included' {
+        $offenders = foreach ($file in Get-ChildItem -LiteralPath $script:SkillsRoot -Filter '*.md' -Recurse) {
+            $relative = $file.FullName.Substring($script:SkillsRoot.Length + 1).Replace('\', '/')
+            if ($relative -match 'node_modules') { continue }
+            $text = Get-Content -LiteralPath $file.FullName -Raw
+            foreach ($name in $script:TypeAndFieldTokens.Keys) {
+                if ($text -cmatch $script:TypeAndFieldTokens[$name]) { "$relative names $name" }
+            }
+        }
+
+        $offenders | Should -BeNullOrEmpty
+    }
+
+    It 'keeps both seed templates where the setup reads them, under the heading set-up repositories already carry' {
         $setup = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' 'SKILL.md') -Raw
 
-        $tracker | Should -MatchExactly '(?m)^## Work item structure$'
-        $tracker | Should -Match '(?m)^### Attach files$'
-        $tracker | Should -Match '(?m)^### How a pull request names a work item$'
-        $setup | Should -Match ([regex]::Escape('[AZURE-DEVOPS.md](AZURE-DEVOPS.md)'))
+        foreach ($file in $script:SeedTemplates) {
+            $text = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' $file) -Raw
+            $text | Should -MatchExactly '(?m)^## Work item structure\r?$'
+            $setup | Should -Match ([regex]::Escape("[$file]($file)"))
+        }
     }
 
     It 'has the Azure DevOps seed template own attachment upload and the native pull-request link' {
@@ -449,22 +491,38 @@ Describe 'Tracker neutrality' {
 
         $tracker | Should -Match '/al-azure-devops-attachments'
         $tracker | Should -Match 'verified attachment URLs'
-        $tracker | Should -Match 'Description on a Feature or PBI, and in Repro Steps on a Bug'
         $tracker | Should -Match 'mcp__plugin_al-agentic-dev_ado__wit_work_item_comment_write'
         $tracker | Should -Match 'Azure Repos pull request links natively'
         $tracker | Should -Match 'link_to_pull_request'
         $tracker | Should -Match 'GitHub pull request carries `AB#<id>`'
     }
 
-    It 'carries the same operation headings in the GitHub and Azure DevOps seed templates' {
-        $headings = foreach ($file in 'AZURE-DEVOPS.md', 'GITHUB.md') {
+    It 'carries the same ## and ### headings in the GitHub and Azure DevOps seed templates, with every verb' {
+        $headings = foreach ($file in $script:SeedTemplates) {
             $text = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' $file) -Raw
-            $text | Should -MatchExactly '(?m)^## Work item structure\r?$'
-            ,@([regex]::Matches($text, '(?m)^### (.+?)\r?$') | ForEach-Object { $_.Groups[1].Value })
+            ,@([regex]::Matches($text, '(?m)^(###? .+?)\r?$') | ForEach-Object { $_.Groups[1].Value })
         }
 
         $headings[0].Count | Should -BeGreaterThan 0
         $headings[1] | Should -Be $headings[0]
+        $verbHeadings = $script:Verbs | ForEach-Object { "## When a skill says `"$_`"" }
+        @($headings[0] | Where-Object { $_ -in $verbHeadings }) | Should -Be $verbHeadings
+    }
+
+    It 'has both seed templates update from the value just read and keep every other section' {
+        foreach ($file in $script:SeedTemplates) {
+            $text = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' $file) -Raw
+            $text | Should -Match 'replaces only its own section, and writes the whole (field|body) back' -Because "$file keeps the other sections"
+        }
+    }
+
+    It 'carries each per-repository placeholder by name in both seed templates' {
+        foreach ($file in $script:SeedTemplates) {
+            $text = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' $file) -Raw
+            foreach ($placeholder in $script:Placeholders) {
+                $text.Contains($placeholder) | Should -BeTrue -Because "$file carries $placeholder"
+            }
+        }
     }
 
     It 'has the GitHub seed template work items only through gh and attach images through --attach' {
@@ -478,7 +536,7 @@ Describe 'Tracker neutrality' {
         $tracker | Should -Match 'BPMN source'
         $tracker | Should -Match '--method PATCH'
         $tracker | Should -Match 'Fixes #<executable item>'
-        $tracker | Should -Match 'this structure governs where the conventions above differ: no skill closes or reopens one, and every `gh` call passes `--repo`'
+        $tracker | Should -Match 'Pass it to every `gh` call as `--repo <owner>/<repo>`'
     }
 
     It 'has setup pick the seed template by Tracker and give any other Tracker none' {
@@ -486,8 +544,9 @@ Describe 'Tracker neutrality' {
 
         $setup | Should -Match '(?m)^- GitHub:.*\[GITHUB\.md\]\(GITHUB\.md\)'
         $setup | Should -Match '(?m)^- Azure DevOps:.*\[AZURE-DEVOPS\.md\]\(AZURE-DEVOPS\.md\)'
-        $setup | Should -Match 'When a skill says "publish to the issue tracker"'
-        $setup | Should -Match 'When a skill says "fetch the relevant ticket"'
+        foreach ($verb in $script:Verbs) {
+            $setup.Contains("`"$verb`"") | Should -BeTrue -Because "the setup lists the verb $verb"
+        }
         $setup | Should -Match 'any other Tracker'
         $setup | Should -Match '`origin`'
     }
