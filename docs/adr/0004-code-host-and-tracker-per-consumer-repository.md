@@ -1,6 +1,6 @@
 # Code host and Tracker per Consumer repository, GitHub through `gh`
 
-Naveksa is moving its AL repositories from Azure DevOps to GitHub, under the `naveksadk` organization, one repository at a time and in no known order; a repository's code and its work items can move separately. So each Consumer repository has its own Code host, which its remote names, and its own Tracker, which its setup records, in any combination, and no skill depends on which. This replaces ADR 0001's rule that Consumer repositories live in Azure Repos alongside their Azure DevOps work items, and its rule that GitHub is only the Plugin repository's host.
+Naveksa is moving its AL repositories from Azure DevOps to GitHub, under the `naveksadk` organization, one repository at a time and in no known order; a repository's code and its work items can move separately. So each Consumer repository has its own Code host, which its remote names, and its own Tracker, which its setup records, in any combination, and no skill depends on which.
 
 ## Considered Options
 
@@ -16,4 +16,4 @@ Naveksa is moving its AL repositories from Azure DevOps to GitHub, under the `na
 - A GitHub pull request names an Azure DevOps work item as `AB#<id>`, which links only once the Azure Boards app is connected to `naveksadk`.
 - On a GitHub Tracker, images attach through `gh --attach`, so `gh` 2.99.0 or later is a developer requirement; `--attach` takes media only.
 - On GitHub, a pull request is ready to merge when the repository's own rules say so; the skills add none of their own.
-- The `ado` server stays bundled, and Azure DevOps support carries no end date.
+- The `ado` server is bundled, and Azure DevOps support has no end date.
