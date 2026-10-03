@@ -71,11 +71,29 @@ Describe 'SessionStart hook' -Tag 'Process' {
         $payload = $result.Text | ConvertFrom-Json
         $payload.hookSpecificOutput.hookEventName | Should -BeExactly 'SubagentStart'
         $context = $payload.hookSpecificOutput.additionalContext
-        $context | Should -Match '(?m)^## Entry skills and their AL additions?$'
-        $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:research` | `/al-research` |') + '?$')
-        $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:to-spec` | `/al-to-spec` |') + '?$')
+        $context | Should -Match '(?m)^## Entry skills and their AL additions\r?$'
+        $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:wayfinder` | `/al-wayfinder` |') + '\r?$')
+        $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:research` | `/al-research` |') + '\r?$')
+        $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:prototype` | `/al-prototype` |') + '\r?$')
+        $rows = @(Get-Content -LiteralPath (Join-Path $script:RepoRoot 'hooks' 'session-start.md') | Where-Object { $_ -match '^\| `/' })
+        $rows.Count | Should -BeGreaterThan 10
+        foreach ($row in $rows) {
+            $context | Should -Match ('(?m)^' + [regex]::Escape($row) + '\r?$') -Because "the subagent gets $row"
+        }
         $context | Should -Not -Match ([regex]::Escape('▶ <model> · <brief> → <return>'))
         $context | Should -Not -Match '(?m)^## Delegation'
+    }
+
+    It 'fails a subagent start when the text is missing' {
+        $plugin = Join-Path $TestDrive 'subagent-plugin'
+        New-Item -ItemType Directory -Path (Join-Path $plugin 'hooks') -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $script:RepoRoot 'hooks' 'hooks.json') -Destination (Join-Path $plugin 'hooks')
+        Copy-Item -LiteralPath (Join-Path $script:RepoRoot 'hooks' 'Write-SessionStart.ps1') -Destination (Join-Path $plugin 'hooks')
+
+        $result = Invoke-SessionStartHook -PluginRoot $plugin -Event SubagentStart
+
+        $result.ExitCode | Should -Not -Be 0
+        $result.Text | Should -Match 'session-start\.md'
     }
 
     It 'fails when the delegation text is missing' {
