@@ -99,14 +99,13 @@ Describe 'Skill workflow contracts' {
     It 'sends al-research through its four sources in order, the clone rule, and ledger lines on a pushed research branch' {
         $research = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-research' 'SKILL.md') -Raw
 
-        $research | Should -Match '(?s)1\. \*\*The precedent map\*\*.*2\. \*\*Microsoft Learn\*\*.*microsoft_docs_search.*3\. \*\*The Base App source\*\*.*`\.bcapps/release` first.*4\. \*\*/al-environment-data\*\*'
+        $research | Should -Match '(?m)^1\. \*\*The precedent map\*\*, through /al-lookup.*\r?\n2\. \*\*Microsoft Learn\*\*.*microsoft_docs_search.*\r?\n3\. \*\*The Base App source\*\*.*`\.bcapps/release` first.*\r?\n4\. \*\*/al-environment-data\*\*.*\r?\n(?!5\.)'
         $research | Should -Match 'while `\.bcapps/` is missing runs /al-clone-bcapps'
-        $research | Should -Match '`symbols\.lock\.json` is missing, the blocker is a /al-build provisioning run'
+        $research | Should -Match '`symbols\.lock\.json` is missing, the blocker is a /al-build provisioning run, the user''s step: write that out in the reply as the blocker'
         $research | Should -Match '(?s)verified: <claim>.*assumed: <claim>.*unresolved: <question>'
-        $research | Should -Match 'second git worktree outside the repository folder, so the lead''s checkout and branch never move'
+        $research | Should -Match 'second git worktree outside the repository folder, so the lead''s checkout never switches branch'
         $research | Should -Match 'asks /al-commit to commit the complete worktree from that folder, pushes the branch, and removes the worktree folder'
-        $research | Should -Not -Match '▶'
-        $research | Should -Match 'hand its question to /al-lookup'
+        $research | Should -Match 'hand /al-lookup the question with the verified claim and its source pointer'
         $research | Should -Match '/al-lookup owns every map change; this skill edits no map'
     }
 
