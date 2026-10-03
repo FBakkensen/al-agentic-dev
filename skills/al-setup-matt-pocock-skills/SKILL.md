@@ -15,7 +15,7 @@ Where new Original work items go is the one thing to settle. For GitHub it is th
 
 ## What the entry writes
 
-The AL sections of the Tracker doc follow the Tracker the user picked, in the same draft the user reviews. A doc that already holds a `## Work item structure` heading takes the current text in its place.
+The AL sections of the Tracker doc follow the Tracker the user picked, in the same draft the user reviews. A doc that already holds a `## Work item structure` heading takes the current AL sections in its place.
 
 - GitHub: the entry's own GitHub template, then the text of [GITHUB.md](GITHUB.md) unchanged. The template's `## When a skill says "publish to the issue tracker"` and `## When a skill says "fetch the relevant ticket"` sections drop, because GITHUB.md carries each; every other template section stays.
 - Azure DevOps: the user's description, then the text of [AZURE-DEVOPS.md](AZURE-DEVOPS.md) unchanged.
