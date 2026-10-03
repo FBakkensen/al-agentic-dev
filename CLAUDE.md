@@ -37,7 +37,7 @@ Twenty-three skills ship today.
 - `al-improve-codebase-architecture` — the AL addition to `mattpocock-skills:improve-codebase-architecture`: deepening behind the caller-visible interface, the gate, the receipt map, and Level 2.
 - `al-review` — the AL addition to `mattpocock-skills:code-review`: Spec, Standards, and Correctness axes, read-only and unmerged.
 - `al-next` — reconciliation of design, slices, receipts, and landed code.
-- `al-pr-shepherd` — one open PR to merge: the user's comments worked, other feedback surfaced, main merged in with intent-preserving conflicts, policies read; completing it is the user's go.
+- `al-pr-shepherd` — one open PR to merge, on Azure Repos or GitHub by the origin remote: the user's comments worked, other feedback surfaced, main merged in with intent-preserving conflicts, policies read; completing it is the user's go.
 - `al-walkthrough` — the Gherkin walk in the branch's agent container: a clean republish through `/al-build`, then the first available browser driver through `/al-webclient`, one screenshot per mismatch attached to the work item.
 - `al-setup-matt-pocock-skills` — the work-item structure that `/mattpocock-skills:setup-matt-pocock-skills` writes after the user's own tracker description: the GitHub tracker text or the Azure DevOps one, by the Tracker picked.
 - `al-simplify` — the AL freeze, per-edit gate, mutation red, and receipt refresh beside `/simplify`.
