@@ -28,7 +28,7 @@ Read the issue by number as Reading an item gives. Its output carries the parent
 
 ## When a skill says "create the Original work item"
 
-`gh issue create --type <new Original work item type> --title <title> --body-file <file>`, or `--type <defect type>` when the request reports a defect. A repository with no issue types takes no `--type`.
+`gh issue create --type <new Original work item type> --title <title> --body-file <file>`, or `--type <defect type>` when the request reports a defect.
 
 ## When a skill says "write the spec"
 
@@ -40,7 +40,7 @@ Put the Gherkin `Behavior` and the `Test specification` in `<acceptance criteria
 
 ## When a skill says "create a slice"
 
-`gh issue create --type <slice type> --parent <original> --title <title> --body-file <file>`, which makes the issue a sub-issue of the Original work item; a repository with no issue types takes no `--type`. An existing issue takes a parent with `gh issue edit <n> --parent <original>`.
+`gh issue create --type <slice type> --parent <original> --title <title> --body-file <file>`, which makes the issue a sub-issue of the Original work item. An existing issue takes a parent with `gh issue edit <n> --parent <original>`.
 
 ## When a skill says "link a blocker"
 

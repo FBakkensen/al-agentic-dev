@@ -16,7 +16,7 @@ An update starts from the field value the read just returned, replaces only its 
 
 ### Triage
 
-Triage roles are Azure DevOps tags: each role string in `docs/agents/triage-labels.md` is a tag name. Tags live in one field, Tags, as one semicolon-separated string. Read it, add or remove the one role, and write the whole string back, so the team's other tags stay.
+Triage roles are Azure DevOps tags: each role string in `docs/agents/triage-labels.md` is a tag name. An item's tags are one semicolon-separated string. Read it, add or remove the one role, and write the whole string back, so the team's other tags stay.
 
 **PRs as a request surface: no.** Pull requests stay out of triage.
 

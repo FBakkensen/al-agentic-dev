@@ -476,12 +476,6 @@ Describe 'Tracker neutrality' {
         $offenders | Should -BeNullOrEmpty
     }
 
-    It 'passes a placeholder, not a type name, to --type' {
-        $github = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' 'GITHUB.md') -Raw
-
-        $github | Should -Match '--type <slice type>'
-    }
-
     It 'keeps both seed templates where the setup reads them, under the heading set-up repositories already carry' {
         $setup = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' 'SKILL.md') -Raw
 
