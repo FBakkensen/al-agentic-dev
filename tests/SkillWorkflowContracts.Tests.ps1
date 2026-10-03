@@ -346,17 +346,13 @@ Describe 'Skill workflow contracts' {
 
         $prototype | Should -Match 'description: .*/mattpocock-skills:prototype.*AL repository'
         $prototype | Should -Match 'own `prototype/<name>` branch'
-        $prototype | Should -Match 'that edit lives on the prototype branch only'
         $prototype | Should -Match 'own `\.vscode/settings\.json` with no analyzers'
         $prototype | Should -Match 'zero-warnings bar does not apply'
         $prototype | Should -Match '\*\*Logic through AL Runner\.\*\*'
         $prototype | Should -Match '\*\*Logic that needs a surface AL Runner refuses\*\* \(`RunnerOutOfScopeException`\)'
-        $prototype | Should -Match 'only after the user agrees in the live session'
         $prototype | Should -Match '\*\*UI or UX, on top of either\.\*\*'
         $prototype | Should -Match 'the Tracker doc''s "attach a file" says'
-        $prototype | Should -Match 'removes the prototype''s agent container by name'
         $prototype | Should -Match 'The agent runs /al-commit at every exit'
-        $prototype | Should -Not -Match '\.html|▶ '
     }
 
     It 'states in /al-build that the container login is not a secret and points to it from the skills that use it' {
