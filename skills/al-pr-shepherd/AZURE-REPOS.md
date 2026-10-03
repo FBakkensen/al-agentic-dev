@@ -12,6 +12,8 @@ The organization is the one the `ado` server is started on in `plugin.json`.
 - The threads: `mcp__plugin_al-agentic-dev_ado__repo_pull_request_thread`, `list` with `fullResponse: true`. The trimmed output drops `commentType`, which tells a system thread — never feedback — from a human one.
 - Branch policies: `az repos pr policy list --id <n>`.
 - The driving user: the `az account show` login. A comment is theirs when its author's unique name matches.
+- A blocking vote: a reviewer vote of `Waiting for author` or `Rejected`.
+- The linked work items: `repo_pull_request`, `get` with `includeWorkItemRefs`, and the issue URLs in its description.
 
 ## Answer
 

@@ -166,7 +166,7 @@ Describe 'Skill workflow contracts' {
     It 'picks the Code-host procedure from the origin remote and stops on an unlisted host' {
         $selection = 'Read `git remote get-url origin`: the procedure is the sibling file whose `Hosts` line lists that host, [AZURE-REPOS.md](AZURE-REPOS.md) today. A `*.` entry matches any subdomain of that domain. A host no procedure lists stops the skill, naming the host.'
         $hosts = '(?m)^Hosts: `dev\.azure\.com`, `ssh\.dev\.azure\.com`, `\*\.visualstudio\.com`\.\r?$'
-        foreach ($skill in @('al-pull-request', 'al-pr-shepherd')) {
+        foreach ($skill in @('al-pull-request')) {
             $body = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'SKILL.md') -Raw
             $procedure = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'AZURE-REPOS.md') -Raw
 
@@ -174,6 +174,51 @@ Describe 'Skill workflow contracts' {
             $body | Should -Not -CMatch '\bgh\b|GitHub|GraphQL|Azure Repos|\baz\b|\bado\b' -Because "$skill names a Code host only through its procedure"
             $procedure | Should -MatchExactly $hosts -Because "$skill's procedure lists its hosts"
         }
+    }
+
+    It 'has the shepherd pick its procedure from the origin remote across both Code hosts and stop on an unlisted one' {
+        $selection = 'Read `git remote get-url origin`: the procedure is the sibling file whose `Hosts` line lists that host, [AZURE-REPOS.md](AZURE-REPOS.md) or [GITHUB.md](GITHUB.md). A `*.` entry matches any subdomain of that domain. A host no procedure lists stops the skill, naming the host.'
+        $hosts = @{
+            'AZURE-REPOS.md' = '(?m)^Hosts: `dev\.azure\.com`, `ssh\.dev\.azure\.com`, `\*\.visualstudio\.com`\.\r?$'
+            'GITHUB.md'      = '(?m)^Hosts: `github\.com`\.\r?$'
+        }
+        $body = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pr-shepherd' 'SKILL.md') -Raw
+
+        $body | Should -Match ([regex]::Escape($selection))
+        $body | Should -Not -CMatch '\bgh\b|GitHub|GraphQL|Azure Repos|\baz\b|\bado\b|CHANGES_REQUESTED|Waiting for author' -Because 'the body names a Code host only through its procedure'
+        foreach ($file in $hosts.Keys) {
+            $procedure = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pr-shepherd' $file) -Raw
+            $procedure | Should -MatchExactly $hosts[$file] -Because "$file lists its hosts"
+        }
+    }
+
+    It 'carries the same step headings in the shepherd''s two Code-host procedures' {
+        $headings = foreach ($file in 'AZURE-REPOS.md', 'GITHUB.md') {
+            $text = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pr-shepherd' $file) -Raw
+            ,@([regex]::Matches($text, '(?m)^## (.+?)\r?$') | ForEach-Object { $_.Groups[1].Value })
+        }
+
+        $headings[0].Count | Should -BeGreaterThan 0
+        $headings[1] | Should -Be $headings[0]
+    }
+
+    It 'has the GitHub shepherd procedure read through gh and GraphQL, answer in threads, and squash on the go' {
+        $procedure = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pr-shepherd' 'GITHUB.md') -Raw
+
+        $procedure | Should -Match '2\.99\.0 or later'
+        $procedure | Should -Match 'gh auth login'
+        $procedure | Should -Match 'every `gh` call passes `--repo <owner>/<name>`'
+        $procedure | Should -Match 'gh pr view <n> --repo <owner>/<name> --json state,mergeStateStatus,reviewDecision,statusCheckRollup,reviews,headRefOid,closingIssuesReferences,comments'
+        $procedure | Should -Match 'reviewThreads\(first:100\)'
+        $procedure | Should -Match 'gh api user --jq \.login'
+        $procedure | Should -Match 'addPullRequestReviewThreadReply'
+        $procedure | Should -Match 'resolveReviewThread'
+        $procedure | Should -Match 'gh pr comment <n> --repo <owner>/<name>'
+        $procedure | Should -Match 'CHANGES_REQUESTED'
+        $procedure | Should -Match '`BEHIND` or `DIRTY`'
+        $procedure | Should -Match '`CLEAN`'
+        $procedure | Should -Match 'gh pr merge <n> --repo <owner>/<name> --squash'
+        $procedure | Should -Not -Match '--auto'
     }
 
     It 'walks the Gherkin scenarios in the agent container through a browser driver' {
