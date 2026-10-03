@@ -275,11 +275,15 @@ Describe 'Tracker neutrality' {
             'Azure Repos'   = [regex]::Escape('Azure Repos')
             'Repro Steps'   = [regex]::Escape('Repro Steps')
             'PBI'           = '\bPBIs?\b'
+            'gh issue'      = '\bgh issue\b'
+            'sub-issue'     = '\bsub-issues?\b'
             'gh pr'         = '\bgh pr\b'
             'GraphQL'       = '\bGraphQL\b'
         }
         $script:TrackerHomes = @(
             'al-setup-matt-pocock-skills/AZURE-DEVOPS.md'
+            'al-setup-matt-pocock-skills/GITHUB.md'
+            'al-setup-matt-pocock-skills/SKILL.md'
             'al-azure-devops-attachments/'
             'al-pull-request/AZURE-REPOS.md'
             'al-pull-request/GITHUB.md'
@@ -322,6 +326,42 @@ Describe 'Tracker neutrality' {
         $tracker | Should -Match 'Azure Repos pull request links natively'
         $tracker | Should -Match 'link_to_pull_request'
         $tracker | Should -Match 'GitHub pull request carries `AB#<id>`'
+    }
+
+    It 'carries the same operation headings in the GitHub and Azure DevOps tracker texts' {
+        $headings = foreach ($file in 'AZURE-DEVOPS.md', 'GITHUB.md') {
+            $text = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' $file) -Raw
+            $text | Should -MatchExactly '(?m)^## Work item structure\r?$'
+            ,@([regex]::Matches($text, '(?m)^### (.+?)\r?$') | ForEach-Object { $_.Groups[1].Value })
+        }
+
+        $headings[0].Count | Should -BeGreaterThan 0
+        $headings[1] | Should -Be $headings[0]
+    }
+
+    It 'has the GitHub tracker text work items only through gh and attach images through --attach' {
+        $tracker = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' 'GITHUB.md') -Raw
+
+        $tracker | Should -Match '2\.99\.0 or later'
+        $tracker | Should -Match 'gh auth login'
+        $tracker | Should -Match '--add-blocked-by'
+        $tracker | Should -Match '--attach \./<file>#<alt>'
+        $tracker | Should -Match '`updatedAt`'
+        $tracker | Should -Match 'BPMN source'
+        $tracker | Should -Match '--method PATCH'
+        $tracker | Should -Match 'Fixes #<executable item>'
+        $tracker | Should -Match 'this structure governs where the conventions above differ: no skill closes or reopens one, and every `gh` call passes `--repo`'
+    }
+
+    It 'has setup pick the tracker text by Tracker and give any other Tracker none' {
+        $setup = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' 'SKILL.md') -Raw
+
+        $setup | Should -Match '(?m)^- GitHub:.*\[GITHUB\.md\]\(GITHUB\.md\)'
+        $setup | Should -Match '(?m)^- Azure DevOps:.*\[AZURE-DEVOPS\.md\]\(AZURE-DEVOPS\.md\)'
+        $setup | Should -Match 'When a skill says "publish to the issue tracker"'
+        $setup | Should -Match 'When a skill says "fetch the relevant ticket"'
+        $setup | Should -Match 'any other Tracker'
+        $setup | Should -Match '`origin`'
     }
 
     It 'has every attach line defer to the tracker text and return verified attachment URLs' {
