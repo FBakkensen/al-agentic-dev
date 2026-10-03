@@ -176,6 +176,36 @@ Describe 'Skill workflow contracts' {
         }
     }
 
+    It 'lists github.com in the GitHub procedure of al-pull-request' {
+        $procedure = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pull-request' 'GITHUB.md') -Raw
+
+        $procedure | Should -MatchExactly '(?m)^Hosts: `github\.com`\.\r?$'
+    }
+
+    It 'gives al-pull-request the same procedure headings for Azure Repos and GitHub' {
+        $headings = foreach ($file in 'AZURE-REPOS.md', 'GITHUB.md') {
+            $text = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pull-request' $file) -Raw
+            ,@([regex]::Matches($text, '(?m)^## (.+?)\r?$') | ForEach-Object { $_.Groups[1].Value })
+        }
+
+        $headings[0].Count | Should -BeGreaterThan 0
+        $headings[1] | Should -Be $headings[0]
+    }
+
+    It 'opens the GitHub pull request ready through gh, with the 65,536-character cap and the Tracker link lines' {
+        $procedure = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pull-request' 'GITHUB.md') -Raw
+
+        $procedure | Should -Match ([regex]::Escape('gh pr list --repo <owner>/<name> --head <branch> --state open --json number,url,isDraft,closingIssuesReferences,body'))
+        $procedure | Should -Match ([regex]::Escape('gh pr create --repo <owner>/<name> --base <base> --head <branch> --title <title> --body-file <file>'))
+        $procedure | Should -Match ([regex]::Escape('gh pr edit <n> --repo <owner>/<name> --title <title> --body-file <file>'))
+        $procedure | Should -Match ([regex]::Escape('gh pr ready <n> --repo <owner>/<name>'))
+        $procedure | Should -Not -Match '--draft\b' -Because 'a pull request is never created as a draft'
+        $procedure | Should -Match 'GitHub caps the body at 65,536 characters'
+        $procedure | Should -Not -Match '4000'
+        $procedure | Should -Match 'closingIssuesReferences'
+        $procedure | Should -Match 'AB#<id>'
+    }
+
     It 'walks the Gherkin scenarios in the agent container through a browser driver' {
         $walkthrough = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-walkthrough' 'SKILL.md') -Raw
         $republish = '▶ haiku · /al-build clean republish into the branch''s agent container → deployed commit, app version, Web Client URL, username'
