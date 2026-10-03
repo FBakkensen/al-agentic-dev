@@ -11,7 +11,7 @@ In: `/mattpocock-skills:wayfinder` charting an effort in an AL repository. The e
 
 | Question | Ticket |
 |---|---|
-| A question one `/al-lookup` call answers | Never a ticket: run `/al-lookup` inline and carry its sourced answer into the map. |
+| A question one `/al-lookup` call answers | Never a ticket: run `/al-lookup` inline. |
 | An investigation that needs several lookups across the AL sources | A research ticket. |
 | A question about how logic should behave or how a page should look | A prototype ticket. |
 

@@ -96,13 +96,11 @@ Describe 'Skill workflow contracts' {
         $mapContracts[0] | Should -Be (Join-Path $script:SkillsRoot 'al-lookup' 'SKILL.md')
     }
 
-    It 'keeps al-wayfinder to the one-lookup rule and the two ticket types' {
+    It 'keeps al-wayfinder on the one-lookup rule and writes no files' {
         $wayfinder = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-wayfinder' 'SKILL.md') -Raw
 
         $wayfinder | Should -Match 'description: .*/mattpocock-skills:wayfinder.*AL repository'
-        $wayfinder | Should -Match 'A question one `/al-lookup` call answers \| Never a ticket: run `/al-lookup` inline'
-        $wayfinder | Should -Match 'several lookups across the AL sources \| A research ticket'
-        $wayfinder | Should -Match 'how logic should behave or how a page should look \| A prototype ticket'
+        $wayfinder | Should -Match 'A question one `/al-lookup` call answers \| Never a ticket: run `/al-lookup` inline.'
         $wayfinder | Should -Not -Match '/al-commit'
     }
 
