@@ -1865,6 +1865,117 @@ function Get-OrphanedAgentContainers {
     return $orphaned
 }
 
+function Remove-AgentContainerResources {
+    <#
+    .SYNOPSIS
+        Remove one agent container and everything kept for it
+    .DESCRIPTION
+        Removes the docker container through Remove-BcContainer when docker lists
+        it, then both hosts entries (bare and .test), the publish-state files, and
+        the registry entry. Without -Strict a Remove-BcContainer failure falls back
+        to docker rm -f and a hosts failure is a warning. With -Strict either failure
+        throws before the registry entry goes, so a rerun retries.
+    .PARAMETER ContainerName
+        The bare container name
+    .PARAMETER HostsFile
+        Hosts file the bare and .test entries are removed from; defaults to the Windows hosts file.
+    .PARAMETER Strict
+        Throw on the step that failed instead of falling back or warning.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$ContainerName,
+
+        [string]$HostsFile = (Get-DefaultHostsFile),
+
+        [switch]$Strict
+    )
+
+    # Remove docker container
+    $existingContainer = docker ps -a --filter "name=^$ContainerName$" --format "{{.Names}}" 2>$null
+    if ($existingContainer) {
+        try {
+            Remove-BcContainer -containerName $ContainerName -ErrorAction Stop | Out-Null
+            Write-BuildMessage -Type Success -Message "Container removed"
+        } catch {
+            if ($Strict) {
+                throw "Remove-BcContainer failed for '$ContainerName': $($_.Exception.Message)"
+            }
+            Write-BuildMessage -Type Warning -Message "Remove-BcContainer failed; using docker rm -f"
+            docker rm -f $ContainerName 2>$null | Out-Null
+        }
+    } else {
+        Write-BuildMessage -Type Detail -Message "Container not running (already removed)"
+    }
+
+    # Remove the bare and .test hosts entries, also for a container docker no longer lists
+    try {
+        Remove-BCAgentContainerHost -ContainerName $ContainerName -HostsFile $HostsFile
+    } catch {
+        if ($Strict) {
+            throw "Could not remove hosts entries for '$ContainerName': $($_.Exception.Message)"
+        }
+        Write-BuildMessage -Type Warning -Message "Could not remove hosts entries: $($_.Exception.Message)"
+    }
+
+    # Remove publish-state files for this container
+    $cacheRoot = Get-SymbolCacheRoot
+    if (Test-Path -LiteralPath $cacheRoot) {
+        $stateFiles = Get-ChildItem -Path $cacheRoot -Recurse -Filter "publish-state.$ContainerName.json" -ErrorAction SilentlyContinue
+        foreach ($stateFile in $stateFiles) {
+            Remove-Item -LiteralPath $stateFile.FullName -Force
+            Write-BuildMessage -Type Detail -Message "Removed publish state: $($stateFile.Name)"
+        }
+    }
+
+    # Unregister from registry
+    Unregister-AgentContainer -ContainerName $ContainerName
+}
+
+function Remove-NamedAgentContainer {
+    <#
+    .SYNOPSIS
+        Remove one named agent container, whether or not its branch still exists
+    .DESCRIPTION
+        Refuses the golden container by name, registered or not, and refuses a
+        container docker lists that is not a registered agent container. A name
+        docker does not list has its bare and .test hosts entries and any registry
+        entry cleared. The snapshot image is never touched. A Remove-BcContainer or
+        hosts failure throws and keeps the registry entry.
+    .PARAMETER ContainerName
+        The bare agent container name
+    .PARAMETER GoldenContainerName
+        The configured golden container name (container.name), which is never removed.
+    .PARAMETER HostsFile
+        Hosts file the bare and .test entries are removed from; defaults to the Windows hosts file.
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory)]
+        [string]$ContainerName,
+
+        [Parameter(Mandatory)]
+        [string]$GoldenContainerName,
+
+        [string]$HostsFile = (Get-DefaultHostsFile)
+    )
+
+    if ($ContainerName -eq $GoldenContainerName) {
+        throw "'$ContainerName' is the golden container; only agent containers are removed, never the golden container or the snapshot image"
+    }
+
+    if (-not (Get-RegisteredAgentContainers).ContainsKey($ContainerName) -and
+        (docker ps -a --filter "name=^$ContainerName$" --format "{{.Names}}" 2>$null)) {
+        throw "'$ContainerName' is not a registered agent container; only agent containers are removed, never the golden container or the snapshot image"
+    }
+
+    if ($PSCmdlet.ShouldProcess($ContainerName, 'Removing agent container')) {
+        Write-BuildMessage -Type Step -Message "Removing agent container '$ContainerName'"
+        Remove-AgentContainerResources -ContainerName $ContainerName -HostsFile $HostsFile -Strict
+    }
+}
+
 function Remove-OrphanedAgentContainers {
     <#
     .SYNOPSIS
@@ -1906,40 +2017,7 @@ function Remove-OrphanedAgentContainers {
         if ($PSCmdlet.ShouldProcess("$($container.ContainerName) ($detail)", $action)) {
             Write-BuildMessage -Type Step -Message "$action container '$($container.ContainerName)'"
             Write-BuildMessage -Type Detail -Message $detail
-
-            # Remove docker container
-            $existingContainer = docker ps -a --filter "name=^$($container.ContainerName)$" --format "{{.Names}}" 2>$null
-            if ($existingContainer) {
-                try {
-                    Remove-BcContainer -containerName $container.ContainerName -ErrorAction Stop | Out-Null
-                    Write-BuildMessage -Type Success -Message "Container removed"
-                } catch {
-                    Write-BuildMessage -Type Warning -Message "Remove-BcContainer failed; using docker rm -f"
-                    docker rm -f $container.ContainerName 2>$null | Out-Null
-                }
-            } else {
-                Write-BuildMessage -Type Detail -Message "Container not running (already removed)"
-            }
-
-            # Remove the bare and .test hosts entries, also for a container docker no longer lists
-            try {
-                Remove-BCAgentContainerHost -ContainerName $container.ContainerName -HostsFile $HostsFile
-            } catch {
-                Write-BuildMessage -Type Warning -Message "Could not remove hosts entries: $($_.Exception.Message)"
-            }
-
-            # Remove publish-state files for this container
-            $cacheRoot = Get-SymbolCacheRoot
-            if (Test-Path -LiteralPath $cacheRoot) {
-                $stateFiles = Get-ChildItem -Path $cacheRoot -Recurse -Filter "publish-state.$($container.ContainerName).json" -ErrorAction SilentlyContinue
-                foreach ($stateFile in $stateFiles) {
-                    Remove-Item -LiteralPath $stateFile.FullName -Force
-                    Write-BuildMessage -Type Detail -Message "Removed publish state: $($stateFile.Name)"
-                }
-            }
-
-            # Unregister from registry
-            Unregister-AgentContainer -ContainerName $container.ContainerName
+            Remove-AgentContainerResources -ContainerName $container.ContainerName -HostsFile $HostsFile
         }
     }
 }
@@ -2872,6 +2950,7 @@ Export-ModuleMember -Function @(
     'Unregister-AgentContainer'
     'Get-OrphanedAgentContainers'
     'Remove-OrphanedAgentContainers'
+    'Remove-NamedAgentContainer'
 
     # Git Utilities
     'Get-GitRepoRoot'

@@ -244,3 +244,279 @@ Describe 'Remove-OrphanedAgentContainers - hosts entries' -Tag 'Process' {
         (Get-RegisteredAgentContainers).ContainsKey('ghost') | Should -BeTrue
     }
 }
+
+Describe 'Remove-OrphanedAgentContainers - Remove-BcContainer failure' -Tag 'Process' {
+    BeforeAll {
+        $script:OriginalHome = $env:HOME
+        $script:OriginalUserProfile = $env:USERPROFILE
+
+        $script:FakeHome = Join-Path $TestDrive 'home-prune-fail'
+        New-Item -ItemType Directory -Path $script:FakeHome -Force | Out-Null
+        $env:HOME = $script:FakeHome
+        $env:USERPROFILE = $script:FakeHome
+
+        $script:PruneFailClone = Join-Path $TestDrive 'cloneF'
+        Initialize-TestClone -Path $script:PruneFailClone -Branch 'feat-x'
+    }
+
+    AfterAll {
+        $env:HOME = $script:OriginalHome
+        $env:USERPROFILE = $script:OriginalUserProfile
+    }
+
+    BeforeEach {
+        Push-Location $script:PruneFailClone
+        Register-AgentContainer -ContainerName 'ghost' -Branch 'never-created'
+
+        $script:Hosts = Join-Path $TestDrive 'prune-fail-hosts'
+        Set-Content -LiteralPath $script:Hosts -Encoding ascii -Value @(
+            '127.0.0.1       localhost'
+            "172.28.0.5`tghost"
+            "172.28.0.5`tghost.test"
+            '10.0.0.9        unrelated-host'
+        )
+    }
+
+    AfterEach {
+        Unregister-AgentContainer -ContainerName 'ghost'
+        Pop-Location
+    }
+
+    It 'falls back to docker rm, then still clears both hosts lines and unregisters' {
+        InModuleScope common -Parameters @{ Hosts = $script:Hosts } {
+            param($Hosts)
+            Mock docker { if ($args[0] -eq 'ps') { 'ghost' } }
+            Mock Remove-BcContainer { throw 'remove failed' }
+
+            Remove-OrphanedAgentContainers -HostsFile $Hosts
+
+            Should -Invoke docker -Times 1 -Exactly -ParameterFilter { $args[0] -eq 'rm' }
+        }
+
+        $content = Get-Content -LiteralPath $script:Hosts
+        $content | Should -Not -Match '\sghost(\.test)?(\s|$)'
+        $content | Should -Contain '10.0.0.9        unrelated-host'
+        (Get-RegisteredAgentContainers).ContainsKey('ghost') | Should -BeFalse
+    }
+}
+
+Describe 'Remove-NamedAgentContainer - one named agent container' -Tag 'Process' {
+    BeforeAll {
+        $script:OriginalHome = $env:HOME
+        $script:OriginalUserProfile = $env:USERPROFILE
+
+        $script:FakeHome = Join-Path $TestDrive 'home-named'
+        New-Item -ItemType Directory -Path $script:FakeHome -Force | Out-Null
+        $env:HOME = $script:FakeHome
+        $env:USERPROFILE = $script:FakeHome
+
+        # The branch 'feat-x' exists, so prune would never catch this container.
+        $script:NamedClone = Join-Path $TestDrive 'cloneN'
+        Initialize-TestClone -Path $script:NamedClone -Branch 'feat-x'
+    }
+
+    AfterAll {
+        $env:HOME = $script:OriginalHome
+        $env:USERPROFILE = $script:OriginalUserProfile
+    }
+
+    BeforeEach {
+        Push-Location $script:NamedClone
+        Register-AgentContainer -ContainerName 'feat-x' -Branch 'feat-x'
+
+        $script:Hosts = Join-Path $TestDrive 'named-hosts'
+        Set-Content -LiteralPath $script:Hosts -Encoding ascii -Value @(
+            '127.0.0.1       localhost'
+            '# my comment line'
+            "172.28.0.5`tfeat-x"
+            "172.28.0.5`tfeat-x.test"
+            "172.28.0.7`tgone-x"
+            "172.28.0.7`tgone-x.test"
+            "172.28.0.6`tbctest"
+            "172.28.0.6`tbctest.test"
+            '10.0.0.9        unrelated-host'
+        )
+    }
+
+    AfterEach {
+        Unregister-AgentContainer -ContainerName 'feat-x'
+        Unregister-AgentContainer -ContainerName 'bctest'
+        Pop-Location
+    }
+
+    It 'removes the container whose branch still exists, with both hosts lines, and unregisters it' {
+        InModuleScope common -Parameters @{ Hosts = $script:Hosts } {
+            param($Hosts)
+            Mock docker { 'feat-x' }
+            Mock Remove-BcContainer {}
+
+            Remove-NamedAgentContainer -ContainerName 'feat-x' -GoldenContainerName 'bctest' -HostsFile $Hosts
+
+            Should -Invoke Remove-BcContainer -Times 1 -Exactly -ParameterFilter { $containerName -eq 'feat-x' }
+        }
+
+        $content = Get-Content -LiteralPath $script:Hosts
+        $content | Should -Not -Match '\sfeat-x(\.test)?(\s|$)'
+        $content | Should -Contain '127.0.0.1       localhost'
+        $content | Should -Contain '10.0.0.9        unrelated-host'
+        (Get-RegisteredAgentContainers).ContainsKey('feat-x') | Should -BeFalse
+    }
+
+    It 'clears both hosts lines and the registry entry for a registered container docker no longer lists' {
+        InModuleScope common -Parameters @{ Hosts = $script:Hosts } {
+            param($Hosts)
+            Mock docker {}
+            Mock Remove-BcContainer {}
+
+            Remove-NamedAgentContainer -ContainerName 'feat-x' -GoldenContainerName 'bctest' -HostsFile $Hosts
+
+            Should -Invoke Remove-BcContainer -Times 0 -Exactly
+        }
+
+        Get-Content -LiteralPath $script:Hosts | Should -Not -Match '\sfeat-x(\.test)?(\s|$)'
+        (Get-RegisteredAgentContainers).ContainsKey('feat-x') | Should -BeFalse
+    }
+
+    It 'clears both hosts lines of a container that is gone from docker and the registry' {
+        InModuleScope common -Parameters @{ Hosts = $script:Hosts } {
+            param($Hosts)
+            Mock docker {}
+            Mock Remove-BcContainer {}
+
+            Remove-NamedAgentContainer -ContainerName 'gone-x' -GoldenContainerName 'bctest' -HostsFile $Hosts
+
+            Should -Invoke Remove-BcContainer -Times 0 -Exactly
+        }
+
+        $content = Get-Content -LiteralPath $script:Hosts
+        $content | Should -Not -Match '\sgone-x(\.test)?(\s|$)'
+        ($content -join "`n") | Should -Match '\sfeat-x\s'
+        ($content -join "`n") | Should -Match '\sbctest\s'
+    }
+
+    It 'refuses the golden container whether or not it is registered, and leaves everything alone' -ForEach @(
+        @{ Registered = $false }
+        @{ Registered = $true }
+    ) {
+        if ($Registered) { Register-AgentContainer -ContainerName 'bctest' -Branch 'feat-x' }
+        $before = Get-Content -LiteralPath $script:Hosts -Raw
+        InModuleScope common -Parameters @{ Hosts = $script:Hosts } {
+            param($Hosts)
+            Mock docker { 'bctest' }
+            Mock Remove-BcContainer {}
+
+            { Remove-NamedAgentContainer -ContainerName 'bctest' -GoldenContainerName 'bctest' -HostsFile $Hosts } | Should -Throw '*is the golden container*'
+
+            Should -Invoke Remove-BcContainer -Times 0 -Exactly
+        }
+
+        Get-Content -LiteralPath $script:Hosts -Raw | Should -Be $before
+        (Get-RegisteredAgentContainers).ContainsKey('feat-x') | Should -BeTrue
+        (Get-RegisteredAgentContainers).ContainsKey('bctest') | Should -Be $Registered
+    }
+
+    It 'refuses a container docker lists that is not a registered agent container' {
+        $before = Get-Content -LiteralPath $script:Hosts -Raw
+        InModuleScope common -Parameters @{ Hosts = $script:Hosts } {
+            param($Hosts)
+            Mock docker { 'stranger' }
+            Mock Remove-BcContainer {}
+
+            { Remove-NamedAgentContainer -ContainerName 'stranger' -GoldenContainerName 'bctest' -HostsFile $Hosts } | Should -Throw '*not a registered agent container*'
+
+            Should -Invoke Remove-BcContainer -Times 0 -Exactly
+        }
+
+        Get-Content -LiteralPath $script:Hosts -Raw | Should -Be $before
+    }
+
+    It 'throws and keeps the registry entry when Remove-BcContainer fails, never falling back to docker rm' {
+        InModuleScope common -Parameters @{ Hosts = $script:Hosts } {
+            param($Hosts)
+            Mock docker { if ($args[0] -eq 'ps') { 'feat-x' } }
+            Mock Remove-BcContainer { throw 'remove failed' }
+
+            { Remove-NamedAgentContainer -ContainerName 'feat-x' -GoldenContainerName 'bctest' -HostsFile $Hosts } | Should -Throw '*Remove-BcContainer failed for ''feat-x''*remove failed*'
+
+            Should -Invoke docker -Times 0 -Exactly -ParameterFilter { $args[0] -eq 'rm' }
+        }
+
+        (Get-RegisteredAgentContainers).ContainsKey('feat-x') | Should -BeTrue
+    }
+
+    It 'throws and keeps the registry entry when the hosts lines cannot be removed' {
+        InModuleScope common -Parameters @{ Hosts = $script:Hosts } {
+            param($Hosts)
+            Mock docker {}
+            Mock Remove-BcContainer {}
+            Mock Remove-BCAgentContainerHost { throw 'hosts locked' }
+
+            { Remove-NamedAgentContainer -ContainerName 'feat-x' -GoldenContainerName 'bctest' -HostsFile $Hosts } | Should -Throw '*Could not remove hosts entries for ''feat-x''*hosts locked*'
+        }
+
+        (Get-RegisteredAgentContainers).ContainsKey('feat-x') | Should -BeTrue
+    }
+
+    It 'leaves the hosts file and the registry alone with -WhatIf' {
+        $before = Get-Content -LiteralPath $script:Hosts -Raw
+        InModuleScope common -Parameters @{ Hosts = $script:Hosts } {
+            param($Hosts)
+            Mock docker { 'feat-x' }
+            Mock Remove-BcContainer {}
+
+            Remove-NamedAgentContainer -ContainerName 'feat-x' -GoldenContainerName 'bctest' -HostsFile $Hosts -WhatIf
+
+            Should -Invoke Remove-BcContainer -Times 0 -Exactly
+        }
+
+        Get-Content -LiteralPath $script:Hosts -Raw | Should -Be $before
+        (Get-RegisteredAgentContainers).ContainsKey('feat-x') | Should -BeTrue
+    }
+}
+
+Describe 'prune.ps1 -ContainerName - exit codes' -Tag 'Process' {
+    BeforeAll {
+        $script:OriginalHome = $env:HOME
+        $script:OriginalUserProfile = $env:USERPROFILE
+
+        $script:FakeHome = Join-Path $TestDrive 'home-prune-script'
+        New-Item -ItemType Directory -Path $script:FakeHome -Force | Out-Null
+        $env:HOME = $script:FakeHome
+        $env:USERPROFILE = $script:FakeHome
+
+        $script:PruneScript = Resolve-Path (Join-Path $PSScriptRoot '..' '..' 'skills' 'al-build' 'scripts' 'prune.ps1')
+        $script:ScriptClone = Join-Path $TestDrive 'cloneS'
+        Initialize-TestClone -Path $script:ScriptClone -Branch 'feat-x'
+        Set-Content -LiteralPath (Join-Path $script:ScriptClone 'al-build.json') -Value '{}'
+
+        Push-Location $script:ScriptClone
+        Register-AgentContainer -ContainerName 'feat-x' -Branch 'feat-x'
+        Pop-Location
+    }
+
+    AfterAll {
+        $env:HOME = $script:OriginalHome
+        $env:USERPROFILE = $script:OriginalUserProfile
+    }
+
+    It 'exits non-zero for the golden container, which defaults to bctest' {
+        Push-Location $script:ScriptClone
+        try {
+            $null = pwsh -NoProfile -File $script:PruneScript -ContainerName 'bctest' 2>&1
+            $LASTEXITCODE | Should -Not -Be 0
+        } finally {
+            Pop-Location
+        }
+    }
+
+    It 'exits zero with -Preview and removes nothing' {
+        Push-Location $script:ScriptClone
+        try {
+            $null = pwsh -NoProfile -File $script:PruneScript -ContainerName 'feat-x' -Preview 2>&1
+            $LASTEXITCODE | Should -Be 0
+            (Get-RegisteredAgentContainers).ContainsKey('feat-x') | Should -BeTrue
+        } finally {
+            Pop-Location
+        }
+    }
+}
