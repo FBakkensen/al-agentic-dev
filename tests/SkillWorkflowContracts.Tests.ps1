@@ -237,7 +237,7 @@ Describe 'Skill workflow contracts' {
         $procedure | Should -Match 'GitHub caps the body at 65,536 characters'
         $procedure | Should -Not -Match '4000-character'
         $procedure | Should -Match 'closingIssuesReferences'
-        $procedure | Should -Match 'How a pull request names a work item'
+        $procedure | Should -Match 'name the work item in a pull request'
         $procedure | Should -Not -Match 'AB#|Fixes' -Because 'a Code-host procedure parses no tracker link syntax'
     }
 
@@ -514,6 +514,21 @@ Describe 'Tracker neutrality' {
             $text = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' $file) -Raw
             $text | Should -Match 'replaces only its own section, and writes the whole (field|body) back' -Because "$file keeps the other sections"
         }
+    }
+
+    It 'names only Tracker doc sections the seed templates write' {
+        $references = foreach ($file in Get-ChildItem -LiteralPath $script:SkillsRoot -Filter '*.md' -Recurse) {
+            $relative = $file.FullName.Substring($script:SkillsRoot.Length + 1).Replace('\', '/')
+            if ($relative -match 'node_modules' -or $relative.StartsWith('al-setup-matt-pocock-skills/')) { continue }
+            $text = Get-Content -LiteralPath $file.FullName -Raw
+            foreach ($match in [regex]::Matches($text, 'Tracker doc''s "([^"]+)"')) {
+                [pscustomobject]@{ File = $relative; Name = $match.Groups[1].Value }
+            }
+        }
+
+        @($references).Count | Should -BeGreaterThan 0
+        $dangling = $references | Where-Object { $_.Name -notin $script:Verbs } | ForEach-Object { "$($_.File) names `"$($_.Name)`"" }
+        $dangling | Should -BeNullOrEmpty
     }
 
     It 'carries each per-repository placeholder by name in both seed templates' {
