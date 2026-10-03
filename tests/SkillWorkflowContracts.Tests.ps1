@@ -104,6 +104,19 @@ Describe 'Skill workflow contracts' {
         $wayfinder | Should -Not -Match '/al-commit'
     }
 
+    It 'sends al-research through its four sources in order, the clone rule, and ledger lines on a pushed research branch' {
+        $research = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-research' 'SKILL.md') -Raw
+
+        $research | Should -Match '(?m)^1\. \*\*The precedent map\*\*, through /al-lookup.*\r?\n2\. \*\*Microsoft Learn\*\*.*microsoft_docs_search.*\r?\n3\. \*\*The Base App source\*\*.*`\.bcapps/release` first.*\r?\n4\. \*\*/al-environment-data\*\*.*\r?\n(?!5\.)'
+        $research | Should -Match 'while `\.bcapps/` is missing runs /al-clone-bcapps'
+        $research | Should -Match '`symbols\.lock\.json` is missing, the blocker is a /al-build provisioning run, the user''s step: write that out in the reply as the blocker'
+        $research | Should -Match '(?s)verified: <claim>.*assumed: <claim>.*unresolved: <question>'
+        $research | Should -Match 'second git worktree outside the repository folder, so the lead''s checkout never switches branch'
+        $research | Should -Match 'asks /al-commit to commit the complete worktree from that folder, pushes the branch, and removes the worktree folder'
+        $research | Should -Match 'hand /al-lookup the question with the verified claim and its source pointer'
+        $research | Should -Match '/al-lookup owns every map change; this skill edits no map'
+    }
+
     It 'keeps al-next on the Tracker doc, off state and parent changes, and Level 2 through al-arc42' {
         $next = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-next' 'SKILL.md') -Raw
         $arc42 = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-arc42' 'SKILL.md') -Raw
@@ -404,7 +417,7 @@ Describe 'Skill workflow contracts' {
         $pullRequest | Should -Match 'never creates or keeps a draft'
         $pullRequest | Should -Match 'Name /al-pr-shepherd as the next move'
 
-        foreach ($skill in @('al-clone-bcapps', 'al-grill-with-docs', 'al-implement', 'al-lookup', 'al-pr-shepherd', 'al-improve-codebase-architecture', 'al-simplify')) {
+        foreach ($skill in @('al-clone-bcapps', 'al-grill-with-docs', 'al-implement', 'al-lookup', 'al-pr-shepherd', 'al-improve-codebase-architecture', 'al-simplify', 'al-research')) {
             $content = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'SKILL.md') -Raw
             $content | Should -Match '/al-commit' -Because "$skill writes repository files"
         }

@@ -37,3 +37,4 @@ In an AL repository, when an entry skill below runs, load its AL addition beside
 | `/mattpocock-skills:diagnosing-bugs` | `/al-diagnosing-bugs` |
 | `/mattpocock-skills:wayfinder` | `/al-wayfinder` |
 | `/mattpocock-skills:prototype` | `/al-prototype` |
+| `/mattpocock-skills:research` | `/al-research` |

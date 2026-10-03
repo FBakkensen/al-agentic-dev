@@ -11,6 +11,18 @@
           }
         ]
       }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh",
+            "args": ["-NoProfile", "-File", "${CLAUDE_PLUGIN_ROOT}/hooks/Write-SessionStart.ps1", "-Event", "SubagentStart"],
+            "timeout": 15
+          }
+        ]
+      }
     ]
   }
 }

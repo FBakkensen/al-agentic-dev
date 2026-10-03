@@ -4,10 +4,13 @@ BeforeAll {
     $script:RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 
     function Invoke-SessionStartHook {
-        param([Parameter(Mandatory = $true)][string]$PluginRoot)
+        param(
+            [Parameter(Mandatory = $true)][string]$PluginRoot,
+            [ValidateSet('SessionStart', 'SubagentStart')][string]$Event = 'SessionStart'
+        )
 
         $hooks = Get-Content -LiteralPath (Join-Path $PluginRoot 'hooks' 'hooks.json') -Raw | ConvertFrom-Json
-        $handler = @($hooks.hooks.SessionStart)[0].hooks[0]
+        $handler = @($hooks.hooks.$Event)[0].hooks[0]
         $arguments = @($handler.args | ForEach-Object { $_.Replace('${CLAUDE_PLUGIN_ROOT}', $PluginRoot) })
 
         $previousEncoding = [Console]::OutputEncoding
@@ -58,6 +61,56 @@ Describe 'SessionStart hook' -Tag 'Process' {
         $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:diagnosing-bugs` | `/al-diagnosing-bugs` |') + '\r?$')
         $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:wayfinder` | `/al-wayfinder` |') + '\r?$')
         $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:prototype` | `/al-prototype` |') + '\r?$')
+        $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:research` | `/al-research` |') + '\r?$')
+    }
+
+    It 'gives a subagent the entry → addition table and none of the delegation rules' {
+        $result = Invoke-SessionStartHook -PluginRoot $script:RepoRoot -Event SubagentStart
+
+        $result.ExitCode | Should -Be 0 -Because $result.Text
+        $payload = $result.Text | ConvertFrom-Json
+        $payload.hookSpecificOutput.hookEventName | Should -BeExactly 'SubagentStart'
+        $context = $payload.hookSpecificOutput.additionalContext
+        $context | Should -Match '(?m)^## Entry skills and their AL additions\r?$'
+        $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:wayfinder` | `/al-wayfinder` |') + '\r?$')
+        $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:research` | `/al-research` |') + '\r?$')
+        $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:prototype` | `/al-prototype` |') + '\r?$')
+        $rows = @(Get-Content -LiteralPath (Join-Path $script:RepoRoot 'hooks' 'session-start.md') | Where-Object { $_ -match '^\| `/' })
+        $rows.Count | Should -BeGreaterThan 10
+        foreach ($row in $rows) {
+            $context | Should -Match ('(?m)^' + [regex]::Escape($row) + '\r?$') -Because "the subagent gets $row"
+        }
+        $context | Should -Not -Match ([regex]::Escape('▶ <model> · <brief> → <return>'))
+        $context | Should -Not -Match '(?m)^## Delegation'
+    }
+
+    It 'ends the subagent section at the next level-2 heading' {
+        $plugin = Join-Path $TestDrive 'section-plugin'
+        New-Item -ItemType Directory -Path (Join-Path $plugin 'hooks') -Force | Out-Null
+        foreach ($name in 'hooks.json', 'Write-SessionStart.ps1') {
+            Copy-Item -LiteralPath (Join-Path $script:RepoRoot 'hooks' $name) -Destination (Join-Path $plugin 'hooks')
+        }
+        $text = Get-Content -LiteralPath (Join-Path $script:RepoRoot 'hooks' 'session-start.md') -Raw
+        Set-Content -LiteralPath (Join-Path $plugin 'hooks' 'session-start.md') -Value ($text.TrimEnd() + "`n`n## Later section`n`nLater text.`n") -NoNewline
+
+        $result = Invoke-SessionStartHook -PluginRoot $plugin -Event SubagentStart
+
+        $result.ExitCode | Should -Be 0 -Because $result.Text
+        $context = ($result.Text | ConvertFrom-Json).hookSpecificOutput.additionalContext
+        $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:research` | `/al-research` |') + '\r?$')
+        $context | Should -Not -Match 'Later'
+    }
+
+    It 'fails a subagent start when the text is missing' {
+        $plugin = Join-Path $TestDrive 'subagent-plugin'
+        New-Item -ItemType Directory -Path (Join-Path $plugin 'hooks') -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $script:RepoRoot 'hooks' 'hooks.json') -Destination (Join-Path $plugin 'hooks')
+        Copy-Item -LiteralPath (Join-Path $script:RepoRoot 'hooks' 'Write-SessionStart.ps1') -Destination (Join-Path $plugin 'hooks')
+
+        $result = Invoke-SessionStartHook -PluginRoot $plugin -Event SubagentStart
+
+        $result.ExitCode | Should -Not -Be 0
+        $result.Text | Should -Match 'session-start\.md'
     }
 
     It 'fails when the delegation text is missing' {
