@@ -1,6 +1,8 @@
 ## Work item structure
 
-The `## Agent skills` block's issue tracker line names the repository that takes new Original work items, and that line is the one to read. Pass it to `gh` as `--repo <owner>/<repo>`.
+For an Original work item and its child work items, this structure governs where the conventions above differ: no skill closes or reopens one, and every `gh` call passes `--repo` from the tracker line.
+
+The `## Agent skills` block's issue tracker line names the repository that takes new Original work items, and that line is the one to read. Pass it to every `gh` call as `--repo <owner>/<repo>`.
 
 ### Tools
 
@@ -8,7 +10,7 @@ Every read and write goes through `gh`, version 2.99.0 or later (`gh --version`)
 
 ### Work items
 
-- **Read**: an existing issue is read by its number: `gh issue view <n> --json number,title,body,updatedAt,issueType,labels,parent,subIssues,blockedBy,comments`.
+- **Read**: an existing issue is read by its number: `gh issue view <n> --repo <owner>/<repo> --json number,title,body,updatedAt,issueType,labels,parent,subIssues,blockedBy,comments`.
 - **The Original work item** is the issue the request arrives on. `Original` names its role in this workflow; its parent and sub-issues stay as they are.
 - **A new Original work item** is created only when the request arrives on none. It is an issue of type Feature, or Bug when the request reports a defect, created in the tracker line's repository: `gh issue create --type Feature --title <title> --body-file <file>`.
 - **Slices**: one slice creates no child, and the Original work item is executable. Several slices each get one sub-issue of type Task directly under the Original work item: `gh issue create --type Task --parent <original> --title <title> --body-file <file>`.

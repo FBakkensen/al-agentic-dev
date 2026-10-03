@@ -327,13 +327,14 @@ Describe 'Tracker neutrality' {
         $tracker | Should -Match 'BPMN source'
         $tracker | Should -Match '--method PATCH'
         $tracker | Should -Match 'Fixes #<executable item>'
+        $tracker | Should -Match 'this structure governs where the conventions above differ: no skill closes or reopens one, and every `gh` call passes `--repo`'
     }
 
     It 'has setup pick the tracker text by Tracker and give any other Tracker none' {
         $setup = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' 'SKILL.md') -Raw
 
-        $setup | Should -Match ([regex]::Escape('[GITHUB.md](GITHUB.md)'))
-        $setup | Should -Match ([regex]::Escape('[AZURE-DEVOPS.md](AZURE-DEVOPS.md)'))
+        $setup | Should -Match '(?m)^- GitHub:.*\[GITHUB\.md\]\(GITHUB\.md\)'
+        $setup | Should -Match '(?m)^- Azure DevOps:.*\[AZURE-DEVOPS\.md\]\(AZURE-DEVOPS\.md\)'
         $setup | Should -Match 'When a skill says "publish to the issue tracker"'
         $setup | Should -Match 'When a skill says "fetch the relevant ticket"'
         $setup | Should -Match 'any other Tracker'
