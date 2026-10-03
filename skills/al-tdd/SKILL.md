@@ -29,7 +29,7 @@ Write `## Test specification` into the executable work item's acceptance criteri
 
 - **Arrange:** business data, setup, permissions, and starting state.
 - **Act:** one verified caller-visible action.
-- **Assert:** exact records, field values, errors, notifications, and side effects, with independently derived expected values.
+- **Assert:** exact records, field values, errors, notifications, and side effects. A tautological expected value passes by construction: recomputed with the production formula, read back from the object under test, or copied from the setup that drives the code. Every expected value is a known literal or worked example from the Gherkin or the spec.
 - **Proof:** unit, integration, or Web Client walkthrough.
 
 Every Gherkin scenario maps to at least one case, and every Trigger-to-outcome path, business branch, boundary, guarantee, and meaningful failure path appears in the map. Production object layout and helper design stay out.
