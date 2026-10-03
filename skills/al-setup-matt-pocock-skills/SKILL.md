@@ -11,7 +11,7 @@ In: `/mattpocock-skills:setup-matt-pocock-skills` running in a Consumer reposito
 
 The user takes the entry's own option for their tracker, or **Other** with a description in their own words. The entry records it in `docs/agents/issue-tracker.md` as it does for any tracker.
 
-Where new Original work items go is the one thing to settle. For GitHub it is the repository of the `origin` remote when `origin` is on github.com; otherwise ask one question: which repository takes them. For Azure DevOps, when the description names no project, ask one question: which project takes them. Offer no default.
+Where new Original work items go is the one thing to settle. For GitHub it is the repository of the `origin` remote when `origin` is on github.com; otherwise ask one question: which repository takes them. For Azure DevOps, when the description names no project, ask one question: which project takes them. For any other Tracker, when the description names no place for them, ask one question: where new Original work items go. Offer no default.
 
 ## The verbs
 
@@ -28,7 +28,7 @@ Beyond the entry's own reads, read what the verbs need from the Tracker itself:
 - The work item types a new Original work item, a defect, and a slice can be.
 - The field that holds the spec on each type, and where the acceptance criteria go.
 
-Azure DevOps: the backlog levels (`wit_backlog`, action `list`), each candidate type's fields (`wit_work_item`, action `get_type`), and one or two recent items read by id. GitHub: the owner's issue types (`gh api orgs/<owner>/issue-types`, where a 404 means none) and one or two recent issues read by number.
+Azure DevOps: the backlog levels (`wit_backlog`, action `list`), each candidate type's fields (`wit_work_item`, action `get_type`), and one or two recent items read by id. GitHub: the owner's issue types (`gh api orgs/<owner>/issue-types`, where a 404 means none) and one or two recent issues read by number. Any other Tracker: what the user's description names, and the five values that the seed templates' placeholders name, proposed from it.
 
 ## What the entry writes
 
@@ -36,9 +36,9 @@ The AL sections of the Tracker doc follow the Tracker the user picked, in the sa
 
 - GitHub: the entry's own GitHub template, then the text of [GITHUB.md](GITHUB.md). The template's `## When a skill says "publish to the issue tracker"` and `## When a skill says "fetch the relevant ticket"` sections drop, because GITHUB.md carries each; every other template section stays.
 - Azure DevOps: the user's description, then the text of [AZURE-DEVOPS.md](AZURE-DEVOPS.md).
-- Any other Tracker: the user's description alone, and say the AL workflow serves GitHub and Azure DevOps Trackers.
+- Any other Tracker: the user's description, then a `## Work item structure` section and the ten verb sections, each answered from the description and the reads, and the user confirms or corrects every answer in the draft.
 - A seed template carries the placeholders `<new Original work item type>`, `<defect type>`, `<slice type>`, `<spec field for each type>`, and `<acceptance criteria location>`. The draft fills each with the value the reads proposed, and the user confirms or corrects it there. A GitHub repository whose owner defines no issue types has no `--type` in its sections.
 - The `## Agent skills` block's issue tracker line is the entry's own, and it names the repository or project from Section A. Every skill reads it from that line.
 - Section B runs as the entry has it; the Tracker doc says how a triage role is applied.
 
-The setup is done when the draft the entry shows for review holds the AL sections of the Tracker doc for the picked Tracker with every placeholder filled, each verb heading appears once, and the issue tracker line carries Section A's answer.
+The setup is done when the draft the entry shows for review holds the AL sections of the Tracker doc for the picked Tracker with every verb section answered, from a seed template with its placeholders filled or from the description; each verb heading appears once, and the issue tracker line carries Section A's answer.
