@@ -55,7 +55,7 @@ Every skill is model-invocable. Skill frontmatter omits `disable-model-invocatio
 - A capability paraphrase where a concrete Claude Code name exists.
 - Skill frontmatter beyond `name` and `description` — no `allowed-tools`, `model`, `tools`, `mcp-servers`, `user-invocable`, or `disable-model-invocation` on a skill.
 - Task-state ceremony — a lifecycle field (`status:`, `phase:`, `blocked-on:`, `review:`, `tier:`, `green-gate:`), an Azure DevOps work-item transition (`State: New|Active|Blocked|Testing|Resolved|Closed`), or an abstract stage gate. A concrete artifact may require user agreement before its consumer runs; that is contract readiness, not lifecycle state. The gate bans the fields in every folder.
-- History in an ADR or a shipped skill — a line that amends, replaces, or supersedes an earlier decision, or narrates what was retired, renamed, or deleted. A changed decision edits the existing ADR or skill line in place, and no record amends the old one.
+- History in an ADR or a shipped skill — a line that amends, replaces, or supersedes an earlier decision, or narrates what was retired, renamed, or deleted. A changed decision edits the existing line in place, and no ADR or skill line amends another.
 - A link that leaves the skill folder: `](../`, `](/`, any absolute path.
 - An MCP server with a `tools` allowlist — Claude Code silently drops the server; the JSON gate fails it.
 - A `.mcp.json` at the repo root — Claude Code also loads it as this repo's project MCP servers, so every dev session here would start the plugin's servers; they live in `plugin.json`'s `mcpServers`, and the JSON gate fails a root `.mcp.json`.
