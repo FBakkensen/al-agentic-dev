@@ -70,7 +70,7 @@ Other skills call these:
 - Docker Desktop, BcContainerHelper, and the .NET SDK — `/al-build`'s scripted toolchain
 - Node.js 22+ with `npx` on PATH (npm comes with it) — `npx` starts the `ado` MCP server, the `/al-build` gate runs on it, and the `/al-to-spec` BPMN renderer runs `npm ci` and exports its review images through an installed Edge, Chrome, or Chromium
 - The Azure CLI, signed in with `az login` — the `ado` MCP server authenticates through it
-- The GitHub CLI `gh` 2.99.0 or later, signed in with `gh auth login` — for a Consumer repository whose Tracker is GitHub Issues
+- The GitHub CLI `gh` 2.99.0 or later, signed in with `gh auth login` — for a Consumer repository whose Tracker or Code host is GitHub
 - Playwright CLI: `npm install -g @playwright/cli@latest` — one of the drivers `/al-walkthrough` uses for the Web Client
 - In each Consumer repository, `al-build.json` at the root, for the build gate
 
