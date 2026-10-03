@@ -12,4 +12,4 @@ GitHub caps the body at 65,536 characters.
 
 ## Create or update
 
-Write the body to a file. With no pull request, create a ready one: `gh pr create --repo <owner>/<name> --base <base> --head <branch> --title <title> --body-file <file>`. With one, call `gh pr edit <n> --repo <owner>/<name> --title <title> --body-file <file>`, then `gh pr ready <n> --repo <owner>/<name>` when `isDraft` is true.
+Write the body to a file with the Write tool. With no pull request, create a ready one: `gh pr create --repo <owner>/<name> --base <base> --head <branch> --title <title> --body-file <file>`. With one, call `gh pr edit <n> --repo <owner>/<name> --title <title> --body-file <file>`, then `gh pr ready <n> --repo <owner>/<name>` when `isDraft` is true.
