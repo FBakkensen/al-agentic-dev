@@ -17,8 +17,12 @@ Where a Consumer repository's code and pull requests live — Azure Repos, or Gi
 _Avoid_: platform, provider, the host
 
 **Tracker**:
-Where a Consumer repository's work items live — Azure DevOps Boards or GitHub Issues — as its setup records it; chosen independently of its Code host, in any combination.
+Where a Consumer repository's work items live, as its setup records it in the Tracker doc; any tracker the setup can describe, chosen independently of its Code host.
 _Avoid_: board, backlog, ALM
+
+**Tracker doc**:
+A Consumer repository's answer, written at its setup, to everything a skill asks of its Tracker, including the types and fields that Tracker uses; skills name what they need and never the answer.
+_Avoid_: tracker text, structure text, tracker config
 
 **Base plugin**:
 A third-party plugin this plugin extends and requires — mattpocock-skills (engineering discipline), bcquality (Microsoft's AL quality knowledge), and SShadowS's AL language server; its skills are called by name or extended by an AL addition, never copied.
@@ -33,7 +37,7 @@ A skill of ours, usually named `al-<entry skill>`, that loads alongside its entr
 _Avoid_: overlay, extension, wrapper, AL version of
 
 **Original work item**:
-The work item a request arrives on — a Feature, Bug, or Product Backlog Item (PBI) in Azure DevOps, an issue on GitHub — carrying it through design and implementation; when the request splits, each slice is one direct child work item.
+The work item a request arrives on, of whatever type its Tracker gives it, carrying it through design and implementation; when the request splits, each slice is one direct child work item.
 _Avoid_: Original User Story, root item, parent (its own structural parent is untouched)
 
 **9Altitudes predecessor**:
