@@ -19,7 +19,7 @@ The organization is the one the `ado` server is started on in `plugin.json`.
 
 ## Unmet blocking policies
 
-On ShopFloor, the blocking policies are minimum reviewers and comment resolution.
+Blocking policies are such as minimum reviewers or comment resolution.
 
 ## Complete
 

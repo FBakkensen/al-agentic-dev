@@ -164,15 +164,13 @@ Describe 'Skill workflow contracts' {
     }
 
     It 'picks the Code-host procedure from the origin remote and stops on an unlisted host' {
-        $hosts = '(?m)^Hosts: `dev\.azure\.com`, `ssh\.dev\.azure\.com`, `\*\.visualstudio\.com`\.$'
+        $selection = 'Read `git remote get-url origin`: the procedure is the sibling file whose `Hosts` line lists that host, [AZURE-REPOS.md](AZURE-REPOS.md) today. A host no procedure lists stops the skill, naming the host.'
+        $hosts = '(?m)^Hosts: `dev\.azure\.com`, `ssh\.dev\.azure\.com`, `\*\.visualstudio\.com`\.\r?$'
         foreach ($skill in @('al-pull-request', 'al-pr-shepherd')) {
             $body = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'SKILL.md') -Raw
             $procedure = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'AZURE-REPOS.md') -Raw
 
-            $body | Should -Match ([regex]::Escape('`git remote get-url origin`')) -Because "$skill reads the remote"
-            $body | Should -Match 'the sibling file whose `Hosts` line lists that host' -Because "$skill picks by host"
-            $body | Should -Match 'A host no procedure lists stops [^.]*, naming the host' -Because "$skill stops on an unknown host"
-            $body | Should -Match ([regex]::Escape('[AZURE-REPOS.md](AZURE-REPOS.md)'))
+            $body | Should -Match ([regex]::Escape($selection)) -Because "$skill words the host selection as its sibling does"
             $procedure | Should -MatchExactly $hosts -Because "$skill's procedure lists its hosts"
         }
     }
