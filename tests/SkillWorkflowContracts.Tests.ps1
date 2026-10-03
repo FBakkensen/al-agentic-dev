@@ -148,16 +148,32 @@ Describe 'Skill workflow contracts' {
         $toSpec.IndexOf('first consult `/mattpocock-skills:codebase-design`') | Should -BeLessThan $toSpec.IndexOf('/al-arc42 the Building Block Level 1 view')
     }
 
-    It 'drives Azure Repos pull requests to completion without GitHub or Copilot' {
+    It 'drives pull requests to completion through the Code-host procedure, never Copilot' {
         $shepherd = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pr-shepherd' 'SKILL.md') -Raw
+        $procedure = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pr-shepherd' 'AZURE-REPOS.md') -Raw
 
-        $shepherd | Should -Not -CMatch '\bgh\b|GitHub|GraphQL'
         $shepherd | Should -Not -Match 'Copilot'
+        $procedure | Should -Not -Match 'Copilot'
         $shepherd | Should -Match 'only a green gate pushes; red goes to class 3'
         $shepherd | Should -Match '/al-build gate on the tree about to be pushed'
         $shepherd | Should -Match 'built-in /code-review over that commit range'
         $shepherd | Should -Match '/bcquality:al-code-review over that commit range'
         $shepherd | Should -Match 'no Spec axis'
+        $procedure | Should -Match 'az repos pr update --id <n> --status completed --merge-strategy squash'
+        $procedure | Should -Match 'az repos pr policy list --id <n>'
+    }
+
+    It 'picks the Code-host procedure from the origin remote and stops on an unlisted host' {
+        $selection = 'Read `git remote get-url origin`: the procedure is the sibling file whose `Hosts` line lists that host, [AZURE-REPOS.md](AZURE-REPOS.md) today. A `*.` entry matches any subdomain of that domain. A host no procedure lists stops the skill, naming the host.'
+        $hosts = '(?m)^Hosts: `dev\.azure\.com`, `ssh\.dev\.azure\.com`, `\*\.visualstudio\.com`\.\r?$'
+        foreach ($skill in @('al-pull-request', 'al-pr-shepherd')) {
+            $body = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'SKILL.md') -Raw
+            $procedure = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'AZURE-REPOS.md') -Raw
+
+            $body | Should -Match ([regex]::Escape($selection)) -Because "$skill words the host selection as its sibling does"
+            $body | Should -Not -CMatch '\bgh\b|GitHub|GraphQL|Azure Repos|\baz\b|\bado\b' -Because "$skill names a Code host only through its procedure"
+            $procedure | Should -MatchExactly $hosts -Because "$skill's procedure lists its hosts"
+        }
     }
 
     It 'walks the Gherkin scenarios in the agent container through a browser driver' {
@@ -220,6 +236,7 @@ Describe 'Skill workflow contracts' {
     It 'owns commits and pull requests in dedicated skills' {
         $commit = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-commit' 'SKILL.md') -Raw
         $pullRequest = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pull-request' 'SKILL.md') -Raw
+        $pullRequestProcedure = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pull-request' 'AZURE-REPOS.md') -Raw
 
         $commit | Should -Match 'Treat every file in the worktree as in scope'
         $commit | Should -Match 'Stage all files by default'
@@ -228,11 +245,13 @@ Describe 'Skill workflow contracts' {
         $commit | Should -MatchExactly 'Co-Authored-By: Claude <noreply@anthropic\.com>'
 
         $pullRequest | Should -Match 'Use `<area>: <imperative change>` for the title'
-        $pullRequest | Should -Match 'mcp__plugin_al-agentic-dev_ado__repo_pull_request_write'
+        $pullRequestProcedure | Should -Match 'mcp__plugin_al-agentic-dev_ado__repo_pull_request_write'
+        $pullRequestProcedure | Should -Match 'Azure Repos caps the description at 4000 characters'
+        $pullRequestProcedure | Should -Match 'passed explicitly on every .update.'
         $pullRequest | Should -Match 'link every work-item id on the branch as that section says'
-        $pullRequest | Should -Match 'passed explicitly on every .update.'
         $pullRequest | Should -Not -MatchExactly '\bgh\b'
         $pullRequest | Should -Not -MatchExactly '\baz\b'
+        $pullRequest | Should -Not -Match 'ado__|isDraft|4000'
         $pullRequest | Should -Not -Match 'AB#'
         $pullRequest | Should -Match 'this skill runs no tests'
         $pullRequest | Should -Match 'Push unpublished commits'
@@ -256,16 +275,20 @@ Describe 'Tracker neutrality' {
             'Azure Repos'   = [regex]::Escape('Azure Repos')
             'Repro Steps'   = [regex]::Escape('Repro Steps')
             'PBI'           = '\bPBIs?\b'
+            'gh pr'         = '\bgh pr\b'
+            'GraphQL'       = '\bGraphQL\b'
         }
         $script:TrackerHomes = @(
             'al-setup-matt-pocock-skills/AZURE-DEVOPS.md'
             'al-azure-devops-attachments/'
-            'al-pull-request/'
-            'al-pr-shepherd/'
+            'al-pull-request/AZURE-REPOS.md'
+            'al-pull-request/GITHUB.md'
+            'al-pr-shepherd/AZURE-REPOS.md'
+            'al-pr-shepherd/GITHUB.md'
         )
     }
 
-    It 'names no Tracker-specific tool or field outside the tracker text, the attachment skill, and the pull-request skills' {
+    It 'names no Tracker-specific tool or field outside the tracker text, the attachment skill, and the Code-host procedures' {
         $offenders = foreach ($file in Get-ChildItem -LiteralPath $script:SkillsRoot -Filter '*.md' -Recurse) {
             $relative = $file.FullName.Substring($script:SkillsRoot.Length + 1).Replace('\', '/')
             if ($relative -match 'node_modules') { continue }
