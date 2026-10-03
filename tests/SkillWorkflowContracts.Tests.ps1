@@ -419,7 +419,7 @@ Describe 'Tracker neutrality' {
         )
     }
 
-    It 'names no Tracker-specific tool or field outside the Tracker doc, the attachment skill, and the Code-host procedures' {
+    It 'names no Tracker-specific tool or field outside the seed templates, the attachment skill, and the Code-host procedures' {
         $offenders = foreach ($file in Get-ChildItem -LiteralPath $script:SkillsRoot -Filter '*.md' -Recurse) {
             $relative = $file.FullName.Substring($script:SkillsRoot.Length + 1).Replace('\', '/')
             if ($relative -match 'node_modules') { continue }
@@ -434,7 +434,7 @@ Describe 'Tracker neutrality' {
         $offenders | Should -BeNullOrEmpty
     }
 
-    It 'keeps the Azure DevOps Tracker doc where the setup reads it, under the heading set-up repositories already carry' {
+    It 'keeps the Azure DevOps seed template where the setup reads it, under the heading set-up repositories already carry' {
         $tracker = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' 'AZURE-DEVOPS.md') -Raw
         $setup = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' 'SKILL.md') -Raw
 
@@ -444,7 +444,7 @@ Describe 'Tracker neutrality' {
         $setup | Should -Match ([regex]::Escape('[AZURE-DEVOPS.md](AZURE-DEVOPS.md)'))
     }
 
-    It 'has the Azure DevOps Tracker doc own attachment upload and the native pull-request link' {
+    It 'has the Azure DevOps seed template own attachment upload and the native pull-request link' {
         $tracker = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' 'AZURE-DEVOPS.md') -Raw
 
         $tracker | Should -Match '/al-azure-devops-attachments'
@@ -456,7 +456,7 @@ Describe 'Tracker neutrality' {
         $tracker | Should -Match 'GitHub pull request carries `AB#<id>`'
     }
 
-    It 'carries the same operation headings in the GitHub and Azure DevOps Tracker docs' {
+    It 'carries the same operation headings in the GitHub and Azure DevOps seed templates' {
         $headings = foreach ($file in 'AZURE-DEVOPS.md', 'GITHUB.md') {
             $text = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' $file) -Raw
             $text | Should -MatchExactly '(?m)^## Work item structure\r?$'
@@ -467,7 +467,7 @@ Describe 'Tracker neutrality' {
         $headings[1] | Should -Be $headings[0]
     }
 
-    It 'has the GitHub Tracker doc work items only through gh and attach images through --attach' {
+    It 'has the GitHub seed template work items only through gh and attach images through --attach' {
         $tracker = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' 'GITHUB.md') -Raw
 
         $tracker | Should -Match '2\.99\.0 or later'
@@ -481,7 +481,7 @@ Describe 'Tracker neutrality' {
         $tracker | Should -Match 'this structure governs where the conventions above differ: no skill closes or reopens one, and every `gh` call passes `--repo`'
     }
 
-    It 'has setup pick the Tracker doc by Tracker and give any other Tracker none' {
+    It 'has setup pick the seed template by Tracker and give any other Tracker none' {
         $setup = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' 'SKILL.md') -Raw
 
         $setup | Should -Match '(?m)^- GitHub:.*\[GITHUB\.md\]\(GITHUB\.md\)'

@@ -39,7 +39,7 @@ Twenty-three skills ship today.
 - `al-next` — reconciliation of design, slices, receipts, and landed code.
 - `al-pr-shepherd` — one open PR to merge, on Azure Repos or GitHub by the origin remote: the user's comments worked, other feedback surfaced, main merged in with intent-preserving conflicts, policies read; completing it is the user's go.
 - `al-walkthrough` — the Gherkin walk in the branch's agent container: a clean republish through `/al-build`, then the first available browser driver through `/al-webclient`, one screenshot per mismatch attached to the work item.
-- `al-setup-matt-pocock-skills` — the work-item structure that `/mattpocock-skills:setup-matt-pocock-skills` writes after the user's own tracker description: the GitHub Tracker doc or the Azure DevOps one, by the Tracker picked.
+- `al-setup-matt-pocock-skills` — the work-item structure that `/mattpocock-skills:setup-matt-pocock-skills` writes after the user's own tracker description: the GitHub seed template or the Azure DevOps one, by the Tracker picked.
 - `al-simplify` — the AL freeze, per-edit gate, mutation red, and receipt refresh beside `/simplify`.
 - `al-environment-data` — GET-only reads of a SaaS sandbox or the agent container, and the read-only debug app with its checked teardown.
 - `al-webclient` — driver-neutral Web Client rules and page-JavaScript snippets for the agent container and a SaaS sandbox.
