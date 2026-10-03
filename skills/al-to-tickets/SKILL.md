@@ -1,11 +1,11 @@
 ---
 name: al-to-tickets
-description: Use whenever /mattpocock-skills:to-tickets runs, or when an Azure DevOps Original work item's agreed process and design are ready to become executable work items, each slice ending at a named BPMN outcome.
+description: Use whenever /mattpocock-skills:to-tickets runs, or when an Original work item's agreed process and design are ready to become executable work items, each slice ending at a named BPMN outcome.
 ---
 
 # al-to-tickets - slices that end at BPMN outcomes
 
-In: `/mattpocock-skills:to-tickets` running on an Original work item, with its Trigger, Success guarantee, Minimal guarantee, BPMN outcomes, Runtime View when present, and Building Block View Level 1. `Original` names a role in this workflow, not the top of the Azure DevOps hierarchy. The entry skill owns the quiz and the publishing, and the tracker text in `docs/agents/issue-tracker.md` turns its edges into native parent and blocking links. This addition adds where an AL slice ends and what each work item carries.
+In: `/mattpocock-skills:to-tickets` running on an Original work item, with its Trigger, Success guarantee, Minimal guarantee, BPMN outcomes, Runtime View when present, and Building Block View Level 1. `Original` names a role in this workflow, not the top of the hierarchy. The entry skill owns the quiz and the publishing, and the tracker text in `docs/agents/issue-tracker.md` turns its edges into native parent and blocking links. This addition adds where an AL slice ends and what each work item carries.
 
 ## Cut at BPMN outcomes
 
@@ -19,11 +19,11 @@ At the entry's quiz, each proposed ticket also shows the BPMN outcome it ends at
 
 One slice creates no child. The Original work item stays the executable item, and its Acceptance Criteria carries the slice's `Behavior`. That write is the one change the publishing makes to the Original: `/mattpocock-skills:to-tickets` otherwise leaves the parent it slices untouched.
 
-Several slices each get one direct child PBI under the Original work item, whether the Original is a Feature, a Bug, or a PBI.
+Several slices each get one direct child work item under the Original work item, whatever type the Original is.
 
-Only those direct child PBIs are created. Every existing item stays where it is, including the Original's own structural parent.
+Only those direct child work items are created. Every existing item stays where it is, including the Original's own structural parent.
 
-The Original work item owns the shared design. A child's Description names its one process path, carries only what is specific to that slice, and points to the Original work item for the shared design instead of copying it.
+The Original work item owns the shared design. A child's spec field names its one process path, carries only what is specific to that slice, and points to the Original work item for the shared design instead of copying it.
 
 ## Write the Acceptance Criteria
 

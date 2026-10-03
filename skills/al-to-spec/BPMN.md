@@ -44,4 +44,4 @@ Use no CDN, iframe, or remote asset. Show the local HTML through `show_widget`, 
 
 ## Completion
 
-The BPMN source imports without error. The SVG and PNG contain every lane, activity, gateway label, record, and named end event. Nothing is clipped at 1600 by 900 pixels. The user reviews the local HTML before the source and PNG are attached to Azure DevOps.
+The BPMN source imports without error. The SVG and PNG contain every lane, activity, gateway label, record, and named end event. Nothing is clipped at 1600 by 900 pixels. The user reviews the local HTML before the source and PNG are attached to the Original work item.

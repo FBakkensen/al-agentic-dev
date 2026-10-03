@@ -1,11 +1,11 @@
 ---
 name: al-walkthrough
-description: Use when an implemented Original work item or child PBI has Gherkin scenarios that need walking in the Business Central Web Client of the branch's agent container.
+description: Use when an implemented Original work item or child work item has Gherkin scenarios that need walking in the Business Central Web Client of the branch's agent container.
 ---
 
 # al-walkthrough - walk the slice
 
-In: an implemented executable Original work item, or a child PBI and its Original; the environment is the branch's agent container. This pass observes Gherkin behavior; AAA unit and integration cases remain build evidence.
+In: an implemented executable Original work item, or a child work item and its Original; the environment is the branch's agent container. Every work-item read, write, and comment follows the tracker text that the `## Agent skills` block's issue tracker line points to. This pass observes Gherkin behavior; AAA unit and integration cases remain build evidence.
 The lead changes no AL code and creates no report file; the screenshots under `.output/` are evidence, not a report.
 
 ## Before the walk
@@ -16,7 +16,7 @@ The lead changes no AL code and creates no report file; the screenshots under `.
 - With none available, the lead stops before the republish and tells the user which install is missing (`npm install -g @playwright/cli@latest` for Playwright CLI); the lead walks by no other means.
 - Done when the lead has named one driver, or has stopped.
 
-**Confirm.** The lead reads the `Behavior` Gherkin in the executable work item's Acceptance Criteria and the Original's BPMN outcomes.
+**Confirm.** The lead reads, as the tracker text says, the `Behavior` Gherkin in the executable work item's Acceptance Criteria and the Original's BPMN outcomes.
 The lead then asks the user with `AskUserQuestion` to confirm the scenario order, company, required records, and expected visible results.
 Done when the user has confirmed; the client opens only after.
 
@@ -49,8 +49,8 @@ For each ⛔ step the lead takes one screenshot and saves it as `.output/walkthr
 - Built-in browser: the lead calls `mcp__Claude_Browser__computer` (`mcp__remote-devices__Claude_Browser__computer` in a cloud session) with the `screenshot` action and saves the file to `<path>` where the tool can write one.
 - When a driver returns only the image and no file, the lead says so in the comment and attaches nothing for that step.
 
-The lead attaches the screenshots to the executable work item by calling /al-azure-devops-attachments in-line; the republish stays the only delegated `▶` line.
-The lead then posts one comment on the executable work item with `mcp__plugin_al-agentic-dev_ado__wit_work_item_comment_write`, action `add`: the commit and app version, each scenario's result, and the attachment URL beside each ⛔ step.
+The lead attaches the screenshots to the executable work item as the tracker text says, in-line; the republish stays the only delegated `▶` line.
+The lead then posts one comment on the executable work item as the tracker text says: the commit and app version, each scenario's result, and the attachment URL beside each ⛔ step.
 With no ⛔ step nothing is attached, and the comment says every step passed.
 Done when every screenshot is a verified attachment and the comment is posted.
 

@@ -35,6 +35,16 @@ Triage roles are Azure DevOps tags: each role string in `docs/agents/triage-labe
 
 **PRs as a request surface: no.** Pull requests stay out of triage.
 
+### Attach files
+
+Local files reach a work item through `/al-azure-devops-attachments`, which returns verified attachment URLs, each with its name. Missing MCP attachment support is not a blocker; Azure CLI authentication trouble stays with that skill until the sign-in works. A skill that embeds an image places each verified PNG URL in the field the Fields section names as a Markdown image carrying its alt text, under the section the skill names. A refreshed file keeps its filename, and its new URL replaces the old reference. A comment names an attached file by its verified URL.
+
+### How a pull request names a work item
+
+An Azure Repos pull request links natively: for each work-item id not yet linked, call `mcp__plugin_al-agentic-dev_ado__wit_work_item_link_write`, action `link_to_pull_request`, with the pull request's `projectId` GUID, `repositoryId`, `pullRequestId`, and `workItemId`. Its body carries no work-item id line.
+
+A GitHub pull request carries `AB#<id>` for each work item, which links once the Azure Boards app is connected to the GitHub organization.
+
 ### When a skill says "publish to the issue tracker"
 
 Write into the Original work item's fields as Fields places them. Create an item only as Work items allows.
