@@ -341,6 +341,20 @@ Describe 'Skill workflow contracts' {
         $walkthrough.IndexOf($republish) | Should -BeLessThan $walkthrough.IndexOf($webclientFirst)
     }
 
+    It 'keeps al-prototype on its own branch, the relaxed gate, three forms, the attach verb, and /al-commit' {
+        $prototype = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-prototype' 'SKILL.md') -Raw
+
+        $prototype | Should -Match 'description: .*/mattpocock-skills:prototype.*AL repository'
+        $prototype | Should -Match 'own `prototype/<name>` branch'
+        $prototype | Should -Match 'own `\.vscode/settings\.json` with no analyzers'
+        $prototype | Should -Match 'zero-warnings bar does not apply'
+        $prototype | Should -Match '\*\*Logic through AL Runner\.\*\*'
+        $prototype | Should -Match '\*\*Logic that needs a surface AL Runner refuses\*\* \(`RunnerOutOfScopeException`\)'
+        $prototype | Should -Match '\*\*UI or UX, on top of either\.\*\*'
+        $prototype | Should -Match 'the Tracker doc''s "attach a file" says'
+        $prototype | Should -Match 'The agent runs /al-commit at every exit'
+    }
+
     It 'states in /al-build that the container login is not a secret and points to it from the skills that use it' {
         $albuild = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-build' 'SKILL.md') -Raw
         $albuild | Should -Match ([regex]::Escape('the throwaway login of a local test container, and they are not secrets'))
@@ -350,6 +364,7 @@ Describe 'Skill workflow contracts' {
             'al-webclient'        = 'that password is not a secret (/al-build)'
             'al-walkthrough'      = 'which is not a secret (/al-build)'
             'al-environment-data' = 'login is not a secret (/al-build)'
+            'al-prototype'        = 'the container login is not a secret (/al-build)'
         }
         foreach ($skill in $pointers.Keys) {
             $text = Get-Content -LiteralPath (Join-Path $script:SkillsRoot $skill 'SKILL.md') -Raw
