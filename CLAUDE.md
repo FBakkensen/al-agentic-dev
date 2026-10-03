@@ -31,7 +31,7 @@ Twenty-three skills ship today.
 - `al-to-spec` — the spec in the Original work item for `/mattpocock-skills:to-spec`: process contract, BPMN review HTML, and Building Block View Level 1.
 - `al-arc42` — official arc42 formatting and architecture review HTML.
 - `al-codebase-design` — the BC shapes, Base App shape survey, and AL seam rule for `/mattpocock-skills:codebase-design`.
-- `al-to-tickets` — BPMN-outcome slices, direct child PBIs, and Gherkin `Behavior` for `/mattpocock-skills:to-tickets`.
+- `al-to-tickets` — BPMN-outcome slices, direct child work items, and Gherkin `Behavior` for `/mattpocock-skills:to-tickets`.
 - `al-tdd` — the AAA and proof maps as `/mattpocock-skills:tdd`'s agreed seams, mutation red, and `/al-build` as the test run.
 - `al-implement` — proof through the module interface.
 - `al-improve-codebase-architecture` — the AL addition to `mattpocock-skills:improve-codebase-architecture`: deepening behind the caller-visible interface, the gate, the receipt map, and Level 2.

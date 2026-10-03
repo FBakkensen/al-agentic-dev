@@ -1,22 +1,21 @@
 # GitHub recipes
 
-`R` is `owner/name`, `O` is the owner, `NAME` is the repo name. Every command here was used on a live run.
+`R` is `owner/name`, `O` is the owner, `NAME` is the repo name. Every command here was used on a live run. The issue relationship flags need `gh` 2.99.0 or later.
 
 ## Sub-issues
 
-List the spec's children:
+List the spec's children, and read each child's native blocking edges:
 ```bash
-gh api graphql -f query='query{repository(owner:"O",name:"NAME"){issue(number:SPEC){subIssues(first:100){nodes{number title state}}}}}' \
-  --jq '.data.repository.issue.subIssues.nodes[] | "#\(.number) \(.state) \(.title)"'
+gh issue view SPEC --repo R --json subIssues --jq '.subIssues.nodes[] | "#\(.number) \(.state) \(.title)"'
+gh issue view <child> --repo R --json blockedBy --jq '[.blockedBy.nodes[] | "\(.number):\(.state)"]'
 ```
 
-File a follow-up and attach it to the spec:
+File a follow-up as a sub-issue of the spec, with its blocking edges, in one call:
 ```bash
-url=$(gh issue create --repo R --title "…" --label ready-for-agent --body-file body.md); n=${url##*/}
-p=$(gh api graphql -f query='query{repository(owner:"O",name:"NAME"){issue(number:SPEC){id}}}' --jq .data.repository.issue.id)
-c=$(gh api graphql -f query="query{repository(owner:\"O\",name:\"NAME\"){issue(number:$n){id}}}" --jq .data.repository.issue.id)
-gh api graphql -f query='mutation($p:ID!,$c:ID!){addSubIssue(input:{issueId:$p,subIssueId:$c}){subIssue{number}}}' -f p="$p" -f c="$c"
+gh issue create --repo R --title "…" --label ready-for-agent --parent SPEC --blocked-by <n>[,<n>] --body-file body.md
 ```
+Leave `--blocked-by` out when the follow-up has no blocker.
+Link an existing issue with `gh issue edit <n> --repo R --parent SPEC`, and add a blocking edge with `--add-blocked-by <blocker>`. An edge that already exists fails with "Target issue has already been taken".
 
 ## Closing references
 

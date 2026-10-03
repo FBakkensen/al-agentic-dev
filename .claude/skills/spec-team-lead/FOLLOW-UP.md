@@ -2,7 +2,7 @@
 
 File a follow-up for a finding outside a PR's scope, or one found after its merge. It comes out decided, so the teammate builds it without asking.
 
-Title: an imperative summary of the outcome. Label: `ready-for-agent`. Then attach it as a sub-issue of the spec; the recipe is in [GITHUB.md](GITHUB.md).
+Title: an imperative summary of the outcome. Label: `ready-for-agent`. Create it as a sub-issue of the spec with its blocking edges, in one call; the recipe is in [GITHUB.md](GITHUB.md).
 
 ```markdown
 ## Parent
