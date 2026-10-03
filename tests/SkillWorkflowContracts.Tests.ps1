@@ -511,8 +511,14 @@ Describe 'Tracker neutrality' {
 
         $headings[0].Count | Should -BeGreaterThan 0
         $headings[1] | Should -Be $headings[0]
-        foreach ($verb in $script:Verbs) {
-            $headings[0] | Should -Contain "## When a skill says `"$verb`""
+        $verbHeadings = $script:Verbs | ForEach-Object { "## When a skill says `"$_`"" }
+        @($headings[0] | Where-Object { $_ -in $verbHeadings }) | Should -Be $verbHeadings
+    }
+
+    It 'has both seed templates update from the value just read and keep every other section' {
+        foreach ($file in $script:SeedTemplates) {
+            $text = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-setup-matt-pocock-skills' $file) -Raw
+            $text | Should -Match 'replaces only its own section, and writes the whole (field|body) back' -Because "$file keeps the other sections"
         }
     }
 

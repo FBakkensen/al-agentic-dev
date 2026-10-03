@@ -12,7 +12,7 @@ An existing item is read by its id alone, which is unique across the org: `mcp__
 
 ### Updating an item
 
-An update to a field read earlier starts with a `test` on `/rev` carrying the revision that read returned. On a revision conflict, read the item again before retrying.
+An update starts from the field value the read just returned, replaces only its own section, and writes the whole field back, so every other section in that field stays. It starts with a `test` on `/rev` carrying the revision that read returned. On a revision conflict, read the item again before retrying.
 
 ### Triage
 
@@ -34,11 +34,11 @@ Read the item by id as Reading an item gives. Its relations carry the parent, th
 
 ## When a skill says "write the spec"
 
-Put the spec in the field `<spec field for each type>` names for the item's type, with `wit_work_item_write`, action `update`, as Updating an item gives.
+Put the spec in the field `<spec field for each type>` names for the item's type, with `wit_work_item_write`, action `update`, as Updating an item gives; the acceptance criteria and every other section of that field stay.
 
 ## When a skill says "write the acceptance criteria"
 
-Put the Gherkin `Behavior` and the `Test specification` in `<acceptance criteria location>`, with `wit_work_item_write`, action `update`, as Updating an item gives.
+Put the Gherkin `Behavior` and the `Test specification` in `<acceptance criteria location>`, with `wit_work_item_write`, action `update`, as Updating an item gives; the spec and every other section there stay.
 
 ## When a skill says "create a slice"
 

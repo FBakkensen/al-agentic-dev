@@ -12,7 +12,7 @@ An existing issue is read by its number: `gh issue view <n> --repo <owner>/<repo
 
 ### Updating an item
 
-An update to a body read earlier starts with the `updatedAt` that read returned. Read it again before the write; when it changed, read the body again and re-apply the edit, because GitHub has no revision test.
+An update starts from the body the read just returned, replaces only its own section, and writes the whole body back, so every other section in that body stays. It carries the `updatedAt` that read returned. Read it again before the write; when it changed, read the body again and re-apply the edit, because GitHub has no revision test.
 
 ### Triage
 
@@ -32,11 +32,11 @@ Read the issue by number as Reading an item gives. Its output carries the parent
 
 ## When a skill says "write the spec"
 
-Put the spec in the field `<spec field for each type>` names for the item's type, with `gh issue edit <n> --body-file <file>`, as Updating an item gives.
+Put the spec in the field `<spec field for each type>` names for the item's type, with `gh issue edit <n> --body-file <file>`, as Updating an item gives; the acceptance criteria and every other section of that body stay.
 
 ## When a skill says "write the acceptance criteria"
 
-Put the Gherkin `Behavior` and the `Test specification` in `<acceptance criteria location>`, with `gh issue edit <n> --body-file <file>`, as Updating an item gives.
+Put the Gherkin `Behavior` and the `Test specification` in `<acceptance criteria location>`, with `gh issue edit <n> --body-file <file>`, as Updating an item gives; the spec and every other section there stay.
 
 ## When a skill says "create a slice"
 
