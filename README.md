@@ -47,7 +47,7 @@ Skills you type directly:
 | `/al-arc42` | Writes settled architecture in the official arc42 v9.0-EN format, with a local architecture review HTML. |
 | `/al-walkthrough` | Walks an implemented work item's Gherkin scenarios in the Business Central Web Client of the branch's agent container. |
 | `/al-next` | Reconciles landed code with the Original work item's design, its child slices, and their receipts, and names the next executable item. |
-| `/al-pr-shepherd` | Drives one open pull request to merge: your comments worked, main merged in, policies read. Completing it is your go. |
+| `/al-pr-shepherd` | Drives one open pull request to merge: your comments and CI review findings worked, main merged in, policies read. Completing it is your go. |
 | `/al-lookup` | Answers one platform question with a source pointer and grows the repository's precedent map. |
 | `/al-webclient` | Loads the Web Client driving rules before any browser call that touches Business Central. |
 | `/al-environment-data` | Reads data, GET only, from a SaaS sandbox's API or the branch's agent container. |

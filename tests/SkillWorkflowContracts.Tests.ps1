@@ -154,7 +154,7 @@ Describe 'Skill workflow contracts' {
 
         $shepherd | Should -Not -Match 'Copilot'
         $procedure | Should -Not -Match 'Copilot'
-        $shepherd | Should -Match 'only a green gate pushes; red goes to class 3'
+        $shepherd | Should -Match 'only a green gate pushes; red goes to class 4'
         $shepherd | Should -Match '/al-build gate on the tree about to be pushed'
         $shepherd | Should -Match 'built-in /code-review over that commit range'
         $shepherd | Should -Match '/bcquality:al-code-review over that commit range'
@@ -262,6 +262,41 @@ Describe 'Skill workflow contracts' {
         $procedure | Should -Not -Match 'AB#'
         $procedure | Should -Match 'gh pr merge <n> --repo <owner>/<name> --squash'
         $procedure | Should -Not -Match '--auto'
+    }
+
+    It 'has the shepherd work a CI review''s findings as class 2 on both Code hosts' {
+        $shepherd = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pr-shepherd' 'SKILL.md') -Raw
+        $classes = @([regex]::Matches($shepherd, '(?m)^(\d)\. \*\*(.+?)\*\*') | ForEach-Object { $_.Groups[1].Value + ':' + $_.Groups[2].Value })
+
+        $classes.Count | Should -Be 5
+        $classes[1] | Should -Be '2:A CI review''s finding'
+        $classes[2] | Should -Match '^3:Anyone else'
+        $classes[3] | Should -Match '^4:A red /al-build gate'
+        $classes[4] | Should -Match '^5:Behind main'
+        $shepherd | Should -Match 'description: .*Use when its threads hold the user''s comments to work, a CI review''s findings to work, or a reviewer''s feedback to surface\.'
+        $shepherd | Should -Match 'a thread posted by a review check that runs on the pull request, such as the Claude review or the bcquality review'
+        $shepherd | Should -Match 'blocking finding is fixed through the worker class 1 uses, then answered and marked as the procedure says'
+        $shepherd | Should -Match 'finding the shepherd judges wrong is answered with the reason and marked the same way; the shepherd reruns its check as the procedure says, and the next read sees the result'
+        $shepherd | Should -Match 'finding it cannot settle goes to the user and stops the automation, like class 3'
+        $shepherd | Should -Match 'summary comment is always read: its blocking items are acted on only when the check is red'
+        $shepherd | Should -Match 'nits are listed in the close and never acted on'
+        $shepherd | Should -Match 'a person''s comment, or a blocking review vote — goes to the user and stops the automation'
+        $shepherd | Should -Match 'except a review-check bot''s thread, which stays class 2'
+
+        $github = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pr-shepherd' 'GITHUB.md') -Raw
+        $github | Should -Match 'first comment is authored by `github-actions` or `github-actions\[bot\]`, while a check whose name contains `review` ran on the head'
+        $github | Should -Match 'by another login that is not a review-check bot'
+        $github | Should -Match '`dependabot\[bot\]` included, counts as anyone else''s'
+        $github | Should -Match 'A CI review''s finding takes the same two calls'
+        $github | Should -Match 'gh run rerun <run-id> --failed --repo <owner>/<name>'
+        $github | Should -Match 'run id comes from that check''s `detailsUrl` in `statusCheckRollup`'
+
+        $azure = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pr-shepherd' 'AZURE-REPOS.md') -Raw
+        $azure | Should -Match 'author is the project''s build service identity, `<project> Build Service`, and a build policy on the pull request whose display name contains `review` carries the review'
+        $azure | Should -Match 'blocking items are acted on only when that policy''s evaluation is rejected or failed'
+        $azure | Should -Match 'any author other than the driving user and a review-check build service identity'
+        $azure | Should -Match 'judged wrong gets the reason in the `reply`, then `update_status` to `WontFix`'
+        $azure | Should -Match 'az repos pr policy queue --id <n> --evaluation-id <id>'
     }
 
     It 'walks the Gherkin scenarios in the agent container through a browser driver' {
