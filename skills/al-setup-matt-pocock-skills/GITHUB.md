@@ -31,7 +31,7 @@ Parent and blocking edges are native, never text lines in a body.
 
 ### Triage
 
-Triage roles are labels: each role string in `docs/agents/triage-labels.md` is a label name. Add or remove the one role alone, with `gh issue edit <n> --add-label <role>` or `--remove-label <role>`; the team's other labels stay. A role never closes or reopens an item.
+Triage roles are labels: each role string in `docs/agents/triage-labels.md` is a label name. Add or remove the one role alone, with `gh issue edit <n> --add-label <role>` or `--remove-label <role>`; the team's other labels stay. A role the repository has no label for is created first with `gh label create <role>`; `gh issue edit` refuses an unknown label. A role never closes or reopens an item.
 
 ### Attach files
 
