@@ -177,7 +177,8 @@ Describe 'Skill workflow contracts' {
     }
 
     It 'has the shepherd pick its procedure from the origin remote across both Code hosts and stop on an unlisted one' {
-        $selection = 'Read `git remote get-url origin`: the procedure is the sibling file whose `Hosts` line lists that host, [AZURE-REPOS.md](AZURE-REPOS.md) or [GITHUB.md](GITHUB.md). A `*.` entry matches any subdomain of that domain. A host no procedure lists stops the skill, naming the host.'
+        $selection = 'Read `git remote get-url origin`: the procedure is the sibling file whose `Hosts` line lists that host. A `*.` entry matches any subdomain of that domain. A host no procedure lists stops the skill, naming the host.'
+        $procedures = '(?m)^- Procedures: \[AZURE-REPOS\.md\]\(AZURE-REPOS\.md\), \[GITHUB\.md\]\(GITHUB\.md\)\.\r?$'
         $hosts = @{
             'AZURE-REPOS.md' = '(?m)^Hosts: `dev\.azure\.com`, `ssh\.dev\.azure\.com`, `\*\.visualstudio\.com`\.\r?$'
             'GITHUB.md'      = '(?m)^Hosts: `github\.com`\.\r?$'
@@ -185,6 +186,7 @@ Describe 'Skill workflow contracts' {
         $body = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pr-shepherd' 'SKILL.md') -Raw
 
         $body | Should -Match ([regex]::Escape($selection))
+        $body | Should -Match $procedures
         $body | Should -Not -CMatch '\bgh\b|GitHub|GraphQL|Azure Repos|\baz\b|\bado\b|CHANGES_REQUESTED|Waiting for author' -Because 'the body names a Code host only through its procedure'
         foreach ($file in $hosts.Keys) {
             $procedure = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-pr-shepherd' $file) -Raw
