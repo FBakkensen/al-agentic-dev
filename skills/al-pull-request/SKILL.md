@@ -11,7 +11,7 @@ Before the first tool call, write one sentence. Update on an important finding o
 
 ## Read the branch
 
-Read the current branch, base branch, commits, and diff with git. A dirty worktree returns /al-commit as the next move. Read `git remote get-url origin`: the procedure is the sibling file whose `Hosts` line lists that host, [AZURE-REPOS.md](AZURE-REPOS.md) today. A host no procedure lists stops the skill, naming the host. Read the branch's existing pull request and its linked work items as the procedure says.
+Read the current branch, base branch, commits, and diff with git. A dirty worktree returns /al-commit as the next move. Read `git remote get-url origin`: the procedure is the sibling file whose `Hosts` line lists that host, [AZURE-REPOS.md](AZURE-REPOS.md) today. A `*.` entry matches any subdomain of that domain. A host no procedure lists stops the skill, naming the host. Read the branch's existing pull request and its linked work items as the procedure says.
 
 Work-item ids come from the request, the branch name, the receipts under `.output/receipts/`, and the existing pull request's linked work items. Never guess an id.
 

@@ -17,10 +17,6 @@ The organization is the one the `ado` server is started on in `plugin.json`.
 
 `mcp__plugin_al-agentic-dev_ado__repo_pull_request_thread_write`: `reply` naming the fixing commit, then `update_status` to `Fixed`. The reply, posted under the user's identity, is how the next read tells instruction from answer.
 
-## Unmet blocking policies
-
-Blocking policies are such as minimum reviewers or comment resolution.
-
 ## Complete
 
 On the user's go: `az repos pr update --id <n> --status completed --merge-strategy squash`.
