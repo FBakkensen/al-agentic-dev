@@ -24,6 +24,10 @@ Run one at a time. `al-build.json` in the repo root is required — without it t
 
 Green is zero errors and zero warnings. `test.ps1` exits 0 on warnings by default, so set `WARN_AS_ERROR=true` to bind that bar to the exit code.
 
+The module gate — `moduleGate.enabled` (`ALBT_MODULE_GATE_ENABLED`; off when omitted, `init.ps1` writes it on) and `moduleGate.rootNamespace` — makes `test.ps1` run a text-only module check before it compiles anything, over the main app and every test app (root namespace plus `.Test`):
+- Rule 1: every AL file declares a namespace equal to the root namespace plus its folder path below `src` (the app folder when there is none). Each violation names the file, the line, and the move, and turns the gate red.
+- `summary.json`'s `moduleGate` block (`enabled`, `violations`, `warnings`, `skippedRules`) sits next to `coverage`.
+
 ## Read the result, not the output
 
 After the run, read `.output/TestResults/summary.json` and report from it. It carries `gate` (`al-runner` or `container`), per-runner `totals`, and `runs[]` — one record per run with `runner`, `appName`, `dir`, `passed`, `counts`, `resultFile`. For a red, open the `resultFile` of each run whose `passed` is false (JUnit XML) for the failing test names and their assertion messages. Reading the console stream instead floods the session with thousands of lines of build spew for numbers the summary already holds.

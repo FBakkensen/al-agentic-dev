@@ -29,6 +29,11 @@
   "tenant": "default",
   "validateCurrent": true,
 
+  "moduleGate": {
+    "enabled": true,
+    "rootNamespace": ""
+  },
+
   "breakingChange": {
     "enabled": false
   }

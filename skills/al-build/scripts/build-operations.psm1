@@ -29,6 +29,7 @@ function Get-BuildConfig {
     .DESCRIPTION
         Priority: 1. Parameter overrides → 2. Environment variables → 3. Config file defaults.
         Coverage uses false when omitted and is disabled without configured testApps.
+        The module gate (moduleGate.enabled, ALBT_MODULE_GATE_ENABLED) resolves off when omitted.
     .PARAMETER Overrides
         Hashtable of parameter overrides
     .OUTPUTS
@@ -141,8 +142,9 @@ function Get-BuildConfig {
         return $Default
     }
 
-    function Resolve-CoverageValue {
-        param([string]$Key, [string]$OverrideKey, [string]$EnvVar, $Default)
+    # Boolean switch inside a config block: override, then a strict env boolean, then the file.
+    function Resolve-BlockSwitch {
+        param([string]$Block, [string]$Key, [string]$OverrideKey, [string]$EnvVar, $Default)
         if ($Overrides.ContainsKey($OverrideKey) -and $null -ne $Overrides[$OverrideKey]) {
             return $Overrides[$OverrideKey]
         }
@@ -150,11 +152,18 @@ function Get-BuildConfig {
         if ($null -ne $envVal) {
             return ConvertFrom-EnvironmentBoolean -Name $EnvVar -Value $envVal
         }
-        if ($defaults.ContainsKey('coverage') -and $defaults['coverage'] -is [hashtable]) {
-            $coverage = $defaults['coverage']
-            if ($coverage.ContainsKey($Key) -and $null -ne $coverage[$Key]) { return $coverage[$Key] }
+        if ($defaults.ContainsKey($Block) -and $defaults[$Block] -is [hashtable]) {
+            $blockValues = $defaults[$Block]
+            if ($blockValues.ContainsKey($Key) -and $null -ne $blockValues[$Key]) { return $blockValues[$Key] }
         }
         return $Default
+    }
+
+    # The app's root namespace, from moduleGate.rootNamespace only; '' when unset.
+    $moduleGateRootNamespace = ''
+    if ($defaults.ContainsKey('moduleGate') -and $defaults['moduleGate'] -is [hashtable]) {
+        $rootNamespace = $defaults['moduleGate']['rootNamespace']
+        if ($null -ne $rootNamespace) { $moduleGateRootNamespace = ([string]$rootNamespace).Trim() }
     }
 
     # The real Release .app's folder: no default, $null when unset. A relative value is repo-root relative.
@@ -190,9 +199,11 @@ function Get-BuildConfig {
         CoverageEnabled                     = if ($testApps.Count -eq 0) {
             $false
         } else {
-            ConvertTo-Boolean (Resolve-CoverageValue 'enabled' 'coverageEnabled' 'ALBT_COVERAGE_ENABLED' $false)
+            ConvertTo-Boolean (Resolve-BlockSwitch 'coverage' 'enabled' 'coverageEnabled' 'ALBT_COVERAGE_ENABLED' $false)
         }
-        BreakingChangeEnabled               = ConvertTo-Boolean (Resolve-BreakingChangeValue 'enabled' 'ALBT_BREAKING_CHANGE_ENABLED' $false)
+        ModuleGateEnabled                   = ConvertTo-Boolean (Resolve-BlockSwitch 'moduleGate' 'enabled' 'moduleGateEnabled' 'ALBT_MODULE_GATE_ENABLED' $false)
+        ModuleGateRootNamespace             = $moduleGateRootNamespace
+        BreakingChangeEnabled              = ConvertTo-Boolean (Resolve-BreakingChangeValue 'enabled' 'ALBT_BREAKING_CHANGE_ENABLED' $false)
         ReleaseAppDir                       = $releaseAppDir
     }
 
@@ -1486,6 +1497,7 @@ function Write-TestSummary {
         [Parameter(Mandatory)]
         $CoverageBlock,
         $ErrorBlock,
+        $ModuleGateBlock,
         [string]$Path
     )
     $summary = [ordered]@{
@@ -1494,6 +1506,7 @@ function Write-TestSummary {
         runs     = @($Results | ForEach-Object { ConvertTo-RunRecord $_ })
         coverage = $CoverageBlock
     }
+    if ($ModuleGateBlock) { $summary.moduleGate = $ModuleGateBlock }
     if ($ErrorBlock) { $summary.error = $ErrorBlock }
     $summary | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $Path -Force
 }
