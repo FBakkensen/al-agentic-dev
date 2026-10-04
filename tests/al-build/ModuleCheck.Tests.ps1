@@ -136,6 +136,32 @@ Describe 'Invoke-ModuleCheck' {
             @($result.Violations).Count | Should -Be 0
         }
 
+        It 'reads the namespace after a line comment that mentions the start of a block comment' {
+            $root = New-ModuleFixtureRepo @{
+                'app/src/Posting/Post.Codeunit.al' = "// see /* the design notes`nnamespace Contoso.Sales.Posting;`ncodeunit 50100 Posting`n{`n}`n"
+            }
+
+            $result = Invoke-FixtureCheck -Root $root
+
+            @($result.Violations).Count | Should -Be 0
+        }
+
+        It 'fails a folder that is not a single AL identifier and suggests no namespace built from it' {
+            $root = New-ModuleFixtureRepo @{
+                'app/src/Sales Order/Post.Codeunit.al' = New-AlFile 'Contoso.Sales.Order'
+                'app/src/Sales.Order/Ship.Codeunit.al' = New-AlFile 'Contoso.Sales.Order' 'codeunit 50101 Ship'
+            }
+
+            $result = Invoke-FixtureCheck -Root $root
+
+            @($result.Violations).Count | Should -Be 2
+            $byFile = @{}
+            $result.Violations | ForEach-Object { $byFile[$_.File] = $_ }
+            $byFile['app/src/Sales Order/Post.Codeunit.al'].Message | Should -Match ([regex]::Escape("Folder 'Sales Order'"))
+            $byFile['app/src/Sales.Order/Ship.Codeunit.al'].Message | Should -Match ([regex]::Escape("Folder 'Sales.Order'"))
+            $result.Violations | ForEach-Object { $_.Message | Should -Not -Match 'namespace Contoso' }
+        }
+
         It 'compares namespaces and folders without regard to case and ignores quoted identifiers' {
             $root = New-ModuleFixtureRepo @{
                 'app/src/Posting/Post.Codeunit.al' = New-AlFile 'contoso.sales."Posting"'

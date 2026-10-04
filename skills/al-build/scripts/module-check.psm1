@@ -100,15 +100,15 @@ function ConvertTo-ModuleGateBlock {
         return [ordered]@{ enabled = $false }
     }
 
-    $finding = {
-        param($Item)
-        [ordered]@{ rule = $Item.Rule; file = $Item.File; line = $Item.Line; message = $Item.Message }
-    }
+    $violations = if ($Result) { @($Result.Violations) } else { @() }
+    $warnings = if ($Result) { @($Result.Warnings) } else { @() }
+    $skippedRules = if ($Result) { @($Result.SkippedRules) } else { @() }
+    $record = { [ordered]@{ rule = $_.Rule; file = $_.File; line = $_.Line; message = $_.Message } }
     return [ordered]@{
         enabled      = $true
-        violations   = @(if ($Result) { @($Result.Violations) | ForEach-Object { & $finding $_ } })
-        warnings     = @(if ($Result) { @($Result.Warnings) | ForEach-Object { & $finding $_ } })
-        skippedRules = @(if ($Result) { @($Result.SkippedRules) })
+        violations   = @($violations | ForEach-Object $record)
+        warnings     = @($warnings | ForEach-Object $record)
+        skippedRules = $skippedRules
     }
 }
 
@@ -156,10 +156,10 @@ function Get-NamespacePathViolation {
             } |
             Sort-Object FullName
 
+        $sourceRootRelative = [System.IO.Path]::GetRelativePath($repoFull, $sourceRoot) -replace '\\', '/'
         foreach ($file in $files) {
             $repoRelative = [System.IO.Path]::GetRelativePath($repoFull, $file.FullName) -replace '\\', '/'
             $folder = [System.IO.Path]::GetRelativePath($sourceRoot, $file.DirectoryName)
-            $sourceRootRelative = [System.IO.Path]::GetRelativePath($repoFull, $sourceRoot) -replace '\\', '/'
             $declaration = Read-AlNamespaceDeclaration -Path $file.FullName
 
             if ($folder -eq '..' -or $folder.StartsWith('..' + [System.IO.Path]::DirectorySeparatorChar)) {
@@ -169,8 +169,15 @@ function Get-NamespacePathViolation {
             }
 
             $segments = @(if ($folder -ne '.') { $folder -split '[\\/]' })
+            $badSegment = $segments | Where-Object { $_ -notmatch '^[A-Za-z_][A-Za-z0-9_]*$' } | Select-Object -First 1
+            if ($badSegment) {
+                New-ModuleViolation -Rule 1 -File $repoRelative -Line 1 `
+                    -Message "Folder '$badSegment' is not a single AL identifier, so no namespace can equal the path. Rename it to letters, digits, and underscores, starting with a letter or underscore."
+                continue
+            }
+
             $expected = (@($app.Namespace) + $segments) -join '.'
-            $expectedFolder = (@($sourceRootRelative) + $segments) -join '/'
+            $expectedFolder = (@($sourceRootRelative) + $segments | Where-Object { $_ -ne '.' }) -join '/'
 
             if (-not $declaration.Namespace) {
                 New-ModuleViolation -Rule 1 -File $repoRelative -Line $declaration.ObjectLine `
@@ -182,7 +189,7 @@ function Get-NamespacePathViolation {
                 $prefix = $app.Namespace + '.'
                 $moveTo = if ($declaration.Namespace.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
                     $below = $declaration.Namespace.Substring($prefix.Length) -replace '\.', '/'
-                    ", or move the file to $sourceRootRelative/$below"
+                    ", or move the file to $((@($sourceRootRelative, $below) | Where-Object { $_ -ne '.' }) -join '/')"
                 } else {
                     ", or move the file under a namespace that starts with $($app.Namespace)"
                 }
@@ -206,7 +213,8 @@ function Read-AlNamespaceDeclaration {
 
     $text = Get-Content -LiteralPath $Path -Raw
     if ($null -eq $text) { $text = '' }
-    $blanked = [regex]::Replace($text, '/\*.*?\*/', { param($m) $m.Value -replace '[^\r\n]', ' ' }, [System.Text.RegularExpressions.RegexOptions]::Singleline)
+    # One left-to-right pass: whichever comment opens first wins, so a // before a /* ends the line.
+    $blanked = [regex]::Replace($text, '/\*.*?\*/|//[^\r\n]*', { param($m) $m.Value -replace '[^\r\n]', ' ' }, [System.Text.RegularExpressions.RegexOptions]::Singleline)
     $lines = $blanked -split "`r?`n"
 
     $objectKeyword = '^\s*(table|tableextension|page|pageextension|pagecustomization|codeunit|report|reportextension|xmlport|query|enum|enumextension|interface|permissionset|permissionsetextension|entitlement|controladdin|profile|dotnet)\s+\S'
@@ -214,7 +222,7 @@ function Read-AlNamespaceDeclaration {
     $namespaceLine = 1
     $objectLine = 1
     for ($i = 0; $i -lt $lines.Count; $i++) {
-        $code = $lines[$i] -replace '//.*$', ''
+        $code = $lines[$i]
         if ($code -match '^\s*namespace\s+(.+?)\s*;') {
             $namespace = $Matches[1] -replace '"', ''
             $namespaceLine = $i + 1

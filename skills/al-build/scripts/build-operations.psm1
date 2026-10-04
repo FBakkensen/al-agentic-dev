@@ -142,6 +142,16 @@ function Get-BuildConfig {
         return $Default
     }
 
+    # A key inside a config block of al-build.json; $null when the block or key is absent.
+    function Get-BlockFileValue {
+        param([string]$Block, [string]$Key)
+        if ($defaults.ContainsKey($Block) -and $defaults[$Block] -is [hashtable]) {
+            $blockValues = $defaults[$Block]
+            if ($blockValues.ContainsKey($Key)) { return $blockValues[$Key] }
+        }
+        return $null
+    }
+
     # Boolean switch inside a config block: override, then a strict env boolean, then the file.
     function Resolve-BlockSwitch {
         param([string]$Block, [string]$Key, [string]$OverrideKey, [string]$EnvVar, $Default)
@@ -152,19 +162,13 @@ function Get-BuildConfig {
         if ($null -ne $envVal) {
             return ConvertFrom-EnvironmentBoolean -Name $EnvVar -Value $envVal
         }
-        if ($defaults.ContainsKey($Block) -and $defaults[$Block] -is [hashtable]) {
-            $blockValues = $defaults[$Block]
-            if ($blockValues.ContainsKey($Key) -and $null -ne $blockValues[$Key]) { return $blockValues[$Key] }
-        }
+        $fileValue = Get-BlockFileValue $Block $Key
+        if ($null -ne $fileValue) { return $fileValue }
         return $Default
     }
 
     # The app's root namespace, from moduleGate.rootNamespace only; '' when unset.
-    $moduleGateRootNamespace = ''
-    if ($defaults.ContainsKey('moduleGate') -and $defaults['moduleGate'] -is [hashtable]) {
-        $rootNamespace = $defaults['moduleGate']['rootNamespace']
-        if ($null -ne $rootNamespace) { $moduleGateRootNamespace = ([string]$rootNamespace).Trim() }
-    }
+    $moduleGateRootNamespace = ([string](Get-BlockFileValue 'moduleGate' 'rootNamespace')).Trim()
 
     # The real Release .app's folder: no default, $null when unset. A relative value is repo-root relative.
     $releaseAppDir = Resolve-BreakingChangeValue 'releaseAppDir' 'ALBT_RELEASE_APP_DIR' $null
@@ -203,7 +207,7 @@ function Get-BuildConfig {
         }
         ModuleGateEnabled                   = ConvertTo-Boolean (Resolve-BlockSwitch 'moduleGate' 'enabled' 'moduleGateEnabled' 'ALBT_MODULE_GATE_ENABLED' $false)
         ModuleGateRootNamespace             = $moduleGateRootNamespace
-        BreakingChangeEnabled              = ConvertTo-Boolean (Resolve-BreakingChangeValue 'enabled' 'ALBT_BREAKING_CHANGE_ENABLED' $false)
+        BreakingChangeEnabled               = ConvertTo-Boolean (Resolve-BreakingChangeValue 'enabled' 'ALBT_BREAKING_CHANGE_ENABLED' $false)
         ReleaseAppDir                       = $releaseAppDir
     }
 
