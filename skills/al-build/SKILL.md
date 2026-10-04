@@ -27,7 +27,8 @@ Green is zero errors and zero warnings. `test.ps1` exits 0 on warnings by defaul
 The module gate — `moduleGate.enabled` (`ALBT_MODULE_GATE_ENABLED`; off when omitted, `init.ps1` writes it on) and `moduleGate.rootNamespace` — makes `test.ps1` run a text-only module check before it compiles anything, over the main app and every test app (root namespace plus `.Test`):
 - Rule 1: every AL file declares a namespace equal to the root namespace plus its folder path below `src` (the app folder when there is none). Each violation names the file, the line, and the move, and turns the gate red.
 - Rule 2: a namespace `X.Internal` declared in these apps belongs to module `X`. A `using` or qualified name that reaches it from outside `X`, `X.Internal`, and below — a test app included — names the module's interface folder to use instead.
-- `summary.json`'s `moduleGate` block (`enabled`, `violations`, `warnings`, `skippedRules`) sits next to `coverage`.
+- Rule 3: the working tree against the merge base with the default branch (`origin/HEAD`). Open code — a namespace that is no module root and not inside an `.Internal` — takes no new object, callable procedure, or event subscriber, and no `local` procedure made callable; each violation names the file, the line, and the move: place the new code in a module. A new `local` procedure warns; edits inside a procedure pass. With no merge base the rule goes into `skippedRules`, never passed.
+- `summary.json`'s `moduleGate` block (`enabled`, `violations`, `warnings`, `base`, `skippedRules`) sits next to `coverage`.
 
 ## Read the result, not the output
 
