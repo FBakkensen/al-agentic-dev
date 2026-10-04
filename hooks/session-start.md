@@ -38,3 +38,11 @@ In an AL repository, when an entry skill below runs, load its AL addition beside
 | `/mattpocock-skills:wayfinder` | `/al-wayfinder` |
 | `/mattpocock-skills:prototype` | `/al-prototype` |
 | `/mattpocock-skills:research` | `/al-research` |
+
+## Reading an AL path
+
+In an AL repository whose `al-build.json` has `moduleGate.enabled` true, the path of code says how to treat it:
+
+- A folder named `Internal` holds a module's internals: call them only from inside that module.
+- A folder with an `Internal` child is a module's interface: call the module from anywhere, through that folder.
+- Any other folder is open code: put no new behavior there; carve a child namespace with its own `Internal` and put the behavior in that module.

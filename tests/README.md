@@ -22,7 +22,7 @@ The drift check fetches over anonymous https: mattpocock-skills at the commit `c
 
 `scripts/Update-EvalBasePlugins.ps1` reuses that resolution to write every Base plugin into `.base-plugins/` for the trigger evals, and `tests/BasePluginDrift.Tests.ps1` also covers its refresh and failure paths. `tests/EvalSuite.Tests.ps1` fails when a skill has no trigger case or a case drops a Base plugin copy or does not pin `model: sonnet` and `runs: 5`.
 
-`tests/SessionStartHook.Tests.ps1` runs exactly the command in `hooks/hooks.json` as a process, with `${CLAUDE_PLUGIN_ROOT}` pointed at the checkout, parses stdout as JSON, and asserts the `SessionStart` event name, the `▶ <model> · <brief> → <return>` line, the delegation-cost text, and the `## Entry skills and their AL additions` heading with each entry → addition row.
+`tests/SessionStartHook.Tests.ps1` runs exactly the command in `hooks/hooks.json` for each of `SessionStart` and `SubagentStart` as a process, with `${CLAUDE_PLUGIN_ROOT}` pointed at the checkout, parses stdout as JSON, and asserts the event name, the `## Entry skills and their AL additions` heading with each entry → addition row, and the `## Reading an AL path` heading with its three-line rule. `SessionStart` also carries the `▶ <model> · <brief> → <return>` line and the delegation-cost text; `SubagentStart` carries neither and fails when either section is missing.
 
 ## Loading this checkout's plugin in isolation
 
