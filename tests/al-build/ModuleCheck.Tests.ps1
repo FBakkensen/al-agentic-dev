@@ -296,9 +296,9 @@ Describe 'Invoke-ModuleCheck' {
 
         It 'passes the module''s own root namespace, its .Internal, and anything below .Internal' {
             $root = New-ModuleFixtureRepo (New-InternalModuleFiles @{
-                'app/src/Posting/Post.Codeunit.al'                  = New-ReachingFile 'Contoso.Sales.Posting' 'using Contoso.Sales.Posting.Internal;' -Object 'codeunit 50100 Posting'
-                'app/src/Posting/Internal/Rules.Codeunit.al'         = New-ReachingFile 'Contoso.Sales.Posting.Internal' 'using Contoso.Sales.Posting.Internal.Deep;' -Object 'codeunit 50101 Rules'
-                'app/src/Posting/Internal/Deep/Deep.Codeunit.al'     = New-ReachingFile 'Contoso.Sales.Posting.Internal.Deep' 'using Contoso.Sales.Posting.Internal;' -Object 'codeunit 50103 Deep'
+                'app/src/Posting/Post.Codeunit.al'               = New-ReachingFile 'Contoso.Sales.Posting' 'using Contoso.Sales.Posting.Internal;' -Object 'codeunit 50100 Posting'
+                'app/src/Posting/Internal/Rules.Codeunit.al'     = New-ReachingFile 'Contoso.Sales.Posting.Internal' 'using Contoso.Sales.Posting.Internal.Deep;' -Object 'codeunit 50101 Rules'
+                'app/src/Posting/Internal/Deep/Deep.Codeunit.al' = New-ReachingFile 'Contoso.Sales.Posting.Internal.Deep' 'using Contoso.Sales.Posting.Internal;' -Object 'codeunit 50103 Deep'
             })
 
             $result = Invoke-FixtureCheck -Root $root
@@ -346,7 +346,7 @@ Describe 'Invoke-ModuleCheck' {
 
         It 'fails a parent namespace and passes a namespace that only shares the Internal prefix' {
             $root = New-ModuleFixtureRepo (New-InternalModuleFiles @{
-                'app/src/Root.Codeunit.al'                     = New-ReachingFile 'Contoso.Sales' 'using Contoso.Sales.Posting.Internal;' -Object 'codeunit 50104 Root'
+                'app/src/Root.Codeunit.al'                        = New-ReachingFile 'Contoso.Sales' 'using Contoso.Sales.Posting.Internal;' -Object 'codeunit 50104 Root'
                 'app/src/Posting/InternalAudit/Audit.Codeunit.al' = New-ReachingFile 'Contoso.Sales.Posting.InternalAudit' 'using Contoso.Sales.Posting.InternalAudit;' -Object 'codeunit 50105 Audit'
             })
 
@@ -356,10 +356,34 @@ Describe 'Invoke-ModuleCheck' {
             $result.Violations[0].File | Should -Be 'app/src/Root.Codeunit.al'
         }
 
+        It 'fails a file in a sub-namespace of the module, which is not the module''s root or its .Internal' {
+            $root = New-ModuleFixtureRepo (New-InternalModuleFiles @{
+                'app/src/Posting/Validation/Check.Codeunit.al' = New-ReachingFile 'Contoso.Sales.Posting.Validation' 'using Contoso.Sales.Posting.Internal;' -Object 'codeunit 50106 Check'
+            })
+
+            $result = Invoke-FixtureCheck -Root $root
+
+            @($result.Violations).Count | Should -Be 1
+            $result.Violations[0].File | Should -Be 'app/src/Posting/Validation/Check.Codeunit.al'
+        }
+
+        It 'matches a module whose namespace has a quoted segment with a space' {
+            $root = New-ModuleFixtureRepo @{
+                'app/src/Posting/Internal/Rules.Codeunit.al' = New-AlFile 'Contoso.Sales."Posting Area".Internal' 'codeunit 50101 Rules'
+                'app/src/Shipping/Ship.Codeunit.al'          = New-ReachingFile 'Contoso.Sales.Shipping' 'using Contoso.Sales."Posting Area".Internal;'
+            }
+
+            $result = Invoke-FixtureCheck -Root $root
+
+            $rule2 = @($result.Violations | Where-Object { $_.Rule -eq 2 })
+            $rule2.Count | Should -Be 1
+            $rule2[0].File | Should -Be 'app/src/Shipping/Ship.Codeunit.al'
+        }
+
         It 'names the app source root as the interface folder of the root namespace''s module' {
             $root = New-ModuleFixtureRepo @{
-                'app/src/Internal/Rules.Codeunit.al'  = New-AlFile 'Contoso.Sales.Internal' 'codeunit 50101 Rules'
-                'app/src/Posting/Post.Codeunit.al'    = New-ReachingFile 'Contoso.Sales.Posting' 'using Contoso.Sales.Internal;' -Object 'codeunit 50100 Posting'
+                'app/src/Internal/Rules.Codeunit.al' = New-AlFile 'Contoso.Sales.Internal' 'codeunit 50101 Rules'
+                'app/src/Posting/Post.Codeunit.al'   = New-ReachingFile 'Contoso.Sales.Posting' 'using Contoso.Sales.Internal;' -Object 'codeunit 50100 Posting'
             }
 
             $result = Invoke-FixtureCheck -Root $root

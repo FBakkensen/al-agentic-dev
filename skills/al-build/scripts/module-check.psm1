@@ -12,6 +12,8 @@
 .NOTES
     Rule 1: every AL file declares a namespace, and its folder path below the
     app's source root equals that namespace after the root namespace.
+    Rule 2: a namespace X.Internal declared in the gate's apps belongs to module
+    X; only files in X or in X.Internal and below may reference it.
 #>
 
 Set-StrictMode -Version Latest
@@ -245,8 +247,8 @@ function Get-InternalReachViolation {
         foreach ($file in $source.Files) {
             [pscustomobject]@{
                 File               = [System.IO.Path]::GetRelativePath($repoFull, $file.FullName) -replace '\\', '/'
-                Namespace          = (Read-AlNamespaceDeclaration -Path $file.FullName).Namespace
-                Code               = Get-AlCodeText -Path $file.FullName
+                Namespace          = ConvertTo-CodeName -Name (Read-AlNamespaceDeclaration -Path $file.FullName).Namespace
+                Code              = Get-AlCodeText -Path $file.FullName
                 AppNamespace       = $app.Namespace
                 SourceRootRelative = $sourceRootRelative
             }
@@ -257,10 +259,9 @@ function Get-InternalReachViolation {
     $modules = @{}
     foreach ($entry in $entries) {
         if (-not $entry.Namespace) { continue }
-        $segments = $entry.Namespace -split '\.'
-        $at = Find-InternalSegment -Segments $segments
-        if ($at -lt 0) { continue }
-        $module = $segments[0..($at - 1)] -join '.'
+        $reach = Get-InternalReach -Name $entry.Namespace
+        if (-not $reach) { continue }
+        $module = $reach.Module
         if ($modules.ContainsKey($module)) { continue }
         $modules[$module] = if ($module -ieq $entry.AppNamespace) {
             $entry.SourceRootRelative
@@ -277,10 +278,9 @@ function Get-InternalReachViolation {
         for ($i = 0; $i -lt $lines.Count; $i++) {
             $reported = @{}
             foreach ($match in [regex]::Matches($lines[$i], '(?<![\w.])[A-Za-z_]\w*(?:\.\w+)+')) {
-                $segments = $match.Value -split '\.'
-                $at = Find-InternalSegment -Segments $segments
-                if ($at -lt 0) { continue }
-                $module = $segments[0..($at - 1)] -join '.'
+                $reach = Get-InternalReach -Name $match.Value
+                if (-not $reach) { continue }
+                $module = $reach.Module
                 if (-not $modules.ContainsKey($module) -or $reported.ContainsKey($module)) { continue }
 
                 $own = $entry.Namespace -and (
@@ -290,22 +290,42 @@ function Get-InternalReachViolation {
                 if ($own) { continue }
 
                 $reported[$module] = $true
-                $reached = $segments[0..$at] -join '.'
                 $interface = if ($modules[$module]) { "its interface folder $($modules[$module])" } else { "the folder of namespace $module" }
                 New-ModuleViolation -Rule 2 -File $entry.File -Line ($i + 1) `
-                    -Message "$reached is internal to module $module. Use the module's interface in $interface instead."
+                    -Message "$($reach.Reached) is internal to module $module. Use the module's interface in $interface instead."
             }
         }
     }
 }
 
-function Find-InternalSegment {
-    param([Parameter(Mandatory)][string[]]$Segments)
+function ConvertTo-CodeName {
+    <#
+    .SYNOPSIS
+        A dotted name with each segment made one word, the form Get-AlCodeText
+        gives quoted identifiers.
+    #>
+    param([AllowNull()][string]$Name)
 
-    for ($i = 1; $i -lt $Segments.Count; $i++) {
-        if ($Segments[$i] -ieq 'Internal') { return $i }
+    if (-not $Name) { return $Name }
+    return (($Name -split '\.') | ForEach-Object { $_ -replace '\W', '_' }) -join '.'
+}
+
+function Get-InternalReach {
+    <#
+    .SYNOPSIS
+        The module and the .Internal namespace a dotted name reaches, or $null.
+    .DESCRIPTION
+        The first Internal segment after the first one ends the module's name.
+    #>
+    param([Parameter(Mandatory)][string]$Name)
+
+    $segments = $Name -split '\.'
+    for ($i = 1; $i -lt $segments.Count; $i++) {
+        if ($segments[$i] -ieq 'Internal') {
+            return [pscustomobject]@{ Module = $segments[0..($i - 1)] -join '.'; Reached = $segments[0..$i] -join '.' }
+        }
     }
-    return -1
+    return $null
 }
 
 function Get-AlCodeText {
@@ -328,7 +348,7 @@ function Get-AlCodeText {
     $code = [regex]::Replace($text, $tokens, {
         param($m)
         if ($m.Value.StartsWith('"')) { return $m.Value.Trim('"') -replace '\W', '_' }
-        return $m.Value -replace '[^\r\n]', ' '
+        return & $blank $m
     }, [System.Text.RegularExpressions.RegexOptions]::Singleline)
     return [regex]::Replace($code, '(?m)^[ \t]*namespace\s[^;\r\n]*;', $blank)
 }
