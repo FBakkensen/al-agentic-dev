@@ -42,6 +42,8 @@ The Base plugins (`mattpocock-skills`, `bcquality`, and the AL language server) 
 
 For an effort too large for one session, `/mattpocock-skills:wayfinder` plans it as a map of decision tickets before `to-spec`.
 
+When a reply does not land, type `/mattpocock-skills:wait-what`. It re-pitches the reply in ASD-STE100 Simplified Technical English with the `CONTEXT.md` terms that `/al-grill-with-docs` keeps.
+
 Skills you type directly:
 
 | Skill | What it does |
@@ -99,7 +101,7 @@ The `ado` MCP server is fixed to the Azure DevOps organization `naveksaas` and c
 
 Both go in your own settings. No Consumer repository commits either.
 
-- The `al-agentic-dev:AL` output style — Speak BC vocabulary in every word, and a diagram for questions that turn on structure. In `~/.claude/settings.json`:
+- The `al-agentic-dev:AL` output style — Speak BC vocabulary for every BC operation and record, and a diagram for questions that turn on structure. In `~/.claude/settings.json`:
 
   ```json
   { "outputStyle": "al-agentic-dev:AL" }

@@ -422,6 +422,16 @@ Describe 'Skill workflow contracts' {
             $content | Should -Match '/al-commit' -Because "$skill writes repository files"
         }
     }
+
+    It 'scopes the AL style''s word pairs to BC operations and records' {
+        $style = Get-Content -LiteralPath (Join-Path $script:RepoRoot 'output-styles' 'AL.md') -Raw
+
+        $style | Should -Match 'the pairs apply where a word names a BC operation or record'
+        $style | Should -Match 'an ordinary word such as "build" stays'
+        $style | Should -Match 'uses the BC word without saying which word it replaced'
+        $style | Should -Match 'Speak BC vocabulary for every BC operation and record'
+        $style | Should -Not -Match 'in every word'
+    }
 }
 
 Describe 'Tracker neutrality' {
