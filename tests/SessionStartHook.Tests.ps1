@@ -125,14 +125,14 @@ Describe 'SessionStart hook' -Tag 'Process' {
 
     It 'prints the path rule to both hooks from the one section of session-start.md' {
         $source = Get-Content -LiteralPath (Join-Path $script:RepoRoot 'hooks' 'session-start.md') -Raw
-        $section = [regex]::Match($source, '(?ms)^## Reading an AL path\r?\n.*?(?=^## |\z)').Value.Trim()
+        $section = [regex]::Match($source, '(?ms)^## Reading an AL path\r?\n.*?(?=^## |\z)').Value.Trim().Replace("`r`n", "`n")
         $section | Should -Not -BeNullOrEmpty
 
         foreach ($event in 'SessionStart', 'SubagentStart') {
             $result = Invoke-SessionStartHook -PluginRoot $script:RepoRoot -Event $event
             $result.ExitCode | Should -Be 0 -Because $result.Text
             $context = ($result.Text | ConvertFrom-Json).hookSpecificOutput.additionalContext
-            $context.Replace("`r`n", "`n") | Should -BeLike "*$($section.Replace("`r`n", "`n"))*" -Because "$event prints the section as written"
+            $context.Replace("`r`n", "`n").Contains($section) | Should -BeTrue -Because "$event prints the section as written"
         }
     }
 
