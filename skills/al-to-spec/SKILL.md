@@ -47,7 +47,7 @@ Place each verified PNG with its explanatory text under its section, as the Trac
 
 ## Grounding
 
-Every Business Central object, field, action, event, enum value, or dialog text shown is confirmed through lookup in this session. Speak BC on every line.
+Every Business Central object, field, action, event, enum value, or dialog text shown is confirmed through lookup in this session. Write BC vocabulary: Post, Validate, Insert, Ledger Entry, codeunit, procedure.
 
 ## Close
 

@@ -142,6 +142,17 @@ Describe 'Skill workflow contracts' {
         $toSpec | Should -Match '`Building Block View` Level 1 nests here, and a `Runtime View` after it'
         $toSpec | Should -Match 'The spec goes in the spec field the Tracker doc names, under the entry''s headings unchanged'
         $toSpec | Should -Not -Match 'User Story'
+        $toSpec | Should -Match 'Write BC vocabulary: Post, Validate, Insert, Ledger Entry, codeunit, procedure'
+    }
+
+    It 'keeps Speak BC out of every shipped skill' {
+        $offenders = foreach ($file in Get-ChildItem -LiteralPath $script:SkillsRoot -Filter '*.md' -Recurse) {
+            $relative = $file.FullName.Substring($script:SkillsRoot.Length + 1).Replace('\', '/')
+            if ($relative -match 'node_modules') { continue }
+            if ((Get-Content -LiteralPath $file.FullName -Raw) -match 'Speak BC') { "$relative names Speak BC" }
+        }
+
+        $offenders | Should -BeNullOrEmpty
     }
 
     It 'slices the Original work item into child work items and orders Acceptance Criteria for people before agents' {
@@ -155,6 +166,7 @@ Describe 'Skill workflow contracts' {
         $toTickets | Should -Match '`Behavior` precedes `Test specification` when both are present'
         $toTickets | Should -Match 'Either section may be omitted'
         $toTickets | Should -Match 'valid fenced Gherkin'
+        $toTickets | Should -Match 'Scenarios use BC business words: Post not submit, Ledger Entry not transaction'
         $toTickets | Should -Not -Match 'User Story'
         $tdd | Should -Match 'acceptance criteria, placed as the Tracker doc''s "write the acceptance criteria" says, after `## Behavior` when both are present'
     }
