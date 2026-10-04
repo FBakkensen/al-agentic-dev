@@ -136,38 +136,24 @@ Describe 'SessionStart hook' -Tag 'Process' {
         }
     }
 
-    It 'fails a subagent start when the path rule section is missing' {
-        $plugin = Join-Path $TestDrive 'no-path-rule-plugin'
+    It 'fails a subagent start when the "<Heading>" section is missing' -ForEach @(
+        @{ Heading = 'Reading an AL path' }
+        @{ Heading = 'Entry skills and their AL additions' }
+    ) {
+        $plugin = Join-Path $TestDrive 'missing-section-plugin'
         New-Item -ItemType Directory -Path (Join-Path $plugin 'hooks') -Force | Out-Null
         foreach ($name in 'hooks.json', 'Write-SessionStart.ps1') {
             Copy-Item -LiteralPath (Join-Path $script:RepoRoot 'hooks' $name) -Destination (Join-Path $plugin 'hooks')
         }
         $text = Get-Content -LiteralPath (Join-Path $script:RepoRoot 'hooks' 'session-start.md') -Raw
-        $text = [regex]::Replace($text, '(?ms)^## Reading an AL path\r?\n.*?(?=^## |\z)', '')
+        $text = [regex]::Replace($text, '(?ms)^## ' + [regex]::Escape($Heading) + '\r?\n.*?(?=^## |\z)', '')
         Set-Content -LiteralPath (Join-Path $plugin 'hooks' 'session-start.md') -Value $text -NoNewline
 
         $result = Invoke-SessionStartHook -PluginRoot $plugin -Event SubagentStart
 
         $result.ExitCode | Should -Not -Be 0
-        $result.Text | Should -Match 'Reading an AL path'
+        $result.Text | Should -Match ([regex]::Escape($Heading))
     }
-
-    It 'fails a subagent start when the entry → addition section is missing' {
-        $plugin = Join-Path $TestDrive 'no-table-plugin'
-        New-Item -ItemType Directory -Path (Join-Path $plugin 'hooks') -Force | Out-Null
-        foreach ($name in 'hooks.json', 'Write-SessionStart.ps1') {
-            Copy-Item -LiteralPath (Join-Path $script:RepoRoot 'hooks' $name) -Destination (Join-Path $plugin 'hooks')
-        }
-        $text = Get-Content -LiteralPath (Join-Path $script:RepoRoot 'hooks' 'session-start.md') -Raw
-        $text = [regex]::Replace($text, '(?ms)^## Entry skills and their AL additions\r?\n.*?(?=^## |\z)', '')
-        Set-Content -LiteralPath (Join-Path $plugin 'hooks' 'session-start.md') -Value $text -NoNewline
-
-        $result = Invoke-SessionStartHook -PluginRoot $plugin -Event SubagentStart
-
-        $result.ExitCode | Should -Not -Be 0
-        $result.Text | Should -Match 'Entry skills and their AL additions'
-    }
-
     It 'fails a subagent start when the text is missing' {
         $plugin = Join-Path $TestDrive 'subagent-plugin'
         New-Item -ItemType Directory -Path (Join-Path $plugin 'hooks') -Force | Out-Null
