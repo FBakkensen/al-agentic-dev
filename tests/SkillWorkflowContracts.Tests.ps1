@@ -141,10 +141,13 @@ Describe 'Skill workflow contracts' {
     }
 
     It 'keeps Speak BC out of every shipped skill' {
-        $hits = Get-ChildItem -LiteralPath $script:SkillsRoot -Recurse -File -Include '*.md' |
-            Where-Object { (Get-Content -LiteralPath $_.FullName -Raw) -match 'Speak BC' }
+        $offenders = foreach ($file in Get-ChildItem -LiteralPath $script:SkillsRoot -Filter '*.md' -Recurse) {
+            $relative = $file.FullName.Substring($script:SkillsRoot.Length + 1).Replace('\', '/')
+            if ($relative -match 'node_modules') { continue }
+            if ((Get-Content -LiteralPath $file.FullName -Raw) -match 'Speak BC') { "$relative names Speak BC" }
+        }
 
-        @($hits).Count | Should -Be 0
+        $offenders | Should -BeNullOrEmpty
     }
 
     It 'slices the Original work item into child work items and orders Acceptance Criteria for people before agents' {
