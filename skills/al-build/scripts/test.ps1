@@ -356,7 +356,11 @@ if ($failedRuns) {
 
 Write-BuildHeader 'Test Complete'
 Show-RunnerTotals $testResults
-Write-BuildMessage -Type Success -Message "All tests passed with zero warnings and zero errors"
+$moduleNotes = @()
+if ($moduleResult -and @($moduleResult.Warnings).Count -gt 0) { $moduleNotes += "$(@($moduleResult.Warnings).Count) warnings" }
+if ($moduleResult -and @($moduleResult.SkippedRules).Count -gt 0) { $moduleNotes += "$(@($moduleResult.SkippedRules).Count) rules skipped" }
+$moduleSuffix = if ($moduleNotes) { " (module gate: $($moduleNotes -join ', '))" } else { '' }
+Write-BuildMessage -Type Success -Message "All tests passed with zero warnings and zero errors$moduleSuffix"
 $gateOutcome = 'passed'
 $script:GateExitCode = 0
 

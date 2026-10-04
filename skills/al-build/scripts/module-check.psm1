@@ -98,6 +98,7 @@ function Invoke-ModuleCheck {
         Violations   = @($violations)
         Warnings     = @($warnings)
         SkippedRules = @($skippedRules)
+        Base         = $openCode.Base
     }
 }
 
@@ -106,7 +107,8 @@ function ConvertTo-ModuleGateBlock {
     .SYNOPSIS
         Shape the module check result as summary.json's moduleGate block.
     .DESCRIPTION
-        An off gate carries nothing beyond the flag.
+        An off gate carries nothing beyond the flag. The base is the ref rule 3
+        compared with and its merge base with HEAD, $null when rule 3 was skipped.
     #>
     [CmdletBinding()]
     param(
@@ -123,11 +125,17 @@ function ConvertTo-ModuleGateBlock {
     $violations = if ($Result) { @($Result.Violations) } else { @() }
     $warnings = if ($Result) { @($Result.Warnings) } else { @() }
     $skippedRules = if ($Result) { @($Result.SkippedRules) } else { @() }
+    $base = if ($Result -and $Result.PSObject.Properties['Base'] -and $Result.Base) {
+        [ordered]@{ ref = $Result.Base.Ref; mergeBase = $Result.Base.MergeBase }
+    } else {
+        $null
+    }
     $record = { [ordered]@{ rule = $_.Rule; file = $_.File; line = $_.Line; message = $_.Message } }
     return [ordered]@{
         enabled      = $true
         violations   = @($violations | ForEach-Object $record)
         warnings     = @($warnings | ForEach-Object $record)
+        base         = $base
         skippedRules = $skippedRules
     }
 }
@@ -458,7 +466,8 @@ function Get-OpenCodeFinding {
         ID-less objects by name); procedures by object and name, counted. The
         current side is the working tree, the base side the merge base's
         committed files; the working tree is never written.
-        Returns Violations, Warnings, and SkippedReason (empty when rule 3 ran).
+        Returns Violations, Warnings, SkippedReason (empty when rule 3 ran),
+        and Base (the ref and merge base compared, $null when skipped).
     #>
     param(
         [Parameter(Mandatory)][string]$RepoRoot,
@@ -468,7 +477,7 @@ function Get-OpenCodeFinding {
 
     $base = Resolve-ModuleMergeBase -RepoRoot $RepoRoot -BaseRef $BaseRef
     if ($base.Reason) {
-        return [pscustomobject]@{ Violations = @(); Warnings = @(); SkippedReason = $base.Reason }
+        return [pscustomobject]@{ Violations = @(); Warnings = @(); SkippedReason = $base.Reason; Base = $null }
     }
 
     $repoFull = [System.IO.Path]::GetFullPath($RepoRoot)
@@ -494,6 +503,7 @@ function Get-OpenCodeFinding {
         Violations    = @($violations | Sort-Object File, Line)
         Warnings      = @($warnings | Sort-Object File, Line)
         SkippedReason = ''
+        Base          = [pscustomobject]@{ Ref = $BaseRef; MergeBase = $base.Sha }
     }
 }
 
@@ -538,7 +548,7 @@ function Get-BaseProcedureMap {
     param(
         [Parameter(Mandatory)][string]$RepoRoot,
         [Parameter(Mandatory)][string]$Revision,
-        [Parameter(Mandatory)][AllowEmptyCollection()][string[]]$AppRelatives
+        [Parameter(Mandatory)][AllowEmptyCollection()][AllowEmptyString()][string[]]$AppRelatives
     )
 
     $owners = @{}
@@ -573,7 +583,7 @@ function Get-TreePathApp {
     #>
     param(
         [Parameter(Mandatory)][string]$RelativePath,
-        [Parameter(Mandatory)][AllowEmptyCollection()][string[]]$AppRelatives
+        [Parameter(Mandatory)][AllowEmptyCollection()][AllowEmptyString()][string[]]$AppRelatives
     )
 
     foreach ($appRelative in $AppRelatives) {

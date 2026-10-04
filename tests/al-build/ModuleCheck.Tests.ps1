@@ -418,6 +418,21 @@ Describe 'ConvertTo-ModuleGateBlock' {
         $block.violations[0].rule | Should -Be 1
         @($block.warnings).Count | Should -Be 0
         @($block.skippedRules).Count | Should -Be 0
+        $block.base | Should -BeNullOrEmpty
+    }
+
+    It 'carries the ref and merge base rule 3 compared with' {
+        $result = [pscustomobject]@{
+            Violations   = @()
+            Warnings     = @()
+            SkippedRules = @()
+            Base         = [pscustomobject]@{ Ref = 'origin/main'; MergeBase = '0123abc' }
+        }
+
+        $block = ConvertTo-ModuleGateBlock -Enabled $true -Result $result
+
+        $block.base.ref | Should -Be 'origin/main'
+        $block.base.mergeBase | Should -Be '0123abc'
     }
 }
 
@@ -537,6 +552,8 @@ $Extra}
             $found[0].Message | Should -Match 'codeunit 50101 Extra'
             $found[0].Message | Should -Match 'Place the new code in a module'
             @($result.SkippedRules).Count | Should -Be 0
+            $result.Base.Ref | Should -Be 'main'
+            $result.Base.MergeBase | Should -Be (& git -C $root rev-parse main)
         }
 
         It 'fails a new object in a file that declares no namespace' {
@@ -586,6 +603,14 @@ $Extra}
 
             $found.Count | Should -Be 1
             $found[0].Line | Should -Be (Get-LineOf $root $script:PostingFile 'procedure Post(Reason: Text)')
+        }
+
+        It 'counts one new procedure when an overload is added beside a changed parameter list' {
+            $root = New-Rule3Repo -Base (Get-BaseFiles) -Change @{
+                $script:PostingFile = New-PostingAl -PostSignature 'procedure Post(Reason: Text)' -Extra "`n    procedure Post(Amount: Decimal)`n    begin`n    end;`n"
+            }
+
+            (Get-Rule3 (Invoke-Rule3Check -Root $root).Violations).Count | Should -Be 1
         }
 
         It 'fails a new event subscriber even though it is local' {
@@ -821,6 +846,7 @@ $Extra}
             @($result.SkippedRules).Count | Should -Be 1
             $result.SkippedRules[0] | Should -Match '^Rule 3 skipped: '
             $result.SkippedRules[0] | Should -Match 'default branch'
+            $result.Base | Should -BeNullOrEmpty
             @(Get-Rule3 $result.Violations).Count | Should -Be 0
         }
 
