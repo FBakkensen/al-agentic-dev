@@ -11,9 +11,9 @@ When this addition loads and `/simplify` has not run, run `/simplify` with the S
 
 ## Freeze
 
-Gherkin, the reviewed AAA expected values and proof levels, and the Level 1 module interface are fixed. Read the diff, the receipt, and the `Current-to-final proof map`, and trace consumers before a seam moves. Every BC object, table, field, procedure, event, enum value, test library, or dialog text used is confirmed by a lookup in the current session.
+Gherkin, the reviewed AAA expected values and proof levels, the Level 1 module interface, and each module's root namespace are fixed; a module's `.Internal` may be reshaped behind it. Read the diff, the receipt, and the `Current-to-final proof map`, and trace consumers before a seam moves. Every BC object, table, field, procedure, event, enum value, test library, or dialog text used is confirmed by a lookup in the current session.
 
-A cleanup that would change behavior, an expected value, a proof level, or the Level 1 interface goes to the user before it is applied.
+A cleanup that would change behavior, an expected value, a proof level, or a module's interface goes to the user before it is applied.
 
 ## BC thrift
 

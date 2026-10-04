@@ -641,3 +641,46 @@ Describe 'Tracker neutrality' {
         }
     }
 }
+
+Describe 'Module shape' {
+    BeforeAll {
+        $script:ModuleShapeSkills = 'al-codebase-design', 'al-implement', 'al-tdd', 'al-review', 'al-simplify'
+        function Get-ModuleShapeSkill([string]$Name) {
+            Get-Content -LiteralPath (Join-Path $script:SkillsRoot $Name 'SKILL.md') -Raw
+        }
+    }
+
+    It 'states the module shape in the Seams section and keeps the one-implementation rule' {
+        $design = Get-ModuleShapeSkill 'al-codebase-design'
+
+        $design | Should -Match 'root namespace is its interface'
+        $design | Should -Match '`<module>\.Internal` holds its internals'
+        $design | Should -Match 'folder path equals namespace'
+        $design | Should -Match 'carved out of a feature cluster as a child namespace'
+        $design | Should -Match 'everything outside a module is open code'
+        $design | Should -Match 'An AL interface with one implementation stays out unless a second implementation or a stable external contract proves the seam\. An extensible enum plus an interface that other apps implement is such a contract\.'
+    }
+
+    It 'places new behavior in a module, tests a module through its root namespace, and keeps its interface fixed' {
+        (Get-ModuleShapeSkill 'al-implement') | Should -Match 'New behavior lands in a module.*never in open code'
+        (Get-ModuleShapeSkill 'al-tdd') | Should -Match 'A module is tested through its root namespace.*never `\.Internal`'
+        (Get-ModuleShapeSkill 'al-simplify') | Should -Match 'each module''s root namespace.*are fixed'
+    }
+
+    It 'flags a test that reaches a module''s .Internal' {
+        (Get-ModuleShapeSkill 'al-review') | Should -Match 'a test that reaches a module''s `\.Internal` is a finding'
+    }
+
+    It 'never calls open code legacy' {
+        foreach ($name in $script:ModuleShapeSkills) {
+            (Get-ModuleShapeSkill $name) | Should -Not -Match 'legacy' -Because "$name speaks of modules and open code"
+        }
+    }
+
+    It 'defines Module and Open code in the glossary' {
+        $context = Get-Content -LiteralPath (Join-Path $script:RepoRoot 'CONTEXT.md') -Raw
+
+        $context | Should -Match '(?m)^\*\*Module\*\*:\r?\n.*root namespace.*`\.Internal`'
+        $context | Should -Match '(?m)^\*\*Open code\*\*:\r?\n.*outside a module'
+    }
+}
