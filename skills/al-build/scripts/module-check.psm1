@@ -248,29 +248,14 @@ function Get-InternalReachViolation {
             [pscustomobject]@{
                 File               = [System.IO.Path]::GetRelativePath($repoFull, $file.FullName) -replace '\\', '/'
                 Namespace          = ConvertTo-CodeName -Name (Read-AlNamespaceDeclaration -Path $file.FullName).Namespace
-                Code              = Get-AlCodeText -Path $file.FullName
+                Code               = Get-AlCodeText -Path $file.FullName
                 AppNamespace       = $app.Namespace
                 SourceRootRelative = $sourceRootRelative
             }
         }
     }
 
-    # A namespace X.Internal declared anywhere in the gate's apps makes X a module; its interface folder is the folder of namespace X.
-    $modules = @{}
-    foreach ($entry in $entries) {
-        if (-not $entry.Namespace) { continue }
-        $reach = Get-InternalReach -Name $entry.Namespace
-        if (-not $reach) { continue }
-        $module = $reach.Module
-        if ($modules.ContainsKey($module)) { continue }
-        $modules[$module] = if ($module -ieq $entry.AppNamespace) {
-            $entry.SourceRootRelative
-        } elseif ($module.StartsWith($entry.AppNamespace + '.', $ignoreCase)) {
-            (@($entry.SourceRootRelative) + ($module.Substring($entry.AppNamespace.Length + 1) -split '\.') | Where-Object { $_ -ne '.' }) -join '/'
-        } else {
-            ''
-        }
-    }
+    $modules = Get-InternalModuleMap -Entries @($entries)
     if ($modules.Count -eq 0) { return }
 
     foreach ($entry in $entries) {
@@ -296,6 +281,34 @@ function Get-InternalReachViolation {
             }
         }
     }
+}
+
+function Get-InternalModuleMap {
+    <#
+    .SYNOPSIS
+        Module name -> interface folder, for every module the entries declare.
+    .DESCRIPTION
+        A namespace X.Internal declared anywhere in the gate's apps makes X a
+        module; its interface folder is the folder of namespace X, empty when X
+        sits outside its app's root namespace.
+    #>
+    param([Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Entries)
+
+    $modules = @{}
+    foreach ($entry in $Entries) {
+        if (-not $entry.Namespace) { continue }
+        $reach = Get-InternalReach -Name $entry.Namespace
+        if (-not $reach -or $modules.ContainsKey($reach.Module)) { continue }
+        $module = $reach.Module
+        $modules[$module] = if ($module -ieq $entry.AppNamespace) {
+            $entry.SourceRootRelative
+        } elseif ($module.StartsWith($entry.AppNamespace + '.', [System.StringComparison]::OrdinalIgnoreCase)) {
+            (@($entry.SourceRootRelative) + ($module.Substring($entry.AppNamespace.Length + 1) -split '\.') | Where-Object { $_ -ne '.' }) -join '/'
+        } else {
+            ''
+        }
+    }
+    return $modules
 }
 
 function ConvertTo-CodeName {
