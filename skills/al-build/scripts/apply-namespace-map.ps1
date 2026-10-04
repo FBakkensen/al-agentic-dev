@@ -2,16 +2,7 @@
 
 <#
 .SYNOPSIS
-    Apply a reviewed namespace map to the main app in one deterministic pass.
-
-.DESCRIPTION
-    Gives every .al file of the app its namespace line and the using lines its
-    references need, moves it to the folder its namespace names below the source
-    root, and renames it to the CodeCop file name. The whole map is checked
-    before the first write: an unknown object, an app object the map leaves out,
-    two files sent to one path, or a namespace that is not a dotted AL identifier
-    under the root fails with nothing written. The map format is in
-    NAMESPACE-MAP.md.
+    Apply a reviewed namespace map to the main app. The contract is NAMESPACE-MAP.md.
 
 .PARAMETER MapPath
     The reviewed map, a JSON array of { type, id, name, namespace }.
@@ -48,10 +39,17 @@ Import-Module (Join-Path $PSScriptRoot 'namespace-map.psm1') -Force -DisableName
 Write-BuildHeader 'Apply Namespace Map'
 
 try {
-    $config = Get-BuildConfig
+    # al-build.json names the app folder and the test apps nested in it; -AppDir alone needs neither.
+    $config = $null
+    if (-not $AppDir -or (Test-Path -LiteralPath (Join-Path (Get-GitRepoRoot) 'al-build.json'))) {
+        $config = Get-BuildConfig
+        Set-BuildEnvironment -Config $config
+    }
     if (-not $AppDir) { $AppDir = $config.AppDir }
-    $result = Invoke-NamespaceMap -MapPath $MapPath -AppDir $AppDir -RootNamespace $RootNamespace `
-        -ExcludeDirs @($config.TestApps + $config.ContainerTestApps | Select-Object -Unique)
+    $excluded = if ($config) { @($config.TestApps + $config.ContainerTestApps | Select-Object -Unique) } else { @() }
+
+    $symbols = Get-SymbolCacheInfo -AppJson (Get-AppJsonObject $AppDir)
+    $result = Invoke-NamespaceMap -MapPath $MapPath -AppDir $AppDir -RootNamespace $RootNamespace -SymbolDir $symbols.CacheDir -ExcludeDirs $excluded
 } catch {
     Write-BuildMessage -Type Error -Message $_.Exception.Message
     exit 1

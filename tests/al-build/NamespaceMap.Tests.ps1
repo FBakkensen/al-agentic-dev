@@ -9,6 +9,7 @@ BeforeAll {
     $script:ScriptsDir = $scriptsDir.Path
     Import-Module (Join-Path $scriptsDir 'namespace-map.psm1') -Force -DisableNameChecking
     Import-Module (Join-Path $scriptsDir 'module-check.psm1') -Force -DisableNameChecking
+    Import-Module (Join-Path $scriptsDir 'common.psm1') -Force -DisableNameChecking
 
     # Writes the files (repo-relative path -> content) as UTF-8, optionally with a BOM, and returns the repository root.
     function New-FixtureRepo {
@@ -36,6 +37,63 @@ BeforeAll {
         return [ordered]@{ type = $Type; id = $Id; name = $Name; namespace = $Namespace }
     }
 
+    Add-Type -AssemblyName System.IO.Compression
+
+    # Writes a symbol package: a NAVX header in front of a zip holding SymbolReference.json, whose
+    # objects (Namespace, Kind such as Tables or Codeunits, Name) sit in the nested namespace tree
+    # the compiler writes. Namespace '' puts an object at the root.
+    function New-SymbolPackage {
+        param([Parameter(Mandatory)][string]$Dir, [Parameter(Mandatory)][string]$FileName, [Parameter(Mandatory)][object[]]$Objects)
+
+        $newNode = { param($Name) [ordered]@{ Name = $Name; Namespaces = [System.Collections.Generic.List[object]]::new() } }
+        $root = & $newNode 'root'
+        $id = 0
+        foreach ($object in $Objects) {
+            $node = $root
+            foreach ($segment in @($object.Namespace -split '\.' | Where-Object { $_ })) {
+                $child = $node.Namespaces | Where-Object { $_.Name -eq $segment } | Select-Object -First 1
+                if (-not $child) { $child = & $newNode $segment; $node.Namespaces.Add($child) }
+                $node = $child
+            }
+            if (-not $node.Contains($object.Kind)) { $node[$object.Kind] = [System.Collections.Generic.List[object]]::new() }
+            $id++
+            $node[$object.Kind].Add([ordered]@{ Id = $id; Name = $object.Name })
+        }
+        $root['Name'] = $FileName
+        $json = ConvertTo-Json -InputObject $root -Depth 30
+
+        $zip = [System.IO.MemoryStream]::new()
+        $archive = [System.IO.Compression.ZipArchive]::new($zip, [System.IO.Compression.ZipArchiveMode]::Create, $true)
+        $writer = [System.IO.StreamWriter]::new($archive.CreateEntry('SymbolReference.json').Open(), [System.Text.UTF8Encoding]::new($true))
+        try { $writer.Write($json) } finally { $writer.Dispose(); $archive.Dispose() }
+        $header = [byte[]]::new(40)
+        [System.Text.Encoding]::ASCII.GetBytes('NAVX').CopyTo($header, 0)
+        [BitConverter]::GetBytes([int]40).CopyTo($header, 4)
+        New-Item -ItemType Directory -Path $Dir -Force | Out-Null
+        [System.IO.File]::WriteAllBytes((Join-Path $Dir $FileName), $header + $zip.ToArray())
+    }
+
+    # The dependency symbols most tests resolve against: Base App-like objects, a codeunit name two
+    # packages put in different namespaces, and one object with no namespace.
+    function New-BaseSymbols {
+        $dir = Join-Path $TestDrive ('symbols-' + [guid]::NewGuid().ToString('N'))
+        New-SymbolPackage -Dir $dir -FileName 'Microsoft.BaseApplication.app' -Objects @(
+            @{ Namespace = 'Microsoft.Sales.Customer'; Kind = 'Tables'; Name = 'Customer' }
+            @{ Namespace = 'Microsoft.Sales.Document'; Kind = 'Tables'; Name = 'Sales Header' }
+            @{ Namespace = 'Microsoft.Sales.Document'; Kind = 'EnumTypes'; Name = 'Sales Document Type' }
+            @{ Namespace = 'Microsoft.Sales.Posting'; Kind = 'Codeunits'; Name = 'Sales-Post' }
+            @{ Namespace = 'Microsoft.Inventory.Item'; Kind = 'Tables'; Name = 'Item' }
+            @{ Namespace = 'System.Tools.A'; Kind = 'Codeunits'; Name = 'Dup Tool' }
+            @{ Namespace = ''; Kind = 'Codeunits'; Name = 'Global Helper' }
+        )
+        New-SymbolPackage -Dir $dir -FileName 'Vendor.Tools.app' -Objects @(
+            @{ Namespace = 'System.Tools.B'; Kind = 'Codeunits'; Name = 'Dup Tool' }
+        )
+        return $dir
+    }
+
+    $script:Symbols = New-BaseSymbols
+
     # Relative path -> hash for every file, plus every directory, so an untouched tree compares equal.
     function Get-TreeSnapshot {
         param([Parameter(Mandatory)][string]$Root)
@@ -50,6 +108,15 @@ BeforeAll {
     function Read-Text {
         param([Parameter(Mandatory)][string]$Path)
         return [System.IO.File]::ReadAllText($Path, [System.Text.UTF8Encoding]::new($false))
+    }
+
+    # Applies the map (entries) to the fixture and asserts the pass throws the message and the tree is byte-identical.
+    function Assert-RefusedUntouched {
+        param([Parameter(Mandatory)][string]$Root, [Parameter(Mandatory)][object[]]$Entries, [Parameter(Mandatory)][string]$Message, [string]$RootNamespace = 'Contoso.Sales', [string]$AppDir = 'app')
+        $mapPath = Write-Map -Root $Root -Entries $Entries
+        $before = Get-TreeSnapshot -Root $Root
+        { Invoke-NamespaceMap -SymbolDir $script:Symbols -MapPath $mapPath -AppDir (Join-Path $Root $AppDir) -RootNamespace $RootNamespace } | Should -Throw -ExpectedMessage $Message
+        Get-TreeSnapshot -Root $Root | Should -BeExactly $before
     }
 
     $script:PostSales = "// Posts a sales document.`r`ncodeunit 50100 `"Post Sales`"`r`n{`r`n    var`r`n        SalesRules: Codeunit `"Sales Rules`";`r`n        SalesLog: Record `"Sales Log`";`r`n        Note: Label 'Sales Rules decide';`r`n`r`n    procedure Post()`r`n    begin`r`n        // Sales Rules are consulted first`r`n        SalesRules.Check();`r`n        SalesLog.Insert();`r`n    end;`r`n}`r`n"
@@ -82,7 +149,7 @@ Describe 'Invoke-NamespaceMap' {
         BeforeAll {
             $script:Root = New-SalesApp
             $mapPath = New-SalesMap -Root $script:Root
-            $script:Result = Invoke-NamespaceMap -MapPath $mapPath -AppDir (Join-Path $script:Root 'app') -RootNamespace 'Contoso.Sales'
+            $script:Result = Invoke-NamespaceMap -SymbolDir $script:Symbols -MapPath $mapPath -AppDir (Join-Path $script:Root 'app') -RootNamespace 'Contoso.Sales'
         }
 
         It 'moves each file to the folder its namespace names below src and gives it the CodeCop file name' {
@@ -128,13 +195,6 @@ Describe 'Invoke-NamespaceMap' {
 
     Context 'a map that cannot be applied' {
         BeforeAll {
-            function Assert-RefusedUntouched {
-                param([Parameter(Mandatory)][string]$Root, [Parameter(Mandatory)][object[]]$Entries, [Parameter(Mandatory)][string]$Message, [string]$RootNamespace = 'Contoso.Sales', [string]$AppDir = 'app')
-                $mapPath = Write-Map -Root $Root -Entries $Entries
-                $before = Get-TreeSnapshot -Root $Root
-                { Invoke-NamespaceMap -MapPath $mapPath -AppDir (Join-Path $Root $AppDir) -RootNamespace $RootNamespace } | Should -Throw -ExpectedMessage $Message
-                Get-TreeSnapshot -Root $Root | Should -BeExactly $before
-            }
             $script:Full = @(
                 (Get-Entry 'codeunit' 50100 'Post Sales' 'Contoso.Sales'),
                 (Get-Entry 'codeunit' 50101 'Sales Rules' 'Contoso.Sales.Rules'),
@@ -178,7 +238,7 @@ Describe 'Invoke-NamespaceMap' {
             }
             $mapPath = Write-Map -Root $root -Entries @((Get-Entry 'codeunit' 50100 'Sales Rules' 'Contoso.Sales.test'))
             $before = Get-TreeSnapshot -Root $root
-            { Invoke-NamespaceMap -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' -ExcludeDirs @((Join-Path $root 'app' 'test')) } |
+            { Invoke-NamespaceMap -SymbolDir $script:Symbols -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' -ExcludeDirs @((Join-Path $root 'app' 'test')) } |
                 Should -Throw -ExpectedMessage '*test/SalesRules.Codeunit.al already exists and is not one of the app''s .al files*'
             Get-TreeSnapshot -Root $root | Should -BeExactly $before
         }
@@ -214,9 +274,9 @@ Describe 'Invoke-NamespaceMap' {
         It 'refuses a file that already has a namespace, so a second run changes nothing' {
             $root = New-SalesApp
             $mapPath = New-SalesMap -Root $root
-            Invoke-NamespaceMap -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' | Out-Null
+            Invoke-NamespaceMap -SymbolDir $script:Symbols -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' | Out-Null
             $before = Get-TreeSnapshot -Root $root
-            { Invoke-NamespaceMap -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' } | Should -Throw -ExpectedMessage '*already has a namespace statement*'
+            { Invoke-NamespaceMap -SymbolDir $script:Symbols -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' } | Should -Throw -ExpectedMessage '*already has a namespace statement*'
             Get-TreeSnapshot -Root $root | Should -BeExactly $before
         }
 
@@ -241,7 +301,7 @@ Describe 'Invoke-NamespaceMap' {
                 (Get-Entry 'codeunit' 50999 'Ghost' 'Contoso.Sales')
             )
             $message = $null
-            try { Invoke-NamespaceMap -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' } catch { $message = $_.Exception.Message }
+            try { Invoke-NamespaceMap -SymbolDir $script:Symbols -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' } catch { $message = $_.Exception.Message }
             $message | Should -Match 'nothing was written'
             $message | Should -Match "has namespace 'Fabrikam'"
             $message | Should -Match 'Ghost names an object the app does not have'
@@ -251,11 +311,11 @@ Describe 'Invoke-NamespaceMap' {
         It 'refuses a map file that is missing, not JSON, or not an array' {
             $root = New-SalesApp
             $app = Join-Path $root 'app'
-            { Invoke-NamespaceMap -MapPath (Join-Path $root 'absent.json') -AppDir $app -RootNamespace 'Contoso.Sales' } | Should -Throw -ExpectedMessage '*does not exist*'
+            { Invoke-NamespaceMap -SymbolDir $script:Symbols -MapPath (Join-Path $root 'absent.json') -AppDir $app -RootNamespace 'Contoso.Sales' } | Should -Throw -ExpectedMessage '*does not exist*'
             Set-Content -LiteralPath (Join-Path $root 'bad.json') -Value '[ {'
-            { Invoke-NamespaceMap -MapPath (Join-Path $root 'bad.json') -AppDir $app -RootNamespace 'Contoso.Sales' } | Should -Throw -ExpectedMessage '*is not valid JSON*'
+            { Invoke-NamespaceMap -SymbolDir $script:Symbols -MapPath (Join-Path $root 'bad.json') -AppDir $app -RootNamespace 'Contoso.Sales' } | Should -Throw -ExpectedMessage '*is not valid JSON*'
             Set-Content -LiteralPath (Join-Path $root 'obj.json') -Value '{ "type": "codeunit" }'
-            { Invoke-NamespaceMap -MapPath (Join-Path $root 'obj.json') -AppDir $app -RootNamespace 'Contoso.Sales' } | Should -Throw -ExpectedMessage '*is not a JSON array*'
+            { Invoke-NamespaceMap -SymbolDir $script:Symbols -MapPath (Join-Path $root 'obj.json') -AppDir $app -RootNamespace 'Contoso.Sales' } | Should -Throw -ExpectedMessage '*is not a JSON array*'
         }
     }
 
@@ -278,53 +338,163 @@ Describe 'Invoke-NamespaceMap' {
                 (Get-Entry 'codeunit' 50105 'Ghost Named' 'Contoso.Sales.Ghost')
             )
 
-            Invoke-NamespaceMap -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' | Out-Null
+            Invoke-NamespaceMap -SymbolDir $script:Symbols -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' | Out-Null
 
             $text = Read-Text (Join-Path $root 'app' 'src' 'Use' 'Consumer.Codeunit.al')
             $text | Should -BeLike "namespace Contoso.Sales.Use;`n`nusing Contoso.Sales.Alpha;`nusing Contoso.Sales.Zeta;`n`ncodeunit 50100 Consumer*"
         }
 
-        It 'adds the using for every namespace when two objects of different types share a name' {
+        It 'takes the type a Record, Codeunit::, or Database:: context fixes, and every type for a bare name' {
             $root = New-FixtureRepo -Files @{
-                'app/src/Use.al' = "codeunit 50100 Consumer`n{`n    var`n        Cust: Record Shared;`n}`n"
-                'app/src/Tab.al' = "table 50101 Shared`n{`n}`n"
-                'app/src/Cod.al' = "codeunit 50102 Shared`n{`n}`n"
+                'app/src/Typed.al' = "codeunit 50100 Typed`n{`n    var`n        Cust: Record Shared;`n}`n"
+                'app/src/Bare.al'  = "page 50101 Bare`n{`n    SourceTable = Shared;`n}`n"
+                'app/src/Tab.al'   = "table 50102 Shared`n{`n}`n"
+                'app/src/Cod.al'   = "codeunit 50103 Shared`n{`n}`n"
             }
             $mapPath = Write-Map -Root $root -Entries @(
-                (Get-Entry 'codeunit' 50100 'Consumer' 'Contoso.Sales.Use'),
-                (Get-Entry 'table' 50101 'Shared' 'Contoso.Sales.Data'),
-                (Get-Entry 'codeunit' 50102 'Shared' 'Contoso.Sales.Logic')
+                (Get-Entry 'codeunit' 50100 'Typed' 'Contoso.Sales.Use'),
+                (Get-Entry 'page' 50101 'Bare' 'Contoso.Sales.Use'),
+                (Get-Entry 'table' 50102 'Shared' 'Contoso.Sales.Data'),
+                (Get-Entry 'codeunit' 50103 'Shared' 'Contoso.Sales.Logic')
             )
 
-            Invoke-NamespaceMap -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' | Out-Null
+            Invoke-NamespaceMap -SymbolDir $script:Symbols -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' | Out-Null
 
-            (Read-Text (Join-Path $root 'app' 'src' 'Use' 'Consumer.Codeunit.al')) | Should -BeLike "namespace Contoso.Sales.Use;`n`nusing Contoso.Sales.Data;`nusing Contoso.Sales.Logic;`n`n*"
+            (Read-Text (Join-Path $root 'app' 'src' 'Use' 'Typed.Codeunit.al')) | Should -BeLike "namespace Contoso.Sales.Use;`n`nusing Contoso.Sales.Data;`n`ncodeunit*"
+            (Read-Text (Join-Path $root 'app' 'src' 'Use' 'Bare.Page.al')) | Should -BeLike "namespace Contoso.Sales.Use;`n`nusing Contoso.Sales.Data;`nusing Contoso.Sales.Logic;`n`npage*"
+        }
+    }
+
+    Context 'dependency symbols' {
+        It 'writes a using for the namespace each named dependency object lives in, and none for an object with no namespace' {
+            $root = New-FixtureRepo -Files @{
+                'app/src/Use.al' = "codeunit 50100 Consumer`n{`n    var`n        Header: Record `"Sales Header`";`n        DocType: Enum `"Sales Document Type`";`n        Post: Codeunit `"Sales-Post`";`n        Helper: Codeunit `"Global Helper`";`n        Cust: Record Customer;`n`n    procedure P()`n    begin`n        Rec.Get(Database::Item);`n    end;`n}`n"
+            }
+            $mapPath = Write-Map -Root $root -Entries @((Get-Entry 'codeunit' 50100 'Consumer' 'Contoso.Sales'))
+
+            Invoke-NamespaceMap -SymbolDir $script:Symbols -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' | Out-Null
+
+            (Read-Text (Join-Path $root 'app' 'src' 'Consumer.Codeunit.al')) |
+                Should -BeLike "namespace Contoso.Sales;`n`nusing Microsoft.Inventory.Item;`nusing Microsoft.Sales.Customer;`nusing Microsoft.Sales.Document;`nusing Microsoft.Sales.Posting;`n`ncodeunit 50100 Consumer*"
+        }
+
+        It 'refuses a reference its context types that resolves to two namespaces, naming the file, the reference, and both' {
+            $root = New-FixtureRepo -Files @{ 'app/src/Use.al' = "codeunit 50100 Consumer`n{`n    var`n        Tool: Codeunit `"Dup Tool`";`n}`n" }
+            Assert-RefusedUntouched -Root $root -Message '*src/Use.al references codeunit Dup Tool, which resolves to System.Tools.A, System.Tools.B*' -Entries @((Get-Entry 'codeunit' 50100 'Consumer' 'Contoso.Sales'))
+        }
+
+        It 'refuses a typed reference that resolves to the app''s own object and a dependency''s in another namespace' {
+            $root = New-FixtureRepo -Files @{
+                'app/src/Use.al' = "codeunit 50100 Consumer`n{`n    var`n        Cust: Record Customer;`n}`n"
+                'app/src/Own.al' = "table 50101 Customer`n{`n}`n"
+            }
+            Assert-RefusedUntouched -Root $root -Message '*references table Customer, which resolves to Contoso.Sales.Data, Microsoft.Sales.Customer*' -Entries @(
+                (Get-Entry 'codeunit' 50100 'Consumer' 'Contoso.Sales.Use'),
+                (Get-Entry 'table' 50101 'Customer' 'Contoso.Sales.Data')
+            )
+        }
+
+        It 'lets the file''s own namespace win a name a dependency also has' {
+            $root = New-FixtureRepo -Files @{
+                'app/src/Use.al' = "codeunit 50100 Consumer`n{`n    var`n        Tool: Codeunit `"Dup Tool`";`n}`n"
+                'app/src/Own.al' = "codeunit 50101 `"Dup Tool`"`n{`n}`n"
+            }
+            $mapPath = Write-Map -Root $root -Entries @((Get-Entry 'codeunit' 50100 'Consumer' 'Contoso.Sales'), (Get-Entry 'codeunit' 50101 'Dup Tool' 'Contoso.Sales'))
+
+            Invoke-NamespaceMap -SymbolDir $script:Symbols -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' | Out-Null
+
+            (Read-Text (Join-Path $root 'app' 'src' 'Consumer.Codeunit.al')) | Should -BeLike "namespace Contoso.Sales;`n`ncodeunit 50100 Consumer*"
+        }
+
+        It 'refuses to run with no symbols, naming provision.ps1, and leaves the tree alone' -TestCases @(
+            @{ Label = 'a missing folder'; Dir = 'absent' }
+            @{ Label = 'a folder with no .app'; Dir = 'empty' }
+        ) {
+            $root = New-SalesApp
+            New-Item -ItemType Directory -Path (Join-Path $root 'empty') | Out-Null
+            $mapPath = New-SalesMap -Root $root
+            $before = Get-TreeSnapshot -Root $root
+            { Invoke-NamespaceMap -SymbolDir (Join-Path $root $Dir) -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' } |
+                Should -Throw -ExpectedMessage '*No dependency symbols*run provision.ps1*'
+            Get-TreeSnapshot -Root $root | Should -BeExactly $before
+        }
+
+        It 'refuses a symbol package that is not a .app file' {
+            $root = New-SalesApp
+            $symbols = Join-Path $root 'symbols'
+            New-Item -ItemType Directory -Path $symbols | Out-Null
+            Set-Content -LiteralPath (Join-Path $symbols 'Broken.app') -Value 'not a package'
+            $mapPath = New-SalesMap -Root $root
+            $before = Get-TreeSnapshot -Root $root
+            { Invoke-NamespaceMap -SymbolDir $symbols -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' } |
+                Should -Throw -ExpectedMessage '*Broken.app is not a .app file*'
+            Get-TreeSnapshot -Root $root | Should -BeExactly $before
+        }
+    }
+
+    Context 'what stands above the object' {
+        It 'puts the namespace above attributes and /// documentation and below other header comments' {
+            $root = New-FixtureRepo -Files @{
+                'app/src/Doc.al' = "// header`n/// <summary>`n/// Does it.`n/// </summary>`n[Obsolete('x', '1.0')]`ncodeunit 50100 Documented`n{`n}`n"
+                'app/src/Tab.al' = "// other header`n[InherentPermissions(PermissionObjectType::TableData, Database::Customer, 'r')]`ntable 50101 Attributed`n{`n}`n"
+            }
+            $mapPath = Write-Map -Root $root -Entries @((Get-Entry 'codeunit' 50100 'Documented' 'Contoso.Sales'), (Get-Entry 'table' 50101 'Attributed' 'Contoso.Sales'))
+
+            Invoke-NamespaceMap -SymbolDir $script:Symbols -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' | Out-Null
+
+            (Read-Text (Join-Path $root 'app' 'src' 'Documented.Codeunit.al')) |
+                Should -BeExactly "// header`nnamespace Contoso.Sales;`n`n/// <summary>`n/// Does it.`n/// </summary>`n[Obsolete('x', '1.0')]`ncodeunit 50100 Documented`n{`n}`n"
+            (Read-Text (Join-Path $root 'app' 'src' 'Attributed.Table.al')) |
+                Should -BeExactly "// other header`nnamespace Contoso.Sales;`n`nusing Microsoft.Sales.Customer;`n`n[InherentPermissions(PermissionObjectType::TableData, Database::Customer, 'r')]`ntable 50101 Attributed`n{`n}`n"
         }
     }
 
     Context 'the apply-namespace-map.ps1 entry point' {
         BeforeAll {
+            # Runs the script as a process in the repository with HOME set to the fixture's, so the
+            # symbol cache it reads is the one the test wrote.
             function Invoke-Entry {
-                param([Parameter(Mandatory)][string]$Root, [Parameter(Mandatory)][string]$MapPath)
+                param([Parameter(Mandatory)][string]$Root, [Parameter(Mandatory)][string]$MapPath, [string[]]$Extra = @())
+                $previousHome = $env:HOME
+                $env:HOME = Join-Path $Root 'home'
                 Push-Location $Root
                 try {
-                    $output = & pwsh -NoProfile -File (Join-Path $script:ScriptsDir 'apply-namespace-map.ps1') -MapPath $MapPath -RootNamespace 'Contoso.Sales' 2>&1 | Out-String
+                    $output = & pwsh -NoProfile -File (Join-Path $script:ScriptsDir 'apply-namespace-map.ps1') -MapPath $MapPath -RootNamespace 'Contoso.Sales' @Extra 2>&1 | Out-String
                     return [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $output }
                 } finally {
                     Pop-Location
+                    $env:HOME = $previousHome
                 }
             }
 
-            function New-ConfiguredSalesApp {
+            # The sales app with an app.json, a git repository, and its dependency symbols in the cache
+            # folder provision.ps1 fills: <HOME>/.bc-symbol-cache/<checkout>/<publisher>/<name>/<id>.
+            function New-ProvisionedSalesApp {
+                param([switch]$WithConfig, [switch]$WithoutSymbols)
                 $root = New-SalesApp
-                Set-Content -LiteralPath (Join-Path $root 'al-build.json') -Value '{ "appDir": "app", "testApps": ["test"] }'
+                Set-Content -LiteralPath (Join-Path $root 'app' 'app.json') -Value '{ "id": "11111111-2222-3333-4444-555555555555", "name": "Sales", "publisher": "Contoso" }'
+                if ($WithConfig) { Set-Content -LiteralPath (Join-Path $root 'al-build.json') -Value '{ "appDir": "app", "testApps": ["test"] }' }
                 & git -C $root init --quiet 2>&1 | Out-Null
+                if (-not $WithoutSymbols) {
+                    $previousHome = $env:HOME
+                    $env:HOME = Join-Path $root 'home'
+                    Push-Location $root
+                    try {
+                        $cache = Join-Path (Get-SymbolCacheRoot) 'Contoso' 'Sales' '11111111-2222-3333-4444-555555555555'
+                    } finally {
+                        Pop-Location
+                        $env:HOME = $previousHome
+                    }
+                    New-Item -ItemType Directory -Path $cache -Force | Out-Null
+                    Copy-Item -Path (Join-Path $script:Symbols '*.app') -Destination $cache
+                    Set-Content -LiteralPath (Join-Path $cache 'symbols.lock.json') -Value '{}'
+                }
                 return $root
             }
         }
 
         It 'exits 0 and organizes the app from al-build.json''s appDir' {
-            $root = New-ConfiguredSalesApp
+            $root = New-ProvisionedSalesApp -WithConfig
             $result = Invoke-Entry -Root $root -MapPath (New-SalesMap -Root $root)
 
             $result.ExitCode | Should -Be 0
@@ -332,8 +502,16 @@ Describe 'Invoke-NamespaceMap' {
             Test-Path -LiteralPath (Join-Path $root 'app' 'src' 'Rules' 'SalesRules.Codeunit.al') | Should -BeTrue
         }
 
+        It 'takes -AppDir without an al-build.json' {
+            $root = New-ProvisionedSalesApp
+            $result = Invoke-Entry -Root $root -MapPath (New-SalesMap -Root $root) -Extra @('-AppDir', 'app')
+
+            $result.ExitCode | Should -Be 0
+            Test-Path -LiteralPath (Join-Path $root 'app' 'src' 'Rules' 'SalesRules.Codeunit.al') | Should -BeTrue
+        }
+
         It 'exits 1 with the problems named and the tree untouched when the map is wrong' {
-            $root = New-ConfiguredSalesApp
+            $root = New-ProvisionedSalesApp -WithConfig
             $mapPath = Write-Map -Root $root -Entries @((Get-Entry 'codeunit' 50100 'Post Sales' 'Contoso.Sales'))
             $before = Get-TreeSnapshot -Root $root
 
@@ -343,6 +521,18 @@ Describe 'Invoke-NamespaceMap' {
             $result.Output | Should -Match 'is missing from the map'
             Get-TreeSnapshot -Root $root | Should -BeExactly $before
         }
+
+        It 'exits 1 naming provision.ps1 when the symbols were never downloaded' {
+            $root = New-ProvisionedSalesApp -WithConfig -WithoutSymbols
+            $mapPath = New-SalesMap -Root $root
+            $before = Get-TreeSnapshot -Root $root
+
+            $result = Invoke-Entry -Root $root -MapPath $mapPath
+
+            $result.ExitCode | Should -Be 1
+            $result.Output | Should -Match 'provision\.ps1'
+            Get-TreeSnapshot -Root $root | Should -BeExactly $before
+        }
     }
 
     Context 'layout' {
@@ -350,7 +540,7 @@ Describe 'Invoke-NamespaceMap' {
             $root = New-FixtureRepo -Files @{ 'app/Old/Thing.al' = "// header`ncodeunit 50100 `"My-Thing 2`"`n{`n}`n" }
             $mapPath = Write-Map -Root $root -Entries @((Get-Entry 'codeunit' 50100 'My-Thing 2' 'Contoso.Sales.Things'))
 
-            Invoke-NamespaceMap -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' | Out-Null
+            Invoke-NamespaceMap -SymbolDir $script:Symbols -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' | Out-Null
 
             $target = Join-Path $root 'app' 'Things' 'MyThing2.Codeunit.al'
             (Read-Text $target) | Should -BeExactly "// header`nnamespace Contoso.Sales.Things;`n`ncodeunit 50100 `"My-Thing 2`"`n{`n}`n"
@@ -378,7 +568,7 @@ Describe 'Invoke-NamespaceMap' {
                 (Get-Entry 'permissionsetextension' 50104 'Perm Ext' 'Contoso.Sales')
             )
 
-            Invoke-NamespaceMap -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' | Out-Null
+            Invoke-NamespaceMap -SymbolDir $script:Symbols -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' | Out-Null
 
             $names = Get-ChildItem -LiteralPath (Join-Path $root 'app' 'src') -File | ForEach-Object Name | Sort-Object { $_.ToLowerInvariant() }
             ($names -join ',') | Should -BeExactly '3.al,4.al,PermExt.PermissionSetExt.al,PostingRule.Interface.al,SalesReportExt.ReportExt.al,StatusExt.EnumExt.al'
@@ -394,7 +584,7 @@ Describe 'Invoke-NamespaceMap' {
             $mapPath = Write-Map -Root $root -Entries @((Get-Entry 'codeunit' 50100 'One' 'Contoso.Sales'))
             $before = Get-TreeSnapshot -Root (Join-Path $root 'app' 'test')
 
-            Invoke-NamespaceMap -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' -ExcludeDirs @((Join-Path $root 'app' 'test')) | Out-Null
+            Invoke-NamespaceMap -SymbolDir $script:Symbols -MapPath $mapPath -AppDir (Join-Path $root 'app') -RootNamespace 'Contoso.Sales' -ExcludeDirs @((Join-Path $root 'app' 'test')) | Out-Null
 
             Get-TreeSnapshot -Root (Join-Path $root 'app' 'test') | Should -BeExactly $before
             Test-Path -LiteralPath (Join-Path $root 'app' '.alpackages' 'P.al') | Should -BeTrue
