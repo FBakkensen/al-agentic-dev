@@ -420,4 +420,5 @@ function New-ModuleViolation {
 Export-ModuleMember -Function @(
     'Invoke-ModuleCheck'
     'ConvertTo-ModuleGateBlock'
+    'Get-AppSource'
 )
