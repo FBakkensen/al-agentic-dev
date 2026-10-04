@@ -11,7 +11,7 @@ Every BC object, table, field, procedure, event, or enum value the map and its e
 
 ## Survey
 
-`<root>` is `Naveksa.<Product>`, proposed from the `app.json` name and agreed with the map. One survey covers the app and every test app.
+`<root>` is `moduleGate.rootNamespace` when `al-build.json` sets it, otherwise the `app.json` publisher and name, each cut to AL identifier characters and joined by a dot; the developer confirms it with the map. One survey covers the app and every test app.
 
 ▶ opus · survey the app in <app folder> and the test apps <test app folders> into one namespace map: group by usage clusters (objects that reference each other, read and write the same fields, and serve one feature) under <root>, named in the product's feature language and as granular as the code allows; an object spanning clusters lands at the namespace level covering everything it touches, unsplit; event publishers and procedures an add-on can call marked final; a test object lands in <root>.Test plus the namespace path of the objects it exercises, at the covering level when it spans clusters → table of object type, ID, name, proposed namespace, folder (the namespace path below the source root), and evidence (what it references, what references it, which fields it shares), one row per object
 

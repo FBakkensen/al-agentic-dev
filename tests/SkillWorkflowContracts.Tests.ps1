@@ -788,6 +788,8 @@ Describe 'Group by feature into namespaces' {
         $line = @($script:GroupSkill -split '\r?\n' | Where-Object { $_ -match '^▶ opus · ' })[0]
         $line | Should -Match 'survey the app in <app folder> and the test apps <test app folders> into one namespace map'
         $line | Should -Match 'a test object lands in <root>\.Test plus the namespace path of the objects it exercises, at the covering level when it spans clusters'
+        $script:GroupSkill | Should -Match '`<root>` is `moduleGate\.rootNamespace` when `al-build\.json` sets it, otherwise the `app\.json` publisher and name, each cut to AL identifier characters and joined by a dot; the developer confirms it with the map'
+        $script:GroupSkill | Should -Not -Match 'Naveksa'
         $script:GroupSkill | Should -Match 'One survey covers the app and every test app'
         $script:GroupSkill | Should -Match '`containerTestApps` included'
     }
