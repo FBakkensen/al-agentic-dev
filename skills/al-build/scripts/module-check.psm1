@@ -974,4 +974,5 @@ Export-ModuleMember -Function @(
     'Invoke-ModuleCheck'
     'ConvertTo-ModuleGateBlock'
     'Get-DefaultBranchRef'
+    'Get-AppSource'
 )
