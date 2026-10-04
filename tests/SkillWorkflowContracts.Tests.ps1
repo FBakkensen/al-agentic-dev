@@ -759,3 +759,70 @@ Describe 'Open code refactoring path' {
         }
     }
 }
+
+Describe 'Group by feature into namespaces' {
+    BeforeAll {
+        $script:GroupSkillPath = Join-Path $script:SkillsRoot 'al-group-by-feature-into-namespaces' 'SKILL.md'
+        $script:GroupSkill = Get-Content -LiteralPath $script:GroupSkillPath -Raw
+    }
+
+    It 'keeps the body within the length rule and the description to three trigger branches' {
+        @(Get-Content -LiteralPath $script:GroupSkillPath).Count | Should -BeLessOrEqual 60
+        $description = [regex]::Match($script:GroupSkill, '(?m)^description: (.+)$').Groups[1].Value
+        $description | Should -Match 'an AL app has no namespaces'
+        $description | Should -Match 'organize an app''s objects by feature into namespaces'
+        $description | Should -Match 'module gate is to be switched on in an existing repository'
+    }
+
+    It 'delegates the survey on opus and returns the map table with dependent-referenced objects marked final' {
+        $line = @($script:GroupSkill -split '\r?\n' | Where-Object { $_ -match '^▶ opus · ' })
+        $line.Count | Should -Be 1
+        $line[0] | Should -Match 'usage clusters'
+        $line[0] | Should -Match 'as granular as the code allows'
+        $line[0] | Should -Match 'namespace level covering everything it touches'
+        $line[0] | Should -Match 'event publishers and procedures an add-on can call marked final'
+        $line[0] | Should -Match ' → table of object type, ID, name, proposed namespace, folder, and evidence \(what it references, what references it, which fields it shares\)'
+    }
+
+    It 'gets the developer''s agreement before anything is written' {
+        $agree = [regex]::Match($script:GroupSkill, '(?s)\r?\n## Agree\r?\n(.*?)(?=\r?\n## |\z)').Groups[1].Value
+        $agree | Should -Match '`show_widget`, falling back to an Artifact, then a table in the reply'
+        $agree | Should -Match '`AskUserQuestion`'
+        $agree | Should -Match 'Nothing is written before the developer agrees'
+        $script:GroupSkill.IndexOf('## Agree') | Should -BeGreaterThan $script:GroupSkill.IndexOf('▶ opus ·')
+        $script:GroupSkill.IndexOf('## Apply') | Should -BeGreaterThan $script:GroupSkill.IndexOf('## Agree')
+    }
+
+    It 'applies the agreed map through /al-build and runs the gate before the module gate is written' {
+        $apply = [regex]::Match($script:GroupSkill, '(?s)\r?\n## Apply\r?\n(.*?)(?=\r?\n## |\z)').Groups[1].Value
+        $apply | Should -Match '(?m)^▶ haiku · /al-build provision .*apply the namespace map `\.output/namespace-map\.json` with root namespace <root>.*ALBT_MODULE_GATE_ENABLED false.* → '
+        $apply | Should -Match '"type", "id", "name", "namespace"'
+        $apply | Should -Not -Match '\.ps1|scripts/'
+    }
+
+    It 'writes the moduleGate block on with the root namespace only after a green gate, then runs the gate again' {
+        $switch = [regex]::Match($script:GroupSkill, '(?s)\r?\n## Switch the gate on\r?\n(.*?)(?=\r?\n## |\z)').Groups[1].Value
+        $switch | Should -Match 'Once the gate is green'
+        $switch | Should -Match '"moduleGate": \{ "enabled": true, "rootNamespace": "<root>" \}'
+        $switch | Should -Match '(?m)^▶ haiku · /al-build gate with the module gate on'
+        $switch | Should -Match 'moduleGate` block'
+        $script:GroupSkill.IndexOf('## Switch the gate on') | Should -BeGreaterThan $script:GroupSkill.IndexOf('## Apply')
+    }
+
+    It 'creates no module, changes no object''s access, and commits through /al-commit at every exit' {
+        $script:GroupSkill | Should -Match 'creates no module and changes no object''s access'
+        $close = [regex]::Match($script:GroupSkill, '(?s)\r?\n## Close\r?\n(.*?)\z').Groups[1].Value
+        $close | Should -Match 'At every exit — clean close, a red gate that pauses the run, or a question left with the developer'
+        $close | Should -Match '(?m)^▶ haiku · /al-commit the complete worktree → '
+        $script:GroupSkill | Should -Not -Match 'legacy'
+    }
+
+    It 'carries the AL grounding rule' {
+        $script:GroupSkill | Should -Match 'confirmed by a lookup in the current session, never recalled'
+    }
+
+    It 'lists the skill in the grounding rule''s list in the skill rules' {
+        $rules = Get-Content -LiteralPath (Join-Path $script:RepoRoot '.claude' 'rules' 'skills.md') -Raw
+        $rules | Should -Match '`al-prototype`, `al-research`, and `al-group-by-feature-into-namespaces` carry the grounding rule'
+    }
+}

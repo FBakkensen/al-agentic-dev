@@ -19,7 +19,7 @@ skills/al-build/scripts/*.ps1   the build substrate
 skills/al-build/config/         al-build.json
 ```
 
-Twenty-six skills ship today.
+Twenty-seven skills ship today.
 
 - `al-build` — the compile-publish-test gate, provisioning, breaking-change validation, and the container lifecycle; the contract model everything else copies.
 - `al-clone-bcapps` — the BCApps lookup-source clone.
@@ -47,6 +47,7 @@ Twenty-six skills ship today.
 - `al-wayfinder` — the AL rules for `/mattpocock-skills:wayfinder`: which question becomes which ticket, with a question one `/al-lookup` call answers never a ticket.
 - `al-prototype` — the AL forms for `/mattpocock-skills:prototype`: a throwaway app on its own `prototype/<name>` branch with its own container, logic through AL Runner or container tests, UI through the Web Client, and a verdict with screenshots as the evidence.
 - `al-research` — the AL addition to `/mattpocock-skills:research`: the four AL sources in order, the clone rule, and the findings as `/al-lookup` ledger lines on a pushed `research/<name>` branch.
+- `al-group-by-feature-into-namespaces` — the one-time organizing pass: a surveyed map of an app's objects into feature namespaces under `Naveksa.<Product>`, agreed by the developer, applied through `/al-build`, then the module gate switched on.
 
 The folder name equals the frontmatter `name`. A skill reaches outside its folder only by naming another skill — `/al-build` — never by path.
 
