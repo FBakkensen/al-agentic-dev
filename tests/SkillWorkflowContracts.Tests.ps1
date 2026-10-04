@@ -685,3 +685,79 @@ Describe 'Module shape' {
         $context | Should -Match '(?m)^\*\*Open code\*\*:\r?\nEvery AL object outside a module.*no special name or mark'
     }
 }
+
+Describe 'Open code refactoring path' {
+    BeforeAll {
+        $script:ArchitectureRoot = Join-Path $script:SkillsRoot 'al-improve-codebase-architecture'
+        $script:OpenCode = Get-Content -LiteralPath (Join-Path $script:ArchitectureRoot 'OPEN-CODE.md') -Raw
+    }
+
+    It 'links the path from one SKILL.md paragraph that names its scope and keeps the body within the length rule' {
+        $skill = Get-Content -LiteralPath (Join-Path $script:ArchitectureRoot 'SKILL.md') -Raw
+
+        $skill | Should -Match '\[OPEN-CODE\.md\]\(OPEN-CODE\.md\)'
+        $skill | Should -Match 'open code in an app with the module gate on \(`moduleGate\.enabled` true in `al-build\.json`\)'
+        $skill | Should -Match 'Elsewhere deepening stays as above'
+        @(Get-Content -LiteralPath (Join-Path $script:ArchitectureRoot 'SKILL.md')).Count | Should -BeLessOrEqual 60
+    }
+
+    It 'fixes each module''s root namespace and sends a new module''s interface through the Level 1 interface sentence' {
+        $skill = Get-Content -LiteralPath (Join-Path $script:ArchitectureRoot 'SKILL.md') -Raw
+
+        $skill | Should -Match 'and the Level 1 module interface \(with the module gate on, each module''s root namespace\) are fixed'
+        $skill | Should -Match 'A proposed Level 1 interface change, a new module''s included, goes to the user before any refactor'
+        $script:OpenCode | Should -Match 'A new module''s interface is a proposed Level 1 interface and goes to the user as Freeze says'
+    }
+
+    It 'states the seven steps in order' {
+        $phrases = @(
+            '1\. \*\*Characterization tests\.\*\*'
+            'calling the open-code procedures directly'
+            'scaffolding with a planned end'
+            '2\. \*\*Mutation set\.\*\*'
+            'For each behavior-bearing site in those procedures, inject one compiling fault, get red, revert, confirm green'
+            'Every fault must turn a characterization test red'
+            'deliberately unpinned'
+            '3\. \*\*Extraction\.\*\*'
+            'new or existing modules \(child namespaces\)'
+            'through its root namespace'
+            '4\. \*\*Pure proxies\.\*\*'
+            'only delegates'
+            '5\. \*\*Mutation handover\.\*\*'
+            'caught by the module''s own tests'
+            'retire the characterization tests'
+            '6\. \*\*Obsolete\.\*\*'
+            'completely finished'
+            '\[Obsolete\(''<replacement interface>'', ''<tag>''\)\]'
+            'AL0432'
+            '7\. \*\*Callers switched\.\*\*'
+            'mechanically'
+            'keeps its mark'
+        )
+        $at = -1
+        foreach ($phrase in $phrases) {
+            $match = [regex]::Match($script:OpenCode, $phrase)
+            $match.Success | Should -BeTrue -Because "OPEN-CODE.md states: $phrase"
+            $match.Index | Should -BeGreaterThan $at -Because "$phrase follows the step before it"
+            $at = $match.Index
+        }
+    }
+
+    It 'records a surviving fault as a receipt line without a new prefix' {
+        $script:OpenCode | Should -Match 'the receipt gets a line naming the site and "deliberately unpinned" with its reason'
+        $script:OpenCode | Should -Not -Match '(?m)^\s*`?unpinned:'
+    }
+
+    It 'keeps event publishers that dependents subscribe to out of the proxies' {
+        $script:OpenCode | Should -Match 'Event publishers that dependents subscribe to never become proxies and never move'
+        $script:OpenCode | Should -Match 'Modules raise the same events'
+        $script:OpenCode | Should -Match 'one test per event the procedures raise'
+    }
+
+    It 'speaks of open code and modules, never legacy' {
+        foreach ($name in 'SKILL.md', 'OPEN-CODE.md') {
+            Get-Content -LiteralPath (Join-Path $script:ArchitectureRoot $name) -Raw | Should -Not -Match 'legacy' -Because "$name speaks of open code and modules"
+        }
+        $script:OpenCode | Should -Match 'Open code'
+    }
+}
