@@ -23,7 +23,7 @@ At the entry's user check:
 
 ▶ haiku · render SVG, PNG, and the local process review HTML from the BPMN source, with the BPMN.md render procedure passed in full → SVG, PNG, HTML paths
 
-Show the HTML through `show_widget`, then an Artifact, then the local file. After the user's check:
+Show the HTML through `show_widget`, falling back to an Artifact, then the local file, and continue after the user's check:
 
 ▶ haiku · attach the BPMN source and PNG to the Original work item as the Tracker doc in docs/agents/issue-tracker.md says → verified attachment URLs
 
@@ -35,9 +35,13 @@ Place the verified PNG with its explanatory text under `Business process`, as th
 
 ▶ haiku · /al-arc42 the Building Block Level 1 view from the settled black boxes → HTML path, SVG and PNG paths, alt text, publishable fragments
 
+Show the HTML through `show_widget`, falling back to an Artifact, then the local file, and continue after the user's check.
+
 Level 1 is settled when every important behavior has one module owner and each caller-visible interface is named. Add a Runtime View only when module call order, ownership, or a transaction boundary stays unclear after the BPMN map, and build it the same way:
 
 ▶ haiku · /al-arc42 the Runtime View from the settled sequence → HTML path, SVG and PNG paths, alt text, publishable fragments
+
+Show the HTML through `show_widget`, falling back to an Artifact, then the local file, and continue after the user's check.
 
 Every local image published to the Original work item, Level 1 and Runtime View included, goes through:
 

@@ -27,7 +27,7 @@ Every BC object, table, field, procedure, event, enum value, and dialog text sho
 
 Regenerate `.output/arc42/<original-work-item-id>/architecture.html` from the settled content. Include the Original work item title, executable-item ID when an implementation overlay is present, the exact arc42 headings, a change legend, explanatory text, and inline SVG diagrams. The HTML is a disposable review surface; the Original work item and executable-item receipt remain the records.
 
-Show the HTML through `show_widget`, falling back to an Artifact, then to the local file opened in the system browser or named by its absolute path. The user reviews the actual page before publication.
+Show the HTML through `show_widget`, falling back to an Artifact, then to the local file opened in the system browser or named by its absolute path. Every caller shows the page: a caller the developer types continues after the user's check, before it attaches anything or writes into the Original work item; `/al-implement` runs unattended, so it shows the page and continues.
 
 ## Return publishable artifacts
 

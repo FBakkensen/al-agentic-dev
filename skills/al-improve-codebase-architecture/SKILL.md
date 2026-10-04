@@ -13,7 +13,7 @@ Gherkin, the reviewed AAA expected values and proof levels, and the Level 1 modu
 
 Deepening reduces hidden complexity behind the existing caller-visible interface: one owner, tests through that interface, replaceable internals. Prefer canonical BC patterns and Base App helpers to local code. Collapse an interface with one implementation unless a second implementation or a stable external contract proves the seam. A defect noticed outside the chosen candidate is a follow-up line in the receipt, not a change.
 
-A proposed Level 1 interface change goes to the user before any refactor, as does any change to behavior, an expected value, or a proof level. Once the user approves a Level 1 change, update the Original work item's Building Block View Level 1 through /al-arc42 and the Tracker doc's attach procedure before the refactor starts, writing the returned fragment into the spec field the Tracker doc names, under `Implementation Decisions`.
+A proposed Level 1 interface change goes to the user before any refactor, as does any change to behavior, an expected value, or a proof level. Once the user approves a Level 1 change, update the Original work item's Building Block View Level 1 through /al-arc42. Show the HTML through `show_widget`, falling back to an Artifact, then the local file, and continue after the user's check. Then run the Tracker doc's attach procedure before the refactor starts, writing the returned fragment into the spec field the Tracker doc names, under `Implementation Decisions`.
 
 A test that moves behind the deepened interface is a materially reshaped proof: it accounts for every existing business assertion and earns its red as al-tdd requires under `/mattpocock-skills:tdd`, a born-green reshape included. That red runs once the step that moves the proof is green: inject one compiling fault, get red, revert, confirm green. This intended red is not a reason to restore.
 
@@ -30,6 +30,8 @@ A move across several AL objects does not compile until its last edit, so run /a
 Regenerate the receipt's connected-object change map from the final diff. When stable internal building blocks changed, update or remove the Original work item's arc42 Level 2 in the spec field the Tracker doc names so it matches the landed code.
 
 ▶ haiku · /al-arc42 the refreshed views from the final change map → HTML path, SVG and PNG paths, alt text, publishable fragments
+
+Show the HTML through `show_widget`, falling back to an Artifact, then the local file, and continue after the user's check:
 
 ▶ haiku · attach the refreshed PNG and SVG to the executable item as the Tracker doc in docs/agents/issue-tracker.md says → verified attachment URLs
 
