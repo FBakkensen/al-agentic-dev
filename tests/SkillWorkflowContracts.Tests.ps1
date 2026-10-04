@@ -125,6 +125,11 @@ Describe 'Skill workflow contracts' {
         $next | Should -Match 'leave its state and parent to the user'
         $next | Should -Match '▶ haiku · /al-arc42 the corrected Level 2 white box.*HTML path, SVG and PNG paths, alt text, publishable fragments'
         $next | Should -Match '▶ haiku · attach the Level 2 PNG and SVG.*as the Tracker doc in docs/agents/issue-tracker\.md says → verified attachment URLs'
+        $next | Should -Match 'Build the trace page in-line, with no `▶` line'
+        $next | Should -Match 'one row per named BPMN end event, with the columns BPMN end event, executable item, `Behavior` scenario, AAA case and proof level from the `Current-to-final proof map`, test procedure, and changed production object'
+        $next | Should -Match 'Write it to `\.output/trace/<original-work-item-id>/trace\.html` as static, self-contained HTML: no CDN, iframe, remote asset, or script'
+        $next | Should -Match 'It is disposable and never attached or committed'
+        $next | Should -Match 'Show the HTML through `show_widget`, falling back to an Artifact, then the local file\.\r?\n\r?\nReport drift'
         $arc42 | Should -Match '(?m)^In: .*/al-next'
     }
 
