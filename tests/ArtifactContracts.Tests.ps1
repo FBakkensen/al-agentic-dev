@@ -104,9 +104,12 @@ Describe 'Architecture artifact contracts' {
             foreach ($call in $calls) {
                 $lineStart = $body.LastIndexOf("`n", $call) + 1
                 $isDispatch = $body.Substring($lineStart).StartsWith('▶')
+                $paragraphEnd = [regex]::Match($body.Substring($call), '\r?\n\r?\n')
+                $paragraph = if ($paragraphEnd.Success) { $body.Substring($call, $paragraphEnd.Index) } else { $body.Substring($call) }
+                if (-not $isDispatch -and $paragraph.TrimEnd().EndsWith(':')) { continue }
+
                 $next = @(($calls + $attaches) | Where-Object { $_ -gt $call } | Sort-Object)[0]
-                if ($null -eq $next) { continue }
-                if (-not $isDispatch -and ($next -notin $attaches -or $body.Substring($call, $next - $call) -match '\r?\n\r?\n')) { continue }
+                if ($null -eq $next) { $next = $body.Length }
 
                 @($shows | Where-Object { $_ -gt $call -and $_ -lt $next }).Count |
                     Should -BeGreaterThan 0 -Because "$name shows the page and continues after the user's check between its /al-arc42 call and the next call or attach"
