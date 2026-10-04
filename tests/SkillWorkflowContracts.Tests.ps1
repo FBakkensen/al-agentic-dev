@@ -643,37 +643,37 @@ Describe 'Tracker neutrality' {
 }
 
 Describe 'Module shape' {
-    BeforeAll {
-        $script:ModuleShapeSkills = 'al-codebase-design', 'al-implement', 'al-tdd', 'al-review', 'al-simplify'
-        function Get-ModuleShapeSkill([string]$Name) {
-            Get-Content -LiteralPath (Join-Path $script:SkillsRoot $Name 'SKILL.md') -Raw
-        }
-    }
-
     It 'states the module shape in the Seams section and keeps the one-implementation rule' {
-        $design = Get-ModuleShapeSkill 'al-codebase-design'
+        $design = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-codebase-design' 'SKILL.md') -Raw
 
-        $design | Should -Match 'root namespace is its interface'
+        $design | Should -Match 'Its root namespace is its interface'
         $design | Should -Match '`<module>\.Internal` holds its internals'
         $design | Should -Match 'folder path equals namespace'
         $design | Should -Match 'carved out of a feature cluster as a child namespace'
-        $design | Should -Match 'everything outside a module is open code'
+        $design | Should -Match 'everything outside a module'
         $design | Should -Match 'An AL interface with one implementation stays out unless a second implementation or a stable external contract proves the seam\. An extensible enum plus an interface that other apps implement is such a contract\.'
     }
 
-    It 'places new behavior in a module, tests a module through its root namespace, and keeps its interface fixed' {
-        (Get-ModuleShapeSkill 'al-implement') | Should -Match 'New behavior lands in a module.*never in open code'
-        (Get-ModuleShapeSkill 'al-tdd') | Should -Match 'A module is tested through its root namespace.*never `\.Internal`'
-        (Get-ModuleShapeSkill 'al-simplify') | Should -Match 'each module''s root namespace.*are fixed'
+    It 'places new behavior in a module and tests a module through its root namespace' {
+        $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
+        $tdd = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-tdd' 'SKILL.md') -Raw
+
+        $implement | Should -Match 'New behavior lands in a module of the shape /al-codebase-design states, never in open code'
+        $tdd | Should -Match 'tested through a module''s root namespace, never its `\.Internal`, from a test at the module''s path in the test tree'
     }
 
-    It 'flags a test that reaches a module''s .Internal' {
-        (Get-ModuleShapeSkill 'al-review') | Should -Match 'a test that reaches a module''s `\.Internal` is a finding'
+    It 'flags a test that reaches a module''s .Internal and keeps a module''s interface fixed' {
+        $review = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-review' 'SKILL.md') -Raw
+        $simplify = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-simplify' 'SKILL.md') -Raw
+
+        $review | Should -Match 'tests exercise the caller-visible module interface rather than private internals; a test that reaches a module''s `\.Internal` is the concrete finding'
+        $simplify | Should -Match 'the interface of each module, its root namespace, are fixed'
+        $simplify | Should -Match 'or a module''s interface goes to the user'
     }
 
-    It 'never calls open code legacy' {
-        foreach ($name in $script:ModuleShapeSkills) {
-            (Get-ModuleShapeSkill $name) | Should -Not -Match 'legacy' -Because "$name speaks of modules and open code"
+    It 'keeps the word legacy out of the five skills that state the module shape' {
+        foreach ($name in 'al-codebase-design', 'al-implement', 'al-tdd', 'al-review', 'al-simplify') {
+            Get-Content -LiteralPath (Join-Path $script:SkillsRoot $name 'SKILL.md') -Raw | Should -Not -Match 'legacy' -Because "$name speaks of modules and open code"
         }
     }
 

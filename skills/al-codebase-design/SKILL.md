@@ -25,7 +25,7 @@ When the consultation names a concept or candidate, survey the platform for it. 
 
 ## Seams
 
-A module is a namespace under the app's root namespace. Its root namespace is its interface: the codeunits callers call, plus the tables, pages, and enums callers use. `<module>.Internal` holds its internals, and folder path equals namespace. A module is carved out of a feature cluster as a child namespace; the cluster's parent namespace and everything outside a module is open code. Design a seam as a module interface.
+A module is a namespace carved out of a feature cluster as a child namespace. Its root namespace is its interface: the codeunits callers call, plus the tables, pages, and enums callers use. `<module>.Internal` holds its internals, and folder path equals namespace. The cluster's parent namespace is open code, and so is everything outside a module. Design a seam as a module interface.
 
 An AL interface with one implementation stays out unless a second implementation or a stable external contract proves the seam. An extensible enum plus an interface that other apps implement is such a contract.
 
