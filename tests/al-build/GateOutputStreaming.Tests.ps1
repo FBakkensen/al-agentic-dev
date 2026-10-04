@@ -351,6 +351,33 @@ Describe 'Invoke-TestGate verdict channel' {
             @($block.violations).Count | Should -Be 0
         }
 
+        It 'compares against the default branch, prints warnings and skipped rules without failing, and records them' {
+            Set-Content -LiteralPath (Join-Path $script:GateRepoRoot 'app' 'src' 'Posting' 'Post.Codeunit.al') -Value "namespace Contoso.Sales.Posting;`n`ncodeunit 50100 Posting`n{`n}`n" -Encoding utf8
+            Mock Get-DefaultBranchRef { 'origin/main' }
+            Mock Invoke-ModuleCheck {
+                [pscustomobject]@{
+                    Violations   = @()
+                    Warnings     = @([pscustomobject]@{ Rule = 3; File = 'app/src/Posting/Post.Codeunit.al'; Line = 7; Message = 'New local procedure Helper sits in open code.' })
+                    SkippedRules = @('Rule 3 skipped: no merge base between HEAD and origin/main.')
+                }
+            }
+
+            Invoke-TestGate | Out-Null
+
+            $script:GateExitCode | Should -Be 0
+            Should -Invoke Invoke-ModuleCheck -Times 1 -ParameterFilter { $BaseRef -eq 'origin/main' }
+            Should -Invoke Write-BuildMessage -ParameterFilter {
+                $Type -eq 'Warning' -and $Message -match 'app/src/Posting/Post\.Codeunit\.al:7 \[module rule 3\] New local procedure Helper'
+            }
+            Should -Invoke Write-BuildMessage -ParameterFilter {
+                $Type -eq 'Warning' -and $Message -match 'Module gate: Rule 3 skipped: no merge base'
+            }
+            $block = (Get-Content -LiteralPath $script:SummaryPath -Raw | ConvertFrom-Json).moduleGate
+            @($block.warnings).Count | Should -Be 1
+            $block.warnings[0].line | Should -Be 7
+            @($block.skippedRules) | Should -Be @('Rule 3 skipped: no merge base between HEAD and origin/main.')
+        }
+
         It 'skips the check and says so in the summary when the switch is off' {
             Mock Get-BuildConfig {
                 [pscustomobject]@{

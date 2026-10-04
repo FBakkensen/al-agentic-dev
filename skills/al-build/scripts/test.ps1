@@ -201,9 +201,16 @@ Write-BuildMessage -Type Detail -Message "Test Apps: $($config.TestApps -join ',
 # app the gate compiles; a violation refuses the gate before anything compiles.
 if ($config.ModuleGateEnabled) {
     Start-Step 'module-check'
-    $moduleResult = Invoke-ModuleCheck -RepoRoot $repoRoot -RootNamespace $config.ModuleGateRootNamespace `
-        -AppDir $config.AppDir -TestAppDirs @($config.TestApps + $config.ContainerTestApps | Select-Object -Unique)
+    $moduleResult = Invoke-ModuleCheck -RepoRoot $repoRoot -BaseRef (Get-DefaultBranchRef -RepoRoot $repoRoot) `
+        -RootNamespace $config.ModuleGateRootNamespace -AppDir $config.AppDir `
+        -TestAppDirs @($config.TestApps + $config.ContainerTestApps | Select-Object -Unique)
     Stop-Step 'module-check'
+    foreach ($skipped in $moduleResult.SkippedRules) {
+        Write-BuildMessage -Type Warning -Message "Module gate: $skipped"
+    }
+    foreach ($warning in $moduleResult.Warnings) {
+        Write-BuildMessage -Type Warning -Message "$($warning.File):$($warning.Line) [module rule $($warning.Rule)] $($warning.Message)"
+    }
     if (@($moduleResult.Violations).Count -gt 0) {
         Write-BuildHeader 'Module Gate FAILED'
         foreach ($violation in $moduleResult.Violations) {
@@ -212,7 +219,7 @@ if ($config.ModuleGateEnabled) {
         $gateOutcome = 'failed'
         return
     }
-    Write-BuildMessage -Type Info -Message "Module gate: no violations ($(@($moduleResult.Warnings).Count) warnings)"
+    Write-BuildMessage -Type Info -Message "Module gate: no violations ($(@($moduleResult.Warnings).Count) warnings, $(@($moduleResult.SkippedRules).Count) rules skipped)"
 } else {
     Write-BuildMessage -Type Info -Message "Module gate: off (moduleGate.enabled in al-build.json, or ALBT_MODULE_GATE_ENABLED)"
 }
