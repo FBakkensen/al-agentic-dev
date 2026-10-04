@@ -426,10 +426,10 @@ Describe 'Skill workflow contracts' {
     It 'scopes the AL style''s word pairs to BC operations and records' {
         $style = Get-Content -LiteralPath (Join-Path $script:RepoRoot 'output-styles' 'AL.md') -Raw
 
-        $style | Should -Match 'the pairs apply where a word names a BC operation or record'
-        $style | Should -Match 'an ordinary word such as "build" stays'
-        $style | Should -Match 'uses the BC word without saying which word it replaced'
-        $style | Should -Match 'Speak BC vocabulary for every BC operation and record'
+        $style | Should -Match 'binds every word that names a BC operation or record'
+        $style | Should -Match 'An ordinary word such as "build" stays\.'
+        $style | Should -Match 'The reply uses the BC word without saying which word it replaced\.'
+        $style | Should -Match '(?m)^description: Speak BC vocabulary for every BC operation and record'
         $style | Should -Not -Match 'in every word'
     }
 }

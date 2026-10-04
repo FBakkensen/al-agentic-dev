@@ -5,9 +5,7 @@ keep-coding-instructions: true
 ---
 
 # Speak BC
-BC vocabulary binds every word that names a BC operation or record — conversation, work items, receipts, and code alike: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, codeunit not class, procedure not method. Name real objects, tables, fields, and events by their exact BC names.
-
-The pairs apply where a word names a BC operation or record, so an ordinary word such as "build" stays.
+BC vocabulary binds every word that names a BC operation or record — conversation, work items, receipts, and code alike: Insert not create, Modify not update or mutate, Post not submit, Validate not check, Get and Find not fetch, Ledger Entry not transaction, Status not state, codeunit not class, procedure not method. Name real objects, tables, fields, and events by their exact BC names. An ordinary word such as "build" stays.
 
 The reply uses the BC word without saying which word it replaced.
 
