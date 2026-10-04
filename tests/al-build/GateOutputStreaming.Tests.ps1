@@ -175,6 +175,8 @@ Describe 'Invoke-TestGate verdict channel' {
                 TestApps          = @($script:TestApp)
                 ContainerTestApps = @()
                 WarnAsError       = $false
+                ModuleGateEnabled = $false
+                ModuleGateRootNamespace = ''
             }
         }
         Mock Get-CompileTargets { @() }
@@ -300,6 +302,71 @@ Describe 'Invoke-TestGate verdict channel' {
             Invoke-TestGate | Out-Null
 
             Should -Invoke Invoke-ALRunnerCli -ParameterFilter { $Arguments -notcontains '--coverage' }
+        }
+    }
+
+    Context 'module gate' {
+        BeforeEach {
+            $appDir = Join-Path $script:GateRepoRoot 'app'
+            New-Item -ItemType Directory -Path (Join-Path $appDir 'src' 'Posting') -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $appDir 'src' 'Posting' 'Post.Codeunit.al') -Value "codeunit 50100 Posting`n{`n}`n" -Encoding utf8
+            Mock Get-BuildConfig {
+                [pscustomobject]@{
+                    AppDir                  = $appDir
+                    TestApps                = @($script:TestApp)
+                    ContainerTestApps       = @()
+                    WarnAsError             = $false
+                    ModuleGateEnabled       = $true
+                    ModuleGateRootNamespace = 'Contoso.Sales'
+                }
+            }
+            Set-FakeCliRun -ExitCode 0 -Tests @([ordered]@{ name = 'Codeunit1.Test1'; status = 'pass'; durationMs = 5 })
+            $script:SummaryPath = Join-Path $script:GateRepoRoot '.output' 'TestResults' 'summary.json'
+        }
+
+        It 'reds the gate before anything compiles and reports each violation in the summary' {
+            Invoke-TestGate | Out-Null
+
+            $script:GateExitCode | Should -Be 1
+            Should -Invoke Invoke-ALBuild -Times 0
+            Should -Invoke Invoke-ALRunnerCli -Times 0
+            Should -Invoke Write-BuildMessage -ParameterFilter {
+                $Type -eq 'Error' -and $Message -match 'app/src/Posting/Post\.Codeunit\.al:1 ' -and $Message -match 'namespace Contoso\.Sales\.Posting;'
+            }
+            $block = (Get-Content -LiteralPath $script:SummaryPath -Raw | ConvertFrom-Json).moduleGate
+            $block.enabled | Should -BeTrue
+            @($block.violations).Count | Should -Be 1
+            $block.violations[0].file | Should -Be 'app/src/Posting/Post.Codeunit.al'
+        }
+
+        It 'runs the rest of the gate and reports no violations when every file matches' {
+            Set-Content -LiteralPath (Join-Path $script:GateRepoRoot 'app' 'src' 'Posting' 'Post.Codeunit.al') -Value "namespace Contoso.Sales.Posting;`n`ncodeunit 50100 Posting`n{`n}`n" -Encoding utf8
+
+            Invoke-TestGate | Out-Null
+
+            $script:GateExitCode | Should -Be 0
+            Should -Invoke Invoke-ALBuild -Times 1
+            $block = (Get-Content -LiteralPath $script:SummaryPath -Raw | ConvertFrom-Json).moduleGate
+            $block.enabled | Should -BeTrue
+            @($block.violations).Count | Should -Be 0
+        }
+
+        It 'skips the check and says so in the summary when the switch is off' {
+            Mock Get-BuildConfig {
+                [pscustomobject]@{
+                    AppDir                  = Join-Path $script:GateRepoRoot 'app'
+                    TestApps                = @($script:TestApp)
+                    ContainerTestApps       = @()
+                    WarnAsError             = $false
+                    ModuleGateEnabled       = $false
+                    ModuleGateRootNamespace = 'Contoso.Sales'
+                }
+            }
+
+            Invoke-TestGate | Out-Null
+
+            $script:GateExitCode | Should -Be 0
+            (Get-Content -LiteralPath $script:SummaryPath -Raw | ConvertFrom-Json).moduleGate.enabled | Should -BeFalse
         }
     }
 }

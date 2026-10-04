@@ -70,6 +70,7 @@ Import-Module (Join-Path $PSScriptRoot 'common.psm1') -Force -DisableNameCheckin
 Import-Module (Join-Path $PSScriptRoot 'build-operations.psm1') -Force -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot 'alrunner-cli.psm1') -Force -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot 'alrunner-coverage.psm1') -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot 'module-check.psm1') -Force -DisableNameChecking
 
 function Invoke-TestGate {
     param(
@@ -156,6 +157,7 @@ Set-BuildEnvironment -Config $config
 $coverageEnabled = Resolve-CoverageEnabled -Config $config -Coverage:$Coverage
 
 $testResults = @()
+$moduleResult = $null
 
 # Coverage lifecycle tracking — read only in the finally block below to
 # build summary.json's coverage object. Coverage-disabled runs never touch
@@ -194,6 +196,26 @@ Write-BuildHeader 'Test: Build & Test Gate'
 Write-BuildMessage -Type Info -Message "Configuration:"
 Write-BuildMessage -Type Detail -Message "App Directory: $($config.AppDir)"
 Write-BuildMessage -Type Detail -Message "Test Apps: $($config.TestApps -join ', ')"
+
+# Step 0: the module gate. A text-only check over the main app and every test
+# app the gate compiles; a violation refuses the gate before anything compiles.
+if ($config.ModuleGateEnabled) {
+    Start-Step 'module-check'
+    $moduleResult = Invoke-ModuleCheck -RepoRoot $repoRoot -RootNamespace $config.ModuleGateRootNamespace `
+        -AppDir $config.AppDir -TestAppDirs @($config.TestApps + $config.ContainerTestApps | Select-Object -Unique)
+    Stop-Step 'module-check'
+    if (@($moduleResult.Violations).Count -gt 0) {
+        Write-BuildHeader 'Module Gate FAILED'
+        foreach ($violation in $moduleResult.Violations) {
+            Write-BuildMessage -Type Error -Message "$($violation.File):$($violation.Line) [module rule $($violation.Rule)] $($violation.Message)"
+        }
+        $gateOutcome = 'failed'
+        return
+    }
+    Write-BuildMessage -Type Info -Message "Module gate: no violations ($(@($moduleResult.Warnings).Count) warnings)"
+} else {
+    Write-BuildMessage -Type Info -Message "Module gate: off (moduleGate.enabled in al-build.json, or ALBT_MODULE_GATE_ENABLED)"
+}
 
 # Step 1: Build main app
 Start-Step 'build'
@@ -391,6 +413,8 @@ $script:GateExitCode = 0
         }
     }
 
+    $moduleGateBlock = ConvertTo-ModuleGateBlock -Enabled ([bool]$config.ModuleGateEnabled) -Result $moduleResult
+
     # Agent-useful top-level error context — only present when the gate
     # never reached an explicit passed/failed verdict (an unhandled throw).
     $errorBlock = $null
@@ -403,7 +427,7 @@ $script:GateExitCode = 0
 
     $summaryPath = Join-Path $baseResultsPath 'summary.json'
     Write-TestSummary -Gate 'al-runner' -Results $testResults -CoverageBlock $coverageBlock `
-        -ErrorBlock $errorBlock -Path $summaryPath
+        -ModuleGateBlock $moduleGateBlock -ErrorBlock $errorBlock -Path $summaryPath
     Write-BuildMessage -Type Info -Message "Summary written: $summaryPath"
 
     $saveArgs = @{

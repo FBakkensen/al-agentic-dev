@@ -31,6 +31,17 @@ function Get-GitRepoRoot {
     return $null
 }
 
+function ConvertTo-RootNamespace {
+    # <publisher>.<name>, each part cut to AL identifier characters.
+    param($AppJson)
+    $parts = foreach ($part in @($AppJson.publisher, $AppJson.name)) {
+        $identifier = ([string]$part) -replace '[^A-Za-z0-9_]', ''
+        if ($identifier -match '^[0-9]') { $identifier = "_$identifier" }
+        if ($identifier) { $identifier }
+    }
+    return $parts -join '.'
+}
+
 # Get repo root
 $repoRoot = Get-GitRepoRoot
 if (-not $repoRoot) {
@@ -58,6 +69,7 @@ Copy-Item -LiteralPath $templatePath -Destination $projectConfigPath -Force
 # Auto-detect app and test directories
 $detectedAppDir = $null
 $detectedTestDirs = @()
+$detectedRootNamespace = $null
 
 $appJsonFiles = Get-ChildItem -Path $repoRoot -Filter 'app.json' -Recurse -Depth 3 -ErrorAction SilentlyContinue |
     Where-Object { $_.FullName -notmatch '[\\/]\.' }
@@ -75,6 +87,7 @@ foreach ($appJsonFile in $appJsonFiles) {
             $detectedTestDirs += $relativeDir
         } elseif (-not $detectedAppDir) {
             $detectedAppDir = $relativeDir
+            $detectedRootNamespace = ConvertTo-RootNamespace $appJson
         }
     } catch {
         # Skip malformed app.json files
@@ -93,6 +106,10 @@ try {
         }
         if ($detectedTestDirs.Count -gt 0) {
             $config.testApps = @($detectedTestDirs)
+            $configUpdated = $true
+        }
+        if ($detectedRootNamespace) {
+            $config.moduleGate.rootNamespace = $detectedRootNamespace
             $configUpdated = $true
         }
 
@@ -126,6 +143,7 @@ if ($configUpdated) {
     Write-Host "Auto-configured:" -ForegroundColor Cyan
     if ($detectedAppDir) { Write-Host "  appDir: $detectedAppDir" }
     if ($detectedTestDirs.Count -gt 0) { Write-Host "  testApps: $($detectedTestDirs -join ', ')" }
+    if ($detectedRootNamespace) { Write-Host "  moduleGate.rootNamespace: $detectedRootNamespace" }
 }
 
 if ($gitignoreUpdated) {
