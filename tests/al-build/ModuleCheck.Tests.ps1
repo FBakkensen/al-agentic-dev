@@ -219,6 +219,155 @@ Describe 'Invoke-ModuleCheck' {
             @((Invoke-FixtureCheck -Root $root).SkippedRules).Count | Should -Be 0
         }
     }
+
+    Context 'rule 2' {
+        BeforeAll {
+            # The module Contoso.Sales.Posting with an .Internal folder, and a sibling module that can be made to reach in.
+            function New-InternalModuleFiles {
+                param([hashtable]$Extra = @{})
+                $files = @{
+                    'app/src/Posting/Post.Codeunit.al'           = New-AlFile 'Contoso.Sales.Posting'
+                    'app/src/Posting/Internal/Rules.Codeunit.al' = New-AlFile 'Contoso.Sales.Posting.Internal' 'codeunit 50101 Rules'
+                }
+                foreach ($key in $Extra.Keys) { $files[$key] = $Extra[$key] }
+                return $files
+            }
+            function New-ReachingFile {
+                param([string]$Namespace, [string]$Using = '', [string]$Body = '', [string]$Object = 'codeunit 50102 Ship')
+                $usingBlock = if ($Using) { "$Using`n`n" } else { '' }
+                return "namespace $Namespace;`n`n${usingBlock}${Object}`n{`n$Body}`n"
+            }
+        }
+
+        It 'fails a using of another module''s .Internal, naming the file, the line, and the module''s interface folder' {
+            $root = New-ModuleFixtureRepo (New-InternalModuleFiles @{
+                'app/src/Shipping/Ship.Codeunit.al' = New-ReachingFile 'Contoso.Sales.Shipping' 'using Contoso.Sales.Posting.Internal;'
+            })
+
+            $result = Invoke-FixtureCheck -Root $root
+
+            @($result.Violations).Count | Should -Be 1
+            $violation = $result.Violations[0]
+            $violation.Rule | Should -Be 2
+            $violation.File | Should -Be 'app/src/Shipping/Ship.Codeunit.al'
+            $violation.Line | Should -Be 3
+            $violation.Message | Should -Match ([regex]::Escape('Contoso.Sales.Posting.Internal'))
+            $violation.Message | Should -Match ([regex]::Escape('app/src/Posting'))
+        }
+
+        It 'fails a qualified name into another module''s .Internal' {
+            $body = "    procedure Run()`n    var`n        Rules: Codeunit Contoso.Sales.Posting.Internal.Rules;`n    begin`n    end;`n"
+            $root = New-ModuleFixtureRepo (New-InternalModuleFiles @{
+                'app/src/Shipping/Ship.Codeunit.al' = New-ReachingFile 'Contoso.Sales.Shipping' -Body $body
+            })
+
+            $result = Invoke-FixtureCheck -Root $root
+
+            @($result.Violations).Count | Should -Be 1
+            $result.Violations[0].File | Should -Be 'app/src/Shipping/Ship.Codeunit.al'
+            $result.Violations[0].Line | Should -Be 7
+            $result.Violations[0].Message | Should -Match ([regex]::Escape('app/src/Posting'))
+        }
+
+        It 'fails a qualified name written with quoted identifiers' {
+            $body = "    procedure Run()`n    var`n        Rules: Codeunit Contoso.Sales.`"Posting`".Internal.`"Rules Helper`";`n    begin`n    end;`n"
+            $root = New-ModuleFixtureRepo (New-InternalModuleFiles @{
+                'app/src/Shipping/Ship.Codeunit.al' = New-ReachingFile 'Contoso.Sales.Shipping' -Body $body
+            })
+
+            $result = Invoke-FixtureCheck -Root $root
+
+            @($result.Violations).Count | Should -Be 1
+            $result.Violations[0].Line | Should -Be 7
+        }
+
+        It 'fails a test app that reaches into a module''s .Internal' {
+            $root = New-ModuleFixtureRepo (New-InternalModuleFiles @{
+                'test/src/Posting/PostTest.Codeunit.al' = New-ReachingFile 'Contoso.Sales.Test.Posting' 'using Contoso.Sales.Posting.Internal;' -Object 'codeunit 50200 PostTest'
+            })
+
+            $result = Invoke-FixtureCheck -Root $root
+
+            @($result.Violations).Count | Should -Be 1
+            $result.Violations[0].File | Should -Be 'test/src/Posting/PostTest.Codeunit.al'
+            $result.Violations[0].Line | Should -Be 3
+            $result.Violations[0].Message | Should -Match ([regex]::Escape('app/src/Posting'))
+        }
+
+        It 'passes the module''s own root namespace, its .Internal, and anything below .Internal' {
+            $root = New-ModuleFixtureRepo (New-InternalModuleFiles @{
+                'app/src/Posting/Post.Codeunit.al'                  = New-ReachingFile 'Contoso.Sales.Posting' 'using Contoso.Sales.Posting.Internal;' -Object 'codeunit 50100 Posting'
+                'app/src/Posting/Internal/Rules.Codeunit.al'         = New-ReachingFile 'Contoso.Sales.Posting.Internal' 'using Contoso.Sales.Posting.Internal.Deep;' -Object 'codeunit 50101 Rules'
+                'app/src/Posting/Internal/Deep/Deep.Codeunit.al'     = New-ReachingFile 'Contoso.Sales.Posting.Internal.Deep' 'using Contoso.Sales.Posting.Internal;' -Object 'codeunit 50103 Deep'
+            })
+
+            $result = Invoke-FixtureCheck -Root $root
+
+            @($result.Violations).Count | Should -Be 0
+        }
+
+        It 'does not count the namespace declaration of a file inside .Internal as a reference' {
+            $root = New-ModuleFixtureRepo (New-InternalModuleFiles)
+
+            @((Invoke-FixtureCheck -Root $root).Violations).Count | Should -Be 0
+        }
+
+        It 'passes a reference that appears only in a comment or a string' {
+            $body = "    // see Contoso.Sales.Posting.Internal.Rules`n    /* using Contoso.Sales.Posting.Internal; */`n    procedure Run()`n    begin`n        Message('Contoso.Sales.Posting.Internal.Rules // not a comment');`n    end;`n"
+            $root = New-ModuleFixtureRepo (New-InternalModuleFiles @{
+                'app/src/Shipping/Ship.Codeunit.al' = New-ReachingFile 'Contoso.Sales.Shipping' -Body $body
+            })
+
+            $result = Invoke-FixtureCheck -Root $root
+
+            @($result.Violations).Count | Should -Be 0
+        }
+
+        It 'reports a reference that follows a string holding a comment marker' {
+            $body = "    procedure Run()`n    begin`n        Message('http://example.com'); Rules.Run(Contoso.Sales.Posting.Internal.Rules);`n    end;`n"
+            $root = New-ModuleFixtureRepo (New-InternalModuleFiles @{
+                'app/src/Shipping/Ship.Codeunit.al' = New-ReachingFile 'Contoso.Sales.Shipping' -Body $body
+            })
+
+            $result = Invoke-FixtureCheck -Root $root
+
+            @($result.Violations).Count | Should -Be 1
+            $result.Violations[0].Line | Should -Be 7
+        }
+
+        It 'ignores a dotted name that is not a namespace of the repository' {
+            $body = "    procedure Run()`n    begin`n        Rec.Internal.Run();`n    end;`n"
+            $root = New-ModuleFixtureRepo (New-InternalModuleFiles @{
+                'app/src/Shipping/Ship.Codeunit.al' = New-ReachingFile 'Contoso.Sales.Shipping' -Body $body
+            })
+
+            @((Invoke-FixtureCheck -Root $root).Violations).Count | Should -Be 0
+        }
+
+        It 'fails a parent namespace and passes a namespace that only shares the Internal prefix' {
+            $root = New-ModuleFixtureRepo (New-InternalModuleFiles @{
+                'app/src/Root.Codeunit.al'                     = New-ReachingFile 'Contoso.Sales' 'using Contoso.Sales.Posting.Internal;' -Object 'codeunit 50104 Root'
+                'app/src/Posting/InternalAudit/Audit.Codeunit.al' = New-ReachingFile 'Contoso.Sales.Posting.InternalAudit' 'using Contoso.Sales.Posting.InternalAudit;' -Object 'codeunit 50105 Audit'
+            })
+
+            $result = Invoke-FixtureCheck -Root $root
+
+            @($result.Violations).Count | Should -Be 1
+            $result.Violations[0].File | Should -Be 'app/src/Root.Codeunit.al'
+        }
+
+        It 'names the app source root as the interface folder of the root namespace''s module' {
+            $root = New-ModuleFixtureRepo @{
+                'app/src/Internal/Rules.Codeunit.al'  = New-AlFile 'Contoso.Sales.Internal' 'codeunit 50101 Rules'
+                'app/src/Posting/Post.Codeunit.al'    = New-ReachingFile 'Contoso.Sales.Posting' 'using Contoso.Sales.Internal;' -Object 'codeunit 50100 Posting'
+            }
+
+            $result = Invoke-FixtureCheck -Root $root
+
+            @($result.Violations).Count | Should -Be 1
+            $result.Violations[0].Message | Should -Match 'app/src(?![/\w])'
+        }
+    }
 }
 
 Describe 'ConvertTo-ModuleGateBlock' {

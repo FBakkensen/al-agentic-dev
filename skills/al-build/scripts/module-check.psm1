@@ -72,6 +72,9 @@ function Invoke-ModuleCheck {
         foreach ($violation in @(Get-NamespacePathViolation -RepoRoot $RepoRoot -Apps $apps)) {
             $violations.Add($violation)
         }
+        foreach ($violation in @(Get-InternalReachViolation -RepoRoot $RepoRoot -Apps $apps)) {
+            $violations.Add($violation)
+        }
     }
 
     return [pscustomobject]@{
@@ -130,6 +133,40 @@ function Get-RootNamespaceViolation {
         -Message 'The module gate is on and moduleGate.rootNamespace is empty. Set moduleGate.rootNamespace in al-build.json to the app''s root namespace.'
 }
 
+function Get-AppSource {
+    <#
+    .SYNOPSIS
+        An app's source root and the AL files the gate reads in it.
+    .DESCRIPTION
+        The source root is src when the app has one, else the app folder. Hidden
+        folders and test apps nested in the app folder are left out. Returns
+        $null when the app folder is missing.
+    #>
+    param(
+        [Parameter(Mandatory)][object]$App,
+        [Parameter(Mandatory)][object[]]$Apps
+    )
+
+    $appFull = [System.IO.Path]::GetFullPath($App.Dir).TrimEnd('\', '/')
+    if (-not (Test-Path -LiteralPath $appFull -PathType Container)) { return $null }
+
+    $appDirs = @($Apps | ForEach-Object { [System.IO.Path]::GetFullPath($_.Dir).TrimEnd('\', '/') })
+    $srcDir = Join-Path $appFull 'src'
+    $sourceRoot = if (Test-Path -LiteralPath $srcDir -PathType Container) { $srcDir } else { $appFull }
+    $nested = @($appDirs | Where-Object { $_ -ne $appFull -and $_.StartsWith($appFull + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase) })
+
+    $files = @(Get-ChildItem -LiteralPath $appFull -Filter '*.al' -Recurse -File |
+        Where-Object {
+            $fileFull = $_.FullName
+            $belowApp = [System.IO.Path]::GetRelativePath($appFull, $fileFull)
+            -not ($belowApp -split '[\\/]' | Where-Object { $_.StartsWith('.') }) -and
+            -not ($nested | Where-Object { $fileFull.StartsWith($_ + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase) })
+        } |
+        Sort-Object FullName)
+
+    return [pscustomobject]@{ SourceRoot = $sourceRoot; Files = $files }
+}
+
 function Get-NamespacePathViolation {
     param(
         [Parameter(Mandatory)][string]$RepoRoot,
@@ -137,24 +174,12 @@ function Get-NamespacePathViolation {
     )
 
     $repoFull = [System.IO.Path]::GetFullPath($RepoRoot)
-    $appDirs = @($Apps | ForEach-Object { [System.IO.Path]::GetFullPath($_.Dir).TrimEnd('\', '/') })
 
     foreach ($app in $Apps) {
-        $appFull = [System.IO.Path]::GetFullPath($app.Dir).TrimEnd('\', '/')
-        if (-not (Test-Path -LiteralPath $appFull -PathType Container)) { continue }
-
-        $srcDir = Join-Path $appFull 'src'
-        $sourceRoot = if (Test-Path -LiteralPath $srcDir -PathType Container) { $srcDir } else { $appFull }
-        $nested = @($appDirs | Where-Object { $_ -ne $appFull -and $_.StartsWith($appFull + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase) })
-
-        $files = Get-ChildItem -LiteralPath $appFull -Filter '*.al' -Recurse -File |
-            Where-Object {
-                $fileFull = $_.FullName
-                $belowApp = [System.IO.Path]::GetRelativePath($appFull, $fileFull)
-                -not ($belowApp -split '[\\/]' | Where-Object { $_.StartsWith('.') }) -and
-                -not ($nested | Where-Object { $fileFull.StartsWith($_ + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase) })
-            } |
-            Sort-Object FullName
+        $source = Get-AppSource -App $app -Apps $Apps
+        if (-not $source) { continue }
+        $sourceRoot = $source.SourceRoot
+        $files = $source.Files
 
         $sourceRootRelative = [System.IO.Path]::GetRelativePath($repoFull, $sourceRoot) -replace '\\', '/'
         foreach ($file in $files) {
@@ -198,6 +223,114 @@ function Get-NamespacePathViolation {
             }
         }
     }
+}
+
+# =============================================================================
+# Rule 2: a module's .Internal is reached only from its own module
+# =============================================================================
+
+function Get-InternalReachViolation {
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [Parameter(Mandatory)][object[]]$Apps
+    )
+
+    $repoFull = [System.IO.Path]::GetFullPath($RepoRoot)
+    $ignoreCase = [System.StringComparison]::OrdinalIgnoreCase
+
+    $entries = foreach ($app in $Apps) {
+        $source = Get-AppSource -App $app -Apps $Apps
+        if (-not $source) { continue }
+        $sourceRootRelative = [System.IO.Path]::GetRelativePath($repoFull, $source.SourceRoot) -replace '\\', '/'
+        foreach ($file in $source.Files) {
+            [pscustomobject]@{
+                File               = [System.IO.Path]::GetRelativePath($repoFull, $file.FullName) -replace '\\', '/'
+                Namespace          = (Read-AlNamespaceDeclaration -Path $file.FullName).Namespace
+                Code               = Get-AlCodeText -Path $file.FullName
+                AppNamespace       = $app.Namespace
+                SourceRootRelative = $sourceRootRelative
+            }
+        }
+    }
+
+    # A namespace X.Internal declared anywhere in the gate's apps makes X a module; its interface folder is the folder of namespace X.
+    $modules = @{}
+    foreach ($entry in $entries) {
+        if (-not $entry.Namespace) { continue }
+        $segments = $entry.Namespace -split '\.'
+        $at = Find-InternalSegment -Segments $segments
+        if ($at -lt 0) { continue }
+        $module = $segments[0..($at - 1)] -join '.'
+        if ($modules.ContainsKey($module)) { continue }
+        $modules[$module] = if ($module -ieq $entry.AppNamespace) {
+            $entry.SourceRootRelative
+        } elseif ($module.StartsWith($entry.AppNamespace + '.', $ignoreCase)) {
+            (@($entry.SourceRootRelative) + ($module.Substring($entry.AppNamespace.Length + 1) -split '\.') | Where-Object { $_ -ne '.' }) -join '/'
+        } else {
+            ''
+        }
+    }
+    if ($modules.Count -eq 0) { return }
+
+    foreach ($entry in $entries) {
+        $lines = $entry.Code -split "`r?`n"
+        for ($i = 0; $i -lt $lines.Count; $i++) {
+            $reported = @{}
+            foreach ($match in [regex]::Matches($lines[$i], '(?<![\w.])[A-Za-z_]\w*(?:\.\w+)+')) {
+                $segments = $match.Value -split '\.'
+                $at = Find-InternalSegment -Segments $segments
+                if ($at -lt 0) { continue }
+                $module = $segments[0..($at - 1)] -join '.'
+                if (-not $modules.ContainsKey($module) -or $reported.ContainsKey($module)) { continue }
+
+                $own = $entry.Namespace -and (
+                    $entry.Namespace -ieq $module -or
+                    $entry.Namespace -ieq "$module.Internal" -or
+                    $entry.Namespace.StartsWith("$module.Internal.", $ignoreCase))
+                if ($own) { continue }
+
+                $reported[$module] = $true
+                $reached = $segments[0..$at] -join '.'
+                $interface = if ($modules[$module]) { "its interface folder $($modules[$module])" } else { "the folder of namespace $module" }
+                New-ModuleViolation -Rule 2 -File $entry.File -Line ($i + 1) `
+                    -Message "$reached is internal to module $module. Use the module's interface in $interface instead."
+            }
+        }
+    }
+}
+
+function Find-InternalSegment {
+    param([Parameter(Mandatory)][string[]]$Segments)
+
+    for ($i = 1; $i -lt $Segments.Count; $i++) {
+        if ($Segments[$i] -ieq 'Internal') { return $i }
+    }
+    return -1
+}
+
+function Get-AlCodeText {
+    <#
+    .SYNOPSIS
+        A file's code with comments, string literals, and the namespace
+        statement blanked and quoted identifiers made single names.
+    .DESCRIPTION
+        Line numbers are kept. One left-to-right pass, so a // inside a string
+        is not a comment and an apostrophe inside a comment is not a string. A
+        file that never says Internal returns empty.
+    #>
+    param([Parameter(Mandatory)][string]$Path)
+
+    $text = Get-Content -LiteralPath $Path -Raw
+    if ([string]::IsNullOrEmpty($text) -or $text.IndexOf('Internal', [System.StringComparison]::OrdinalIgnoreCase) -lt 0) { return '' }
+
+    $tokens = '/\*.*?\*/|//[^\r\n]*|''(?:[^''\r\n]|'''')*''|"[^"\r\n]*"'
+    $blank = { param($m) $m.Value -replace '[^\r\n]', ' ' }
+    $code = [regex]::Replace($text, $tokens, {
+        param($m)
+        if ($m.Value.StartsWith('"')) { return $m.Value.Trim('"') -replace '\W', '_' }
+        return $m.Value -replace '[^\r\n]', ' '
+    }, [System.Text.RegularExpressions.RegexOptions]::Singleline)
+    return [regex]::Replace($code, '(?m)^[ \t]*namespace\s[^;\r\n]*;', $blank)
 }
 
 function Read-AlNamespaceDeclaration {
