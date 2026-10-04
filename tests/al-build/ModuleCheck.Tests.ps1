@@ -267,6 +267,19 @@ Describe 'Invoke-ModuleCheck' {
             $violation.Message | Should -Match ([regex]::Escape('app/src/Posting'))
         }
 
+        It 'names the folder of the repository root as the interface folder when the app sits at the root' {
+            $root = New-ModuleFixtureRepo @{
+                'Internal/Rules.Codeunit.al' = New-AlFile 'Contoso.Sales.Internal' 'codeunit 50101 Rules'
+                'Posting/Post.Codeunit.al'   = New-ReachingFile 'Contoso.Sales.Posting' 'using Contoso.Sales.Internal;' -Object 'codeunit 50100 Posting'
+            }
+
+            $result = Invoke-FixtureCheck -Root $root -AppDir '.' -TestAppDirs @()
+
+            @($result.Violations).Count | Should -Be 1
+            $result.Violations[0].Rule | Should -Be 2
+            $result.Violations[0].Message | Should -Match 'its interface folder \.'
+        }
+
         It 'fails a qualified name into another module''s .Internal' {
             $body = "    procedure Run()`n    var`n        Rules: Codeunit Contoso.Sales.Posting.Internal.Rules;`n    begin`n    end;`n"
             $root = New-ModuleFixtureRepo (New-InternalModuleFiles @{

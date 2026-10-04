@@ -18,9 +18,9 @@
 Set-StrictMode -Version Latest
 
 # AL object keyword -> whether the object has an ID, and the CodeCop file-name
-# type (Best practices for AL, "File naming"). reportextension follows the page's
+# type (Best practices for AL, "File naming"). Exported: the namespace pass validates its map against it. reportextension follows the page's
 # <FullTypeName>Ext notation; entitlement is not in the type map, so its file keeps its name.
-$script:ObjectTypes = @{
+$script:AlObjectTypes = @{
     table                  = @{ HasId = $true;  FileType = 'Table' }
     tableextension         = @{ HasId = $true;  FileType = 'TableExt' }
     page                   = @{ HasId = $true;  FileType = 'Page' }
@@ -149,16 +149,6 @@ function Get-AlLineNumber {
     return $position + 1
 }
 
-function Get-AlObjectType {
-    <#
-    .SYNOPSIS
-        Object keyword -> HasId and FileType, for every object type AL declares.
-    #>
-    param()
-
-    return $script:ObjectTypes
-}
-
 # =============================================================================
 # The source model
 # =============================================================================
@@ -173,9 +163,7 @@ function Read-AlSource {
           statement before the first object ($null and 1 when there is none) and
           the offsets it spans. Quotes around a segment are dropped.
         - Usings: Name and Line of each using statement, in order.
-        - HeaderWord: namespace or using, whichever the file's last header
-          statement starts with, or $null.
-        - Objects: Keyword (as written), Type, Id (0 without one), Name, NameText
+        - Objects: Keyword (as written), Type, HasId, Id (0 without one), Name, NameText
           (as written, quotes kept), NameIndex, StartIndex (the
           leading attributes' first bracket, else the keyword), Line (of the
           keyword), and Procedures.
@@ -197,7 +185,6 @@ function Read-AlSource {
         NamespaceStart  = -1
         NamespaceEnd    = -1
         Usings          = [System.Collections.Generic.List[object]]::new()
-        HeaderWord      = $null
         Objects         = $null
         FirstObjectLine = 1
         NewlineOffsets  = $(if ($lineBreaks.Count -gt 0) { [int[]]$lineBreaks.Index } else { [int[]]@() })
@@ -225,7 +212,6 @@ function Read-AlSource {
             } elseif ($depth -eq 0 -and $bracket -eq 0 -and ($previous -eq [char]0 -or $previous -eq '}' -or $previous -eq ';' -or $previous -eq ']')) {
                 $word = $match.Value.ToLowerInvariant()
                 if ($word -eq 'namespace' -or $word -eq 'using') {
-                    $source.HeaderWord = $word
                     $statement = Read-HeaderStatement -Token $significant -Position $i -Text $Text
                     if ($statement) {
                         if ($word -eq 'using') {
@@ -237,7 +223,7 @@ function Read-AlSource {
                             $source.NamespaceEnd = $statement.EndIndex
                         }
                     }
-                } elseif ($script:ObjectTypes.ContainsKey($word)) {
+                } elseif ($script:AlObjectTypes.ContainsKey($word)) {
                     $object = Read-ObjectDeclaration -Token $significant -Position $i -Word $word
                     if ($object) {
                         $object.StartIndex = if ($attributeStart -ge 0) { $attributeStart } else { $match.Index }
@@ -270,12 +256,12 @@ function Get-SignificantMatch {
     }
 }
 
-function Test-NameValue {
-    # Whether a token's text is an identifier or a quoted identifier.
-    param([string]$Value)
+function Test-NameStart {
+    # Whether a token starting with this character is an identifier or a quoted identifier (or, with
+    # AllowDigit, a number).
+    param([char]$First, [switch]$AllowDigit)
 
-    $first = $Value[0]
-    return $first -eq '"' -or $first -eq '_' -or [char]::IsLetter($first)
+    return $First -eq '_' -or $First -eq '"' -or [char]::IsLetter($First) -or ($AllowDigit -and [char]::IsDigit($First))
 }
 
 function ConvertTo-NameText {
@@ -309,12 +295,12 @@ function Read-ObjectDeclaration {
     $keyword = $Token[$Position]
     $id = 0
     $nameMatch = $null
-    if ($script:ObjectTypes[$Word].HasId) {
-        if ($Position + 2 -lt $Token.Count -and [char]::IsDigit($Token[$Position + 1].Value[0]) -and (Test-NameValue -Value $Token[$Position + 2].Value)) {
+    if ($script:AlObjectTypes[$Word].HasId) {
+        if ($Position + 2 -lt $Token.Count -and [char]::IsDigit($Token[$Position + 1].Value[0]) -and (Test-NameStart -First $Token[$Position + 2].Value[0])) {
             $id = [long]$Token[$Position + 1].Value
             $nameMatch = $Token[$Position + 2]
         }
-    } elseif ($Position + 1 -lt $Token.Count -and (Test-NameValue -Value $Token[$Position + 1].Value)) {
+    } elseif ($Position + 1 -lt $Token.Count -and (Test-NameStart -First $Token[$Position + 1].Value[0])) {
         $nameMatch = $Token[$Position + 1]
     }
     if (-not $nameMatch) { return $null }
@@ -322,6 +308,7 @@ function Read-ObjectDeclaration {
     return [pscustomobject]@{
         Keyword      = $keyword.Value
         Type         = $Word
+        HasId        = $script:AlObjectTypes[$Word].HasId
         Id           = $id
         Name         = ConvertTo-NameText -Value $nameMatch.Value
         NameText     = $nameMatch.Value
@@ -365,7 +352,7 @@ function Read-ProcedureDeclaration {
     param([object]$Token, [int]$Position, [string]$Text, $Source)
 
     $keyword = $Token[$Position]
-    if ($Position + 1 -ge $Token.Count -or -not (Test-NameValue -Value $Token[$Position + 1].Value)) { return $null }
+    if ($Position + 1 -ge $Token.Count -or -not (Test-NameStart -First $Token[$Position + 1].Value[0])) { return $null }
     $nameMatch = $Token[$Position + 1]
 
     $parameterList = Read-ParameterList -Text $Text -Start ($nameMatch.Index + $nameMatch.Length)
@@ -434,18 +421,18 @@ function Get-AlNameReference {
     for ($i = 0; $i -lt $significant.Count; $i++) {
         $token = $significant[$i]
         if ($token.Kind -notin 'ident', 'qident' -or $declarations.Contains($token.Index)) { continue }
-        $one = if ($i -ge 1) { $significant[$i - 1] } else { $null }
-        $two = if ($i -ge 2) { $significant[$i - 2] } else { $null }
+        $previous = if ($i -ge 1) { $significant[$i - 1] } else { $null }
+        $beforePrevious = if ($i -ge 2) { $significant[$i - 2] } else { $null }
         $next = if ($i + 1 -lt $significant.Count) { $significant[$i + 1] } else { $null }
-        if ($one -and $one.Text -eq '.') { continue }
+        if ($previous -and $previous.Text -eq '.') { continue }
 
         $word = $token.Value.ToLowerInvariant()
         $isTypeWord = $token.Kind -eq 'ident' -and ($script:TypeAfterKeyword.ContainsKey($word) -or $script:TypeBeforeColons.ContainsKey($word))
         if ($isTypeWord -and $next -and ($next.Text -eq '::' -or $next.Kind -in 'ident', 'qident')) { continue }
 
         $type = $null
-        if ($one -and $one.Text -eq '::' -and $two -and $two.Kind -eq 'ident') { $type = $script:TypeBeforeColons[$two.Text.ToLowerInvariant()] }
-        elseif ($one -and $one.Kind -eq 'ident') { $type = $script:TypeAfterKeyword[$one.Text.ToLowerInvariant()] }
+        if ($previous -and $previous.Text -eq '::' -and $beforePrevious -and $beforePrevious.Kind -eq 'ident') { $type = $script:TypeBeforeColons[$beforePrevious.Text.ToLowerInvariant()] }
+        elseif ($previous -and $previous.Kind -eq 'ident') { $type = $script:TypeAfterKeyword[$previous.Text.ToLowerInvariant()] }
         $key = "$type|$word"
         if (-not $references.ContainsKey($key)) {
             $references[$key] = [pscustomobject]@{ Name = $word; Display = $token.Value; Type = $type }
@@ -476,8 +463,11 @@ function Get-AlQualifiedName {
     $i = 0
     while ($i -lt $count) {
         $token = $significant[$i]
-        $first = $Text[$token.Index]
-        if (-not ($first -eq '_' -or $first -eq '"' -or [char]::IsLetterOrDigit($first)) -or
+        $end = $token.Index + $token.Length
+
+        # Only a name with a dot right behind it starts a run, so most tokens end here.
+        if ($i + 2 -ge $count -or $significant[$i + 1].Index -ne $end -or $significant[$i + 1].Length -ne 1 -or $Text[$end] -ne '.' -or
+            -not (Test-NameStart -First $Text[$token.Index] -AllowDigit) -or
             ($token.Index -ge $Source.NamespaceStart -and $token.Index -le $Source.NamespaceEnd)) {
             $i++
             continue
@@ -485,18 +475,16 @@ function Get-AlQualifiedName {
 
         # A run: names joined by dots with nothing between them.
         $j = $i
-        $end = $token.Index + $token.Length
         while ($j + 2 -lt $count) {
             $dot = $significant[$j + 1]
             $next = $significant[$j + 2]
-            if ($dot.Index -ne $end -or $dot.Length -ne 1 -or $Text[$dot.Index] -ne '.' -or $next.Index -ne $end + 1) { break }
-            $nextFirst = $Text[$next.Index]
-            if (-not ($nextFirst -eq '_' -or $nextFirst -eq '"' -or [char]::IsLetterOrDigit($nextFirst))) { break }
+            if ($dot.Index -ne $end -or $dot.Length -ne 1 -or $Text[$dot.Index] -ne '.' -or $next.Index -ne $end + 1 -or
+                -not (Test-NameStart -First $Text[$next.Index] -AllowDigit)) { break }
             $end = $next.Index + $next.Length
             $j += 2
         }
         $before = if ($token.Index -gt 0) { $Text[$token.Index - 1] } else { ' ' }
-        if ($j -gt $i -and -not [char]::IsDigit($first) -and $before -ne '.' -and $before -ne ')') {
+        if ($j -gt $i -and -not [char]::IsDigit($Text[$token.Index]) -and $before -ne '.' -and $before -ne ')') {
             [pscustomobject]@{
                 Segments = [string[]]@(for ($k = $i; $k -le $j; $k += 2) { ConvertTo-NameText -Value $significant[$k].Value })
                 Line     = Get-AlLineNumber -Source $Source -Index $token.Index
@@ -510,11 +498,11 @@ function Get-AlQualifiedName {
 # Module Exports
 # =============================================================================
 
+Export-ModuleMember -Variable 'AlObjectTypes'
 Export-ModuleMember -Function @(
     'Get-AlToken'
     'Get-AlBlankedText'
     'Get-AlLineNumber'
-    'Get-AlObjectType'
     'Read-AlSource'
     'Get-AlNameReference'
     'Get-AlQualifiedName'

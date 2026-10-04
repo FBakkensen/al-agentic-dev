@@ -15,9 +15,6 @@ Set-StrictMode -Version Latest
 Import-Module (Join-Path $PSScriptRoot 'al-source.psm1') -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot 'module-check.psm1') -DisableNameChecking
 
-# AL object keyword -> HasId and the CodeCop file-name type, from the reader.
-$script:ObjectTypes = Get-AlObjectType
-
 # The object types other code names, which is what a using is for. Extensions are never named.
 $script:ReferenceableTypes = @('table', 'page', 'codeunit', 'report', 'xmlport', 'query', 'enum', 'controladdin', 'profile', 'interface', 'permissionset')
 
@@ -191,12 +188,12 @@ function Read-NamespaceMap {
         $name = Get-JsonProperty $raw 'name'
         $namespace = Get-JsonProperty $raw 'namespace'
 
-        if ($type -isnot [string] -or -not $script:ObjectTypes.ContainsKey($type.ToLowerInvariant())) {
+        if ($type -isnot [string] -or -not $AlObjectTypes.ContainsKey($type.ToLowerInvariant())) {
             $Errors.Add("$where has type '$type', which is not an AL object type. Use the object keyword, such as codeunit or tableextension.")
             continue
         }
         $type = $type.ToLowerInvariant()
-        $hasId = $script:ObjectTypes[$type].HasId
+        $hasId = $AlObjectTypes[$type].HasId
         $idOk = ($id -is [int] -or $id -is [long]) -and (($hasId -and $id -ge 1) -or (-not $hasId -and $id -eq 0))
         if (-not $idOk) {
             $Errors.Add("$where ($type) has id '$id'. $(if ($hasId) { 'Use the object ID, a positive number.' } else { "A $type has no ID; use 0." })")
@@ -245,7 +242,7 @@ function Select-MapObjectMatch {
     foreach ($entry in $Entries) { $entriesByKey[$entry.Key] = $entry }
 
     foreach ($entry in $Entries | Where-Object { -not $objectsByKey.ContainsKey($_.Key) }) {
-        $sameId = if ($script:ObjectTypes[$entry.Type].HasId) {
+        $sameId = if ($AlObjectTypes[$entry.Type].HasId) {
             $Files | ForEach-Object { $_.Objects } | Where-Object { $_.Type -eq $entry.Type -and $_.Id -eq $entry.Id } | Select-Object -First 1
         }
         $hint = if ($sameId) { " The app's $($entry.Type) $($entry.Id) is named $($sameId.Name); correct the name in the map." } else { ' Remove the entry, or correct its type, id, and name.' }
@@ -272,7 +269,7 @@ function Get-ObjectKey {
 
 function Get-ObjectLabel {
     param([string]$Type, [long]$Id, [string]$Name)
-    return $(if ($script:ObjectTypes[$Type].HasId) { "$Type $Id $Name" } else { "$Type $Name" })
+    return $(if ($AlObjectTypes[$Type].HasId) { "$Type $Id $Name" } else { "$Type $Name" })
 }
 
 # =============================================================================
@@ -437,8 +434,9 @@ function Read-AlFile {
     }
 
     $source = Read-AlSource -Text $text
-    if ($source.HeaderWord) {
-        return [pscustomobject]@{ Error = "$relative already has a $($source.HeaderWord) statement. The pass organizes files that have none; restore the file with git, then run the pass again." }
+    $header = if (@($source.Usings).Count -gt 0) { 'using' } elseif ($source.Namespace) { 'namespace' }
+    if ($header) {
+        return [pscustomobject]@{ Error = "$relative already has a $header statement. The pass organizes files that have none; restore the file with git, then run the pass again." }
     }
     if (@($source.Objects).Count -eq 0) {
         return [pscustomobject]@{ Error = "$relative declares no AL object the pass recognizes. Remove the file or declare its object." }
@@ -505,7 +503,7 @@ function Get-CodeCopFileName {
     $current = [System.IO.Path]::GetFileName($File.Path)
     if (@($File.Objects).Count -ne 1) { return $current }
     $object = $File.Objects[0]
-    $fileType = $script:ObjectTypes[$object.Type].FileType
+    $fileType = $AlObjectTypes[$object.Type].FileType
     $stem = $object.Name -replace '[^A-Za-z0-9]', ''
     if (-not $fileType -or -not $stem) { return $current }
     return "$stem.$fileType.al"

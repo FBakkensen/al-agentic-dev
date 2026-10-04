@@ -197,8 +197,8 @@ function Read-AppAlFile {
         Read every AL file the gate reads in the apps, once each.
     .DESCRIPTION
         Returns one record per file, app by app in file order: App, SourceRoot,
-        SourceRootRelative, File (the FileInfo), Relative (repo-relative, forward
-        slashes), AppRelative, Source (Read-AlSource's model), and Names (the dotted
+        SourceRootRelative, File (the FileInfo), Relative, AppRelative (all
+        repo-relative with forward slashes, empty for the repository root), Source (Read-AlSource's model), and Names (the dotted
         names rule 2 reads, empty unless the text holds the word Internal).
     #>
     param(
@@ -210,7 +210,7 @@ function Read-AppAlFile {
     foreach ($app in $Apps) {
         $appSource = Get-AppSource -App $app -Apps $Apps
         if (-not $appSource) { continue }
-        $sourceRootRelative = [System.IO.Path]::GetRelativePath($repoFull, $appSource.SourceRoot) -replace '\\', '/'
+        $sourceRootRelative = Get-RepoRelativePath -RepoRoot $repoFull -Path $appSource.SourceRoot
         $appRelative = Get-RepoRelativePath -RepoRoot $repoFull -Path ([System.IO.Path]::GetFullPath($app.Dir).TrimEnd('\', '/'))
         foreach ($file in $appSource.Files) {
             $text = "$(Get-Content -LiteralPath $file.FullName -Raw)"
@@ -221,7 +221,7 @@ function Read-AppAlFile {
                 SourceRoot         = $appSource.SourceRoot
                 SourceRootRelative = $sourceRootRelative
                 File               = $file
-                Relative           = [System.IO.Path]::GetRelativePath($repoFull, $file.FullName) -replace '\\', '/'
+                Relative           = Get-RepoRelativePath -RepoRoot $repoFull -Path $file.FullName
                 AppRelative        = $appRelative
                 Source             = $source
                 Names              = $names
@@ -234,45 +234,43 @@ function Get-NamespacePathViolation {
     param([Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Files)
 
     foreach ($entry in $Files) {
-        $app = $entry.App
-        $sourceRootRelative = $entry.SourceRootRelative
-        $repoRelative = $entry.Relative
-        $declaration = $entry.Source
+        $source = $entry.Source
+        $sourceRootDisplay = if ($entry.SourceRootRelative) { $entry.SourceRootRelative } else { '.' }
         $folder = [System.IO.Path]::GetRelativePath($entry.SourceRoot, $entry.File.DirectoryName)
 
         if ($folder -eq '..' -or $folder.StartsWith('..' + [System.IO.Path]::DirectorySeparatorChar)) {
-            New-ModuleViolation -Rule 1 -File $repoRelative -Line 1 `
-                -Message "The file sits outside the source root $sourceRootRelative. Move it under $sourceRootRelative, in the folder its namespace names."
+            New-ModuleViolation -Rule 1 -File $entry.Relative -Line 1 `
+                -Message "The file sits outside the source root $sourceRootDisplay. Move it under $sourceRootDisplay, in the folder its namespace names."
             continue
         }
 
         $segments = @(if ($folder -ne '.') { $folder -split '[\\/]' })
         $badSegment = $segments | Where-Object { $_ -notmatch '^[A-Za-z_][A-Za-z0-9_]*$' } | Select-Object -First 1
         if ($badSegment) {
-            New-ModuleViolation -Rule 1 -File $repoRelative -Line 1 `
+            New-ModuleViolation -Rule 1 -File $entry.Relative -Line 1 `
                 -Message "Folder '$badSegment' is not a single AL identifier, so no namespace can equal the path. Rename it to letters, digits, and underscores, starting with a letter or underscore."
             continue
         }
 
-        $expected = (@($app.Namespace) + $segments) -join '.'
-        $expectedFolder = (@($sourceRootRelative) + $segments | Where-Object { $_ -ne '.' }) -join '/'
+        $expected = (@($entry.App.Namespace) + $segments) -join '.'
+        $expectedFolder = (@($entry.SourceRootRelative) + $segments | Where-Object { $_ }) -join '/'
 
-        if (-not $declaration.Namespace) {
-            New-ModuleViolation -Rule 1 -File $repoRelative -Line $declaration.FirstObjectLine `
-                -Message "The file declares no namespace, so it sees every namespace without a using. Add 'namespace $expected;' above line $($declaration.FirstObjectLine)."
+        if (-not $source.Namespace) {
+            New-ModuleViolation -Rule 1 -File $entry.Relative -Line $source.FirstObjectLine `
+                -Message "The file declares no namespace, so it sees every namespace without a using. Add 'namespace $expected;' above line $($source.FirstObjectLine)."
             continue
         }
 
-        if ($declaration.Namespace -ine $expected) {
-            $prefix = $app.Namespace + '.'
-            $moveTo = if ($declaration.Namespace.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
-                $below = $declaration.Namespace.Substring($prefix.Length) -replace '\.', '/'
-                ", or move the file to $((@($sourceRootRelative, $below) | Where-Object { $_ -ne '.' }) -join '/')"
+        if ($source.Namespace -ine $expected) {
+            $prefix = $entry.App.Namespace + '.'
+            $moveTo = if ($source.Namespace.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+                $below = $source.Namespace.Substring($prefix.Length) -replace '\.', '/'
+                ", or move the file to $((@($entry.SourceRootRelative, $below) | Where-Object { $_ }) -join '/')"
             } else {
-                ", or move the file under a namespace that starts with $($app.Namespace)"
+                ", or move the file under a namespace that starts with $($entry.App.Namespace)"
             }
-            New-ModuleViolation -Rule 1 -File $repoRelative -Line $declaration.NamespaceLine `
-                -Message "Namespace $($declaration.Namespace) does not match folder $expectedFolder. Change it to 'namespace $expected;'$moveTo."
+            New-ModuleViolation -Rule 1 -File $entry.Relative -Line $source.NamespaceLine `
+                -Message "Namespace $($source.Namespace) does not match folder $expectedFolder. Change it to 'namespace $expected;'$moveTo."
         }
     }
 }
@@ -289,7 +287,7 @@ function Get-InternalReachViolation {
     $entries = @(foreach ($file in $Files) {
         [pscustomobject]@{
             File               = $file.Relative
-            Namespace          = ConvertTo-CodeName -Name $file.Source.Namespace
+            Namespace          = ConvertTo-CodeName -Segment @(if ($file.Source.Namespace) { $file.Source.Namespace -split '\.' })
             AppNamespace       = $file.App.Namespace
             SourceRootRelative = $file.SourceRootRelative
             Names              = $file.Names
@@ -302,7 +300,7 @@ function Get-InternalReachViolation {
     foreach ($entry in $entries) {
         $reported = @{}
         foreach ($name in $entry.Names) {
-            $reach = Get-InternalReach -Name (($name.Segments | ForEach-Object { $_ -replace '\W', '_' }) -join '.')
+            $reach = Get-InternalReach -Name (ConvertTo-CodeName -Segment $name.Segments)
             if (-not $reach) { continue }
             $module = $reach.Module
             if (-not $modules.ContainsKey($module) -or $reported.ContainsKey("$($name.Line)|$module")) { continue }
@@ -339,9 +337,9 @@ function Get-InternalModuleMap {
         if (-not $reach -or $modules.ContainsKey($reach.Module)) { continue }
         $module = $reach.Module
         $modules[$module] = if ($module -ieq $entry.AppNamespace) {
-            $entry.SourceRootRelative
+            if ($entry.SourceRootRelative) { $entry.SourceRootRelative } else { '.' }
         } elseif ($module.StartsWith($entry.AppNamespace + '.', [System.StringComparison]::OrdinalIgnoreCase)) {
-            (@($entry.SourceRootRelative) + ($module.Substring($entry.AppNamespace.Length + 1) -split '\.') | Where-Object { $_ -ne '.' }) -join '/'
+            (@($entry.SourceRootRelative) + ($module.Substring($entry.AppNamespace.Length + 1) -split '\.') | Where-Object { $_ }) -join '/'
         } else {
             ''
         }
@@ -352,13 +350,13 @@ function Get-InternalModuleMap {
 function ConvertTo-CodeName {
     <#
     .SYNOPSIS
-        A dotted name with each segment made one word, the form rule 2 compares
-        quoted identifiers in.
+        A dotted name from its segments, each made one word: the form rule 2
+        compares quoted identifiers in. $null when there are no segments.
     #>
-    param([AllowNull()][string]$Name)
+    param([AllowNull()][AllowEmptyCollection()][string[]]$Segment)
 
-    if (-not $Name) { return $Name }
-    return (($Name -split '\.') | ForEach-Object { $_ -replace '\W', '_' }) -join '.'
+    if (-not $Segment) { return $null }
+    return ($Segment | ForEach-Object { $_ -replace '\W', '_' }) -join '.'
 }
 
 function Get-InternalReach {
@@ -491,10 +489,9 @@ function ConvertTo-OpenCodeObject {
 
     $namespace = if ($Source.Namespace) { $Source.Namespace } else { '' }
     foreach ($object in $Source.Objects) {
-        $hasId = (Get-AlObjectType)[$object.Type].HasId
         [pscustomobject]@{
-            Key        = if ($hasId) { "$App|$($object.Type)|$($object.Id)" } else { "$App|$($object.Type)|$($object.Name.ToLowerInvariant())" }
-            Display    = $(if ($hasId) { "$($object.Keyword) $($object.Id) $($object.NameText)" } else { "$($object.Keyword) $($object.NameText)" }) -replace '\s+', ' '
+            Key        = if ($object.HasId) { "$App|$($object.Type)|$($object.Id)" } else { "$App|$($object.Type)|$($object.Name.ToLowerInvariant())" }
+            Display    = $(if ($object.HasId) { "$($object.Keyword) $($object.Id) $($object.NameText)" } else { "$($object.Keyword) $($object.NameText)" }) -replace '\s+', ' '
             Line       = $object.Line
             File       = $File
             Namespace  = $namespace

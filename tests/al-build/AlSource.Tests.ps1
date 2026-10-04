@@ -153,7 +153,7 @@ Describe 'Read-AlSource namespace and using' {
         $source = Read-AlSource -Text $text
 
         $source.Namespace | Should -BeNullOrEmpty
-        $source.HeaderWord | Should -BeNullOrEmpty
+        @($source.Usings).Count | Should -Be 0
     }
 
     It 'reads a namespace after a line comment that mentions the start of a block comment' {
@@ -167,20 +167,16 @@ Describe 'Read-AlSource namespace and using' {
         $source = Read-AlSource -Text (Join-Line @('// header', '', 'codeunit 50100 Posting', '{', '}'))
 
         $source.Namespace | Should -BeNullOrEmpty
-        $source.HeaderWord | Should -BeNullOrEmpty
+        @($source.Usings).Count | Should -Be 0
         $source.FirstObjectLine | Should -Be 3
     }
 
-    It 'names the last header statement the file starts with' {
-        $withUsing = Read-AlSource -Text (Join-Line @('using Contoso.Sales;', 'codeunit 50100 Posting', '{', '}'))
-        $withBoth = Read-AlSource -Text (Join-Line @('namespace Contoso.Sales;', 'using System.Utilities;', 'codeunit 50100 Posting', '{', '}'))
+    It 'reads a using with no namespace above it' {
+        $source = Read-AlSource -Text (Join-Line @('using Contoso.Sales;', 'codeunit 50100 Posting', '{', '}'))
 
-        $withUsing.HeaderWord | Should -Be 'using'
-        $withUsing.Namespace | Should -BeNullOrEmpty
-        $withBoth.HeaderWord | Should -Be 'using'
-        $withBoth.Namespace | Should -Be 'Contoso.Sales'
+        $source.Namespace | Should -BeNullOrEmpty
+        @($source.Usings | ForEach-Object Name) | Should -Be @('Contoso.Sales')
     }
-
     It 'counts only a namespace that comes before the first object' {
         $text = Join-Line @('codeunit 50100 Posting', '{', '}', 'namespace Late.One;')
 
@@ -583,18 +579,16 @@ Describe 'Get-AlQualifiedName' {
     }
 }
 
-Describe 'Get-AlObjectType' {
-    It 'says which object types carry an ID and the file type CodeCop names' {
-        $types = Get-AlObjectType
+Describe 'the object types' {
+    It 'says which object types carry an ID, on each object and in the exported table' {
+        $objects = @((Read-AlSource -Text (Join-Line @('codeunit 50100 One', '{', '}', 'interface "ITwo"', '{', '}', 'pagecustomization Three customizes "Customer Card"', '{', '}'))).Objects)
 
-        $types['codeunit'].HasId | Should -BeTrue
-        $types['codeunit'].FileType | Should -Be 'Codeunit'
-        $types['interface'].HasId | Should -BeFalse
-        $types['pagecustomization'].HasId | Should -BeFalse
-        $types['entitlement'].FileType | Should -BeNullOrEmpty
+        @($objects | ForEach-Object HasId) | Should -Be @($true, $false, $false)
+        $AlObjectTypes['codeunit'].FileType | Should -Be 'Codeunit'
+        $AlObjectTypes['entitlement'].FileType | Should -BeNullOrEmpty
+        $AlObjectTypes['interface'].HasId | Should -BeFalse
     }
 }
-
 Describe 'the al-build modules loaded together' {
     It 'exports no function name from more than one of al-source, module-check, and namespace-map' {
         $names = foreach ($module in 'al-source', 'module-check', 'namespace-map') {
