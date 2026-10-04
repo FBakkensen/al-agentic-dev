@@ -35,6 +35,8 @@ Regenerate the receipt's connected-object change map from the final diff. When s
 
 ▶ haiku · /al-arc42 the refreshed views from the final change map → HTML path, SVG and PNG paths, alt text, publishable fragments
 
+Show the HTML through `show_widget`, falling back to an Artifact, then the local file, and continue after the user's check:
+
 ▶ haiku · attach the refreshed PNG and SVG to the executable item as the Tracker doc in docs/agents/issue-tracker.md says → verified attachment URLs
 
 Use the verified URLs in the receipt and the Original work item's Level 2 fragment.

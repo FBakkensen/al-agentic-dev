@@ -61,6 +61,59 @@ Describe 'Architecture artifact contracts' {
         $review | Should -Match 'implementation change map includes every changed production object'
     }
 
+    It 'states in al-arc42 that every caller shows the page and a typed caller waits for the check' {
+        $arc42 = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-arc42' 'SKILL.md') -Raw
+
+        $arc42 | Should -Match 'Every caller shows the page'
+        $arc42 | Should -Match "a caller the developer types continues after the user's check, before it attaches anything or writes into the Original work item"
+        $arc42 | Should -Match '`/al-implement` runs unattended, so it shows the page and continues'
+        $arc42 | Should -Not -Match 'reviews the actual page'
+    }
+
+    It 'shows every al-arc42 page before a typed caller attaches it or writes it into the Original work item' {
+        $show = 'Show the HTML through `show_widget`, falling back to an Artifact, then the local file'
+        $wait = "continue after the user's check"
+        $sentence = "$show, and $wait"
+        $callers = @(
+            Get-ChildItem -LiteralPath $script:SkillsRoot -Directory |
+                Where-Object { $_.Name -ne 'al-arc42' -and (Test-Path -LiteralPath (Join-Path $_.FullName 'SKILL.md')) } |
+                ForEach-Object {
+                    $text = Get-Content -LiteralPath (Join-Path $_.FullName 'SKILL.md') -Raw
+                    [pscustomobject]@{ Name = $_.Name; Body = ($text -replace '(?s)^---.*?\r?\n---\r?\n', '') }
+                } |
+                Where-Object { $_.Body -match '/al-arc42' }
+        )
+
+        $callers | Should -Not -BeNullOrEmpty
+
+        foreach ($caller in $callers) {
+            $body = $caller.Body
+            $name = $caller.Name
+
+            if ($name -eq 'al-implement') {
+                $body | Should -Match ([regex]::Escape($show)) -Because "$name shows its page"
+                $body | Should -Not -Match ([regex]::Escape($wait)) -Because "$name runs unattended"
+                continue
+            }
+
+            $shows = @([regex]::Matches($body, [regex]::Escape($sentence)) | ForEach-Object { $_.Index })
+            $shows.Count | Should -BeGreaterThan 0 -Because "$name shows each page and waits for the user's check"
+
+            $calls = @([regex]::Matches($body, '/al-arc42') | ForEach-Object { $_.Index })
+            $attaches = @([regex]::Matches($body, '(?i)\battach') | ForEach-Object { $_.Index })
+            foreach ($call in $calls) {
+                $lineStart = $body.LastIndexOf("`n", $call) + 1
+                $isDispatch = $body.Substring($lineStart).StartsWith('▶')
+                $next = @(($calls + $attaches) | Where-Object { $_ -gt $call } | Sort-Object)[0]
+                if ($null -eq $next) { continue }
+                if (-not $isDispatch -and ($next -notin $attaches -or $body.Substring($call, $next - $call) -match '\r?\n\r?\n')) { continue }
+
+                @($shows | Where-Object { $_ -gt $call -and $_ -lt $next }).Count |
+                    Should -BeGreaterThan 0 -Because "$name shows the page and continues after the user's check between its /al-arc42 call and the next call or attach"
+            }
+        }
+    }
+
     It 'owns Azure DevOps attachment upload in one skill' {
         $attachmentSkill = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-azure-devops-attachments' 'SKILL.md') -Raw
 
