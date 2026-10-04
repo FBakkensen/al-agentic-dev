@@ -176,7 +176,7 @@ function Read-AlSource {
         - HeaderWord: namespace or using, whichever the file's last header
           statement starts with, or $null.
         - Objects: Keyword (as written), Type, Id (0 without one), Name, NameText
-          (as written, quotes kept), NameIndex, KeywordIndex, StartIndex (the
+          (as written, quotes kept), NameIndex, StartIndex (the
           leading attributes' first bracket, else the keyword), Line (of the
           keyword), and Procedures.
         - Procedures: Name, Access (local, internal, protected, or public),
@@ -226,7 +226,7 @@ function Read-AlSource {
                 $word = $match.Value.ToLowerInvariant()
                 if ($word -eq 'namespace' -or $word -eq 'using') {
                     $source.HeaderWord = $word
-                    $statement = Read-HeaderStatement -Token $significant -Position $i
+                    $statement = Read-HeaderStatement -Token $significant -Position $i -Text $Text
                     if ($statement) {
                         if ($word -eq 'using') {
                             $source.Usings.Add([pscustomobject]@{ Name = $statement.Name; Line = Get-AlLineNumber -Source $source -Index $match.Index })
@@ -287,23 +287,21 @@ function ConvertTo-NameText {
 }
 
 function Read-HeaderStatement {
-    # `namespace A.B;` or `using A.B;` from the keyword at Position; $null when the tokens are not a statement.
-    param([object]$Token, [int]$Position)
+    # `namespace A.B;` or `using A.B;` from the keyword at Position: the text up to the first semicolon, on the
+    # keyword's line, with its quotes dropped. $null when no semicolon ends the statement on that line.
+    # The text is not checked as a name, so a malformed namespace is still read as declared.
+    param([object]$Token, [int]$Position, [string]$Text)
 
-    $name = [System.Text.StringBuilder]::new()
+    $keyword = $Token[$Position]
     for ($j = $Position + 1; $j -lt $Token.Count; $j++) {
-        $value = $Token[$j].Value
-        if ($value -eq '.' -or (Test-NameValue -Value $value)) {
-            [void]$name.Append((ConvertTo-NameText -Value $value))
-        } elseif ($value -eq ';' -and $name.Length -gt 0) {
-            return [pscustomobject]@{ Name = $name.ToString(); EndIndex = $Token[$j].Index }
-        } else {
-            return $null
-        }
+        if ($Token[$j].Value -ne ';') { continue }
+        $start = $keyword.Index + $keyword.Length
+        $name = $Text.Substring($start, $Token[$j].Index - $start)
+        if ($name.Contains("`n") -or [string]::IsNullOrWhiteSpace($name)) { return $null }
+        return [pscustomobject]@{ Name = $name.Replace('"', '').Trim(); EndIndex = $Token[$j].Index }
     }
     return $null
 }
-
 function Read-ObjectDeclaration {
     # `codeunit 50100 "Name"` or, for an object with no ID, `interface "Name"`; $null when the tokens are neither.
     param([object]$Token, [int]$Position, [string]$Word)
@@ -328,7 +326,6 @@ function Read-ObjectDeclaration {
         Name         = ConvertTo-NameText -Value $nameMatch.Value
         NameText     = $nameMatch.Value
         NameIndex    = $nameMatch.Index
-        KeywordIndex = $keyword.Index
         StartIndex   = $keyword.Index
         Line         = 1
         Procedures   = [System.Collections.Generic.List[object]]::new()
@@ -464,7 +461,8 @@ function Get-AlQualifiedName {
         namespace statement.
     .DESCRIPTION
         A name is identifiers and quoted identifiers joined by dots with no
-        space between them. Takes the text and the Read-AlSource result for it.
+        space between them, and not a member access (a name that follows a dot
+        or a closing parenthesis). Takes the text and the Read-AlSource result for it.
         Returns Segments (a quoted segment without its quotes) and Line. A
         using statement's name counts.
     #>
@@ -497,7 +495,8 @@ function Get-AlQualifiedName {
             $end = $next.Index + $next.Length
             $j += 2
         }
-        if ($j -gt $i -and -not [char]::IsDigit($first)) {
+        $before = if ($token.Index -gt 0) { $Text[$token.Index - 1] } else { ' ' }
+        if ($j -gt $i -and -not [char]::IsDigit($first) -and $before -ne '.' -and $before -ne ')') {
             [pscustomobject]@{
                 Segments = [string[]]@(for ($k = $i; $k -le $j; $k += 2) { ConvertTo-NameText -Value $significant[$k].Value })
                 Line     = Get-AlLineNumber -Source $Source -Index $token.Index

@@ -127,6 +127,19 @@ Describe 'Read-AlSource namespace and using' {
         $source.Namespace | Should -Be 'Contoso.Sales Posting'
     }
 
+    It 'reads text that is not a valid name as the namespace, so the gate can report it' {
+        $source = Read-AlSource -Text (Join-Line @('namespace Contoso.Sales.Post-ing;', 'codeunit 50100 Posting', '{', '}'))
+
+        $source.Namespace | Should -Be 'Contoso.Sales.Post-ing'
+        @($source.Objects).Count | Should -Be 1
+    }
+
+    It 'reads no namespace from a statement whose semicolon is on a later line' {
+        $source = Read-AlSource -Text (Join-Line @('namespace Contoso.Sales', ';', 'codeunit 50100 Posting', '{', '}'))
+
+        $source.Namespace | Should -BeNullOrEmpty
+    }
+
     It 'ignores a namespace statement in a comment or a string' {
         $text = Join-Line @(
             '// namespace Fake.One;',
@@ -234,7 +247,6 @@ Describe 'Read-AlSource objects' {
 
         $object.Line | Should -Be 5
         $object.StartIndex | Should -Be $text.IndexOf('[Obsolete')
-        $object.KeywordIndex | Should -Be $text.IndexOf('codeunit')
     }
 
     It 'starts an object at its keyword when no attribute sits above it' {
@@ -556,6 +568,12 @@ Describe 'Get-AlQualifiedName' {
         $names = @(Get-AlQualifiedName -Source (Read-AlSource -Text $text) -Text $text)
 
         $names[0].Segments -join '.' | Should -Be 'Contoso.Internal.Check'
+    }
+
+    It 'does not start a name after a dot or a closing parenthesis' {
+        $text = Join-Line @('codeunit 50100 Host', '{', '    Value := Find().Contoso.Internal.Check;', '}')
+
+        @(Get-AlQualifiedName -Source (Read-AlSource -Text $text) -Text $text).Count | Should -Be 0
     }
 
     It 'does not join names across whitespace' {

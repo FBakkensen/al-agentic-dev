@@ -87,6 +87,18 @@ Describe 'Invoke-ModuleCheck' {
             $violation.Message | Should -Match ([regex]::Escape('app/src/Shipping'))
         }
 
+        It 'reads a namespace that is not a valid name as declared, and reports the mismatch with the folder' {
+            $root = New-ModuleFixtureRepo @{
+                'app/src/Posting/Post.Codeunit.al' = New-AlFile 'Contoso.Sales.Post-ing'
+            }
+
+            $result = Invoke-FixtureCheck -Root $root
+
+            @($result.Violations).Count | Should -Be 1
+            $result.Violations[0].Line | Should -Be 1
+            $result.Violations[0].Message | Should -Match ([regex]::Escape('Namespace Contoso.Sales.Post-ing does not match folder app/src/Posting'))
+        }
+
         It 'treats the app folder as the source root when the app has no src folder' {
             $root = New-ModuleFixtureRepo @{
                 'app/Posting/Post.Codeunit.al' = New-AlFile 'Contoso.Sales.Posting'
@@ -335,6 +347,24 @@ Describe 'Invoke-ModuleCheck' {
             $result.Violations[0].Line | Should -Be 7
         }
 
+        It 'does not read a member access after a call as a qualified name' {
+            $body = "    procedure Run()`n    begin`n        Rec.Foo().Contoso.Sales.Posting.Internal.Rules.Run();`n    end;`n"
+            $root = New-ModuleFixtureRepo (New-InternalModuleFiles @{
+                'app/src/Shipping/Ship.Codeunit.al' = New-ReachingFile 'Contoso.Sales.Shipping' -Body $body
+            })
+
+            @((Invoke-FixtureCheck -Root $root).Violations).Count | Should -Be 0
+        }
+
+        It 'passes a name that appears only in a preprocessor line' {
+            $body = "#region Contoso.Sales.Posting.Internal.Rules`n    procedure Run()`n    begin`n    end;`n#endregion`n"
+            $root = New-ModuleFixtureRepo (New-InternalModuleFiles @{
+                'app/src/Shipping/Ship.Codeunit.al' = New-ReachingFile 'Contoso.Sales.Shipping' -Body $body
+            })
+
+            @((Invoke-FixtureCheck -Root $root).Violations).Count | Should -Be 0
+        }
+
         It 'ignores a dotted name that is not a namespace of the repository' {
             $body = "    procedure Run()`n    begin`n        Rec.Internal.Run();`n    end;`n"
             $root = New-ModuleFixtureRepo (New-InternalModuleFiles @{
@@ -579,6 +609,17 @@ $Extra}
             }
 
             (Get-Rule3 (Invoke-Rule3Check -Root $root).Violations).Count | Should -Be 1
+        }
+
+        It 'fails a new object that has no ID, such as a page customization' {
+            $root = New-Rule3Repo -Base (Get-BaseFiles) -Change @{
+                'app/src/Posting/CustomerCard.PageCust.al' = New-AlFile 'Contoso.Sales.Posting' 'pagecustomization CustomerCardCust customizes "Customer Card"'
+            }
+
+            $found = Get-Rule3 (Invoke-Rule3Check -Root $root).Violations
+
+            $found.Count | Should -Be 1
+            $found[0].Message | Should -Match 'pagecustomization CustomerCardCust'
         }
 
         It 'fails a new public procedure on an existing object, at the procedure line' {
