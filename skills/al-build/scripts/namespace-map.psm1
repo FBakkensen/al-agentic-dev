@@ -12,31 +12,8 @@
 
 Set-StrictMode -Version Latest
 
+Import-Module (Join-Path $PSScriptRoot 'al-source.psm1') -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot 'module-check.psm1') -DisableNameChecking
-
-# AL object keyword -> whether the object has an ID, and the CodeCop file-name
-# type (Best practices for AL, "File naming"). reportextension follows the page's
-# <FullTypeName>Ext notation; entitlement is not in the type map, so its file keeps its name.
-$script:ObjectTypes = @{
-    table                  = @{ HasId = $true;  FileType = 'Table' }
-    tableextension         = @{ HasId = $true;  FileType = 'TableExt' }
-    page                   = @{ HasId = $true;  FileType = 'Page' }
-    pageextension          = @{ HasId = $true;  FileType = 'PageExt' }
-    pagecustomization      = @{ HasId = $false; FileType = 'PageCust' }
-    codeunit               = @{ HasId = $true;  FileType = 'Codeunit' }
-    report                 = @{ HasId = $true;  FileType = 'Report' }
-    reportextension        = @{ HasId = $true;  FileType = 'ReportExt' }
-    xmlport                = @{ HasId = $true;  FileType = 'Xmlport' }
-    query                  = @{ HasId = $true;  FileType = 'Query' }
-    enum                   = @{ HasId = $true;  FileType = 'Enum' }
-    enumextension          = @{ HasId = $true;  FileType = 'EnumExt' }
-    controladdin           = @{ HasId = $false; FileType = 'ControlAddin' }
-    profile                = @{ HasId = $false; FileType = 'Profile' }
-    interface              = @{ HasId = $false; FileType = 'Interface' }
-    permissionset          = @{ HasId = $true;  FileType = 'PermissionSet' }
-    permissionsetextension = @{ HasId = $true;  FileType = 'PermissionSetExt' }
-    entitlement            = @{ HasId = $false; FileType = $null }
-}
 
 # The object types other code names, which is what a using is for. Extensions are never named.
 $script:ReferenceableTypes = @('table', 'page', 'codeunit', 'report', 'xmlport', 'query', 'enum', 'controladdin', 'profile', 'interface', 'permissionset')
@@ -45,16 +22,6 @@ $script:ReferenceableTypes = @('table', 'page', 'codeunit', 'report', 'xmlport',
 $script:SymbolKinds = @{
     Tables = 'table'; Pages = 'page'; Codeunits = 'codeunit'; Reports = 'report'; XmlPorts = 'xmlport'; Queries = 'query'
     EnumTypes = 'enum'; ControlAddIns = 'controladdin'; Profiles = 'profile'; Interfaces = 'interface'; PermissionSets = 'permissionset'
-}
-
-# The word before a name (Record Customer) or before :: (Database::Customer) that fixes its object type.
-$script:TypeAfterKeyword = @{
-    record = 'table'; tabledata = 'table'; codeunit = 'codeunit'; page = 'page'; testpage = 'page'; report = 'report'; query = 'query'
-    xmlport = 'xmlport'; enum = 'enum'; interface = 'interface'; controladdin = 'controladdin'; permissionset = 'permissionset'
-}
-$script:TypeBeforeColons = @{
-    database = 'table'; table = 'table'; codeunit = 'codeunit'; page = 'page'; report = 'report'; query = 'query'
-    xmlport = 'xmlport'; enum = 'enum'; interface = 'interface'; controladdin = 'controladdin'; permissionset = 'permissionset'; profile = 'profile'
 }
 
 $script:NamespacePattern = '^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$'
@@ -221,12 +188,12 @@ function Read-NamespaceMap {
         $name = Get-JsonProperty $raw 'name'
         $namespace = Get-JsonProperty $raw 'namespace'
 
-        if ($type -isnot [string] -or -not $script:ObjectTypes.ContainsKey($type.ToLowerInvariant())) {
+        if ($type -isnot [string] -or -not $AlObjectTypes.ContainsKey($type.ToLowerInvariant())) {
             $Errors.Add("$where has type '$type', which is not an AL object type. Use the object keyword, such as codeunit or tableextension.")
             continue
         }
         $type = $type.ToLowerInvariant()
-        $hasId = $script:ObjectTypes[$type].HasId
+        $hasId = $AlObjectTypes[$type].HasId
         $idOk = ($id -is [int] -or $id -is [long]) -and (($hasId -and $id -ge 1) -or (-not $hasId -and $id -eq 0))
         if (-not $idOk) {
             $Errors.Add("$where ($type) has id '$id'. $(if ($hasId) { 'Use the object ID, a positive number.' } else { "A $type has no ID; use 0." })")
@@ -275,7 +242,7 @@ function Select-MapObjectMatch {
     foreach ($entry in $Entries) { $entriesByKey[$entry.Key] = $entry }
 
     foreach ($entry in $Entries | Where-Object { -not $objectsByKey.ContainsKey($_.Key) }) {
-        $sameId = if ($script:ObjectTypes[$entry.Type].HasId) {
+        $sameId = if ($AlObjectTypes[$entry.Type].HasId) {
             $Files | ForEach-Object { $_.Objects } | Where-Object { $_.Type -eq $entry.Type -and $_.Id -eq $entry.Id } | Select-Object -First 1
         }
         $hint = if ($sameId) { " The app's $($entry.Type) $($entry.Id) is named $($sameId.Name); correct the name in the map." } else { ' Remove the entry, or correct its type, id, and name.' }
@@ -302,7 +269,7 @@ function Get-ObjectKey {
 
 function Get-ObjectLabel {
     param([string]$Type, [long]$Id, [string]$Name)
-    return $(if ($script:ObjectTypes[$Type].HasId) { "$Type $Id $Name" } else { "$Type $Name" })
+    return $(if ($AlObjectTypes[$Type].HasId) { "$Type $Id $Name" } else { "$Type $Name" })
 }
 
 # =============================================================================
@@ -466,147 +433,27 @@ function Read-AlFile {
         return [pscustomobject]@{ Error = "$relative is not valid UTF-8. Save it as UTF-8, then run the pass again." }
     }
 
-    $tokens = @(Get-AlToken -Text $text)
-    $structure = Read-AlStructure -Tokens $tokens
-    if ($structure.Header) {
-        return [pscustomobject]@{ Error = "$relative already has a $($structure.Header) statement. The pass organizes files that have none; restore the file with git, then run the pass again." }
+    $source = Read-AlSource -Text $text
+    $header = if (@($source.Usings).Count -gt 0) { 'using' } elseif ($source.Namespace) { 'namespace' }
+    if ($header) {
+        return [pscustomobject]@{ Error = "$relative already has a $header statement. The pass organizes files that have none; restore the file with git, then run the pass again." }
     }
-    if (@($structure.Objects).Count -eq 0) {
+    if (@($source.Objects).Count -eq 0) {
         return [pscustomobject]@{ Error = "$relative declares no AL object the pass recognizes. Remove the file or declare its object." }
     }
 
     return [pscustomobject]@{
         Error = $null; Path = $Path; Text = $text; HasBom = $hasBom
         NewLine = $(if ($text -match "\r\n") { "`r`n" } else { "`n" })
-        InsertAt = Get-InsertionOffset -Text $text -Index $structure.FirstStart
-        Objects = @($structure.Objects)
-        References = @(Get-NameReference -Tokens $tokens -DeclarationIndexes $structure.DeclarationIndexes)
-    }
-}
-
-function Read-AlStructure {
-    # The top-level shape: objects, a namespace or using statement, and where the first object's
-    # leading attributes begin. Only tokens outside braces and brackets can start a statement.
-    param([Parameter(Mandatory)][object[]]$Tokens)
-
-    $objects = [System.Collections.Generic.List[object]]::new()
-    $declarationIndexes = [System.Collections.Generic.HashSet[int]]::new()
-    $header = $null
-    $firstStart = -1
-    $attributeStart = -1
-    $depth = 0
-    $bracket = 0
-    $previous = $null
-    for ($i = 0; $i -lt $Tokens.Count; $i++) {
-        $token = $Tokens[$i]
-        if ($token.Kind -in 'comment', 'directive') { continue }
-
-        if ($token.Kind -eq 'punct') {
-            switch ($token.Text) {
-                '{' { $depth++ }
-                '}' { $depth--; if ($depth -eq 0) { $attributeStart = -1 } }
-                ';' { if ($depth -eq 0) { $attributeStart = -1 } }
-                '[' { if ($depth -eq 0) { if ($bracket -eq 0 -and $attributeStart -lt 0) { $attributeStart = $token.Index }; $bracket++ } }
-                ']' { if ($depth -eq 0) { $bracket-- } }
+        InsertAt = Get-InsertionOffset -Text $text -Index $source.Objects[0].StartIndex
+        Objects = @($source.Objects | ForEach-Object {
+            [pscustomobject]@{
+                Type = $_.Type; Id = $_.Id; Name = $_.Name
+                Label = Get-ObjectLabel -Type $_.Type -Id $_.Id -Name $_.Name
+                Key = Get-ObjectKey -Type $_.Type -Id $_.Id -Name $_.Name
             }
-        } elseif ($depth -eq 0 -and $bracket -eq 0 -and $token.Kind -eq 'ident' -and ($null -eq $previous -or $previous.Text -in '}', ';', ']')) {
-            $word = $token.Text.ToLowerInvariant()
-            if ($word -in 'namespace', 'using') {
-                $header = $word
-            } elseif ($script:ObjectTypes.ContainsKey($word)) {
-                $object = Read-ObjectDeclaration -Word $word -Tokens $Tokens -KeywordPosition $i
-                if ($object) {
-                    [void]$declarationIndexes.Add($object.NameIndex)
-                    if ($firstStart -lt 0) { $firstStart = if ($attributeStart -ge 0) { $attributeStart } else { $token.Index } }
-                    $objects.Add($object)
-                }
-            }
-        }
-        $previous = $token
-    }
-    return [pscustomobject]@{ Objects = @($objects); Header = $header; FirstStart = $firstStart; DeclarationIndexes = $declarationIndexes }
-}
-
-function Read-ObjectDeclaration {
-    # `codeunit 50100 "Name"` or, for an object with no ID, `interface "Name"`; $null when the tokens are neither.
-    param([string]$Word, [object[]]$Tokens, [int]$KeywordPosition)
-
-    $hasId = $script:ObjectTypes[$Word].HasId
-    $rest = if ($KeywordPosition + 1 -lt $Tokens.Count) {
-        @($Tokens[($KeywordPosition + 1)..($Tokens.Count - 1)] | Where-Object { $_.Kind -notin 'comment', 'directive' } | Select-Object -First 2)
-    } else { @() }
-
-    $id = 0
-    $nameToken = $null
-    if ($hasId) {
-        if ($rest.Count -ge 2 -and $rest[0].Kind -eq 'number' -and $rest[1].Kind -in 'ident', 'qident') { $id = [long]$rest[0].Text; $nameToken = $rest[1] }
-    } elseif ($rest.Count -ge 1 -and $rest[0].Kind -in 'ident', 'qident') {
-        $nameToken = $rest[0]
-    }
-    if (-not $nameToken) { return $null }
-
-    return [pscustomobject]@{
-        Type = $Word; Id = $id; Name = $nameToken.Value; NameIndex = $nameToken.Index
-        Label = Get-ObjectLabel -Type $Word -Id $id -Name $nameToken.Value
-        Key = Get-ObjectKey -Type $Word -Id $id -Name $nameToken.Value
-    }
-}
-
-function Get-NameReference {
-    # Identifiers and quoted identifiers the file names, except member accesses after a dot, the
-    # declared object names, and the type words (Record, Database::) that introduce a name. The
-    # object type is set when the word before a name fixes it.
-    param([Parameter(Mandatory)][object[]]$Tokens, [Parameter(Mandatory)]$DeclarationIndexes)
-
-    $significant = @($Tokens | Where-Object { $_.Kind -notin 'comment', 'directive' })
-    $references = [System.Collections.Generic.Dictionary[string, object]]::new()
-    for ($i = 0; $i -lt $significant.Count; $i++) {
-        $token = $significant[$i]
-        if ($token.Kind -notin 'ident', 'qident' -or $DeclarationIndexes.Contains($token.Index)) { continue }
-        $one = if ($i -ge 1) { $significant[$i - 1] } else { $null }
-        $two = if ($i -ge 2) { $significant[$i - 2] } else { $null }
-        $next = if ($i + 1 -lt $significant.Count) { $significant[$i + 1] } else { $null }
-        if ($one -and $one.Text -eq '.') { continue }
-
-        $word = $token.Value.ToLowerInvariant()
-        $isTypeWord = $token.Kind -eq 'ident' -and ($script:TypeAfterKeyword.ContainsKey($word) -or $script:TypeBeforeColons.ContainsKey($word))
-        if ($isTypeWord -and $next -and ($next.Text -eq '::' -or $next.Kind -in 'ident', 'qident')) { continue }
-
-        $type = $null
-        if ($one -and $one.Text -eq '::' -and $two -and $two.Kind -eq 'ident') { $type = $script:TypeBeforeColons[$two.Text.ToLowerInvariant()] }
-        elseif ($one -and $one.Kind -eq 'ident') { $type = $script:TypeAfterKeyword[$one.Text.ToLowerInvariant()] }
-        $key = "$type|$word"
-        if (-not $references.ContainsKey($key)) {
-            $references[$key] = [pscustomobject]@{ Name = $word; Display = $token.Value; Type = $type }
-        }
-    }
-    return @($references.Values)
-}
-
-function Get-AlToken {
-    <#
-    .SYNOPSIS
-        Split AL text into tokens, setting comments, strings, and directives apart.
-    .DESCRIPTION
-        One left-to-right pass, so a quote inside a comment or a preprocessor line
-        never opens a string. Kinds: comment, directive, string, qident, number,
-        ident, punct. Value is the identifier without its quotes.
-    #>
-    param([Parameter(Mandatory)][AllowEmptyString()][string]$Text)
-
-    $pattern = '(?m)^[ \t]*#[^\r\n]*|//[^\r\n]*|/\*.*?\*/|@?''(?:[^''\r\n]|'''')*''|"[^"\r\n]*"|\d+|[A-Za-z_][A-Za-z0-9_]*|::|[{};.\[\]]'
-    foreach ($match in [regex]::Matches($Text, $pattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
-        $value = $match.Value
-        $trimmed = $value.TrimStart()
-        $kind = if ($trimmed.StartsWith('#')) { 'directive' }
-        elseif ($trimmed.StartsWith('//') -or $trimmed.StartsWith('/*')) { 'comment' }
-        elseif ($trimmed.StartsWith("'") -or $trimmed.StartsWith("@'")) { 'string' }
-        elseif ($trimmed.StartsWith('"')) { 'qident' }
-        elseif ($trimmed -match '^\d') { 'number' }
-        elseif ($trimmed -match '^[A-Za-z_]') { 'ident' }
-        else { 'punct' }
-        $inner = if ($kind -eq 'qident') { $value.Substring(1, $value.Length - 2) } else { $value }
-        [pscustomobject]@{ Kind = $kind; Text = $value; Value = $inner; Index = $match.Index + ($value.Length - $trimmed.Length) }
+        })
+        References = @(Get-AlNameReference -Source $source -Text $text)
     }
 }
 
@@ -656,7 +503,7 @@ function Get-CodeCopFileName {
     $current = [System.IO.Path]::GetFileName($File.Path)
     if (@($File.Objects).Count -ne 1) { return $current }
     $object = $File.Objects[0]
-    $fileType = $script:ObjectTypes[$object.Type].FileType
+    $fileType = $AlObjectTypes[$object.Type].FileType
     $stem = $object.Name -replace '[^A-Za-z0-9]', ''
     if (-not $fileType -or -not $stem) { return $current }
     return "$stem.$fileType.al"
