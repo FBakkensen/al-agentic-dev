@@ -660,8 +660,8 @@ Describe 'Module shape' {
         $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
         $tdd = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-tdd' 'SKILL.md') -Raw
 
-        $implement | Should -Match 'A new object, callable procedure, or event subscriber goes into a module of the shape /al-codebase-design states; a fix inside an existing open-code procedure stays where it is'
-        $tdd | Should -Match 'tested through a module''s root namespace, never its `\.Internal`, from a test at the module''s path in the test tree'
+        $implement | Should -Match 'With the module gate on, a new object, callable procedure, or event subscriber goes into a module of the shape /al-codebase-design states; a fix inside an existing open-code procedure stays where it is'
+        $tdd | Should -Match 'with the module gate on, that is its root namespace, never its `\.Internal`, from a test at the module''s path in the test tree'
     }
 
     It 'flags a test that reaches a module''s .Internal and keeps a module''s interface fixed' {
@@ -669,8 +669,7 @@ Describe 'Module shape' {
         $simplify = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-simplify' 'SKILL.md') -Raw
 
         $review | Should -Match 'tests exercise the caller-visible module interface rather than private internals; a test that reaches a module''s `\.Internal` is the concrete finding'
-        $simplify | Should -Match 'the interface of each module, its root namespace, are fixed; its `\.Internal` may be reshaped behind it'
-        $simplify | Should -Match 'or a module''s interface goes to the user'
+        $simplify | Should -Match 'the Level 1 module interface \(with the module gate on, each module''s root namespace\) are fixed; a module''s `\.Internal` may be reshaped behind it'
     }
 
     It 'keeps the word legacy out of the five skills that state the module shape' {
