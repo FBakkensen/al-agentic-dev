@@ -9,11 +9,13 @@ In: `/mattpocock-skills:improve-codebase-architecture` running on AL code in a C
 
 ## Freeze
 
-Gherkin, the reviewed AAA expected values and proof levels, and the Level 1 module interface are fixed. Read the diff, the receipt, and the `Current-to-final proof map`, and trace consumers before a seam moves. Every BC object, table, field, procedure, event, enum value, test library, or dialog text used is confirmed by a lookup in the current session.
+Gherkin, the reviewed AAA expected values and proof levels, and the Level 1 module interface (with the module gate on, each module's root namespace) are fixed. Read the diff, the receipt, and the `Current-to-final proof map`, and trace consumers before a seam moves. Every BC object, table, field, procedure, event, enum value, test library, or dialog text used is confirmed by a lookup in the current session.
 
 Deepening reduces hidden complexity behind the existing caller-visible interface: one owner, tests through that interface, replaceable internals. Prefer canonical BC patterns and Base App helpers to local code. Collapse an interface with one implementation unless a second implementation or a stable external contract proves the seam. A defect noticed outside the chosen candidate is a follow-up line in the receipt, not a change.
 
-A proposed Level 1 interface change goes to the user before any refactor, as does any change to behavior, an expected value, or a proof level. Once the user approves a Level 1 change, update the Original work item's Building Block View Level 1 through /al-arc42. Show the HTML through `show_widget`, falling back to an Artifact, then the local file, and continue after the user's check. Then run the Tracker doc's attach procedure before the refactor starts, writing the returned fragment into the spec field the Tracker doc names, under `Implementation Decisions`.
+When the candidate is open code in an app with the module gate on (`moduleGate.enabled` true in `al-build.json`), the refactor follows [OPEN-CODE.md](OPEN-CODE.md).
+
+A proposed Level 1 interface change, a new module's interface included, goes to the user before any refactor, as does any change to behavior, an expected value, or a proof level. Once the user approves a Level 1 change, update the Original work item's Building Block View Level 1 through /al-arc42. Show the HTML through `show_widget`, falling back to an Artifact, then the local file, and continue after the user's check. Then run the Tracker doc's attach procedure before the refactor starts, writing the returned fragment into the spec field the Tracker doc names, under `Implementation Decisions`.
 
 A test that moves behind the deepened interface is a materially reshaped proof: it accounts for every existing business assertion and earns its red as al-tdd requires under `/mattpocock-skills:tdd`, a born-green reshape included. That red runs once the step that moves the proof is green: inject one compiling fault, get red, revert, confirm green. This intended red is not a reason to restore.
 
