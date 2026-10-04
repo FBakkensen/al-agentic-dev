@@ -27,7 +27,7 @@ The Original work item owns the shared design. A child's spec field names its on
 
 ## Write the acceptance criteria
 
-Each slice carries its `Behavior` as valid fenced Gherkin in the acceptance criteria: `Scenario`, `Given`, `When`, and `Then`, with `Background`, `And`, `But`, and `Scenario Outline` when useful. Gherkin speaks the business process; AL object structure and test implementation stay out of it.
+Each slice carries its `Behavior` as valid fenced Gherkin in the acceptance criteria: `Scenario`, `Given`, `When`, and `Then`, with `Background`, `And`, `But`, and `Scenario Outline` when useful. Gherkin speaks the business process, and scenarios use BC business words: Post not submit, Ledger Entry not transaction. AL object structure and test implementation stay out of it.
 
 `Behavior` precedes `Test specification` when both are present. Either section may be omitted, and its absence has no prescribed meaning. That omission never lifts a slice's `Behavior`: it covers a container Original, which holds the shared design, and a `Test specification` that `/mattpocock-skills:tdd` writes later.
 
