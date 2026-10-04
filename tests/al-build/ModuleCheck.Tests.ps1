@@ -648,6 +648,30 @@ $Extra}
             $found[0].Message | Should -Match 'event subscriber'
         }
 
+        It 'fails a new event subscriber whose attribute names an object with a closing bracket in its name' {
+            $subscriber = "`n    [EventSubscriber(ObjectType::Table, Database::`"Sales ] Line`", 'OnAfterInsert', '', false, false)]`n    local procedure OnAfterInsertLine()`n    begin`n    end;`n"
+            $root = New-Rule3Repo -Base (Get-BaseFiles) -Change @{
+                $script:PostingFile = New-PostingAl -Extra $subscriber
+            }
+
+            $found = Get-Rule3 (Invoke-Rule3Check -Root $root).Violations
+
+            $found.Count | Should -Be 1
+            $found[0].Message | Should -Match 'event subscriber'
+        }
+
+        It 'warns, and does not fail, on a new local procedure whose local sits on its own line' {
+            $helper = "`n    local`n    procedure SecondHelper()`n    begin`n    end;`n"
+            $root = New-Rule3Repo -Base (Get-BaseFiles) -Change @{
+                $script:PostingFile = New-PostingAl -Extra $helper
+            }
+
+            $result = Invoke-Rule3Check -Root $root
+
+            @(Get-Rule3 $result.Violations).Count | Should -Be 0
+            @(Get-Rule3 $result.Warnings).Count | Should -Be 1
+        }
+
         It 'fails an existing local procedure made callable' {
             $root = New-Rule3Repo -Base (Get-BaseFiles) -Change @{
                 $script:PostingFile = New-PostingAl -HelperSignature 'procedure Helper(Amount: Decimal)'
