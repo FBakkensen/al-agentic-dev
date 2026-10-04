@@ -421,6 +421,15 @@ Describe 'ConvertTo-ModuleGateBlock' {
         $block.base | Should -BeNullOrEmpty
     }
 
+    It 'keeps a single skipped rule an array, so the summary lists it as one' {
+        $result = [pscustomobject]@{ Violations = @(); Warnings = @(); SkippedRules = @('Rule 3 skipped: no base.') }
+
+        $block = ConvertTo-ModuleGateBlock -Enabled $true -Result $result
+
+        ($block.skippedRules -is [array]) | Should -BeTrue
+        ($block | ConvertTo-Json -Depth 5) | Should -Match '"skippedRules": \[\s*"Rule 3 skipped: no base\."\s*\]'
+    }
+
     It 'carries the ref and merge base rule 3 compared with' {
         $result = [pscustomobject]@{
             Violations   = @()

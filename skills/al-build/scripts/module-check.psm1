@@ -124,7 +124,7 @@ function ConvertTo-ModuleGateBlock {
 
     $violations = if ($Result) { @($Result.Violations) } else { @() }
     $warnings = if ($Result) { @($Result.Warnings) } else { @() }
-    $skippedRules = if ($Result) { @($Result.SkippedRules) } else { @() }
+    $skippedRules = @(if ($Result) { $Result.SkippedRules })
     $base = if ($Result -and $Result.PSObject.Properties['Base'] -and $Result.Base) {
         [ordered]@{ ref = $Result.Base.Ref; mergeBase = $Result.Base.MergeBase }
     } else {
