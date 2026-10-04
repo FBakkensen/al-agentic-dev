@@ -706,7 +706,7 @@ Describe 'Open code refactoring path' {
 
         $skill | Should -Match 'and the Level 1 module interface \(with the module gate on, each module''s root namespace\) are fixed'
         $skill | Should -Match 'A proposed Level 1 interface change, a new module''s included, goes to the user before any refactor'
-        $script:OpenCode | Should -Match 'A new module''s interface is a proposed Level 1 interface and goes to the user as Freeze says'
+        $script:OpenCode | Should -Match 'A new module''s interface is agreed with the user before the first move \(Freeze\)'
     }
 
     It 'states the seven steps in order' {
@@ -720,6 +720,7 @@ Describe 'Open code refactoring path' {
             'deliberately unpinned'
             '3\. \*\*Extraction\.\*\*'
             'new or existing modules \(child namespaces\)'
+            'its internals in the module''s `\.Internal` behind the root-namespace interface'
             'through its root namespace'
             '4\. \*\*Pure proxies\.\*\*'
             'only delegates'
@@ -733,6 +734,8 @@ Describe 'Open code refactoring path' {
             '7\. \*\*Callers switched\.\*\*'
             'mechanically'
             'keeps its mark'
+            'breaks the gate''s zero-warnings green'
+            'Steps 6 and 7 together are one step to a green gate'
         )
         $at = -1
         foreach ($phrase in $phrases) {
