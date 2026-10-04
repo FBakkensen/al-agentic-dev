@@ -685,3 +685,77 @@ Describe 'Module shape' {
         $context | Should -Match '(?m)^\*\*Open code\*\*:\r?\nEvery AL object outside a module.*no special name or mark'
     }
 }
+
+Describe 'Open code refactoring path' {
+    BeforeAll {
+        $script:ArchitectureRoot = Join-Path $script:SkillsRoot 'al-improve-codebase-architecture'
+        $script:ArchitectureSkill = Get-Content -LiteralPath (Join-Path $script:ArchitectureRoot 'SKILL.md') -Raw
+        $script:OpenCode = Get-Content -LiteralPath (Join-Path $script:ArchitectureRoot 'OPEN-CODE.md') -Raw
+    }
+
+    It 'links the path from SKILL.md with its scope and keeps the body within the length rule' {
+        $script:ArchitectureSkill | Should -Match 'open code in an app with the module gate on \(`moduleGate\.enabled` true in `al-build\.json`\)'
+        $script:ArchitectureSkill | Should -Match '\[OPEN-CODE\.md\]\(OPEN-CODE\.md\)'
+        @(Get-Content -LiteralPath (Join-Path $script:ArchitectureRoot 'SKILL.md')).Count | Should -BeLessOrEqual 60
+    }
+
+    It 'fixes each module''s root namespace and sends a new module''s interface through the Level 1 interface sentence' {
+        $script:ArchitectureSkill | Should -Match 'each module''s root namespace\) are fixed'
+        $script:ArchitectureSkill | Should -Match 'a new module''s interface included, goes to the user before any refactor'
+        $script:OpenCode | Should -Match 'agreed with the user before the first move \(Freeze\)'
+    }
+
+    It 'states the seven steps in order' {
+        $phrases = @(
+            '1\. \*\*Characterization tests\.\*\*'
+            'calling the open-code procedures directly'
+            'planned end'
+            '2\. \*\*Mutation set\.\*\*'
+            'each behavior-bearing site'
+            'inject-red-revert'
+            'turn a characterization test red'
+            'deliberately unpinned'
+            '3\. \*\*Extraction\.\*\*'
+            'new or existing modules'
+            '`\.Internal`'
+            'through its root namespace'
+            '4\. \*\*Pure proxies\.\*\*'
+            'only delegates'
+            '5\. \*\*Mutation handover\.\*\*'
+            'module''s own tests'
+            'retire the characterization tests'
+            '6\. \*\*Obsolete\.\*\*'
+            'the handover has passed'
+            '\[Obsolete\(''<replacement interface>'', ''<tag>''\)\]'
+            'AL0432'
+            '7\. \*\*Callers switched\.\*\*'
+            'mechanically'
+            'keeps its mark'
+            'zero-warnings green'
+        )
+        $at = -1
+        foreach ($phrase in $phrases) {
+            $match = [regex]::Match($script:OpenCode, $phrase)
+            $match.Success | Should -BeTrue -Because "OPEN-CODE.md states: $phrase"
+            $match.Index | Should -BeGreaterThan $at -Because "$phrase follows the step before it"
+            $at = $match.Index
+        }
+    }
+
+    It 'records a surviving fault as a receipt line and adds no receipt prefix' {
+        $script:OpenCode | Should -Match 'the receipt gets a line naming the site'
+        $script:OpenCode | Should -Not -Match '(?m)^\s*`?unpinned:'
+    }
+
+    It 'keeps event publishers that dependents subscribe to out of the proxies' {
+        $script:OpenCode | Should -Match 'never become proxies and never move'
+        $script:OpenCode | Should -Match 'Modules raise the same events'
+        $script:OpenCode | Should -Match 'one test per event'
+    }
+
+    It 'speaks of open code and modules, never legacy' {
+        foreach ($name in 'SKILL.md', 'OPEN-CODE.md') {
+            Get-Content -LiteralPath (Join-Path $script:ArchitectureRoot $name) -Raw | Should -Not -Match 'legacy' -Because "$name speaks of open code and modules"
+        }
+    }
+}
