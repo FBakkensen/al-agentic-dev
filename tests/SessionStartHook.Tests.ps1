@@ -3,6 +3,13 @@
 BeforeAll {
     $script:RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 
+    $script:PathRule = @(
+        'In an AL repository whose `al-build.json` has `moduleGate.enabled` true, the path of code says how to treat it:'
+        '- A folder named `Internal` holds a module''s internals: call them only from inside that module.'
+        '- A folder with an `Internal` child is a module''s interface: call the module from anywhere, through that folder.'
+        '- Any other folder is open code: a fix inside an existing procedure stays there; a new object, callable procedure, or event subscriber goes into a module, carved as a child namespace with its own `Internal`.'
+    )
+
     function Invoke-SessionStartHook {
         param(
             [Parameter(Mandatory = $true)][string]$PluginRoot,
@@ -64,13 +71,28 @@ Describe 'SessionStart hook' -Tag 'Process' {
         $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:research` | `/al-research` |') + '\r?$')
     }
 
-    It 'gives a subagent the entry → addition table and none of the delegation rules' {
+    It 'injects the path rule, scoped to a repository whose module gate is on, as SessionStart additionalContext' {
+        $result = Invoke-SessionStartHook -PluginRoot $script:RepoRoot
+
+        $result.ExitCode | Should -Be 0 -Because $result.Text
+        $context = ($result.Text | ConvertFrom-Json).hookSpecificOutput.additionalContext
+        $context | Should -Match '(?m)^## Reading an AL path\r?$'
+        foreach ($line in $script:PathRule) {
+            $context | Should -Match ('(?m)^' + [regex]::Escape($line) + '\r?$') -Because "SessionStart carries: $line"
+        }
+    }
+
+    It 'gives a subagent the entry → addition table, the path rule, and none of the delegation rules' {
         $result = Invoke-SessionStartHook -PluginRoot $script:RepoRoot -Event SubagentStart
 
         $result.ExitCode | Should -Be 0 -Because $result.Text
         $payload = $result.Text | ConvertFrom-Json
         $payload.hookSpecificOutput.hookEventName | Should -BeExactly 'SubagentStart'
         $context = $payload.hookSpecificOutput.additionalContext
+        $context | Should -Match '(?m)^## Reading an AL path\r?$'
+        foreach ($line in $script:PathRule) {
+            $context | Should -Match ('(?m)^' + [regex]::Escape($line) + '\r?$') -Because "SubagentStart carries: $line"
+        }
         $context | Should -Match '(?m)^## Entry skills and their AL additions\r?$'
         $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:wayfinder` | `/al-wayfinder` |') + '\r?$')
         $context | Should -Match ('(?m)^' + [regex]::Escape('| `/mattpocock-skills:research` | `/al-research` |') + '\r?$')
@@ -101,6 +123,37 @@ Describe 'SessionStart hook' -Tag 'Process' {
         $context | Should -Not -Match 'Later'
     }
 
+    It 'prints the path rule to both hooks from the one section of session-start.md' {
+        $source = Get-Content -LiteralPath (Join-Path $script:RepoRoot 'hooks' 'session-start.md') -Raw
+        $section = [regex]::Match($source, '(?ms)^## Reading an AL path\r?\n.*?(?=^## |\z)').Value.Trim().Replace("`r`n", "`n")
+        $section | Should -Not -BeNullOrEmpty
+
+        foreach ($event in 'SessionStart', 'SubagentStart') {
+            $result = Invoke-SessionStartHook -PluginRoot $script:RepoRoot -Event $event
+            $result.ExitCode | Should -Be 0 -Because $result.Text
+            $context = ($result.Text | ConvertFrom-Json).hookSpecificOutput.additionalContext
+            $context.Replace("`r`n", "`n").Contains($section) | Should -BeTrue -Because "$event prints the section as written"
+        }
+    }
+
+    It 'fails a subagent start when the "<Heading>" section is missing' -ForEach @(
+        @{ Heading = 'Reading an AL path' }
+        @{ Heading = 'Entry skills and their AL additions' }
+    ) {
+        $plugin = Join-Path $TestDrive 'missing-section-plugin'
+        New-Item -ItemType Directory -Path (Join-Path $plugin 'hooks') -Force | Out-Null
+        foreach ($name in 'hooks.json', 'Write-SessionStart.ps1') {
+            Copy-Item -LiteralPath (Join-Path $script:RepoRoot 'hooks' $name) -Destination (Join-Path $plugin 'hooks')
+        }
+        $text = Get-Content -LiteralPath (Join-Path $script:RepoRoot 'hooks' 'session-start.md') -Raw
+        $text = [regex]::Replace($text, '(?ms)^## ' + [regex]::Escape($Heading) + '\r?\n.*?(?=^## |\z)', '')
+        Set-Content -LiteralPath (Join-Path $plugin 'hooks' 'session-start.md') -Value $text -NoNewline
+
+        $result = Invoke-SessionStartHook -PluginRoot $plugin -Event SubagentStart
+
+        $result.ExitCode | Should -Not -Be 0
+        $result.Text | Should -Match ([regex]::Escape($Heading))
+    }
     It 'fails a subagent start when the text is missing' {
         $plugin = Join-Path $TestDrive 'subagent-plugin'
         New-Item -ItemType Directory -Path (Join-Path $plugin 'hooks') -Force | Out-Null

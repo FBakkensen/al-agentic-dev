@@ -9,7 +9,7 @@ In: `/mattpocock-skills:tdd` running against AL code. The entry skill owns the l
 
 ## The agreed seams
 
-The seams `/mattpocock-skills:tdd` agrees are the AAA map and the current-to-final proof map, both tested through the caller-visible interface of a Level 1 module.
+The seams `/mattpocock-skills:tdd` agrees are the AAA map and the current-to-final proof map, both tested through the caller-visible interface of a Level 1 module; with the module gate on, that is its root namespace, never its `.Internal`, from a test at the module's path in the test tree.
 
 Before proposing cases, search the repository for existing proof by affected module interface, objects, business terms, fixtures, and assertions:
 

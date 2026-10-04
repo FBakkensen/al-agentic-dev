@@ -24,7 +24,7 @@ The sub-agent reads the receipt's `verified:` / `assumed:` / `unresolved:` entri
 - every Gherkin scenario reaches its named BPMN outcome
 - the Gherkin and AAA proof start from the Original work item's Trigger and cover its Success and Minimal guarantees
 - AAA cases cover the scenario branches with independent expected values
-- tests exercise the caller-visible module interface rather than private internals
+- tests exercise the caller-visible module interface rather than private internals; a test that reaches a module's `.Internal` is the concrete finding
 - Building Block Level 1 ownership matches the code
 - the implementation change map includes every changed production object, explains every connection, and separates proof objects
 - Level 2, when present, matches proven internals; its absence is valid for a simple module

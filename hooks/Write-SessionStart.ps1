@@ -6,8 +6,10 @@
     Reads the static delegation rules and entry -> addition table from
     session-start.md beside this script. SessionStart writes the whole text to
     stdout as additionalContext; SubagentStart writes only the entry -> addition
-    section, up to the next level-2 heading, so a subagent loads an addition beside its entry skill. Exits 1 when
-    the text file is missing or empty, or lacks that section.
+    section, so a subagent loads an addition beside its entry skill, and the path-rule
+    section, so a subagent reads an AL path the way the main session does. Each section
+    runs up to the next level-2 heading. Exits 1 when the text file is missing or empty,
+    or lacks either section.
 .EXAMPLE
     pwsh -NoProfile -File hooks/Write-SessionStart.ps1
 .EXAMPLE
@@ -32,16 +34,20 @@ if (-not $text -or -not $text.Trim()) {
 }
 
 if ($Event -eq 'SubagentStart') {
-    $start = $text.IndexOf('## Entry skills and their AL additions', [StringComparison]::Ordinal)
-    if ($start -lt 0) {
-        [Console]::Error.WriteLine("SubagentStart section is missing from: $textPath")
-        exit 1
+    $sections = foreach ($heading in '## Entry skills and their AL additions', '## Reading an AL path') {
+        $start = $text.IndexOf($heading, [StringComparison]::Ordinal)
+        if ($start -lt 0) {
+            [Console]::Error.WriteLine("SubagentStart section '$heading' is missing from: $textPath")
+            exit 1
+        }
+        $section = $text.Substring($start)
+        $next = [regex]::Match($section.Substring(1), '(?m)^## ')
+        if ($next.Success) {
+            $section = $section.Substring(0, $next.Index + 1)
+        }
+        $section.TrimEnd()
     }
-    $text = $text.Substring($start)
-    $next = [regex]::Match($text.Substring(1), '(?m)^## ')
-    if ($next.Success) {
-        $text = $text.Substring(0, $next.Index + 1).TrimEnd() + "`n"
-    }
+    $text = ($sections -join "`n`n") + "`n"
 }
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
