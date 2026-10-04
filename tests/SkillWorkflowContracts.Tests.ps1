@@ -649,7 +649,7 @@ Describe 'Module shape' {
         $design | Should -Match 'Its root namespace is its interface'
         $design | Should -Match '`<module>\.Internal` holds its internals'
         $design | Should -Match 'folder path equals namespace'
-        $design | Should -Match 'carved out of a feature cluster as a child namespace'
+        $design | Should -Match 'carved out of a feature cluster as a child namespace, never declared on the cluster itself'
         $design | Should -Match 'everything outside a module'
         $design | Should -Match 'An AL interface with one implementation stays out unless a second implementation or a stable external contract proves the seam\. An extensible enum plus an interface that other apps implement is such a contract\.'
     }
@@ -658,7 +658,7 @@ Describe 'Module shape' {
         $implement = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-implement' 'SKILL.md') -Raw
         $tdd = Get-Content -LiteralPath (Join-Path $script:SkillsRoot 'al-tdd' 'SKILL.md') -Raw
 
-        $implement | Should -Match 'New behavior lands in a module of the shape /al-codebase-design states, never in open code'
+        $implement | Should -Match 'New objects, callable procedures, and event subscribers land in a module of the shape /al-codebase-design states, not in open code'
         $tdd | Should -Match 'tested through a module''s root namespace, never its `\.Internal`, from a test at the module''s path in the test tree'
     }
 
@@ -680,7 +680,7 @@ Describe 'Module shape' {
     It 'defines Module and Open code in the glossary' {
         $context = Get-Content -LiteralPath (Join-Path $script:RepoRoot 'CONTEXT.md') -Raw
 
-        $context | Should -Match '(?m)^\*\*Module\*\*:\r?\n.*root namespace.*`\.Internal`'
-        $context | Should -Match '(?m)^\*\*Open code\*\*:\r?\n.*outside a module'
+        $context | Should -Match '(?m)^\*\*Module\*\*:\r?\nA child namespace carved out of a feature cluster.*root namespace is its interface.*`\.Internal`.*folder path equals namespace'
+        $context | Should -Match '(?m)^\*\*Open code\*\*:\r?\nEvery AL object outside a module.*no special name or mark'
     }
 }
