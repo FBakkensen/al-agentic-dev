@@ -766,7 +766,7 @@ Describe 'Group by feature into namespaces' {
         $script:GroupSkill = Get-Content -LiteralPath $script:GroupSkillPath -Raw
     }
 
-    It 'keeps the body within the length rule and the description to three trigger branches' {
+    It 'keeps the file within the length rule and names each of the three trigger branches in the description' {
         @(Get-Content -LiteralPath $script:GroupSkillPath).Count | Should -BeLessOrEqual 60
         $description = [regex]::Match($script:GroupSkill, '(?m)^description: (.+)$').Groups[1].Value
         $description | Should -Match 'an AL app has no namespaces'
@@ -781,7 +781,15 @@ Describe 'Group by feature into namespaces' {
         $line[0] | Should -Match 'as granular as the code allows'
         $line[0] | Should -Match 'namespace level covering everything it touches'
         $line[0] | Should -Match 'event publishers and procedures an add-on can call marked final'
-        $line[0] | Should -Match ' → table of object type, ID, name, proposed namespace, folder, and evidence \(what it references, what references it, which fields it shares\)'
+        $line[0] | Should -Match ' → table of object type, ID, name, proposed namespace, folder \(the namespace path below the source root\), and evidence \(what it references, what references it, which fields it shares\), one row per object$'
+    }
+
+    It 'surveys the app and its test apps once and mirrors the grouping into the test namespaces' {
+        $line = @($script:GroupSkill -split '\r?\n' | Where-Object { $_ -match '^▶ opus · ' })[0]
+        $line | Should -Match 'survey the app in <app folder> and the test apps <test app folders> into one namespace map'
+        $line | Should -Match 'a test object lands in <root>\.Test plus the namespace path of the objects it exercises, at the covering level when it spans clusters'
+        $script:GroupSkill | Should -Match 'One survey covers the app and every test app'
+        $script:GroupSkill | Should -Match '`containerTestApps` included'
     }
 
     It 'gets the developer''s agreement before anything is written' {
@@ -795,14 +803,22 @@ Describe 'Group by feature into namespaces' {
 
     It 'applies the agreed map through /al-build and runs the gate before the module gate is written' {
         $apply = [regex]::Match($script:GroupSkill, '(?s)\r?\n## Apply\r?\n(.*?)(?=\r?\n## |\z)').Groups[1].Value
-        $apply | Should -Match '(?m)^▶ haiku · /al-build provision .*apply the namespace map `\.output/namespace-map\.json` with root namespace <root>.*ALBT_MODULE_GATE_ENABLED false.* → '
+        $apply | Should -Match '(?m)^▶ haiku · /al-build provision the symbols, apply `\.output/namespace-map\.json` with root namespace <root>, then the gate with ALBT_MODULE_GATE_ENABLED false.* → '
         $apply | Should -Match '"type", "id", "name", "namespace"'
         $apply | Should -Not -Match '\.ps1|scripts/'
     }
 
+    It 'splits the agreed map per app and applies each test app under <root>.Test without a new provision' {
+        $apply = [regex]::Match($script:GroupSkill, '(?s)\r?\n## Apply\r?\n(.*?)(?=\r?\n## |\z)').Groups[1].Value
+        $apply | Should -Match 'Split the agreed map into one file per app, `\.output/namespace-map\.json` for the app and `\.output/namespace-map-<app folder>\.json` for each test app'
+        $apply | Should -Match 'a new provision would clear them'
+        $apply | Should -Match '(?m)^▶ haiku · /al-build apply each test app''s map `\.output/namespace-map-<app folder>\.json` with root namespace <root>\.Test and that app folder, without provisioning, then the gate with ALBT_MODULE_GATE_ENABLED false.* → '
+        $apply.IndexOf('/al-build provision the symbols') | Should -BeLessThan $apply.IndexOf('/al-build apply each test app')
+    }
+
     It 'writes the moduleGate block on with the root namespace only after a green gate, then runs the gate again' {
         $switch = [regex]::Match($script:GroupSkill, '(?s)\r?\n## Switch the gate on\r?\n(.*?)(?=\r?\n## |\z)').Groups[1].Value
-        $switch | Should -Match 'Once the gate is green'
+        $switch | Should -Match 'Once both gates are green'
         $switch | Should -Match '"moduleGate": \{ "enabled": true, "rootNamespace": "<root>" \}'
         $switch | Should -Match '(?m)^▶ haiku · /al-build gate with the module gate on'
         $switch | Should -Match 'moduleGate` block'

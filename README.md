@@ -56,7 +56,7 @@ Skills you type directly:
 | `/al-lookup` | Answers one platform question with a source pointer and grows the repository's precedent map. |
 | `/al-webclient` | Loads the Web Client driving rules before any browser call that touches Business Central. |
 | `/al-environment-data` | Reads data, GET only, from a SaaS sandbox's API or the branch's agent container. |
-| `/al-group-by-feature-into-namespaces` | Groups an app's objects by feature into namespaces under `Naveksa.<Product>`, applies the map you agree through `/al-build`, and switches the module gate on. |
+| `/al-group-by-feature-into-namespaces` | Groups an app's and its test apps' objects by feature into namespaces under `Naveksa.<Product>`, applies the map you agree through `/al-build`, and switches the module gate on. |
 
 Other skills call these:
 
